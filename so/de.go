@@ -103,7 +103,10 @@ func DE(
 
 func checkFilePath(filePath string) {
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		os.Mkdir(filePath, os.ModePerm)
+		err = os.Mkdir(filePath, os.ModePerm)
+		if err != nil {
+			log.Fatalf("Error creating a folder in the path: %v", filePath)
+		}
 	}
 }
 

@@ -31,7 +31,7 @@ func Start() {
 
 	// multiple objetives flags
 	moNP := modeCommand.Int("np", 100, "number of elements in the population.")
-	moM := modeCommand.Int("m", 1, "value used in the ZDTLs.")
+	moM := modeCommand.Int("m", 2, "value used in the ZDTLs.")
 	moDim := modeCommand.Int("dim", 5, "number of dimentions of each element.")
 	moGen := modeCommand.Int("gen", 300, "number of generations of the DE.")
 	moExecs := modeCommand.Int("execs", 1, "number of executions.")

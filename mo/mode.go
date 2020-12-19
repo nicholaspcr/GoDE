@@ -109,15 +109,17 @@ func MultiExecutions(
 	EXECS, NP, M, DIM, GEN int,
 	LOWER, UPPER, CR, F float64,
 ) {
-	outDir := os.Getenv("HOME") + "./goDE/paretoFront"
+	outDir := os.Getenv("HOME") + "/.goDE/mode"
 	checkFilePath(outDir)
+	paretoPath := outDir + "/paretoFront"
+	checkFilePath(paretoPath)
 
 	// obtains the union of the points of all executions
 	var arrElem []Elem
 	for i := 0; i < EXECS; i++ {
-		f, err := os.Create(outDir + "/exec-" + strconv.Itoa(i+1) + ".csv")
+		f, err := os.Create(paretoPath + "/exec-" + strconv.Itoa(i+1) + ".csv")
 		checkError(err)
-		currSlice := DE(NP, M, DIM, GEN, LOWER, UPPER, CR, F, outDir, f)
+		currSlice := DE(NP, M, DIM, GEN, LOWER, UPPER, CR, F, paretoPath, f)
 		for _, e := range currSlice {
 			arrElem = append(arrElem, e)
 		}
@@ -142,7 +144,6 @@ func MultiExecutions(
 	}
 
 	// creates path and file
-	checkFilePath(outDir)
 	var path string = outDir + "/multiExecutions"
 	checkFilePath(path)
 	path += "/rand1.csv"
@@ -278,7 +279,10 @@ func generateIndices(startInd, NP int, r []int) error {
 
 func checkFilePath(filePath string) {
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		os.Mkdir(filePath, os.ModePerm)
+		err = os.Mkdir(filePath, os.ModePerm)
+		if err != nil {
+			log.Fatalf("error creating file in path: %v", filePath)
+		}
 	}
 }
 

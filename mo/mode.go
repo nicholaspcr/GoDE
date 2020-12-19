@@ -108,18 +108,16 @@ func DE(
 func MultiExecutions(
 	EXECS, NP, M, DIM, GEN int,
 	LOWER, UPPER, CR, F float64,
-	OUTDIR string,
 ) {
-	checkFilePath(OUTDIR)
-	basePath := OUTDIR + "/paretoFront"
-	checkFilePath(basePath)
+	outDir := os.Getenv("HOME") + "./goDE/paretoFront"
+	checkFilePath(outDir)
 
 	// obtains the union of the points of all executions
 	var arrElem []Elem
 	for i := 0; i < EXECS; i++ {
-		f, err := os.Create(basePath + "/exec-" + strconv.Itoa(i+1) + ".csv")
+		f, err := os.Create(outDir + "/exec-" + strconv.Itoa(i+1) + ".csv")
 		checkError(err)
-		currSlice := DE(NP, M, DIM, GEN, LOWER, UPPER, CR, F, OUTDIR, f)
+		currSlice := DE(NP, M, DIM, GEN, LOWER, UPPER, CR, F, outDir, f)
 		for _, e := range currSlice {
 			arrElem = append(arrElem, e)
 		}
@@ -144,8 +142,8 @@ func MultiExecutions(
 	}
 
 	// creates path and file
-	checkFilePath(OUTDIR)
-	var path string = OUTDIR + "/multiExecutions"
+	checkFilePath(outDir)
+	var path string = outDir + "/multiExecutions"
 	checkFilePath(path)
 	path += "/rand1.csv"
 	f, err := os.Create(path)

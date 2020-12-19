@@ -14,24 +14,29 @@ import (
 func DE(
 	NP, dim, gen, maxInst int,
 	lower, upper, CR, F, P float64,
-	outputDir string,
 	equation Equation,
 	variant Variant,
 ) {
 	rand.Seed(time.Now().UTC().UnixNano())
-	checkFilePath(outputDir)
-	var path string = outputDir + "/convergence"
+
+	// base path for the sode
+	var dbPath string = os.Getenv("HOME") + "/.goDE"
+	checkFilePath(dbPath)
+	dbPath += "/sode"
+	checkFilePath(dbPath)
+
+	var path string = dbPath + "/convergence"
 	path = checkFullPath(path, equation.fileName, variant.funcName, dim, P)
 	f, err := os.Create(path)
 	checkError(err)
 
 	// TODO: Rename to reflect what it writes, X[...] points of the current best of population
-	var extraDataPath string = outputDir + "/extra"
+	var extraDataPath string = dbPath + "/extra"
 	extraDataPath = checkFullPath(extraDataPath, equation.fileName, variant.funcName, dim, P)
 	fExtraData, err := os.Create(extraDataPath)
 	checkError(err)
 
-	var allPointsPath string = outputDir + "/allPoints"
+	var allPointsPath string = dbPath + "/allPoints"
 	var fAllPoints *os.File
 	if dim == 2 {
 		allPointsPath = checkFullPath(allPointsPath, equation.fileName, variant.funcName, dim, P)

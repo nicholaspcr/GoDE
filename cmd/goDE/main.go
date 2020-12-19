@@ -1,7 +1,7 @@
 package main
 
-import "fmt"
+import "gitlab.com/nicholaspcr/gode/cli"
 
 func main() {
-	fmt.Println("Hello World")
+	cli.Start()
 }

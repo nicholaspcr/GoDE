@@ -41,7 +41,7 @@ type Equation struct {
 	fileName string
 }
 
-var ackley Equation = Equation{
+var Ackley Equation = Equation{
 	calcFunc: func(x []float64) float64 {
 		var sqrdSum, cosSum, invDim, ret float64 // squaredSum, sumOfCos, inverseDim
 		dim := len(x)
@@ -57,7 +57,7 @@ var ackley Equation = Equation{
 	fileName: "ackley",
 }
 
-var rastrigin Equation = Equation{
+var Rastrigin Equation = Equation{
 	calcFunc: func(x []float64) float64 {
 		var ret float64
 		for i := 0; i < len(x); i++ {
@@ -68,7 +68,7 @@ var rastrigin Equation = Equation{
 	fileName: "rastrigin",
 }
 
-var schwefel Equation = Equation{
+var Schwefel Equation = Equation{
 	calcFunc: func(x []float64) float64 {
 		var sum float64 = 0.0
 		dim := len(x)
@@ -81,7 +81,7 @@ var schwefel Equation = Equation{
 	fileName: "schwefel",
 }
 
-var rosenbrock Equation = Equation{
+var Rosenbrock Equation = Equation{
 	calcFunc: func(x []float64) float64 {
 		var ret float64
 		dim := len(x)

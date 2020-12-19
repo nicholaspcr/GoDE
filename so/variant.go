@@ -12,7 +12,7 @@ type Variant struct {
 	makeMutant func(pop []Elem, F, P float64, currPos, dim int) (Elem, error)
 }
 
-var rand1 Variant = Variant{
+var Rand1 Variant = Variant{
 	makeMutant: func(pop []Elem, F, P float64, currPos, dim int) (Elem, error) {
 		index := make([]int, 4)
 		index[0] = currPos

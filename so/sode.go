@@ -8,7 +8,7 @@ import (
 // Run -> single objevtive Differential Evolution function that accepts flags
 func Run(np, dim, gen, maxInst int, lower, upper, CR, F, P float64) {
 	allEqts := [...]Equation{Rastrigin}
-	allVariants := [...]Variant{Rand1, rand2}
+	allVariants := [...]Variant{Rand1, Rand2}
 	// , best1, best2, currToBestv1, currToBestv2, pBest
 
 	testTimer := time.Now()

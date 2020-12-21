@@ -12,6 +12,7 @@ type Variant struct {
 	makeMutant func(pop []Elem, F, P float64, currPos, dim int) (Elem, error)
 }
 
+// Rand1 implementation
 var Rand1 Variant = Variant{
 	makeMutant: func(pop []Elem, F, P float64, currPos, dim int) (Elem, error) {
 		index := make([]int, 4)
@@ -34,7 +35,8 @@ var Rand1 Variant = Variant{
 	funcName: "rand1",
 }
 
-var rand2 Variant = Variant{
+// Rand2 implementation
+var Rand2 Variant = Variant{
 	makeMutant: func(pop []Elem, F, P float64, currPos, dim int) (Elem, error) {
 		index := make([]int, 7)
 		index[0] = currPos
@@ -57,7 +59,8 @@ var rand2 Variant = Variant{
 	funcName: "rand2",
 }
 
-var best1 Variant = Variant{
+// Best1 implementation
+var Best1 Variant = Variant{
 	makeMutant: func(pop []Elem, F, P float64, currPos, dim int) (Elem, error) {
 		index := make([]int, 4)
 		index[0] = currPos
@@ -81,6 +84,7 @@ var best1 Variant = Variant{
 	funcName: "best1",
 }
 
+// Best2 implementation
 var best2 Variant = Variant{
 	makeMutant: func(pop []Elem, F, P float64, currPos, dim int) (Elem, error) {
 		index := make([]int, 6)
@@ -155,7 +159,8 @@ var currToBestv2 Variant = Variant{
 	funcName: "current-to-best-2",
 }
 
-var pBest Variant = Variant{
+// PBest implementation
+var PBest Variant = Variant{
 	makeMutant: func(pop []Elem, F, P float64, currPos, dim int) (Elem, error) {
 		popSz := float64(len(pop))
 		ceilRand := int(math.Floor(popSz * P))

@@ -5,6 +5,12 @@ import (
 	"math"
 )
 
+// Params of the DE
+type Params struct {
+	NP, M, DIM, GEN    int
+	FLOOR, CEIL, CR, F float64
+}
+
 // Elem -> Element of population
 type Elem struct {
 	X      []float64
@@ -12,7 +18,8 @@ type Elem struct {
 	crwdst float64
 }
 
-func (e *Elem) makeCpy() Elem {
+// Copy the entire struct
+func (e *Elem) Copy() Elem {
 	var ret Elem
 	ret.X = make([]float64, len(e.X))
 	ret.objs = make([]float64, len(e.objs))
@@ -38,17 +45,29 @@ func (e *Elem) dominates(other Elem) bool {
 	return dominates
 }
 
-type byCrwdst []Elem
+// Elements is a slice of the type Elem
+type Elements []Elem
+
+// Copy of the []Elem slice
+func (e Elements) Copy() Elements {
+	arr := make(Elements, len(e))
+	for i, v := range e {
+		arr[i] = v.Copy()
+	}
+	return arr
+}
+
+type byCrwdst Elements
 
 func (x byCrwdst) Len() int           { return len(x) }
 func (x byCrwdst) Less(i, j int) bool { return x[i].crwdst > x[j].crwdst }
-func (x byCrwdst) Swap(i, j int)      { t := x[i].makeCpy(); x[i] = x[j].makeCpy(); x[j] = t }
+func (x byCrwdst) Swap(i, j int)      { t := x[i].Copy(); x[i] = x[j].Copy(); x[j] = t }
 
-type byFirstObj []Elem
+type byFirstObj Elements
 
 func (x byFirstObj) Len() int           { return len(x) }
 func (x byFirstObj) Less(i, j int) bool { return x[i].objs[0] < x[j].objs[0] }
-func (x byFirstObj) Swap(i, j int)      { t := x[i].makeCpy(); x[i] = x[j].makeCpy(); x[j] = t }
+func (x byFirstObj) Swap(i, j int)      { t := x[i].Copy(); x[i] = x[j].Copy(); x[j] = t }
 
 // ZDT1 -> bi-objetive evaluation
 func ZDT1(e *Elem) error {

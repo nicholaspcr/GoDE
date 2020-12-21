@@ -1,9 +1,7 @@
 package mo
 
 import (
-	"errors"
 	"fmt"
-	"log"
 	"math"
 	"math/rand"
 	"os"
@@ -13,21 +11,7 @@ import (
 )
 
 // DE -> runs a simple multiObjective DE in the ZDT1 case
-func DE(
-	NP, M, DIM, GEN int,
-	LOWER, UPPER, CR, F float64,
-	OUTDIR string,
-	f *os.File,
-) []Elem {
-	if f == nil {
-		var err error
-		checkFilePath(OUTDIR)
-		var path string = OUTDIR + "/paretoFront"
-		checkFilePath(path)
-		path += "/rand1.csv"
-		f, err = os.Create(path)
-		checkError(err)
-	}
+func DE(p Params, population Elements, f *os.File) Elements {
 	defer f.Close()
 
 	// Rand Seed
@@ -35,49 +19,43 @@ func DE(
 
 	// setting the test case, example: ZDT1
 	evaluate := DTLZ3
-	// generates random population
-	population := generatePopulation(NP, DIM, LOWER, UPPER)
 	for i := range population {
-		err := evaluate(&population[i], M)
+		err := evaluate(&population[i], p.M)
 		checkError(err)
 	}
-
-	// fmt.Println(DIM)
-	// fmt.Println(len(population[0].X))
-	// fmt.Println(len(population[0].objs))
 
 	writeHeader(population, f)
 	writeGeneration(population, f)
 
 	// Finish --- Writing on f
-	for currGen := 0; currGen < GEN; currGen++ {
+	for currGen := 0; currGen < p.GEN; currGen++ {
 		// fmt.Println(len(population[0].X))
 		// trial population vector
-		trial := make([]Elem, NP)
+		trial := make([]Elem, p.NP)
 		for i, p := range population {
-			trial[i] = p.makeCpy()
+			trial[i] = p.Copy()
 		}
 		for i, t := range trial {
 			inds := make([]int, 3)
-			err := generateIndices(0, NP, inds)
+			err := generateIndices(0, p.NP, inds)
 			checkError(err)
 			a, b, c := population[inds[0]], population[inds[1]], population[inds[2]]
 
 			// CROSS OVER
-			currInd := rand.Int() % DIM
-			for j := 0; j < DIM; j++ {
+			currInd := rand.Int() % p.DIM
+			for j := 0; j < p.DIM; j++ {
 				changeProb := rand.Float64()
-				if changeProb < CR || currInd == DIM {
-					t.X[currInd] = a.X[currInd] + F*(b.X[currInd]-c.X[currInd])
+				if changeProb < p.CR || currInd == p.DIM {
+					t.X[currInd] = a.X[currInd] + p.F*(b.X[currInd]-c.X[currInd])
 				}
 
-				if t.X[currInd] < LOWER {
-					t.X[currInd] = LOWER
+				if t.X[currInd] < p.FLOOR {
+					t.X[currInd] = p.FLOOR
 				}
-				if t.X[currInd] > UPPER {
-					t.X[currInd] = UPPER
+				if t.X[currInd] > p.CEIL {
+					t.X[currInd] = p.CEIL
 				}
-				currInd = (currInd + 1) % DIM
+				currInd = (currInd + 1) % p.DIM
 			}
 
 			// for ZDT4
@@ -87,17 +65,17 @@ func DE(
 			// 	t.X[0] = 0.0
 			// }
 
-			evalErr := evaluate(&t, M)
+			evalErr := evaluate(&t, p.M)
 			checkError(evalErr)
 
 			if t.dominates(population[i]) {
-				population[i] = t.makeCpy()
+				population[i] = t.Copy()
 			} else if !population[i].dominates(t) {
-				population = append(population, t.makeCpy())
+				population = append(population, t.Copy())
 			}
 		}
 
-		population = reduceByCrowdDistance(population, NP)
+		population = reduceByCrowdDistance(population, p.NP)
 
 		writeGeneration(population, f)
 	}
@@ -105,31 +83,30 @@ func DE(
 }
 
 // MultiExecutions returns the pareto front of the total of 30 executions of the same problem
-func MultiExecutions(
-	EXECS, NP, M, DIM, GEN int,
-	LOWER, UPPER, CR, F float64,
-) {
+func MultiExecutions(EXECS int, params Params) {
 	outDir := os.Getenv("HOME") + "/.goDE/mode"
 	checkFilePath(outDir)
 	paretoPath := outDir + "/paretoFront"
 	checkFilePath(paretoPath)
 
 	// obtains the union of the points of all executions
-	var arrElem []Elem
+	var pareto Elements
+	// generates random population
+	population := generatePopulation(params)
 	for i := 0; i < EXECS; i++ {
 		f, err := os.Create(paretoPath + "/exec-" + strconv.Itoa(i+1) + ".csv")
 		checkError(err)
-		currSlice := DE(NP, M, DIM, GEN, LOWER, UPPER, CR, F, paretoPath, f)
+		currSlice := DE(params, population, f)
 		for _, e := range currSlice {
-			arrElem = append(arrElem, e)
+			pareto = append(pareto, e)
 		}
 	}
 
 	// filter those elements who are not dominated
 	var result []Elem
-	for i, first := range arrElem {
+	for i, first := range pareto {
 		flag := true
-		for j, second := range arrElem {
+		for j, second := range pareto {
 			if i == j {
 				continue
 			}
@@ -185,20 +162,20 @@ func reduceByCrowdDistance(pop []Elem, NP int) []Elem {
 				}
 			}
 			if flag == true {
-				inRank = append(inRank, pop[i].makeCpy())
+				inRank = append(inRank, pop[i].Copy())
 			} else {
-				notInRank = append(notInRank, pop[i].makeCpy())
+				notInRank = append(notInRank, pop[i].Copy())
 			}
 		}
 
 		qtdElements += len(inRank)
 		for i := 0; i < len(inRank); i++ {
-			ranks[rankSize] = append(ranks[rankSize], inRank[i].makeCpy())
+			ranks[rankSize] = append(ranks[rankSize], inRank[i].Copy())
 		}
 
 		pop = make([]Elem, 0)
 		for i := 0; i < len(notInRank); i++ {
-			pop = append(pop, notInRank[i].makeCpy())
+			pop = append(pop, notInRank[i].Copy())
 		}
 		rankSize++
 
@@ -231,7 +208,7 @@ func reduceByCrowdDistance(pop []Elem, NP int) []Elem {
 
 	for _, rank := range ranks {
 		for _, elem := range rank {
-			pop = append(pop, elem.makeCpy())
+			pop = append(pop, elem.Copy())
 			if len(pop) >= NP {
 				break
 			}
@@ -241,70 +218,4 @@ func reduceByCrowdDistance(pop []Elem, NP int) []Elem {
 		}
 	}
 	return pop
-}
-
-// generates a group of points with random values
-func generatePopulation(NP, DIM int, LOWER, UPPER float64) []Elem {
-	ret := make([]Elem, NP)
-	constant := UPPER - LOWER // range between floor and ceiling
-	for i := 0; i < NP; i++ {
-		ret[i].X = make([]float64, DIM)
-
-		for j := 0; j < DIM; j++ {
-			ret[i].X[j] = rand.Float64()*constant + LOWER // value varies within [lower,upper]
-		}
-
-		// for ZDT4
-		// ret[i].X[0] = rand.Float64()
-	}
-	return ret
-}
-
-// generates random indices in the int slice, r -> it's a pointer
-func generateIndices(startInd, NP int, r []int) error {
-	if len(r) > NP {
-		return errors.New("insufficient elements in population to generate random indices")
-	}
-	for i := startInd; i < len(r); i++ {
-		for done := false; !done; {
-			r[i] = rand.Int() % NP
-			done = true
-			for j := 0; j < i; j++ {
-				done = done && r[j] != r[i]
-			}
-		}
-	}
-	return nil
-}
-
-func checkFilePath(filePath string) {
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		err = os.Mkdir(filePath, os.ModePerm)
-		if err != nil {
-			log.Fatalf("error creating file in path: %v", filePath)
-		}
-	}
-}
-
-func checkError(e error) {
-	if e != nil {
-		log.Fatal(e)
-	}
-}
-
-func writeHeader(pop []Elem, f *os.File) {
-	for i := range pop {
-		fmt.Fprintf(f, "pop[%d]\t", i)
-	}
-	fmt.Fprintf(f, "\n")
-}
-
-func writeGeneration(pop []Elem, f *os.File) {
-	qtdObjs := len(pop[0].objs)
-	for i := 0; i < qtdObjs; i++ {
-		for _, p := range pop {
-			fmt.Fprintf(f, "%10.3f\t", p.objs[i])
-		}
-		fmt.Fprintf(f, "\n")
-	}
 }

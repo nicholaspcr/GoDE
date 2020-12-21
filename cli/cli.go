@@ -79,7 +79,17 @@ func Start() {
 		so.Run(*soNP, *soDim, *soGen, *soExecs, *soFloor, *soCeil, *soCR, *soF, *soP)
 	}
 	if modeCommand.Parsed() {
-		mo.MultiExecutions(*moExecs, *moNP, *moM, *moDim, *moGen, *moFloor, *moCeil, *moCR, *moF)
+		params := mo.Params{
+			NP:    *moNP,
+			M:     *moM,
+			DIM:   *moDim,
+			FLOOR: *moFloor,
+			CEIL:  *moCeil,
+			CR:    *moCR,
+			F:     *moF,
+			GEN:   *moGen,
+		}
+		mo.MultiExecutions(*moExecs, params)
 	}
 	if plotCommand.Parsed() {
 

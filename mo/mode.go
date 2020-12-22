@@ -18,7 +18,7 @@ func DE(p Params, population Elements, f *os.File) Elements {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	// setting the test case, example: ZDT1
-	evaluate := DTLZ7
+	evaluate := DTLZ3
 	for i := range population {
 		err := evaluate(&population[i], p.M)
 		checkError(err)
@@ -186,15 +186,16 @@ func reduceByCrowdDistance(pop []Elem, NP int) []Elem {
 		sort.Sort(byFirstObj(rank))
 		// Calculates the distance for the points in the rank
 		for i := 0; i < len(rank); i++ {
-			if len(rank) == 0 {
-				continue
-			}
-			//end of tail
-			if i == 0 || i == len(rank)-1 {
-				rank[i].crwdst = rank[i].objs[0] + rank[i].objs[1]
-			} else {
-				rank[i].crwdst = math.Abs(rank[i-1].objs[0]-rank[i+1].objs[0]) +
-					math.Abs(rank[i-1].objs[1]-rank[i+1].objs[1])
+			for j := range rank[i].objs {
+				//end of tail
+				if i == 0 {
+					rank[i].crwdst += (rank[i+1].objs[j] - rank[i].objs[j]) * (rank[i+1].objs[j] - rank[i].objs[j])
+				} else if i == len(rank)-1 {
+					rank[i].crwdst += (rank[i-1].objs[j] - rank[i].objs[j]) * (rank[i-1].objs[j] - rank[i].objs[j])
+				} else {
+					rank[i].crwdst += (rank[i-1].objs[j] - rank[i+1].objs[j]) * (rank[i-1].objs[j] - rank[i+1].objs[j])
+				}
+				rank[i].crwdst = math.Sqrt(rank[i].crwdst)
 			}
 		}
 		sort.Sort(byCrwdst(rank))

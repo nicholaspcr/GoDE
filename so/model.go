@@ -2,18 +2,26 @@ package so
 
 import "math"
 
+// Params of the sode
+type Params struct {
+	NP, DIM, GEN, EXECS   int
+	FLOOR, CEIL, CR, F, P float64
+}
+
+// Input -> input used in main
+type Input struct {
+	Eq  Equation
+	Var Variant
+}
+
 // Elem - Element with a point and it's fitness based on the function f(Point)
 type Elem struct {
 	X   []float64
 	fit float64
 }
 
-var emptyElem Elem = Elem{
-	X:   make([]float64, 0),
-	fit: 0.0,
-}
-
-func (e *Elem) makeCopy() Elem {
+// Copy the Elem struct
+func (e *Elem) Copy() Elem {
 	var ret Elem
 	ret.X = make([]float64, len(e.X))
 	copy(ret.X, e.X)
@@ -21,19 +29,30 @@ func (e *Elem) makeCopy() Elem {
 	return ret
 }
 
+// Elements is a slice of Elem
+type Elements []Elem
+
+// Copy of the slice of Elem
+func (e Elements) Copy() Elements {
+	arr := make(Elements, len(e))
+	for i, v := range e {
+		arr[i] = v.Copy()
+	}
+	return arr
+}
 func elemArrCopy(arr []Elem) []Elem {
 	ret := make([]Elem, len(arr))
 	for i := 0; i < len(arr); i++ {
-		ret[i] = arr[i].makeCopy()
+		ret[i] = arr[i].Copy()
 	}
 	return ret
 }
 
-type byFit []Elem
+type byFit Elements
 
 func (x byFit) Len() int           { return len(x) }
 func (x byFit) Less(i, j int) bool { return x[i].fit < x[j].fit }
-func (x byFit) Swap(i, j int)      { t := x[i].makeCopy(); x[i] = x[j].makeCopy(); x[i] = t }
+func (x byFit) Swap(i, j int)      { t := x[i].Copy(); x[i] = x[j].Copy(); x[i] = t }
 
 // Equation - used as a parameter to determine fitness in a DE
 type Equation struct {

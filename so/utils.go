@@ -7,99 +7,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
-	"time"
 )
-
-// DE -> Differential Evolution function
-func DE(
-	NP, dim, gen, maxInst int,
-	lower, upper, CR, F, P float64,
-	equation Equation,
-	variant Variant,
-) {
-	rand.Seed(time.Now().UTC().UnixNano())
-
-	// base path for the sode
-	var dbPath string = os.Getenv("HOME") + "/.goDE"
-	checkFilePath(dbPath)
-	dbPath += "/sode"
-	checkFilePath(dbPath)
-
-	var path string = dbPath + "/convergence"
-	path = checkFullPath(path, equation.fileName, variant.funcName, dim, P)
-	f, err := os.Create(path)
-	checkError(err)
-
-	// TODO: Rename to reflect what it writes, X[...] points of the current best of population
-	var extraDataPath string = dbPath + "/extra"
-	extraDataPath = checkFullPath(extraDataPath, equation.fileName, variant.funcName, dim, P)
-	fExtraData, err := os.Create(extraDataPath)
-	checkError(err)
-
-	var allPointsPath string = dbPath + "/allPoints"
-	var fAllPoints *os.File
-	if dim == 2 {
-		allPointsPath = checkFullPath(allPointsPath, equation.fileName, variant.funcName, dim, P)
-		var err error
-		fAllPoints, err = os.Create(allPointsPath)
-		checkError(err)
-		defer fAllPoints.Close()
-	}
-
-	defer f.Close()
-	defer fExtraData.Close()
-
-	writeFileHeader(f, fExtraData, fAllPoints, gen, dim, NP)
-
-	for currInst := 1; currInst <= maxInst; currInst++ {
-		fmt.Fprintf(f, "%-30d\t", currInst)
-		population := generatePopulation(NP, dim, lower, upper, equation.calcFunc)
-
-		for currGen := 0; currGen < gen; currGen++ {
-			writeFileBody(
-				f, fExtraData, fAllPoints,
-				currInst, currGen, gen,
-				dim, NP,
-				population,
-			)
-
-			// trial population vector
-			trial := elemArrCopy(population)
-			for i := 0; i < len(population); i++ {
-				mutant, err := variant.makeMutant(population, F, P, i, dim)
-				checkError(err)
-
-				//the experimental
-				index := rand.Int() % dim // selecting random index
-				for j := 1; j <= dim; j++ {
-					changeProbability := rand.Float64()
-					if changeProbability < CR || j == dim {
-						trial[i].X[index] = mutant.X[index]
-					}
-					index = (index + 1) % dim
-				}
-
-				for j := 0; j < dim; j++ {
-					if trial[i].X[j] < lower {
-						trial[i].X[j] = lower
-					}
-					if trial[i].X[j] > upper {
-						trial[i].X[j] = upper
-					}
-				}
-				trial[i].fit = equation.calcFunc(trial[i].X)
-
-				// the crossover
-				if trial[i].fit < population[i].fit {
-					population[i] = trial[i].makeCopy()
-				}
-			}
-
-			// sorting population
-			sort.Sort(byFit(population))
-		}
-	}
-}
 
 func checkFilePath(filePath string) {
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -110,7 +18,7 @@ func checkFilePath(filePath string) {
 	}
 }
 
-func checkFullPath(basePath, equationName, variantName string, dim int, P float64) string {
+func checkUsedPaths(basePath, equationName, variantName string, dim int, P float64) string {
 	var ret string = basePath
 	checkFilePath(ret)
 	ret += "/" + equationName
@@ -203,8 +111,8 @@ func checkError(e error) {
 }
 
 // generates a group of points with random values
-func generatePopulation(sz, dim int, lower, upper float64, calcFit func(x []float64) float64) []Elem {
-	ret := make([]Elem, sz)
+func generatePopulation(sz, dim int, lower, upper float64, calcFit func(x []float64) float64) Elements {
+	ret := make(Elements, sz)
 	rang := upper - lower // range between floor and ceiling
 	for i := 0; i < sz; i++ {
 		x := make([]float64, dim)

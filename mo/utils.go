@@ -8,14 +8,14 @@ import (
 	"os"
 )
 
-func generatePopulation(p Params) []Elem {
-	ret := make([]Elem, p.NP)
-	constant := p.CEIL - p.CEIL // range between floor and ceiling
+func generatePopulation(p Params) Elements {
+	ret := make(Elements, p.NP)
+	constant := p.CEIL - p.FLOOR // range between floor and ceiling
 	for i := 0; i < p.NP; i++ {
 		ret[i].X = make([]float64, p.DIM)
 
 		for j := 0; j < p.DIM; j++ {
-			ret[i].X[j] = rand.Float64()*constant + p.CEIL // value varies within [ceil,upper]
+			ret[i].X[j] = rand.Float64()*constant + p.FLOOR // value varies within [ceil,upper]
 		}
 
 		// for ZDT4
@@ -63,7 +63,7 @@ func writeHeader(pop []Elem, f *os.File) {
 	fmt.Fprintf(f, "\n")
 }
 
-func writeGeneration(pop []Elem, f *os.File) {
+func writeGeneration(pop Elements, f *os.File) {
 	qtdObjs := len(pop[0].objs)
 	for i := 0; i < qtdObjs; i++ {
 		for _, p := range pop {

@@ -19,7 +19,7 @@ var Rand1 Variant = Variant{
 		index[0] = currPos
 		err := generateIndices(1, len(pop), index)
 		if err != nil {
-			return emptyElem, errors.New("insufficient size for the population, must me equal or greater than 4")
+			return Elem{}, errors.New("insufficient size for the population, must me equal or greater than 4")
 		}
 		arr := make([]float64, dim)
 		a, b, c := pop[index[1]], pop[index[2]], pop[index[3]]
@@ -28,7 +28,7 @@ var Rand1 Variant = Variant{
 		}
 		ret := Elem{
 			X:   arr,
-			fit: emptyElem.fit,
+			fit: 0.0,
 		}
 		return ret, nil
 	},
@@ -42,7 +42,7 @@ var Rand2 Variant = Variant{
 		index[0] = currPos
 		err := generateIndices(1, len(pop), index)
 		if err != nil {
-			return emptyElem, errors.New("insufficient size for the population, must me equal or greater than 4")
+			return Elem{}, errors.New("insufficient size for the population, must me equal or greater than 4")
 		}
 
 		arr := make([]float64, dim)
@@ -52,7 +52,7 @@ var Rand2 Variant = Variant{
 		}
 		ret := Elem{
 			X:   arr,
-			fit: emptyElem.fit,
+			fit: 0.0,
 		}
 		return ret, nil
 	},
@@ -67,7 +67,7 @@ var Best1 Variant = Variant{
 		index[1] = 0 // best in pop
 		err := generateIndices(2, len(pop), index)
 		if err != nil {
-			return emptyElem, errors.New("insufficient size for the population, must me equal or greater than 4")
+			return Elem{}, errors.New("insufficient size for the population, must me equal or greater than 4")
 		}
 
 		arr := make([]float64, dim)
@@ -77,7 +77,7 @@ var Best1 Variant = Variant{
 		}
 		ret := Elem{
 			X:   arr,
-			fit: emptyElem.fit,
+			fit: 0.0,
 		}
 		return ret, nil
 	},
@@ -92,7 +92,7 @@ var best2 Variant = Variant{
 		index[1] = 0 // best in pop
 		err := generateIndices(2, len(pop), index)
 		if err != nil {
-			return emptyElem, errors.New("insufficient size for the population, must me equal or greater than 4")
+			return Elem{}, errors.New("insufficient size for the population, must me equal or greater than 4")
 		}
 
 		arr := make([]float64, dim)
@@ -102,7 +102,7 @@ var best2 Variant = Variant{
 		}
 		ret := Elem{
 			X:   arr,
-			fit: emptyElem.fit,
+			fit: 0.0,
 		}
 		return ret, nil
 	},
@@ -118,7 +118,7 @@ var currToBestv1 Variant = Variant{
 		index[1] = 0 // best in pop
 		err := generateIndices(2, len(pop), index)
 		if err != nil {
-			return emptyElem, errors.New("insufficient size for the population, must me equal or greater than 5")
+			return Elem{}, errors.New("insufficient size for the population, must me equal or greater than 5")
 		}
 		arr := make([]float64, dim)
 		a, b, c, d, e := pop[index[0]], pop[index[1]], pop[index[2]], pop[index[3]], pop[index[4]]
@@ -127,7 +127,7 @@ var currToBestv1 Variant = Variant{
 		}
 		ret := Elem{
 			X:   arr,
-			fit: emptyElem.fit,
+			fit: 0.0,
 		}
 		return ret, nil
 	},
@@ -143,7 +143,7 @@ var currToBestv2 Variant = Variant{
 		index[1] = 0 // best in pop
 		err := generateIndices(2, len(pop), index)
 		if err != nil {
-			return emptyElem, errors.New("insufficient size for the population, must me equal or greater than 4")
+			return Elem{}, errors.New("insufficient size for the population, must me equal or greater than 4")
 		}
 		arr := make([]float64, dim)
 		a, b, c, d := pop[index[0]], pop[index[1]], pop[index[2]], pop[index[3]]
@@ -152,7 +152,7 @@ var currToBestv2 Variant = Variant{
 		}
 		ret := Elem{
 			X:   arr,
-			fit: emptyElem.fit,
+			fit: 0.0,
 		}
 		return ret, nil
 	},
@@ -175,16 +175,16 @@ var PBest Variant = Variant{
 		index[1] = randPIndex
 		err := generateIndices(2, len(pop), index)
 		if err != nil {
-			return emptyElem, errors.New("insufficient size for the population, must me equal or greater than 4")
+			return Elem{}, errors.New("insufficient size for the population, must me equal or greater than 4")
 		}
 		arr := make([]float64, dim)
 		curr, pB, a, b := index[0], index[1], index[2], index[3]
 		for i := 0; i < dim; i++ {
-			arr[i] = pop[curr].makeCopy().X[i] + F*(pop[pB].makeCopy().X[i]-pop[curr].makeCopy().X[i]) + F*(pop[a].makeCopy().X[i]-pop[b].makeCopy().X[i])
+			arr[i] = pop[curr].X[i] + F*(pop[pB].X[i]-pop[curr].X[i]) + F*(pop[a].X[i]-pop[b].X[i])
 		}
 		ret := Elem{
 			X:   arr,
-			fit: emptyElem.fit,
+			fit: 0.0,
 		}
 		return ret, nil
 	},

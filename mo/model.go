@@ -5,7 +5,7 @@ import (
 	"math"
 )
 
-// Params of the DE
+// Params of the moDE
 type Params struct {
 	NP, M, DIM, GEN    int
 	FLOOR, CEIL, CR, F float64

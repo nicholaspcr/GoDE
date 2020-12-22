@@ -31,9 +31,9 @@ func Start() {
 
 	// multiple objetives flags
 	moNP := modeCommand.Int("np", 100, "number of elements in the population.")
-	moM := modeCommand.Int("m", 2, "value used in the ZDTLs.")
-	moDim := modeCommand.Int("dim", 5, "number of dimentions of each element.")
-	moGen := modeCommand.Int("gen", 300, "number of generations of the DE.")
+	moM := modeCommand.Int("m", 3, "value used in the ZDTLs.")
+	moDim := modeCommand.Int("dim", 7, "number of dimentions of each element.")
+	moGen := modeCommand.Int("gen", 500, "number of generations of the DE.")
 	moExecs := modeCommand.Int("execs", 1, "number of executions.")
 	moFloor := modeCommand.Float64("floor", 0, "floor for the random generated values.")
 	moCeil := modeCommand.Float64("ceil", 1, "ceil for the random generated values.")
@@ -76,7 +76,18 @@ func Start() {
 		// todo process values
 		// e, v := so.Rastrigin, so.Rand1
 		// so.DE(*soNP, *soDim, *soGen, *soExecs, *soFloor, *soCeil, *soCR, *soF, *soP, e, v)
-		so.Run(*soNP, *soDim, *soGen, *soExecs, *soFloor, *soCeil, *soCR, *soF, *soP)
+		params := so.Params{
+			NP:    *soNP,
+			DIM:   *soDim,
+			GEN:   *soGen,
+			EXECS: *soExecs,
+			FLOOR: *soFloor,
+			CEIL:  *soCeil,
+			CR:    *soCR,
+			F:     *soF,
+			P:     *soP,
+		}
+		so.Run(params)
 	}
 	if modeCommand.Parsed() {
 		params := mo.Params{

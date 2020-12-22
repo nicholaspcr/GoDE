@@ -18,7 +18,7 @@ func DE(p Params, population Elements, f *os.File) Elements {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	// setting the test case, example: ZDT1
-	evaluate := DTLZ3
+	evaluate := DTLZ7
 	for i := range population {
 		err := evaluate(&population[i], p.M)
 		checkError(err)
@@ -29,12 +29,8 @@ func DE(p Params, population Elements, f *os.File) Elements {
 
 	// Finish --- Writing on f
 	for currGen := 0; currGen < p.GEN; currGen++ {
-		// fmt.Println(len(population[0].X))
 		// trial population vector
-		trial := make([]Elem, p.NP)
-		for i, p := range population {
-			trial[i] = p.Copy()
-		}
+		trial := population.Copy()
 		for i, t := range trial {
 			inds := make([]int, 3)
 			err := generateIndices(0, p.NP, inds)
@@ -96,10 +92,9 @@ func MultiExecutions(EXECS int, params Params) {
 	for i := 0; i < EXECS; i++ {
 		f, err := os.Create(paretoPath + "/exec-" + strconv.Itoa(i+1) + ".csv")
 		checkError(err)
-		currSlice := DE(params, population, f)
-		for _, e := range currSlice {
-			pareto = append(pareto, e)
-		}
+		currSlice := DE(params, population.Copy(), f)
+		pareto = append(pareto, currSlice...)
+
 	}
 
 	// filter those elements who are not dominated

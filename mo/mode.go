@@ -11,7 +11,13 @@ import (
 )
 
 // DE -> runs a simple multiObjective DE in the ZDT1 case
-func DE(p Params, evaluate moProblem, population Elements, f *os.File) Elements {
+func DE(
+	p Params,
+	evaluate ProblemFn,
+	variant VariantFn,
+	population Elements,
+	f *os.File,
+) Elements {
 	defer f.Close()
 
 	// Rand Seed
@@ -30,17 +36,14 @@ func DE(p Params, evaluate moProblem, population Elements, f *os.File) Elements 
 		// trial population vector
 		trial := population.Copy()
 		for i, t := range trial {
-			inds := make([]int, 3)
-			err := generateIndices(0, p.NP, inds)
+			e, err := variant(population, p)
 			checkError(err)
-			a, b, c := population[inds[0]], population[inds[1]], population[inds[2]]
-
 			// CROSS OVER
 			currInd := rand.Int() % p.DIM
 			for j := 0; j < p.DIM; j++ {
 				changeProb := rand.Float64()
 				if changeProb < p.CR || currInd == p.DIM {
-					t.X[currInd] = a.X[currInd] + p.F*(b.X[currInd]-c.X[currInd])
+					t.X[currInd] = e.X[currInd]
 				}
 
 				if t.X[currInd] < p.FLOOR {
@@ -77,7 +80,7 @@ func DE(p Params, evaluate moProblem, population Elements, f *os.File) Elements 
 }
 
 // MultiExecutions returns the pareto front of the total of 30 executions of the same problem
-func MultiExecutions(params Params, prob moProblem) {
+func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 	outDir := os.Getenv("HOME") + "/.goDE/mode"
 	checkFilePath(outDir)
 	paretoPath := outDir + "/paretoFront"
@@ -90,7 +93,7 @@ func MultiExecutions(params Params, prob moProblem) {
 	for i := 0; i < params.EXECS; i++ {
 		f, err := os.Create(paretoPath + "/exec-" + strconv.Itoa(i+1) + ".csv")
 		checkError(err)
-		currSlice := DE(params, prob, population.Copy(), f)
+		currSlice := DE(params, prob, variant, population.Copy(), f)
 		pareto = append(pareto, currSlice...)
 
 	}

@@ -6,7 +6,53 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"strings"
 )
+
+// GetProblemByName -> returns the problem function
+func GetProblemByName(name string) ProblemFn {
+	switch name {
+	case "ZDT1":
+		return ZDT1
+	case "ZDT2":
+		return ZDT2
+	case "ZDT3":
+		return ZDT3
+	case "ZDT4":
+		return ZDT4
+	case "ZDT6":
+		return ZDT6
+	case "VNT1":
+		return VNT1
+	case "DTLZ1":
+		return DTLZ1
+	case "DTLZ2":
+		return DTLZ2
+	case "DTLZ3":
+		return DTLZ3
+	case "DTLZ4":
+		return DTLZ4
+	case "DTLZ5":
+		return DTLZ5
+	case "DTLZ6":
+		return DTLZ6
+	case "DTLZ7":
+		return DTLZ7
+	default:
+		return nil
+	}
+}
+
+// GetVariantByName -> Returns the variant function
+func GetVariantByName(name string) VariantFn {
+	name = strings.ToLower(name)
+	switch name {
+	case "rand1":
+		return Rand1
+	default:
+		return nil
+	}
+}
 
 func generatePopulation(p Params) Elements {
 	ret := make(Elements, p.NP)

@@ -5,7 +5,8 @@ import (
 	"math"
 )
 
-type moProblem func(e *Elem, M int) error
+// ProblemFn definition of the test case functions
+type ProblemFn func(e *Elem, M int) error
 
 // ZDT1 -> bi-objetive evaluation
 func ZDT1(e *Elem, M int) error {

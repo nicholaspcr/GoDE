@@ -17,9 +17,6 @@ func generatePopulation(p Params) Elements {
 		for j := 0; j < p.DIM; j++ {
 			ret[i].X[j] = rand.Float64()*constant + p.FLOOR // value varies within [ceil,upper]
 		}
-
-		// for ZDT4
-		// ret[i].X[0] = rand.Float64()
 	}
 	return ret
 }
@@ -50,12 +47,14 @@ func checkFilePath(filePath string) {
 	}
 }
 
+// todo: create a proper error handler
 func checkError(e error) {
 	if e != nil {
 		log.Fatal(e)
 	}
 }
 
+// todo: maybe remove this and do a separate subcommand to write the result in a .csv file!
 func writeHeader(pop []Elem, f *os.File) {
 	for i := range pop {
 		fmt.Fprintf(f, "pop[%d]\t", i)
@@ -63,6 +62,7 @@ func writeHeader(pop []Elem, f *os.File) {
 	fmt.Fprintf(f, "\n")
 }
 
+// todo: maybe remove this and do a separate subcommand to write the result in a .csv file!
 func writeGeneration(pop Elements, f *os.File) {
 	qtdObjs := len(pop[0].objs)
 	for i := 0; i < qtdObjs; i++ {

@@ -39,6 +39,7 @@ func Start() {
 	moCeil := modeCommand.Float64("ceil", 1, "ceil for the random generated values.")
 	moCR := modeCommand.Float64("cr", 0.9, "CR -> value used for the DE.")
 	moF := modeCommand.Float64("f", 0.5, "F -> value used for the DE.")
+	moFunctionName := modeCommand.String("fn", "DTLZ1", "name of the fuction of the test case, like zdt1, dtlz1 etc.")
 
 	// image plotting flags
 
@@ -91,6 +92,7 @@ func Start() {
 	}
 	if modeCommand.Parsed() {
 		params := mo.Params{
+			EXECS: *moExecs,
 			NP:    *moNP,
 			M:     *moM,
 			DIM:   *moDim,
@@ -100,9 +102,51 @@ func Start() {
 			F:     *moF,
 			GEN:   *moGen,
 		}
-		mo.MultiExecutions(*moExecs, params)
+		problem := processProblemName(*moFunctionName)
+		if problem == nil {
+			fmt.Println(
+				"Please enter one of the following valid names:",
+				"\nZDT1, ZDT2, ZDT3, ZDT4, ZDT6, VNT1",
+				", DTLZ1, DTLZ2, DTLZ3, DTLZ4, DTLZ5, DTLZ6, DTLZ7",
+			)
+			os.Exit(1)
+		}
+		mo.MultiExecutions(params, problem)
 	}
 	if plotCommand.Parsed() {
 
+	}
+}
+
+func processProblemName(name string) func(e *mo.Elem, M int) error {
+	switch name {
+	case "ZDT1":
+		return mo.ZDT1
+	case "ZDT2":
+		return mo.ZDT2
+	case "ZDT3":
+		return mo.ZDT3
+	case "ZDT4":
+		return mo.ZDT4
+	case "ZDT6":
+		return mo.ZDT6
+	case "VNT1":
+		return mo.VNT1
+	case "DTLZ1":
+		return mo.DTLZ1
+	case "DTLZ2":
+		return mo.DTLZ2
+	case "DTLZ3":
+		return mo.DTLZ3
+	case "DTLZ4":
+		return mo.DTLZ4
+	case "DTLZ5":
+		return mo.DTLZ5
+	case "DTLZ6":
+		return mo.DTLZ6
+	case "DTLZ7":
+		return mo.DTLZ7
+	default:
+		return nil
 	}
 }

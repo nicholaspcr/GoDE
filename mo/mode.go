@@ -11,14 +11,12 @@ import (
 )
 
 // DE -> runs a simple multiObjective DE in the ZDT1 case
-func DE(p Params, population Elements, f *os.File) Elements {
+func DE(p Params, evaluate moProblem, population Elements, f *os.File) Elements {
 	defer f.Close()
 
 	// Rand Seed
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	// setting the test case, example: ZDT1
-	evaluate := DTLZ3
 	for i := range population {
 		err := evaluate(&population[i], p.M)
 		checkError(err)
@@ -79,7 +77,7 @@ func DE(p Params, population Elements, f *os.File) Elements {
 }
 
 // MultiExecutions returns the pareto front of the total of 30 executions of the same problem
-func MultiExecutions(EXECS int, params Params) {
+func MultiExecutions(params Params, prob moProblem) {
 	outDir := os.Getenv("HOME") + "/.goDE/mode"
 	checkFilePath(outDir)
 	paretoPath := outDir + "/paretoFront"
@@ -89,10 +87,10 @@ func MultiExecutions(EXECS int, params Params) {
 	var pareto Elements
 	// generates random population
 	population := generatePopulation(params)
-	for i := 0; i < EXECS; i++ {
+	for i := 0; i < params.EXECS; i++ {
 		f, err := os.Create(paretoPath + "/exec-" + strconv.Itoa(i+1) + ".csv")
 		checkError(err)
-		currSlice := DE(params, population.Copy(), f)
+		currSlice := DE(params, prob, population.Copy(), f)
 		pareto = append(pareto, currSlice...)
 
 	}

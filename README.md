@@ -1,10 +1,17 @@
 # goDE
 
-A differential evolution cli experiment written in golang.
+A differential evolution experiment written in golang.
+
+
+### Important
+
+This is a work in progress, the project itself has two purposes.
+  - Learning how to use golang efficiently
+  - Making available the packages containing the implementation of the differential evolution.
 
 ### Todo
 
-  - Write the cli package
-  - Write the single objective (so) differential evolution package
-  - Write the multi objective (mo) differential evolution package
-  - see if it's possible to create a package with the common data between the two types of algorithms
+  - [ ] modularize functions
+  - [ ] use cobra for subcommands and flags
+  - [ ] figure out how to properly write the files 
+  - [ ] look up testing

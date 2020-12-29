@@ -10,6 +10,66 @@ import (
 	"time"
 )
 
+// MultiExecutions returns the pareto front of the total of 30 executions of the same problem
+func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
+	outDir := os.Getenv("HOME") + "/.goDE/mode"
+	checkFilePath(outDir)
+	paretoPath := outDir + "/paretoFront"
+	checkFilePath(paretoPath)
+
+	// obtains the union of the points of all executions
+	var pareto Elements
+	// generates random population
+	population := generatePopulation(params)
+	for i := 0; i < params.EXECS; i++ {
+		f, err := os.Create(paretoPath + "/exec-" + strconv.Itoa(i+1) + ".csv")
+		checkError(err)
+		currSlice := DE(params, prob, variant, population.Copy(), f)
+		pareto = append(pareto, currSlice...)
+
+	}
+
+	// filter those elements who are not dominated
+	var result []Elem
+	for i, first := range pareto {
+		flag := true
+		for j, second := range pareto {
+			if i == j {
+				continue
+			}
+			if second.dominates(first) {
+				flag = false
+				break
+			}
+		}
+		if flag {
+			result = append(result, first)
+		}
+	}
+
+	// creates path and file
+	var path string = outDir + "/multiExecutions"
+	checkFilePath(path)
+	path += "/rand1.csv"
+	f, err := os.Create(path)
+	checkError(err)
+	defer f.Close()
+	// writes in file
+	for i := range result {
+		fmt.Fprintf(f, "elem[%d]\t", i)
+	}
+	fmt.Fprintf(f, "\n")
+	for i := 0; i < len(result[0].objs); i++ {
+		for _, r := range result {
+			fmt.Fprintf(f, "%10.3f\t", r.objs[i])
+		}
+		fmt.Fprintf(f, "\n")
+	}
+	fmt.Println("Done writing file!")
+	fmt.Println(result[len(result)-1].X)
+	fmt.Println(result[len(result)-1].objs)
+}
+
 // DE -> runs a simple multiObjective DE in the ZDT1 case
 func DE(
 	p Params,
@@ -77,66 +137,6 @@ func DE(
 		writeGeneration(population, f)
 	}
 	return population
-}
-
-// MultiExecutions returns the pareto front of the total of 30 executions of the same problem
-func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
-	outDir := os.Getenv("HOME") + "/.goDE/mode"
-	checkFilePath(outDir)
-	paretoPath := outDir + "/paretoFront"
-	checkFilePath(paretoPath)
-
-	// obtains the union of the points of all executions
-	var pareto Elements
-	// generates random population
-	population := generatePopulation(params)
-	for i := 0; i < params.EXECS; i++ {
-		f, err := os.Create(paretoPath + "/exec-" + strconv.Itoa(i+1) + ".csv")
-		checkError(err)
-		currSlice := DE(params, prob, variant, population.Copy(), f)
-		pareto = append(pareto, currSlice...)
-
-	}
-
-	// filter those elements who are not dominated
-	var result []Elem
-	for i, first := range pareto {
-		flag := true
-		for j, second := range pareto {
-			if i == j {
-				continue
-			}
-			if second.dominates(first) {
-				flag = false
-				break
-			}
-		}
-		if flag {
-			result = append(result, first)
-		}
-	}
-
-	// creates path and file
-	var path string = outDir + "/multiExecutions"
-	checkFilePath(path)
-	path += "/rand1.csv"
-	f, err := os.Create(path)
-	checkError(err)
-	defer f.Close()
-	// writes in file
-	for i := range result {
-		fmt.Fprintf(f, "elem[%d]\t", i)
-	}
-	fmt.Fprintf(f, "\n")
-	for i := 0; i < len(result[0].objs); i++ {
-		for _, r := range result {
-			fmt.Fprintf(f, "%10.3f\t", r.objs[i])
-		}
-		fmt.Fprintf(f, "\n")
-	}
-	fmt.Println("Done writing file!")
-	fmt.Println(result[len(result)-1].X)
-	fmt.Println(result[len(result)-1].objs)
 }
 
 func reduceByCrowdDistance(pop []Elem, NP int) []Elem {

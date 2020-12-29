@@ -7,6 +7,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -17,16 +18,32 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 	paretoPath := outDir + "/paretoFront"
 	checkFilePath(paretoPath)
 
-	// obtains the union of the points of all executions
-	var pareto Elements
-	// generates random population
-	population := generatePopulation(params)
+	population := generatePopulation(params) // random generated population
+	var wg sync.WaitGroup                    // number of working go routines
+	elemChan := make(chan Elements)
 	for i := 0; i < params.EXECS; i++ {
 		f, err := os.Create(paretoPath + "/exec-" + strconv.Itoa(i+1) + ".csv")
 		checkError(err)
-		currSlice := DE(params, prob, variant, population.Copy(), f)
-		pareto = append(pareto, currSlice...)
+		wg.Add(1)
+		// worker
+		go func() {
+			defer wg.Done()
+			elemChan <- DE(params, prob, variant, population.Copy(), f)
+		}()
+	}
+	// closer
+	go func() {
+		wg.Wait()
+		close(elemChan)
+	}()
 
+	var pareto Elements // DE pareto front
+	for i := 0; i < params.EXECS; i++ {
+		v, ok := <-elemChan
+		if !ok {
+			fmt.Println("one of the goroutine workers didn't work")
+		}
+		pareto = append(pareto, v...)
 	}
 
 	// filter those elements who are not dominated

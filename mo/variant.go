@@ -6,7 +6,7 @@ import "fmt"
 type VariantFn func(elems Elements, p Params) (Elem, error)
 
 // Rand1 variant -> a + F(b - c)
-func Rand1(elems Elements, p Params) (Elem, error) {
+func rand1(elems Elements, p Params) (Elem, error) {
 	if len(elems) < 3 {
 		return Elem{}, fmt.Errorf("no sufficient amount of elements in the population, should be bigger than three")
 	}

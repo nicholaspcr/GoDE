@@ -14,7 +14,7 @@ var variantName string
 
 // modeCmd represents the mode command
 var modeCmd = &cobra.Command{
-	Use:   "mode",
+	Use:   "multi",
 	Short: "Multi-objective implementation of DE",
 	Long:  `An implementation that allows the processing of multiple objective functions, these are a bit more complex and time consuming overall.`,
 
@@ -43,9 +43,16 @@ var modeCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(modeCmd)
-
-	// local flags
-	modeCmd.Flags().IntVar(&mConst, "m", 3, "m -> DE constant")
-	modeCmd.Flags().StringVar(&functionName, "fn", "DTLZ1", "name of the problem to be used.")
-	modeCmd.Flags().StringVar(&variantName, "vr", "rand1", "name fo the variant to be used")
+	modeCmd.Flags().IntVar(&mConst,
+		"M",
+		3,
+		"M -> DE constant")
+	modeCmd.Flags().StringVar(&functionName,
+		"fn",
+		"DTLZ1",
+		"name of the problem to be used.")
+	modeCmd.Flags().StringVar(&variantName,
+		"vr",
+		"rand1",
+		"name fo the variant to be used")
 }

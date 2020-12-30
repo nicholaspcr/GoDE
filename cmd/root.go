@@ -23,8 +23,6 @@ var rootCmd = &cobra.Command{
 	Long:  `A CLI for using the implementation of the differential evolution algorithm`,
 	// todo:  Allow the user to insert his own
 
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },
 }
 
@@ -41,15 +39,46 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	// persistent flags
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.gode.yaml)")
-	rootCmd.PersistentFlags().IntVar(&np, "np", 100, "amout of elements.")
-	rootCmd.PersistentFlags().IntVar(&dim, "dim", 5, "quantity of dimension used for the problem.")
-	rootCmd.PersistentFlags().IntVar(&gen, "gen", 500, "generations of the DE")
-	rootCmd.PersistentFlags().IntVar(&execs, "execs", 1, "amount of times to run DE")
-	rootCmd.PersistentFlags().Float64Var(&floor, "floor", 0.0, "floor of the float64 generator")
-	rootCmd.PersistentFlags().Float64Var(&ceil, "ceil", 1.0, "ceil of the float64 generator")
-	rootCmd.PersistentFlags().Float64Var(&crConst, "cr", 0.9, "CR -> DE constant")
-	rootCmd.PersistentFlags().Float64Var(&fConst, "f", 0.5, "F -> DE constant")
+	rootCmd.PersistentFlags().StringVar(&cfgFile,
+		"config",
+		"",
+		"config file (default is $HOME/.gode.yaml)")
+	rootCmd.PersistentFlags().IntVarP(&np,
+		"np",
+		"n",
+		100,
+		"amout of elements.")
+	rootCmd.PersistentFlags().IntVarP(&dim,
+		"dim",
+		"d",
+		5,
+		"quantity of dimension used for the problem.")
+	rootCmd.PersistentFlags().IntVarP(&gen,
+		"gen",
+		"g",
+		500,
+		"generations of the DE")
+	rootCmd.PersistentFlags().IntVarP(&execs,
+		"execs",
+		"e",
+		1,
+		"amount of times to run DE")
+	rootCmd.PersistentFlags().Float64Var(&floor,
+		"floor",
+		0.0,
+		"floor of the float64 generator (default 0)")
+	rootCmd.PersistentFlags().Float64Var(&ceil,
+		"ceil",
+		1.0,
+		"ceil of the float64 generator")
+	rootCmd.PersistentFlags().Float64Var(&crConst,
+		"CR",
+		0.9,
+		"CR -> DE constant")
+	rootCmd.PersistentFlags().Float64Var(&fConst,
+		"F",
+		0.5,
+		"F -> DE constant")
 
 }
 

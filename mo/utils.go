@@ -11,47 +11,46 @@ import (
 
 // GetProblemByName -> returns the problem function
 func GetProblemByName(name string) ProblemFn {
-	switch name {
-	case "ZDT1":
-		return ZDT1
-	case "ZDT2":
-		return ZDT2
-	case "ZDT3":
-		return ZDT3
-	case "ZDT4":
-		return ZDT4
-	case "ZDT6":
-		return ZDT6
-	case "VNT1":
-		return VNT1
-	case "DTLZ1":
-		return DTLZ1
-	case "DTLZ2":
-		return DTLZ2
-	case "DTLZ3":
-		return DTLZ3
-	case "DTLZ4":
-		return DTLZ4
-	case "DTLZ5":
-		return DTLZ5
-	case "DTLZ6":
-		return DTLZ6
-	case "DTLZ7":
-		return DTLZ7
-	default:
-		return nil
+	name = strings.ToLower(name)
+	problems := map[string]ProblemFn{
+		"zdt1":  zdt1,
+		"zdt2":  zdt2,
+		"zdt3":  zdt3,
+		"zdt4":  zdt4,
+		"zdt6":  zdt6,
+		"vnt1":  vnt1,
+		"dtlz1": dtlz1,
+		"dtlz2": dtlz2,
+		"dtlz3": dtlz3,
+		"dtlz4": dtlz4,
+		"dtlz5": dtlz5,
+		"dtlz6": dtlz6,
+		"dtlz7": dtlz7,
 	}
+	var problem ProblemFn
+	for k, v := range problems {
+		if name == k {
+			problem = v
+			break
+		}
+	}
+	return problem
 }
 
 // GetVariantByName -> Returns the variant function
 func GetVariantByName(name string) VariantFn {
 	name = strings.ToLower(name)
-	switch name {
-	case "rand1":
-		return Rand1
-	default:
-		return nil
+	variants := map[string]VariantFn{
+		"rand1": rand1,
 	}
+	var variant VariantFn
+	for k, v := range variants {
+		if name == k {
+			variant = v
+			break
+		}
+	}
+	return variant
 }
 
 func generatePopulation(p Params) Elements {
@@ -84,6 +83,7 @@ func generateIndices(startInd, NP int, r []int) error {
 	return nil
 }
 
+// todo: do it in routines
 func checkFilePath(filePath string) {
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		err = os.Mkdir(filePath, os.ModePerm)

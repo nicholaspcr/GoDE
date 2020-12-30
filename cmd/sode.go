@@ -1,36 +1,40 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
+	"gitlab.com/nicholaspcr/go-de/so"
 )
+
+// local flags
+var pConst float64
 
 // sodeCmd represents the sode command
 var sodeCmd = &cobra.Command{
-	Use:   "sode",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Use:   "single",
+	Short: "Single-objective implementation of DE",
+	Long:  `Implementation of the DE algorithm in the simpler sense, where there is only one objective funtion to be minimized.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("sode called")
+		params := so.Params{
+			NP:    np,
+			DIM:   dim,
+			GEN:   gen,
+			EXECS: execs,
+			FLOOR: floor,
+			CEIL:  ceil,
+			CR:    crConst,
+			F:     fConst,
+			P:     pConst,
+		}
+		so.Run(params)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(sodeCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// sodeCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// sodeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	sodeCmd.Flags().Float64Var(
+		&pConst,
+		"P",
+		0.5,
+		"P -> DE constant",
+	)
 }

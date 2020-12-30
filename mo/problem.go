@@ -9,7 +9,7 @@ import (
 type ProblemFn func(e *Elem, M int) error
 
 // ZDT1 -> bi-objetive evaluation
-func ZDT1(e *Elem, M int) error {
+func zdt1(e *Elem, M int) error {
 	if len(e.X) < 2 {
 		return errors.New("Need at least two variables/dimensions")
 	}
@@ -44,7 +44,7 @@ func ZDT1(e *Elem, M int) error {
 }
 
 // ZDT2 -> bi-objetive evaluation
-func ZDT2(e *Elem, M int) error {
+func zdt2(e *Elem, M int) error {
 	if len(e.X) < 2 {
 		return errors.New("Need at least two variables/dimensions")
 	}
@@ -75,7 +75,7 @@ func ZDT2(e *Elem, M int) error {
 }
 
 // ZDT3 -> bi-objetive evaluation
-func ZDT3(e *Elem, M int) error {
+func zdt3(e *Elem, M int) error {
 	if len(e.X) < 2 {
 		return errors.New("Need at least two variables/dimensions")
 	}
@@ -108,7 +108,7 @@ func ZDT3(e *Elem, M int) error {
 }
 
 // ZDT4 -> bi-objetive evaluation
-func ZDT4(e *Elem, M int) error {
+func zdt4(e *Elem, M int) error {
 	if len(e.X) < 2 {
 		return errors.New("Need at least two variables/dimensions")
 	}
@@ -139,7 +139,7 @@ func ZDT4(e *Elem, M int) error {
 }
 
 // ZDT6 -> bi-objetive evaluation
-func ZDT6(e *Elem, M int) error {
+func zdt6(e *Elem, M int) error {
 	if len(e.X) < 2 {
 		return errors.New("Need at least two variables/dimensions")
 	}
@@ -179,7 +179,7 @@ func ZDT6(e *Elem, M int) error {
 
 // VNT1 -> https://ti.arc.nasa.gov/m/pub-archive/archive/1163.pdf
 // VNT1 -> recebe 2 variaveis e otimiza 3 funções objetivo
-func VNT1(e *Elem, M int) error {
+func vnt1(e *Elem, M int) error {
 	if len(e.X) != 2 {
 		return errors.New("Need at have only two variables/dimensions")
 	}
@@ -209,7 +209,7 @@ https://pymoo.org/problems/many/dtlz.html
 */
 
 // DTLZ1 multiObjective testcase
-func DTLZ1(e *Elem, M int) error {
+func dtlz1(e *Elem, M int) error {
 	if len(e.X) <= M {
 		return errors.New("need to have an M lesser than the amount of variables")
 	}
@@ -245,7 +245,7 @@ func DTLZ1(e *Elem, M int) error {
 }
 
 // DTLZ2  multiObjective testcase
-func DTLZ2(e *Elem, M int) error {
+func dtlz2(e *Elem, M int) error {
 	if len(e.X) <= M {
 		return errors.New("need to have an M lesser than the amount of variables")
 	}
@@ -281,7 +281,7 @@ func DTLZ2(e *Elem, M int) error {
 }
 
 // DTLZ3 multiObjective testcase
-func DTLZ3(e *Elem, M int) error {
+func dtlz3(e *Elem, M int) error {
 	if len(e.X) <= M {
 		return errors.New("need to have an M lesser than the amount of variables")
 	}
@@ -317,7 +317,7 @@ func DTLZ3(e *Elem, M int) error {
 }
 
 // DTLZ4 multiObjective testcase
-func DTLZ4(e *Elem, M int) error {
+func dtlz4(e *Elem, M int) error {
 	if len(e.X) <= M {
 		return errors.New("need to have an M lesser than the amount of variables")
 	}
@@ -353,7 +353,7 @@ func DTLZ4(e *Elem, M int) error {
 }
 
 // DTLZ5 multiObjective testcase
-func DTLZ5(e *Elem, M int) error {
+func dtlz5(e *Elem, M int) error {
 	if len(e.X) <= M {
 		return errors.New("need to have an M lesser than the amount of variables")
 	}
@@ -396,7 +396,7 @@ func DTLZ5(e *Elem, M int) error {
 }
 
 // DTLZ6 multiObjective testcase
-func DTLZ6(e *Elem, M int) error {
+func dtlz6(e *Elem, M int) error {
 	if len(e.X) <= M {
 		return errors.New("need to have an M lesser than the amount of variables")
 	}
@@ -439,7 +439,7 @@ func DTLZ6(e *Elem, M int) error {
 }
 
 // DTLZ7 multiObjective testcase
-func DTLZ7(e *Elem, M int) error {
+func dtlz7(e *Elem, M int) error {
 	if len(e.X) <= M {
 		return errors.New("need to have an M lesser than the amount of variables")
 	}

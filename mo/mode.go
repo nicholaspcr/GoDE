@@ -2,10 +2,8 @@ package mo
 
 import (
 	"fmt"
-	"math"
 	"math/rand"
 	"os"
-	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -13,16 +11,20 @@ import (
 
 // MultiExecutions returns the pareto front of the total of 30 executions of the same problem
 func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
-	outDir := os.Getenv("HOME") + "/.goDE/mode"
-	checkFilePath(outDir)
-	paretoPath := outDir + "/paretoFront"
-	checkFilePath(paretoPath)
+	basePath := os.Getenv("HOME")
+	paretoPath := ".go-de/mode/paretoFront"
+	checkFilePath(basePath, paretoPath)
 
 	population := generatePopulation(params) // random generated population
 	var wg sync.WaitGroup                    // number of working go routines
 	elemChan := make(chan Elements)
 	for i := 0; i < params.EXECS; i++ {
-		f, err := os.Create(paretoPath + "/exec-" + strconv.Itoa(i+1) + ".csv")
+		f, err := os.Create(basePath +
+			"/" +
+			paretoPath +
+			"/exec-" +
+			strconv.Itoa(i+1) +
+			".csv")
 		checkError(err)
 		wg.Add(1)
 		// worker
@@ -45,11 +47,12 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 		}
 		pareto = append(pareto, v...)
 	}
-	result := filterDominated(pareto)             // non dominated set
-	var path string = outDir + "/multiExecutions" // file path
-	checkFilePath(path)
-	path += "/rand1.csv"
-	f, err := os.Create(path)
+	result := filterDominated(pareto) // non dominated set
+
+	multiExecPath := ".go-de/mode/multiExecutions"
+	checkFilePath(basePath, multiExecPath)
+	// todo: add the use of the variant name here
+	f, err := os.Create(basePath + "/" + multiExecPath + "/rand1.csv")
 	checkError(err)
 	defer f.Close()
 	// writes in file
@@ -64,6 +67,7 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 		fmt.Fprintf(f, "\n")
 	}
 	fmt.Println("Done writing file!")
+	fmt.Println(result[0])
 }
 
 // DE -> runs a simple multiObjective DE in the ZDT1 case
@@ -117,96 +121,4 @@ func DE(
 		writeGeneration(population, f)
 	}
 	return population
-}
-
-// returns NP elements filtered by rank and crwod distance
-func reduceByCrowdDistance(elems Elements, NP int) Elements {
-	ranks := rankElements(elems)
-	elems = make(Elements, 0)
-	//sorting each rank by crowd distance
-	for i := range ranks {
-		calcCrwdst(ranks[i])
-		sort.Sort(byCrwdst(ranks[i]))
-	}
-	for _, rank := range ranks {
-		for _, elem := range rank {
-			elems = append(elems, elem.Copy())
-			if len(elems) >= NP {
-				return elems
-			}
-		}
-	}
-	return elems
-}
-
-// rankElements returna  map of dominating elements in ascending order
-// destroys the slice provided
-func rankElements(elems Elements) map[int]Elements {
-	ranks := make(map[int]Elements)
-	currentRank := 0
-	for len(elems) > 0 {
-		inRank := make(Elements, 0)
-		notInRank := make(Elements, 0)
-		for i := range elems {
-			flag := true
-			for j := range elems {
-				if i == j {
-					continue
-				}
-				if elems[j].dominates(elems[i]) {
-					flag = false
-					break
-				}
-			}
-			if flag == true {
-				inRank = append(inRank, elems[i].Copy())
-			} else {
-				notInRank = append(notInRank, elems[i].Copy())
-			}
-		}
-		ranks[currentRank] = append(ranks[currentRank], inRank...)
-		currentRank++
-		elems = make(Elements, 0)
-		elems = append(elems, notInRank...)
-	}
-	return ranks
-}
-
-// calcCrwdst -> calculates the crowd distance between elements
-func calcCrwdst(elems Elements) {
-	sort.Sort(byFirstObj(elems))
-	for i := range elems {
-		for j := range elems[i].objs {
-			//end of tail
-			if i == 0 {
-				elems[i].crwdst += (elems[i+1].objs[j] - elems[i].objs[j]) * (elems[i+1].objs[j] - elems[i].objs[j])
-			} else if i == len(elems)-1 {
-				elems[i].crwdst += (elems[i-1].objs[j] - elems[i].objs[j]) * (elems[i-1].objs[j] - elems[i].objs[j])
-			} else {
-				elems[i].crwdst += (elems[i-1].objs[j] - elems[i+1].objs[j]) * (elems[i-1].objs[j] - elems[i+1].objs[j])
-			}
-			elems[i].crwdst = math.Sqrt(elems[i].crwdst)
-		}
-	}
-}
-
-// filterDominated -> returns elements that are not dominated in the set
-func filterDominated(elems Elements) Elements {
-	result := make(Elements, 0)
-	for i, first := range elems {
-		flag := true
-		for j, second := range elems {
-			if i == j {
-				continue
-			}
-			if second.dominates(first) {
-				flag = false
-				break
-			}
-		}
-		if flag {
-			result = append(result, first)
-		}
-	}
-	return result
 }

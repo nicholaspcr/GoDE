@@ -45,27 +45,8 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 		}
 		pareto = append(pareto, v...)
 	}
-
-	// filter those elements who are not dominated
-	var result []Elem
-	for i, first := range pareto {
-		flag := true
-		for j, second := range pareto {
-			if i == j {
-				continue
-			}
-			if second.dominates(first) {
-				flag = false
-				break
-			}
-		}
-		if flag {
-			result = append(result, first)
-		}
-	}
-
-	// creates path and file
-	var path string = outDir + "/multiExecutions"
+	result := filterDominated(pareto)             // non dominated set
+	var path string = outDir + "/multiExecutions" // file path
 	checkFilePath(path)
 	path += "/rand1.csv"
 	f, err := os.Create(path)
@@ -83,8 +64,6 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 		fmt.Fprintf(f, "\n")
 	}
 	fmt.Println("Done writing file!")
-	fmt.Println(result[len(result)-1].X)
-	fmt.Println(result[len(result)-1].objs)
 }
 
 // DE -> runs a simple multiObjective DE in the ZDT1 case
@@ -96,33 +75,27 @@ func DE(
 	f *os.File,
 ) Elements {
 	defer f.Close()
-
 	// Rand Seed
 	rand.Seed(time.Now().UTC().UnixNano())
-
 	for i := range population {
 		err := evaluate(&population[i], p.M)
 		checkError(err)
 	}
-
 	writeHeader(population, f)
 	writeGeneration(population, f)
 
-	// Finish --- Writing on f
-	for currGen := 0; currGen < p.GEN; currGen++ {
-		// trial population vector
-		trial := population.Copy()
+	for ; p.GEN > 0; p.GEN-- {
+		trial := population.Copy() // trial population slice
 		for i, t := range trial {
-			e, err := variant(population, p)
+			v, err := variant(population, p)
 			checkError(err)
 			// CROSS OVER
 			currInd := rand.Int() % p.DIM
 			for j := 0; j < p.DIM; j++ {
 				changeProb := rand.Float64()
 				if changeProb < p.CR || currInd == p.DIM {
-					t.X[currInd] = e.X[currInd]
+					t.X[currInd] = v.X[currInd]
 				}
-
 				if t.X[currInd] < p.FLOOR {
 					t.X[currInd] = p.FLOOR
 				}
@@ -131,17 +104,8 @@ func DE(
 				}
 				currInd = (currInd + 1) % p.DIM
 			}
-
-			// for ZDT4
-			// if t.X[0] > 1.0 {
-			// 	t.X[0] = 1.0
-			// } else if t.X[0] < 0 {
-			// 	t.X[0] = 0.0
-			// }
-
 			evalErr := evaluate(&t, p.M)
 			checkError(evalErr)
-
 			if t.dominates(population[i]) {
 				population[i] = t.Copy()
 			} else if !population[i].dominates(t) {
@@ -150,86 +114,99 @@ func DE(
 		}
 
 		population = reduceByCrowdDistance(population, p.NP)
-
 		writeGeneration(population, f)
 	}
 	return population
 }
 
-func reduceByCrowdDistance(pop []Elem, NP int) []Elem {
-	rankSize := 0
-	ranks := make(map[int]([]Elem))
-	qtdElements := 0
-	for qtdElements < NP {
-		inRank := make([]Elem, 0)
-		notInRank := make([]Elem, 0)
-		for i := 0; i < len(pop); i++ {
+// returns NP elements filtered by rank and crwod distance
+func reduceByCrowdDistance(elems Elements, NP int) Elements {
+	ranks := rankElements(elems)
+	elems = make(Elements, 0)
+	//sorting each rank by crowd distance
+	for i := range ranks {
+		calcCrwdst(ranks[i])
+		sort.Sort(byCrwdst(ranks[i]))
+	}
+	for _, rank := range ranks {
+		for _, elem := range rank {
+			elems = append(elems, elem.Copy())
+			if len(elems) >= NP {
+				return elems
+			}
+		}
+	}
+	return elems
+}
+
+// rankElements returna  map of dominating elements in ascending order
+// destroys the slice provided
+func rankElements(elems Elements) map[int]Elements {
+	ranks := make(map[int]Elements)
+	currentRank := 0
+	for len(elems) > 0 {
+		inRank := make(Elements, 0)
+		notInRank := make(Elements, 0)
+		for i := range elems {
 			flag := true
-			for j := 0; j < len(pop); j++ {
+			for j := range elems {
 				if i == j {
 					continue
 				}
-				if pop[j].dominates(pop[i]) {
+				if elems[j].dominates(elems[i]) {
 					flag = false
 					break
 				}
 			}
 			if flag == true {
-				inRank = append(inRank, pop[i].Copy())
+				inRank = append(inRank, elems[i].Copy())
 			} else {
-				notInRank = append(notInRank, pop[i].Copy())
+				notInRank = append(notInRank, elems[i].Copy())
 			}
 		}
-
-		qtdElements += len(inRank)
-		for i := 0; i < len(inRank); i++ {
-			ranks[rankSize] = append(ranks[rankSize], inRank[i].Copy())
-		}
-
-		pop = make([]Elem, 0)
-		for i := 0; i < len(notInRank); i++ {
-			pop = append(pop, notInRank[i].Copy())
-		}
-		rankSize++
-
-		if len(inRank) == 0 && len(notInRank) == 0 {
-			fmt.Println("Ranking ERROR -> PopSz = ", len(pop))
-			break
-		}
+		ranks[currentRank] = append(ranks[currentRank], inRank...)
+		currentRank++
+		elems = make(Elements, 0)
+		elems = append(elems, notInRank...)
 	}
+	return ranks
+}
 
-	pop = make([]Elem, 0)
-	//sorting each rank by crowd distance
-	for _, rank := range ranks {
-		sort.Sort(byFirstObj(rank))
-		// Calculates the distance for the points in the rank
-		for i := 0; i < len(rank); i++ {
-			for j := range rank[i].objs {
-				//end of tail
-				if i == 0 {
-					rank[i].crwdst += (rank[i+1].objs[j] - rank[i].objs[j]) * (rank[i+1].objs[j] - rank[i].objs[j])
-				} else if i == len(rank)-1 {
-					rank[i].crwdst += (rank[i-1].objs[j] - rank[i].objs[j]) * (rank[i-1].objs[j] - rank[i].objs[j])
-				} else {
-					rank[i].crwdst += (rank[i-1].objs[j] - rank[i+1].objs[j]) * (rank[i-1].objs[j] - rank[i+1].objs[j])
-				}
-				rank[i].crwdst = math.Sqrt(rank[i].crwdst)
+// calcCrwdst -> calculates the crowd distance between elements
+func calcCrwdst(elems Elements) {
+	sort.Sort(byFirstObj(elems))
+	for i := range elems {
+		for j := range elems[i].objs {
+			//end of tail
+			if i == 0 {
+				elems[i].crwdst += (elems[i+1].objs[j] - elems[i].objs[j]) * (elems[i+1].objs[j] - elems[i].objs[j])
+			} else if i == len(elems)-1 {
+				elems[i].crwdst += (elems[i-1].objs[j] - elems[i].objs[j]) * (elems[i-1].objs[j] - elems[i].objs[j])
+			} else {
+				elems[i].crwdst += (elems[i-1].objs[j] - elems[i+1].objs[j]) * (elems[i-1].objs[j] - elems[i+1].objs[j])
 			}
+			elems[i].crwdst = math.Sqrt(elems[i].crwdst)
 		}
-		sort.Sort(byCrwdst(rank))
-
 	}
+}
 
-	for _, rank := range ranks {
-		for _, elem := range rank {
-			pop = append(pop, elem.Copy())
-			if len(pop) >= NP {
+// filterDominated -> returns elements that are not dominated in the set
+func filterDominated(elems Elements) Elements {
+	result := make(Elements, 0)
+	for i, first := range elems {
+		flag := true
+		for j, second := range elems {
+			if i == j {
+				continue
+			}
+			if second.dominates(first) {
+				flag = false
 				break
 			}
 		}
-		if len(pop) >= NP {
-			break
+		if flag {
+			result = append(result, first)
 		}
 	}
-	return pop
+	return result
 }

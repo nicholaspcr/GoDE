@@ -55,17 +55,8 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 	f, err := os.Create(basePath + "/" + multiExecPath + "/rand1.csv")
 	checkError(err)
 	defer f.Close()
-	// writes in file
-	for i := range result {
-		fmt.Fprintf(f, "elem[%d]\t", i)
-	}
-	fmt.Fprintf(f, "\n")
-	for i := 0; i < len(result[0].objs); i++ {
-		for _, r := range result {
-			fmt.Fprintf(f, "%10.3f\t", r.objs[i])
-		}
-		fmt.Fprintf(f, "\n")
-	}
+	writeHeader(result, f)
+	writeGeneration(result, f)
 	fmt.Println("Done writing file!")
 	fmt.Println(result[0])
 }

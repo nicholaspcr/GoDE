@@ -11,7 +11,7 @@ This is a work in progress, the project itself has two purposes.
 
 ### Todo
 
-  - [ ] modularize functions
+  - [x] modularize functions
   - [x] use cobra for subcommands and flags
   - [ ] figure out how to properly write the files 
   - [ ] look up testing

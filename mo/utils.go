@@ -85,7 +85,7 @@ func generateIndices(startInd, NP int, r []int) error {
 	return nil
 }
 
-// checks if
+// checks existance of filePath
 func checkFilePath(basePath, filePath string) {
 	folders := strings.Split(filePath, "/")
 	for _, folder := range folders {
@@ -109,7 +109,7 @@ func checkError(e error) {
 // todo: maybe remove this and do a separate subcommand to write the result in a .csv file!
 func writeHeader(pop []Elem, f *os.File) {
 	for i := range pop {
-		fmt.Fprintf(f, "pop[%d]\t", i)
+		fmt.Fprintf(f, "elem[%d]\t", i)
 	}
 	fmt.Fprintf(f, "\n")
 }

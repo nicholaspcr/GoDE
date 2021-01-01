@@ -62,7 +62,7 @@ func DE(
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	// base path for the sode
-	var dbPath string = os.Getenv("HOME") + "/.goDE"
+	var dbPath string = os.Getenv("HOME") + "/.go-de"
 	checkFilePath(dbPath)
 	dbPath += "/sode"
 	checkFilePath(dbPath)

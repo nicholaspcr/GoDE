@@ -21,7 +21,7 @@ var modeCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		problem := mo.GetProblemByName(functionName)
 		variant := mo.GetVariantByName(variantName)
-		if problem == nil || variant == nil {
+		if problem == nil || variant.Name == "" {
 			// todo error message and list of problems and variants
 			fmt.Println("Invalid problem or variant.")
 			return

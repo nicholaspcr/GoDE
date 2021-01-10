@@ -52,7 +52,7 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 	multiExecPath := ".go-de/mode/multiExecutions"
 	checkFilePath(basePath, multiExecPath)
 	// todo: add the use of the variant name here
-	f, err := os.Create(basePath + "/" + multiExecPath + "/rand1.csv")
+	f, err := os.Create(basePath + "/" + multiExecPath + "/" + variant.Name + ".csv")
 	checkError(err)
 	defer f.Close()
 	writeHeader(result, f)
@@ -82,13 +82,13 @@ func DE(
 	for ; p.GEN > 0; p.GEN-- {
 		trial := population.Copy() // trial population slice
 		for i, t := range trial {
-			v, err := variant(population, p)
+			v, err := variant.fn(population, p)
 			checkError(err)
 			// CROSS OVER
 			currInd := rand.Int() % p.DIM
 			for j := 0; j < p.DIM; j++ {
 				changeProb := rand.Float64()
-				if changeProb < p.CR || currInd == p.DIM {
+				if changeProb < p.CR || currInd == p.DIM-1 {
 					t.X[currInd] = v.X[currInd]
 				}
 				if t.X[currInd] < p.FLOOR {

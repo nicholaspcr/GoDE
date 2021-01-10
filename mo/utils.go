@@ -45,14 +45,12 @@ func GetVariantByName(name string) VariantFn {
 	variants := map[string]VariantFn{
 		"rand1": rand1,
 	}
-	var variant VariantFn
 	for k, v := range variants {
 		if name == k {
-			variant = v
-			break
+			return v
 		}
 	}
-	return variant
+	return VariantFn{}
 }
 
 func generatePopulation(p Params) Elements {
@@ -194,8 +192,8 @@ func calcCrwdst(elems Elements) {
 			} else {
 				elems[i].crwdst += (elems[i-1].objs[j] - elems[i+1].objs[j]) * (elems[i-1].objs[j] - elems[i+1].objs[j])
 			}
-			elems[i].crwdst = math.Sqrt(elems[i].crwdst)
 		}
+		elems[i].crwdst = math.Sqrt(elems[i].crwdst)
 	}
 }
 

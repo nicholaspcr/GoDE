@@ -20,13 +20,12 @@ var rand1 VariantFn = VariantFn{
 			return Elem{}, err
 		}
 
-		e := Elem{}
-		e.X = make([]float64, p.DIM)
+		result := Elem{}
+		result.X = make([]float64, p.DIM)
 		for i := 0; i < p.DIM; i++ {
-			e.X[i] = elems[inds[0]].X[i] + p.F*(elems[inds[1]].X[i]-elems[inds[2]].X[i])
+			result.X[i] = elems[inds[0]].X[i] + p.F*(elems[inds[1]].X[i]-elems[inds[2]].X[i])
 		}
-
-		return e, nil
+		return result, nil
 	},
 	Name: "rand1",
 }

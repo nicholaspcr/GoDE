@@ -11,8 +11,8 @@ import (
 // Run -> single objevtive Differential Evolution function that accepts flags
 func Run(p Params) {
 	allEqts := [...]Equation{Rastrigin}
-	allVariants := [...]Variant{Rand1, Rand2}
-	// , best1, best2, currToBestv1, currToBestv2, pBest
+	allVariants := [...]Variant{Rand1}
+	// , Rand2, best1, best2, currToBestv1, currToBestv2, pBest
 
 	testTimer := time.Now()
 	var inputs []Input

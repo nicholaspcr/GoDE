@@ -15,6 +15,8 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 	paretoPath := ".go-de/mode/paretoFront"
 	checkFilePath(basePath, paretoPath)
 
+	startTimer := time.Now()                 //	timer start
+	rand.Seed(time.Now().UTC().UnixNano())   // Rand Seed
 	population := generatePopulation(params) // random generated population
 	var wg sync.WaitGroup                    // number of working go routines
 	elemChan := make(chan Elements)
@@ -58,7 +60,9 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 	writeHeader(result, f)
 	writeGeneration(result, f)
 	fmt.Println("Done writing file!")
-	fmt.Println(result[0])
+
+	timeSpent := time.Since(startTimer)
+	fmt.Println(timeSpent)
 }
 
 // DE -> runs a simple multiObjective DE in the ZDT1 case
@@ -70,8 +74,7 @@ func DE(
 	f *os.File,
 ) Elements {
 	defer f.Close()
-	// Rand Seed
-	rand.Seed(time.Now().UTC().UnixNano())
+
 	for i := range population {
 		err := evaluate(&population[i], p.M)
 		checkError(err)

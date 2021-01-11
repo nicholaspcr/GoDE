@@ -186,11 +186,12 @@ func calcCrwdst(elems Elements) {
 		for j := range elems[i].objs {
 			//end of tail
 			if i == 0 {
-				elems[i].crwdst += (elems[i+1].objs[j] - elems[i].objs[j]) * (elems[i+1].objs[j] - elems[i].objs[j])
+				elems[i].crwdst += math.Pow(elems[i+1].objs[j]-elems[i].objs[j], 2)
 			} else if i == len(elems)-1 {
-				elems[i].crwdst += (elems[i-1].objs[j] - elems[i].objs[j]) * (elems[i-1].objs[j] - elems[i].objs[j])
+				elems[i].crwdst += math.Pow(elems[i-1].objs[j]-elems[i].objs[j], 2)
 			} else {
-				elems[i].crwdst += (elems[i-1].objs[j] - elems[i+1].objs[j]) * (elems[i-1].objs[j] - elems[i+1].objs[j])
+				elems[i].crwdst += math.Pow(elems[i-1].objs[j]-elems[i].objs[j], 2) + math.Pow(elems[i+1].objs[j]-elems[i].objs[j], 2)
+
 			}
 		}
 		elems[i].crwdst = math.Sqrt(elems[i].crwdst)

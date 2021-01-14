@@ -19,7 +19,8 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 	rand.Seed(time.Now().UTC().UnixNano())   // Rand Seed
 	population := generatePopulation(params) // random generated population
 	var wg sync.WaitGroup                    // number of working go routines
-	elemChan := make(chan Elements)
+	normalChan := make(chan Elements, params.EXECS)
+	rankedChan := make(chan Elements, params.EXECS)
 	for i := 0; i < params.EXECS; i++ {
 		f, err := os.Create(basePath +
 			"/" +
@@ -32,47 +33,67 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 		// worker
 		go func() {
 			defer wg.Done()
-			elemChan <- DE(params, prob, variant, population.Copy(), f)
+			DE(
+				normalChan,
+				rankedChan,
+				params,
+				prob,
+				variant,
+				population.Copy(),
+				f,
+			)
 		}()
 	}
 	// closer
 	go func() {
 		wg.Wait()
-		close(elemChan)
+		close(normalChan)
+		close(rankedChan)
 	}()
 
-	var pareto Elements // DE pareto front
-	for i := 0; i < params.EXECS; i++ {
-		v, ok := <-elemChan
-		if !ok {
-			fmt.Println("one of the goroutine workers didn't work")
-		}
-		pareto = append(pareto, v...)
+	var normalPareto Elements // DE pareto front of the last gen
+	var rankedPareto Elements // DE pareto front of the best in each gen
+	for v := range normalChan {
+		normalPareto = append(normalPareto, v...)
 	}
-	result := filterDominated(pareto) // non dominated set
-
+	for v := range rankedChan {
+		rankedPareto = append(rankedPareto, v...)
+	}
+	// checks dir
 	multiExecPath := ".go-de/mode/multiExecutions"
 	checkFilePath(basePath, multiExecPath)
-	// todo: add the use of the variant name here
-	f, err := os.Create(basePath + "/" + multiExecPath + "/" + variant.Name + ".csv")
+
+	// results of the normal pareto
+	result, _ := filterDominated(normalPareto) // non dominated set
+	f, err := os.Create(basePath + "/" + multiExecPath + "/" + variant.Name + "-old.csv")
 	checkError(err)
-	defer f.Close()
 	writeHeader(result, f)
 	writeGeneration(result, f)
-	fmt.Println("Done writing file!")
+	f.Close()
 
+	// result of the ranked pareto
+	result, _ = filterDominated(rankedPareto)
+	f, err = os.Create(basePath + "/" + multiExecPath + "/" + variant.Name + "-new.csv")
+	checkError(err)
+	writeHeader(result, f)
+	writeGeneration(result, f)
+	f.Close()
+
+	fmt.Println("Done writing file!")
 	timeSpent := time.Since(startTimer)
 	fmt.Println(timeSpent)
 }
 
 // DE -> runs a simple multiObjective DE in the ZDT1 case
 func DE(
+	normalCh chan<- Elements,
+	rankedCh chan<- Elements,
 	p Params,
 	evaluate ProblemFn,
 	variant VariantFn,
 	population Elements,
 	f *os.File,
-) Elements {
+) {
 	defer f.Close()
 
 	for i := range population {
@@ -82,6 +103,7 @@ func DE(
 	writeHeader(population, f)
 	writeGeneration(population, f)
 
+	bestElems := make(Elements, 0)
 	for ; p.GEN > 0; p.GEN-- {
 		trial := population.Copy() // trial population slice
 		for i, t := range trial {
@@ -111,8 +133,9 @@ func DE(
 			}
 		}
 
-		population = reduceByCrowdDistance(population, p.NP)
+		population = reduceByCrowdDistance(&population, &bestElems, p.NP)
 		writeGeneration(population, f)
 	}
-	return population
+	normalCh <- population
+	rankedCh <- bestElems
 }

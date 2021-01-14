@@ -1,0 +1,12 @@
+
+
+https://www.iitk.ac.in/kangal/Deb_NSGA-II.pdf
+
+1 - rewrite crowding distance - done
+2 - teste de pymetal crwdDst vs golang crwdDst
+3 - check fastRanking
+4 - get the ranks[0] of each generation - done
+    - that is a the final answer
+5 - latex
+    - Escrever sobre multi-objective
+    - 

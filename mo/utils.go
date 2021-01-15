@@ -147,11 +147,12 @@ func calculateCrwdDist(elems Elements) {
 		return
 	}
 	objs := len(elems[0].objs)
-	inf := float64(1e8)
 	maxes := make([]float64, len(elems))
 	minis := make([]float64, len(elems))
 	for i := range elems {
+		// resets the crwdst
 		elems[i].crwdst = 0
+		// gets the max/min values of each objective
 		for j := 0; j < objs; j++ {
 			maxes[j] = math.Max(maxes[j], elems[i].objs[j])
 			minis[j] = math.Min(minis[j], elems[i].objs[j])
@@ -162,8 +163,9 @@ func calculateCrwdDist(elems Elements) {
 		sort.SliceStable(elems, func(i, j int) bool {
 			return elems[i].objs[m] < elems[j].objs[m]
 		})
-		elems[0].crwdst = inf
-		elems[len(elems)-1].crwdst = inf
+		// adds an advantage to the points in the extreme
+		elems[0].crwdst = maxes[m]
+		elems[len(elems)-1].crwdst = maxes[m]
 		for i := 1; i < len(elems)-1; i++ {
 			elems[i].crwdst = elems[i].crwdst + (elems[i+1].objs[m]-elems[i-1].objs[m])/(maxes[m]-minis[m])
 		}
@@ -172,23 +174,24 @@ func calculateCrwdDist(elems Elements) {
 
 // filterDominated -> returns elements that are not dominated in the set
 func filterDominated(elems Elements) (nonDominated, dominated Elements) {
+	sort.Sort(byFirstObj(elems))
 	nonDom := make(Elements, 0)
 	dom := make(Elements, 0)
-	for i, first := range elems {
+	for i := len(elems) - 1; i >= 0; i-- {
 		flag := true
 		for j, second := range elems {
 			if i == j {
 				continue
 			}
-			if second.dominates(first) {
+			if second.dominates(elems[i]) {
 				flag = false
 				break
 			}
 		}
 		if flag {
-			nonDom = append(nonDom, first)
+			nonDom = append(nonDom, elems[i])
 		} else {
-			dom = append(dom, first)
+			dom = append(dom, elems[i])
 		}
 	}
 	return nonDom, dom

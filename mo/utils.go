@@ -52,7 +52,7 @@ func GetVariantByName(name string) VariantFn {
 	return VariantFn{}
 }
 
-func generatePopulation(p Params) Elements {
+func GeneratePopulation(p Params) Elements {
 	ret := make(Elements, p.NP)
 	constant := p.CEIL - p.FLOOR // range between floor and ceiling
 	for i := 0; i < p.NP; i++ {

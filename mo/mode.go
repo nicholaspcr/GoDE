@@ -17,7 +17,7 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 
 	startTimer := time.Now()                 //	timer start
 	rand.Seed(time.Now().UTC().UnixNano())   // Rand Seed
-	population := generatePopulation(params) // random generated population
+	population := GeneratePopulation(params) // random generated population
 	var wg sync.WaitGroup                    // number of working go routines
 	normalChan := make(chan Elements, params.EXECS)
 	rankedChan := make(chan Elements, params.EXECS)

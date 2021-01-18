@@ -56,28 +56,28 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 	var rankedPareto Elements // DE pareto front of the best in each gen
 	for v := range normalChan {
 		normalPareto = append(normalPareto, v...)
+		normalPareto, _ = filterDominated(normalPareto)
 	}
 	for v := range rankedChan {
 		rankedPareto = append(rankedPareto, v...)
+		rankedPareto, _ = filterDominated(rankedPareto)
 	}
 	// checks dir
 	multiExecPath := ".go-de/mode/multiExecutions"
 	checkFilePath(basePath, multiExecPath)
 
 	// results of the normal pareto
-	result, _ := filterDominated(normalPareto) // non dominated set
 	f, err := os.Create(basePath + "/" + multiExecPath + "/" + variant.Name + "-old.csv")
 	checkError(err)
-	writeHeader(result, f)
-	writeGeneration(result, f)
+	writeHeader(normalPareto, f)
+	writeGeneration(normalPareto, f)
 	f.Close()
 
 	// result of the ranked pareto
-	result, _ = filterDominated(rankedPareto)
 	f, err = os.Create(basePath + "/" + multiExecPath + "/" + variant.Name + "-new.csv")
 	checkError(err)
-	writeHeader(result, f)
-	writeGeneration(result, f)
+	writeHeader(rankedPareto, f)
+	writeGeneration(rankedPareto, f)
 	f.Close()
 
 	fmt.Println("Done writing file!")

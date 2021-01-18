@@ -243,14 +243,15 @@ func dtlz1(e *Elem, M int) error {
 		return errors.New("need to have an M lesser than the amount of variables")
 	}
 
-	evalG := func(x []float64, k float64) float64 {
+	k := float64(len(e.X) - M + 1)
+	evalG := func(x []float64) float64 {
 		g := 0.0
 		for _, v := range x {
 			g += (v-0.5)*(v-0.5) - math.Cos(20*math.Pi*(v-0.5))
 		}
 		return 100 * (k + g)
 	}
-	g := evalG(e.X[M:], float64(len(e.X)-M+1))
+	g := evalG(e.X[M:])
 
 	newObjs := make([]float64, M)
 	for i := 0; i < M; i++ {
@@ -266,7 +267,6 @@ func dtlz1(e *Elem, M int) error {
 	// puts new objectives into the elem
 	e.objs = make([]float64, M)
 	copy(e.objs, newObjs)
-
 	return nil
 }
 
@@ -276,18 +276,16 @@ func dtlz2(e *Elem, M int) error {
 		return errors.New("need to have an M lesser than the amount of variables")
 	}
 
-	newObjs := make([]float64, M)
-
 	evalG := func(x []float64) float64 {
-		k := len(x) - M + 1
 		g := 0.0
-		for i := len(x) - k; i < len(x); i++ {
-			g += (x[i] - 0.5) * (x[i] - 0.5)
+		for _, v := range x {
+			g += (v - 0.5) * (v - 0.5)
 		}
 		return g
 	}
-	g := evalG(e.X)
+	g := evalG(e.X[M:])
 
+	newObjs := make([]float64, M)
 	for i := 0; i < M; i++ {
 		prod := (1 + g)
 		for j := 0; j < M-(i+1); j++ {
@@ -311,19 +309,17 @@ func dtlz3(e *Elem, M int) error {
 	if len(e.X) <= M {
 		return errors.New("need to have an M lesser than the amount of variables")
 	}
+	k := float64(len(e.X) - M + 1)
+	evalG := func(x []float64) float64 {
+		g := 0.0
+		for _, v := range x {
+			g += (v-0.5)*(v-0.5) - math.Cos(20*math.Pi*(v-0.5))
+		}
+		return 100 * (k + g)
+	}
+	g := evalG(e.X[M:])
 
 	newObjs := make([]float64, M)
-
-	evalG := func(x []float64) float64 {
-		k := len(x) - M + 1
-		g := 0.0
-		for i := len(x) - k; i < len(x); i++ {
-			g += (x[i]-0.5)*(x[i]-0.5) - math.Cos(20.0*(x[i]-0.5)*math.Pi)
-		}
-		return 100 * (float64(k) + g)
-	}
-	g := evalG(e.X)
-
 	for i := 0; i < M; i++ {
 		prod := (1.0 + g)
 		for j := 0; j < M-(i+1); j++ {
@@ -347,19 +343,16 @@ func dtlz4(e *Elem, M int) error {
 	if len(e.X) <= M {
 		return errors.New("need to have an M lesser than the amount of variables")
 	}
-
-	newObjs := make([]float64, M)
-
 	evalG := func(x []float64) float64 {
-		k := len(x) - M + 1
 		g := 0.0
-		for i := len(x) - k; i < len(x); i++ {
-			g += (x[i] - 0.5) * (x[i] - 0.5)
+		for _, v := range x {
+			g += (v - 0.5) * (v - 0.5)
 		}
 		return g
 	}
-	g := evalG(e.X)
+	g := evalG(e.X[M:])
 
+	newObjs := make([]float64, M)
 	for i := 0; i < M; i++ {
 		prod := (1 + g)
 		for j := 0; j < M-(i+1); j++ {
@@ -383,20 +376,17 @@ func dtlz5(e *Elem, M int) error {
 	if len(e.X) <= M {
 		return errors.New("need to have an M lesser than the amount of variables")
 	}
-
-	newObjs := make([]float64, M)
-
 	evalG := func(x []float64) float64 {
-		k := len(x) - M + 1
 		g := 0.0
-		for i := len(x) - k; i < len(x); i++ {
-			g += (x[i] - 0.5) * (x[i] - 0.5)
+		for _, v := range x {
+			g += (v - 0.5) * (v - 0.5)
 		}
 		return g
 	}
-	g := evalG(e.X)
+	g := evalG(e.X[M:])
 	t := math.Pi / (4.0 * (1 + g))
 
+	newObjs := make([]float64, M)
 	theta := make([]float64, M-1)
 	theta[0] = e.X[0] * math.Pi / 2.0
 	for i := 1; i < M-1; i++ {
@@ -426,18 +416,14 @@ func dtlz6(e *Elem, M int) error {
 	if len(e.X) <= M {
 		return errors.New("need to have an M lesser than the amount of variables")
 	}
-
-	newObjs := make([]float64, M)
-
 	evalG := func(x []float64) float64 {
-		k := len(x) - M + 1
 		g := 0.0
-		for i := len(x) - k; i < len(x); i++ {
-			g += math.Pow(x[i], 0.1)
+		for _, v := range x {
+			g += math.Pow(v, 0.1)
 		}
 		return g
 	}
-	g := evalG(e.X)
+	g := evalG(e.X[M:])
 	t := math.Pi / (4.0 * (1 + g))
 
 	theta := make([]float64, M-1)
@@ -446,6 +432,7 @@ func dtlz6(e *Elem, M int) error {
 		theta[i] = t * (1.0 + 2.0*g*e.X[i])
 	}
 
+	newObjs := make([]float64, M)
 	for i := 0; i < M; i++ {
 		prod := (1 + g)
 		for j := 0; j < M-(i+1); j++ {
@@ -469,27 +456,24 @@ func dtlz7(e *Elem, M int) error {
 	if len(e.X) <= M {
 		return errors.New("need to have an M lesser than the amount of variables")
 	}
-
-	newObjs := make([]float64, M)
-
 	evalG := func(x []float64) float64 {
-		k := len(x) - M + 1
 		g := 0.0
-		for i := len(x) - k; i < len(x); i++ {
-			g += math.Pow(x[i], 0.1)
+		for _, v := range x {
+			g += math.Pow(v, 0.1)
 		}
 		return g
 	}
 	evalH := func(x []float64, g float64) float64 {
 		h := 0.0
-		for i := 0; i < M-1; i++ {
-			h += (x[i] / (1 + g) * (1 + math.Sin(3*math.Pi*x[i])))
+		for _, v := range x {
+			h += (v / (1 + g) * (1 + math.Sin(3*math.Pi*v)))
 		}
 		return float64(M) - h
 	}
-	g := evalG(e.X)
-	h := evalH(e.X, g)
+	g := evalG(e.X[M:])
+	h := evalH(e.X[:M], g)
 
+	newObjs := make([]float64, M)
 	for i := 0; i < M-1; i++ {
 		newObjs[i] = e.X[i]
 	}

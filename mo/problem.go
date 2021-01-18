@@ -3,10 +3,39 @@ package mo
 import (
 	"errors"
 	"math"
+	"strings"
 )
 
 // ProblemFn definition of the test case functions
 type ProblemFn func(e *Elem, M int) error
+
+// GetProblemByName -> returns the problem function
+func GetProblemByName(name string) ProblemFn {
+	name = strings.ToLower(name)
+	problems := map[string]ProblemFn{
+		"zdt1":  zdt1,
+		"zdt2":  zdt2,
+		"zdt3":  zdt3,
+		"zdt4":  zdt4,
+		"zdt6":  zdt6,
+		"vnt1":  vnt1,
+		"dtlz1": dtlz1,
+		"dtlz2": dtlz2,
+		"dtlz3": dtlz3,
+		"dtlz4": dtlz4,
+		"dtlz5": dtlz5,
+		"dtlz6": dtlz6,
+		"dtlz7": dtlz7,
+	}
+	var problem ProblemFn
+	for k, v := range problems {
+		if name == k {
+			problem = v
+			break
+		}
+	}
+	return problem
+}
 
 // ZDT1 -> bi-objetive evaluation
 func zdt1(e *Elem, M int) error {
@@ -214,31 +243,28 @@ func dtlz1(e *Elem, M int) error {
 		return errors.New("need to have an M lesser than the amount of variables")
 	}
 
-	newObjs := make([]float64, M)
-
-	evalG := func(x []float64) float64 {
-		k := len(x) - M + 1
+	evalG := func(x []float64, k float64) float64 {
 		g := 0.0
-		for i := len(x) - k; i < len(x); i++ {
-			g += (x[i]-0.5)*(x[i]-0.5) - math.Cos(20*math.Pi*(x[i]-0.5))
+		for _, v := range x {
+			g += (v-0.5)*(v-0.5) - math.Cos(20*math.Pi*(v-0.5))
 		}
-		return 100 * (float64(k) + g)
+		return 100 * (k + g)
 	}
-	g := evalG(e.X)
+	g := evalG(e.X[M:], float64(len(e.X)-M+1))
 
+	newObjs := make([]float64, M)
 	for i := 0; i < M; i++ {
-		prod := 0.5 * (1 + g)
+		newObjs[i] = (1.0 + g) * 0.5
 		for j := 0; j < M-(i+1); j++ {
-			prod *= e.X[j]
+			newObjs[i] *= e.X[j]
 		}
 		if i != 0 {
-			prod *= (1 - e.X[M-(i+1)])
+			newObjs[i] *= 1 - e.X[M-(i+1)]
 		}
-		newObjs[i] = prod
 	}
 
 	// puts new objectives into the elem
-	e.objs = make([]float64, len(newObjs))
+	e.objs = make([]float64, M)
 	copy(e.objs, newObjs)
 
 	return nil

@@ -5,9 +5,6 @@ import (
 	"gitlab.com/nicholaspcr/go-de/so"
 )
 
-// local flags
-var pConst float64
-
 // sodeCmd represents the sode command
 var sodeCmd = &cobra.Command{
 	Use:   "single",
@@ -23,7 +20,6 @@ var sodeCmd = &cobra.Command{
 			CEIL:  ceil,
 			CR:    crConst,
 			F:     fConst,
-			P:     pConst,
 		}
 		so.Run(params)
 	},
@@ -31,10 +27,4 @@ var sodeCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(sodeCmd)
-	sodeCmd.Flags().Float64Var(
-		&pConst,
-		"P",
-		0.5,
-		"P -> DE constant",
-	)
 }

@@ -10,49 +10,7 @@ import (
 	"strings"
 )
 
-// GetProblemByName -> returns the problem function
-func GetProblemByName(name string) ProblemFn {
-	name = strings.ToLower(name)
-	problems := map[string]ProblemFn{
-		"zdt1":  zdt1,
-		"zdt2":  zdt2,
-		"zdt3":  zdt3,
-		"zdt4":  zdt4,
-		"zdt6":  zdt6,
-		"vnt1":  vnt1,
-		"dtlz1": dtlz1,
-		"dtlz2": dtlz2,
-		"dtlz3": dtlz3,
-		"dtlz4": dtlz4,
-		"dtlz5": dtlz5,
-		"dtlz6": dtlz6,
-		"dtlz7": dtlz7,
-	}
-	var problem ProblemFn
-	for k, v := range problems {
-		if name == k {
-			problem = v
-			break
-		}
-	}
-	return problem
-}
-
-// GetVariantByName -> Returns the variant function
-func GetVariantByName(name string) VariantFn {
-	name = strings.ToLower(name)
-	variants := map[string]VariantFn{
-		"rand1": rand1,
-	}
-	for k, v := range variants {
-		if name == k {
-			return v
-		}
-	}
-	return VariantFn{}
-}
-
-func GeneratePopulation(p Params) Elements {
+func generatePopulation(p Params) Elements {
 	ret := make(Elements, p.NP)
 	constant := p.CEIL - p.FLOOR // range between floor and ceiling
 	for i := 0; i < p.NP; i++ {
@@ -104,7 +62,7 @@ func checkError(e error) {
 }
 
 // returns NP elements filtered by rank and crwod distance
-func reduceByCrowdDistance(elems, best *Elements, NP int) Elements {
+func reduceByCrowdDistance(elems, pareto *Elements, NP int) Elements {
 	ranks := rankElements(*elems)
 	*elems = make(Elements, 0)
 	//sorting each rank by crowd distance
@@ -112,8 +70,8 @@ func reduceByCrowdDistance(elems, best *Elements, NP int) Elements {
 		calculateCrwdDist(ranks[i])
 		sort.Sort(byCrwdst(ranks[i]))
 	}
-	// writes the best ranked into the pareto db
-	*best = append(*best, ranks[0]...)
+	// writes the pareto ranked into the pareto db
+	*pareto = append(*pareto, ranks[0]...)
 
 	for _, rank := range ranks {
 		for _, elem := range rank {
@@ -141,37 +99,6 @@ func rankElements(elems Elements) map[int]Elements {
 	return ranks
 }
 
-// assumes that the slice is composed of non dominated elements
-func calculateCrwdDist(elems Elements) {
-	if len(elems) <= 3 {
-		return
-	}
-	objs := len(elems[0].objs)
-	maxes := make([]float64, len(elems))
-	minis := make([]float64, len(elems))
-	for i := range elems {
-		// resets the crwdst
-		elems[i].crwdst = 0
-		// gets the max/min values of each objective
-		for j := 0; j < objs; j++ {
-			maxes[j] = math.Max(maxes[j], elems[i].objs[j])
-			minis[j] = math.Min(minis[j], elems[i].objs[j])
-		}
-	}
-	for m := 0; m < objs; m++ {
-		// sort by current objective
-		sort.SliceStable(elems, func(i, j int) bool {
-			return elems[i].objs[m] < elems[j].objs[m]
-		})
-		// adds an advantage to the points in the extreme
-		elems[0].crwdst = maxes[m]
-		elems[len(elems)-1].crwdst = maxes[m]
-		for i := 1; i < len(elems)-1; i++ {
-			elems[i].crwdst = elems[i].crwdst + (elems[i+1].objs[m]-elems[i-1].objs[m])/(maxes[m]-minis[m])
-		}
-	}
-}
-
 // filterDominated -> returns elements that are not dominated in the set
 func filterDominated(elems Elements) (nonDominated, dominated Elements) {
 	sort.Sort(byFirstObj(elems))
@@ -195,4 +122,33 @@ func filterDominated(elems Elements) (nonDominated, dominated Elements) {
 		}
 	}
 	return nonDom, dom
+}
+
+// assumes that the slice is composed of non dominated elements
+func calculateCrwdDist(elems Elements) {
+	if len(elems) <= 3 {
+		return
+	}
+	for i := range elems {
+		elems[i].crwdst = 0 // resets the crwdst
+	}
+	szObjs := len(elems[0].objs)
+	for m := 0; m < szObjs; m++ {
+		// sort by current objective
+		sort.SliceStable(elems, func(i, j int) bool {
+			return elems[i].objs[m] < elems[j].objs[m]
+		})
+
+		objMin := elems[0].objs[m]
+		objMax := elems[len(elems)-1].objs[m]
+		elems[0].crwdst = math.MaxFloat64
+		elems[len(elems)-1].crwdst = math.MaxFloat64
+		for i := 1; i < len(elems)-1; i++ {
+			distance := elems[i+1].objs[m] - elems[i-1].objs[m]
+			if objMax-objMin != 0 {
+				distance = distance / (objMax - objMin)
+			}
+			elems[i].crwdst += distance
+		}
+	}
 }

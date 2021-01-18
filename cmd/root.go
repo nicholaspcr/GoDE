@@ -14,7 +14,7 @@ var cfgFile string
 
 // global flags
 var np, dim, gen, execs int
-var floor, ceil, crConst, fConst float64
+var floor, ceil, crConst, fConst, pConst float64
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -56,7 +56,7 @@ func init() {
 	rootCmd.PersistentFlags().IntVarP(&gen,
 		"gen",
 		"g",
-		500,
+		300,
 		"generations of the DE")
 	rootCmd.PersistentFlags().IntVarP(&execs,
 		"execs",
@@ -79,6 +79,12 @@ func init() {
 		"F",
 		0.5,
 		"F -> DE constant")
+	rootCmd.PersistentFlags().Float64Var(
+		&pConst,
+		"P",
+		0.2,
+		"P -> DE constant",
+	)
 
 }
 

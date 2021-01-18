@@ -17,8 +17,9 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 
 	startTimer := time.Now()                 //	timer start
 	rand.Seed(time.Now().UTC().UnixNano())   // Rand Seed
-	population := GeneratePopulation(params) // random generated population
-	var wg sync.WaitGroup                    // number of working go routines
+	population := generatePopulation(params) // random generated population
+
+	var wg sync.WaitGroup // number of working go routines
 	normalChan := make(chan Elements, params.EXECS)
 	rankedChan := make(chan Elements, params.EXECS)
 	for i := 0; i < params.EXECS; i++ {
@@ -107,7 +108,11 @@ func DE(
 	for ; p.GEN > 0; p.GEN-- {
 		trial := population.Copy() // trial population slice
 		for i, t := range trial {
-			v, err := variant.fn(population, p)
+			v, err := variant.fn(population, varParams{
+				currPos: i,
+				DIM:     p.DIM,
+				F:       p.F,
+			})
 			checkError(err)
 			// CROSS OVER
 			currInd := rand.Int() % p.DIM

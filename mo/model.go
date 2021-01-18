@@ -3,7 +3,7 @@ package mo
 // Params of the moDE
 type Params struct {
 	EXECS, NP, M, DIM, GEN int
-	FLOOR, CEIL, CR, F     float64
+	FLOOR, CEIL, CR, F, P  float64
 }
 
 // Elem -> Element of population

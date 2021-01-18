@@ -21,9 +21,12 @@ var modeCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		problem := mo.GetProblemByName(functionName)
 		variant := mo.GetVariantByName(variantName)
-		if problem == nil || variant.Name == "" {
-			// todo error message and list of problems and variants
-			fmt.Println("Invalid problem or variant.")
+		if problem == nil {
+			fmt.Println("Invalid problem")
+			return
+		}
+		if variant.Name == "" {
+			fmt.Println("Invalid variant.")
 			return
 		}
 		params := mo.Params{
@@ -36,6 +39,7 @@ var modeCmd = &cobra.Command{
 			CEIL:  ceil,
 			CR:    crConst,
 			F:     fConst,
+			P:     pConst,
 		}
 		mo.MultiExecutions(params, problem, variant)
 	},

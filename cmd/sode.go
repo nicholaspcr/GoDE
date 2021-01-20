@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"gitlab.com/nicholaspcr/go-de/so"
+	so "gitlab.com/nicholaspcr/go-de/pkg/sode"
 )
 
 // sodeCmd represents the sode command

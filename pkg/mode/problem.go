@@ -446,32 +446,32 @@ func dtlz7(e *Elem, M int) error {
 	if len(e.X) <= M {
 		return errors.New("need to have an M lesser than the amount of variables")
 	}
-	evalG := func(x []float64) float64 {
-		g := 0.0
-		for _, v := range x {
-			g += math.Pow(v, 0.1)
-		}
-		return g
-	}
-	evalH := func(x []float64, g float64) float64 {
-		h := 0.0
-		for _, v := range x {
-			h += (v / (1 + g) * (1 + math.Sin(3*math.Pi*v)))
-		}
-		return float64(M) - h
-	}
-	g := evalG(e.X[M:])
-	h := evalH(e.X[:M], g)
+	varSz := len(e.X)
+	k := varSz - M + 1
 
-	newObjs := make([]float64, M)
-	for i := 0; i < M-1; i++ {
-		newObjs[i] = e.X[i]
+	// calculating the value of the constant G
+	g := 0.0
+	for _, v := range e.X[varSz-k:] {
+		g += v
 	}
-	newObjs[M-1] = (1 + g) * h
+	g = 1.0 + (9.0*g)/float64(k)
 
+	// calculating the value of the constant H
+	h := 0.0
+	for _, v := range e.X[:M-1] {
+		h += (v / (1.0 + g)) * (1 + math.Sin(3.0*math.Pi*v))
+	}
+	h = float64(M) - h
+
+	// calculating objs values
+	objs := make([]float64, M)
+	for i := range objs {
+		objs[i] = e.X[i]
+	}
+	objs[M-1] = (1.0 + g) * h
 	// puts new objectives into the elem
-	e.objs = make([]float64, len(newObjs))
-	copy(e.objs, newObjs)
+	e.objs = make([]float64, len(objs))
+	copy(e.objs, objs)
 
 	return nil
 }

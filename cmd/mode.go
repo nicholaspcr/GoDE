@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/nicholaspcr/go-de/mo"
+	mo "gitlab.com/nicholaspcr/go-de/pkg/mode"
 )
 
 // local flags

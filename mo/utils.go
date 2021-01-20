@@ -63,7 +63,7 @@ func checkError(e error) {
 
 // returns NP elements filtered by rank and crwod distance
 func reduceByCrowdDistance(elems, pareto *Elements, NP int) Elements {
-	ranks := rankElements(*elems)
+	ranks := fastNonDominatedRanking(*elems)
 	*elems = make(Elements, 0)
 	//sorting each rank by crowd distance
 	for i := range ranks {
@@ -97,6 +97,73 @@ func rankElements(elems Elements) map[int]Elements {
 		elems = append(elems, nonRanked...)
 	}
 	return ranks
+}
+
+// x is best 	-> -1
+// y is best 	-> 	1
+// else 			->	0
+func dominanceTest(x, y *[]float64) int {
+	result := 0
+	for i := range *x {
+		if (*x)[i] > (*y)[i] {
+			if result == -1 {
+				return 0
+			}
+			result = 1
+		} else if (*y)[i] > (*x)[i] {
+			if result == 1 {
+				return 0
+			}
+			result = -1
+		}
+	}
+	return result
+}
+
+func fastNonDominatedRanking(elems Elements) map[int]Elements {
+	dominatingIth := make([]int, len(elems))
+	ithDominated := make([][]Elem, len(elems))
+	front := make([][]int, len(elems)+1)
+
+	for p := 0; p < len(elems)-1; p++ {
+		for q := p + 1; q < len(elems); q++ {
+			dominanceTestResult := dominanceTest(&elems[p].objs, &elems[q].objs)
+			if dominanceTestResult == -1 {
+				ithDominated[p] = append(ithDominated[p], elems[q])
+				dominatingIth[q]++
+			} else if dominanceTestResult == 1 {
+				ithDominated[q] = append(ithDominated[q], elems[p])
+				dominatingIth[p]++
+			}
+		}
+	}
+	for i := 0; i < len(elems); i++ {
+		if dominatingIth[i] == 0 {
+			front[0] = append(front[0], i)
+		}
+	}
+	i := 0
+	for len(front[i]) != 0 {
+		i++
+		for p := range front[i-1] {
+			if p <= len(ithDominated) {
+				for q := range ithDominated[p] {
+					dominatingIth[q]--
+					if dominatingIth[q] == 0 {
+						front[i] = append(front[i], q)
+					}
+
+				}
+			}
+		}
+	}
+	rankedSubList := make(map[int]Elements)
+	for j := 0; j < i; j++ {
+		for m := range front[j] {
+			rankedSubList[j] = append(rankedSubList[j], elems[front[j][m]].Copy())
+		}
+	}
+	return rankedSubList
 }
 
 // filterDominated -> returns elements that are not dominated in the set
@@ -145,7 +212,7 @@ func calculateCrwdDist(elems Elements) {
 		elems[len(elems)-1].crwdst = math.MaxFloat64
 		for i := 1; i < len(elems)-1; i++ {
 			distance := elems[i+1].objs[m] - elems[i-1].objs[m]
-			if objMax-objMin != 0 {
+			if math.Abs(objMax-objMin) != 0 {
 				distance = distance / (objMax - objMin)
 			}
 			elems[i].crwdst += distance

@@ -243,30 +243,25 @@ func dtlz1(e *Elem, M int) error {
 		return errors.New("need to have an M lesser than the amount of variables")
 	}
 
-	k := float64(len(e.X) - M + 1)
-	evalG := func(x []float64) float64 {
-		g := 0.0
-		for _, v := range x {
-			g += (v-0.5)*(v-0.5) - math.Cos(20*math.Pi*(v-0.5))
-		}
-		return 100 * (k + g)
+	k := len(e.X) - M + 1
+	g := 0.0
+	varSz := len(e.X)
+	for _, v := range e.X[varSz-k:] {
+		g += (v-0.5)*(v-0.5) - math.Cos(20.0*math.Pi*(v-0.5))
 	}
-	g := evalG(e.X[M:])
-
-	newObjs := make([]float64, M)
-	for i := 0; i < M; i++ {
-		newObjs[i] = (1.0 + g) * 0.5
+	g = 100 * (float64(k) + g)
+	objs := make([]float64, M)
+	for i := range objs {
+		objs[i] = 0.5 * (1.0 + g)
 		for j := 0; j < M-(i+1); j++ {
-			newObjs[i] *= e.X[j]
+			objs[i] *= e.X[j]
 		}
 		if i != 0 {
-			newObjs[i] *= 1 - e.X[M-(i+1)]
+			objs[i] *= 1 - e.X[M-(i+1)]
 		}
 	}
-
-	// puts new objectives into the elem
 	e.objs = make([]float64, M)
-	copy(e.objs, newObjs)
+	copy(e.objs, objs)
 	return nil
 }
 
@@ -309,32 +304,27 @@ func dtlz3(e *Elem, M int) error {
 	if len(e.X) <= M {
 		return errors.New("need to have an M lesser than the amount of variables")
 	}
-	k := float64(len(e.X) - M + 1)
-	evalG := func(x []float64) float64 {
-		g := 0.0
-		for _, v := range x {
-			g += (v-0.5)*(v-0.5) - math.Cos(20*math.Pi*(v-0.5))
-		}
-		return 100 * (k + g)
-	}
-	g := evalG(e.X[M:])
 
-	newObjs := make([]float64, M)
-	for i := 0; i < M; i++ {
-		prod := (1.0 + g)
+	k := len(e.X) - M + 1
+	g := 0.0
+	varSz := len(e.X)
+	for _, v := range e.X[varSz-k:] {
+		g += (v-0.5)*(v-0.5) - math.Cos(20*math.Pi*(v-0.5))
+	}
+	g = 100 * (float64(k) + g)
+	objs := make([]float64, M)
+	for i := range objs {
+		objs[i] = (1.0 + g)
 		for j := 0; j < M-(i+1); j++ {
-			prod *= math.Cos(e.X[j] * 0.5 * math.Pi)
+			objs[i] *= math.Cos(e.X[j] * 0.5 * math.Pi)
 		}
 		if i != 0 {
-			prod *= math.Sin(e.X[M-(i+1)] * 0.5 * math.Pi)
+			objs[i] *= math.Sin(e.X[M-(i+1)] * 0.5 * math.Pi)
 		}
-		newObjs[i] = prod
 	}
-
 	// puts new objectives into the elem
-	e.objs = make([]float64, len(newObjs))
-	copy(e.objs, newObjs)
-
+	e.objs = make([]float64, len(objs))
+	copy(e.objs, objs)
 	return nil
 }
 

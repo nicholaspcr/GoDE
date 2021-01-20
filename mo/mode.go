@@ -82,6 +82,9 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 
 	fmt.Println("Done writing file!")
 	timeSpent := time.Since(startTimer)
+
+	fmt.Println(rankedPareto[len(rankedPareto)-1].X)
+	fmt.Println(rankedPareto[len(rankedPareto)-1].objs)
 	fmt.Println(timeSpent)
 }
 

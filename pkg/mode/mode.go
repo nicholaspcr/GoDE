@@ -1,11 +1,12 @@
 package mo
 
 import (
+	"encoding/csv"
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
 	"strconv"
-	"sync"
 	"time"
 )
 
@@ -19,7 +20,7 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 	rand.Seed(time.Now().UTC().UnixNano())   // Rand Seed
 	population := generatePopulation(params) // random generated population
 
-	var wg sync.WaitGroup // number of working go routines
+	// var wg sync.WaitGroup // number of working go routines
 	normalChan := make(chan Elements, params.EXECS)
 	rankedChan := make(chan Elements, params.EXECS)
 	for i := 0; i < params.EXECS; i++ {
@@ -30,24 +31,24 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 			strconv.Itoa(i+1) +
 			".csv")
 		checkError(err)
-		wg.Add(1)
+		// wg.Add(1)
 		// worker
-		go func() {
-			defer wg.Done()
-			DE(
-				normalChan,
-				rankedChan,
-				params,
-				prob,
-				variant,
-				population.Copy(),
-				f,
-			)
-		}()
+		// go func() {
+		// defer wg.Done()
+		DE(
+			normalChan,
+			rankedChan,
+			params,
+			prob,
+			variant,
+			population.Copy(),
+			f,
+		)
+		// }()
 	}
 	// closer
 	go func() {
-		wg.Wait()
+		// wg.Wait()
 		close(normalChan)
 		close(rankedChan)
 	}()
@@ -68,16 +69,20 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 
 	// results of the normal pareto
 	f, err := os.Create(basePath + "/" + multiExecPath + "/" + variant.Name + "-old.csv")
+	writer := csv.NewWriter(f)
 	checkError(err)
-	writeHeader(normalPareto, f)
-	writeGeneration(normalPareto, f)
+	writeHeader(normalPareto, writer)
+	writeGeneration(normalPareto, writer)
+	writer.Flush()
 	f.Close()
 
 	// result of the ranked pareto
 	f, err = os.Create(basePath + "/" + multiExecPath + "/" + variant.Name + "-new.csv")
+	writer = csv.NewWriter(f)
 	checkError(err)
-	writeHeader(rankedPareto, f)
-	writeGeneration(rankedPareto, f)
+	writeHeader(rankedPareto, writer)
+	writeGeneration(rankedPareto, writer)
+	writer.Flush()
 	f.Close()
 
 	fmt.Println("Done writing file!")
@@ -98,14 +103,18 @@ func DE(
 	population Elements,
 	f *os.File,
 ) {
-	defer f.Close()
+	writer := csv.NewWriter(f)
+	defer func() {
+		writer.Flush()
+		f.Close()
+	}()
 
 	for i := range population {
 		err := evaluate(&population[i], p.M)
 		checkError(err)
 	}
-	writeHeader(population, f)
-	writeGeneration(population, f)
+	writeHeader(population, writer)
+	writeGeneration(population, writer)
 
 	bestElems := make(Elements, 0)
 	for ; p.GEN > 0; p.GEN-- {
@@ -141,8 +150,12 @@ func DE(
 			}
 		}
 
-		population = reduceByCrowdDistance(&population, &bestElems, p.NP)
-		writeGeneration(population, f)
+		population = reduceByCrowdDistance(population, &bestElems, p.NP)
+		if len(population) < p.NP {
+			fmt.Println(len(population))
+			log.Fatal("failed to generate enough elements")
+		}
+		writeGeneration(population, writer)
 	}
 	normalCh <- population
 	rankedCh <- bestElems

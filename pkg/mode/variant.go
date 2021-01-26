@@ -29,8 +29,7 @@ func GetVariantByName(name string) VariantFn {
 		"rand2":       rand2,
 		"best1":       best1,
 		"best2":       best2,
-		"currtobest1": currToBest1,
-		"currtobest2": currToBest2,
+		"currtobest1": currToBest1,		
 		"pbest":       pbest,
 	}
 	for k, v := range variants {
@@ -138,8 +137,6 @@ var best2 VariantFn = VariantFn{
 	Name: "best2",
 }
 
-// TODO:
-// link do artigo ->
 var currToBest1 VariantFn = VariantFn{
 	fn: func(elems Elements, p varParams) (Elem, error) {
 		ind := make([]int, 5)
@@ -160,30 +157,6 @@ var currToBest1 VariantFn = VariantFn{
 		return ret, nil
 	},
 	Name: "current-to-best-1",
-}
-
-// TODO
-// link do artigo ->
-var currToBest2 VariantFn = VariantFn{
-	fn: func(elems Elements, p varParams) (Elem, error) {
-		ind := make([]int, 4)
-		ind[0] = p.currPos
-		ind[1] = 0 // best in population
-		err := generateIndices(2, len(elems), ind)
-		if err != nil {
-			return Elem{}, errors.New("insufficient size for the population, must me equal or greater than 4")
-		}
-		arr := make([]float64, p.DIM)
-		a, b, c, d := elems[ind[0]], elems[ind[1]], elems[ind[2]], elems[ind[3]]
-		for i := 0; i < p.DIM; i++ {
-			arr[i] = a.X[i] + p.F*(b.X[i]-a.X[i]) + p.F*(c.X[i]-d.X[i])
-		}
-		ret := Elem{
-			X: arr,
-		}
-		return ret, nil
-	},
-	Name: "current-to-best-2",
 }
 
 // PBest implementation

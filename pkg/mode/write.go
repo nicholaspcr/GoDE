@@ -1,7 +1,9 @@
 package mo
 
 import (
+	"encoding/csv"
 	"fmt"
+	"log"
 	"os"
 )
 
@@ -10,26 +12,36 @@ type fileManager struct {
 	f *os.File
 }
 
-var paretoPATH = os.Getenv("HOME") + "/.go-de/mode/bolt.db"
-
 // todo: maybe remove this and do a separate subcommand to write the result in a .csv file!
-func writeHeader(pop []Elem, f *os.File) {
+func writeHeader(pop []Elem, w *csv.Writer) {
+	tmpData := []string{}
 	for i := range pop {
-		fmt.Fprintf(f, "elem[%d]\t", i)
+		tmpData = append(tmpData, fmt.Sprintf("elem[%d]", i))
 	}
-	fmt.Fprintf(f, "\n")
+	err := w.Write(tmpData)
+	if err != nil {
+		log.Fatal("Couldn't write file")
+	}
+	w.Flush()
 }
 
 // todo: maybe remove this and do a separate subcommand to write the result in a .csv file!
-func writeGeneration(elems Elements, f *os.File) {
+func writeGeneration(elems Elements, w *csv.Writer) {
 	if len(elems) == 0 {
 		return
 	}
+	data := [][]string{}
 	objs := len(elems[0].objs)
 	for i := 0; i < objs; i++ {
+		tmpData := []string{}
 		for _, p := range elems {
-			fmt.Fprintf(f, "%10.3f\t", p.objs[i])
+			tmpData = append(tmpData, fmt.Sprintf("%5.3f", p.objs[i]))
 		}
-		fmt.Fprintf(f, "\n")
+		data = append(data, tmpData)
 	}
+	err := w.WriteAll(data)
+	if err != nil {
+		log.Fatal("Couldn't write file")
+	}
+	w.Flush()
 }

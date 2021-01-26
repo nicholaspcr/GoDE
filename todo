@@ -1,12 +1,15 @@
-
-
 https://www.iitk.ac.in/kangal/Deb_NSGA-II.pdf
 
-1 - rewrite crowding distance - done
-2 - teste de pymetal crwdDst vs golang crwdDst
-3 - check fastRanking
-4 - get the ranks[0] of each generation - done
-    - that is a the final answer
-5 - latex
-    - Escrever sobre multi-objective
-    - 
+
+Todo:
+    -mudar nome para refletir o uso do GDE3
+    -corrigir variantes mo:
+        - x_best é um escolhido aleatoriamente de rank 1            
+            - sortear aleatóriamente um elemento do rank 1
+        - x_pbest é um escolhido aleatoriamente entre os p% melhores de rank 1
+            - decidir:
+                5%, 10%, 15%, 20% -> P different values
+    - hypervolume:
+        - rodar todas as variantes em todos os problemas, 30x cada um.
+            -> armazenando o maiores valores de F[0],F[1] e f[2] de cada problema.
+            -> considerando todas as gerações.

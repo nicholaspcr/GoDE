@@ -2,6 +2,7 @@ package mo
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"math"
 	"math/rand"
@@ -62,26 +63,30 @@ func checkError(e error) {
 }
 
 // returns NP elements filtered by rank and crwod distance
-func reduceByCrowdDistance(elems, pareto *Elements, NP int) Elements {
-	ranks := fastNonDominatedRanking(*elems)
-	*elems = make(Elements, 0)
+func reduceByCrowdDistance(elems Elements, pareto *Elements, NP int) Elements {
+	ranks := fastNonDominatedRanking(elems)
+	fmt.Println(len(elems))
+	for _, r := range ranks {
+		fmt.Print(fmt.Sprint(len(r)) + " ")
+	}
+	elems = make(Elements, 0)
 	//sorting each rank by crowd distance
 	for i := range ranks {
 		calculateCrwdDist(ranks[i])
 		sort.Sort(byCrwdst(ranks[i]))
 	}
+
 	// writes the pareto ranked into the pareto db
 	*pareto = append(*pareto, ranks[0]...)
 
 	for _, rank := range ranks {
-		for _, elem := range rank {
-			*elems = append(*elems, elem.Copy())
-			if len(*elems) >= NP {
-				return *elems
-			}
+		elems = append(elems, rank...)
+		if len(elems) > NP {
+			elems = elems[:50]
+			break
 		}
 	}
-	return *elems
+	return elems
 }
 
 // rankElements returna  map of dominating elements in ascending order
@@ -152,7 +157,6 @@ func fastNonDominatedRanking(elems Elements) map[int]Elements {
 					if dominatingIth[q] == 0 {
 						front[i] = append(front[i], q)
 					}
-
 				}
 			}
 		}

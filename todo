@@ -1,6 +1,5 @@
 https://www.iitk.ac.in/kangal/Deb_NSGA-II.pdf
 
-
 Todo:
     -mudar nome para refletir o uso do GDE3
     -corrigir variantes mo:
@@ -13,3 +12,53 @@ Todo:
         - rodar todas as variantes em todos os problemas, 30x cada um.
             -> armazenando o maiores valores de F[0],F[1] e f[2] de cada problema.
             -> considerando todas as gerações.
+
+
+maximum values found in 30 execs:
+- default values
+    - np = 100
+    - gen = 300
+    - dim = 12 ( with the exception of the dtlz1, that is 7 )
+    - CR = 0.9
+    - F = 0.5
+    - variables values [0,1]
+
+-DTLZ1
+    -RAND_1:
+        [499.7035124603466 524.891323128417 507.0705866188616]
+    -RAND_2:
+        [509.3830940485077 476.91045518548884 508.29891821092093]
+    -BEST_1:
+        [502.3450136317501 494.3950750875664 512.7536160563354]
+    -BEST_2:
+        [496.78267354647926 487.88092721924033 517.0622067306465]
+    -CURRENT_TO_BEST_1:
+        [516.8697677378657 516.1155326431347 514.1632852538767]
+    -P-BEST_0.05:
+        [513.1487570995499 502.87510810949664 531.4586995836383]
+    -P-BEST_0.10:
+        [519.5803678497489 516.9897607769898 501.0297725630838]
+    -P-BEST_0.15:
+        [496.5111432882955 504.5895769782106 507.307407959781]
+    -P-BEST_0.20:
+        [513.8430263476425 514.9354769529621 497.6038626083349]
+
+-DTLZ2
+    -RAND_1:
+        
+    -RAND_2:
+        
+    -BEST_1:
+        
+    -BEST_2:
+        
+    -CURRENT_TO_BEST_1:
+        
+    -P-BEST_0.05:
+        
+    -P-BEST_0.10:
+        
+    -P-BEST_0.15:
+        
+    -P-BEST_0.20:
+        

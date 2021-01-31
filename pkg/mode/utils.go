@@ -2,13 +2,10 @@ package mo
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"math"
 	"math/rand"
-	"os"
 	"sort"
-	"strings"
 )
 
 func generatePopulation(p Params) Elements {
@@ -41,20 +38,6 @@ func generateIndices(startInd, NP int, r []int) error {
 	return nil
 }
 
-// checks existance of filePath
-func checkFilePath(basePath, filePath string) {
-	folders := strings.Split(filePath, "/")
-	for _, folder := range folders {
-		basePath += "/" + folder
-		if _, err := os.Stat(basePath); os.IsNotExist(err) {
-			err = os.Mkdir(basePath, os.ModePerm)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-	}
-}
-
 // todo: create a proper error handler
 func checkError(e error) {
 	if e != nil {
@@ -63,11 +46,11 @@ func checkError(e error) {
 }
 
 // returns NP elements filtered by rank and crwod distance
-func reduceByCrowdDistance(elems Elements, pareto *Elements, NP int) Elements {
+func reduceByCrowdDistance(elems Elements, NP int) (reduceElements, rankZero Elements) {
 	ranks := fastNonDominatedRanking(elems)
-	fmt.Println(len(elems))
+	totalRanksElements := 0
 	for _, r := range ranks {
-		fmt.Print(fmt.Sprint(len(r)) + " ")
+		totalRanksElements += len(r)
 	}
 	elems = make(Elements, 0)
 	//sorting each rank by crowd distance
@@ -76,9 +59,6 @@ func reduceByCrowdDistance(elems Elements, pareto *Elements, NP int) Elements {
 		sort.Sort(byCrwdst(ranks[i]))
 	}
 
-	// writes the pareto ranked into the pareto db
-	*pareto = append(*pareto, ranks[0]...)
-
 	for _, rank := range ranks {
 		elems = append(elems, rank...)
 		if len(elems) > NP {
@@ -86,22 +66,57 @@ func reduceByCrowdDistance(elems Elements, pareto *Elements, NP int) Elements {
 			break
 		}
 	}
-	return elems
+
+	// todo: REVIEW quick fix for the ranking generating less than np elements
+	for len(elems) < NP {
+		randIndex := rand.Int() % len(elems)
+		elems = append(elems, elems[randIndex])
+	}
+	return elems, ranks[0]
 }
 
-// rankElements returna  map of dominating elements in ascending order
-// destroys the slice provided
-func rankElements(elems Elements) map[int]Elements {
-	ranks := make(map[int]Elements)
-	currentRank := 0
-	for len(elems) > 0 {
-		ranked, nonRanked := filterDominated(elems)
-		ranks[currentRank] = append(ranks[currentRank], ranked...)
-		currentRank++
-		elems = make(Elements, 0)
-		elems = append(elems, nonRanked...)
+func fastNonDominatedRanking(elems Elements) map[int]Elements {
+	dominatingIth := make([]int, len(elems))
+	ithDominated := make([][]Elem, len(elems))
+	fronts := make([][]int, len(elems)+1)
+
+	for p := 0; p < len(elems)-1; p++ {
+		for q := p + 1; q < len(elems); q++ {
+			// dominanceTestResult := dominanceTest(&elems[p].objs, &elems[q].objs)
+			// if dominanceTestResult == -1 {
+			// 	ithDominated[p] = append(ithDominated[p], elems[q])
+			// } else if dominanceTestResult == 1 {
+			// 	dominatingIth[p]++
+			// }
+			if elems[p].dominates(elems[q]) {
+				ithDominated[p] = append(ithDominated[p], elems[q])
+			} else if elems[q].dominates(elems[p]) {
+				dominatingIth[p]++
+			}
+		}
+		if dominatingIth[p] == 0 {
+			fronts[0] = append(fronts[0], p)
+		}
 	}
-	return ranks
+
+	for i := 1; i < len(fronts); i++ {
+		for p := range fronts[i-1] {
+			for q := range ithDominated[p] {
+				dominatingIth[q]--
+				if dominatingIth[q] == 0 {
+					fronts[i] = append(fronts[i], q)
+				}
+			}
+		}
+	}
+	rankedSubList := make(map[int]Elements)
+	for i := range fronts {
+		for m := range fronts[i] {
+			rankedSubList[i] = append(rankedSubList[i], elems[fronts[i][m]].Copy())
+		}
+	}
+
+	return rankedSubList
 }
 
 // x is best 	-> -1
@@ -123,51 +138,6 @@ func dominanceTest(x, y *[]float64) int {
 		}
 	}
 	return result
-}
-
-func fastNonDominatedRanking(elems Elements) map[int]Elements {
-	dominatingIth := make([]int, len(elems))
-	ithDominated := make([][]Elem, len(elems))
-	front := make([][]int, len(elems)+1)
-
-	for p := 0; p < len(elems)-1; p++ {
-		for q := p + 1; q < len(elems); q++ {
-			dominanceTestResult := dominanceTest(&elems[p].objs, &elems[q].objs)
-			if dominanceTestResult == -1 {
-				ithDominated[p] = append(ithDominated[p], elems[q])
-				dominatingIth[q]++
-			} else if dominanceTestResult == 1 {
-				ithDominated[q] = append(ithDominated[q], elems[p])
-				dominatingIth[p]++
-			}
-		}
-	}
-	for i := 0; i < len(elems); i++ {
-		if dominatingIth[i] == 0 {
-			front[0] = append(front[0], i)
-		}
-	}
-	i := 0
-	for len(front[i]) != 0 {
-		i++
-		for p := range front[i-1] {
-			if p <= len(ithDominated) {
-				for q := range ithDominated[p] {
-					dominatingIth[q]--
-					if dominatingIth[q] == 0 {
-						front[i] = append(front[i], q)
-					}
-				}
-			}
-		}
-	}
-	rankedSubList := make(map[int]Elements)
-	for j := 0; j < i; j++ {
-		for m := range front[j] {
-			rankedSubList[j] = append(rankedSubList[j], elems[front[j][m]].Copy())
-		}
-	}
-	return rankedSubList
 }
 
 // filterDominated -> returns elements that are not dominated in the set

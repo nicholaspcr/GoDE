@@ -21,7 +21,7 @@ var modeCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		problem := mo.GetProblemByName(functionName)
 		variant := mo.GetVariantByName(variantName)
-		if problem == nil {
+		if problem.Name == "" {
 			fmt.Println("Invalid problem")
 			return
 		}

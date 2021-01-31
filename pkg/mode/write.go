@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 )
 
 // todo manage interfaces with type
@@ -12,7 +13,22 @@ type fileManager struct {
 	f *os.File
 }
 
-// todo: maybe remove this and do a separate subcommand to write the result in a .csv file!
+// checks existance of filePath
+func checkFilePath(basePath, filePath string) {
+	folders := strings.Split(filePath, "/")
+	for _, folder := range folders {
+		basePath += "/" + folder
+		if _, err := os.Stat(basePath); os.IsNotExist(err) {
+			err = os.Mkdir(basePath, os.ModePerm)
+			if err != nil {
+				fmt.Println(basePath, folder)
+				log.Fatal(err)
+			}
+		}
+	}
+}
+
+// writeHeader writes the header of the csv writer file
 func writeHeader(pop []Elem, w *csv.Writer) {
 	tmpData := []string{}
 	for i := range pop {
@@ -25,7 +41,7 @@ func writeHeader(pop []Elem, w *csv.Writer) {
 	w.Flush()
 }
 
-// todo: maybe remove this and do a separate subcommand to write the result in a .csv file!
+// writeGeneration writes the objectives in the csv writer file
 func writeGeneration(elems Elements, w *csv.Writer) {
 	if len(elems) == 0 {
 		return
@@ -44,4 +60,17 @@ func writeGeneration(elems Elements, w *csv.Writer) {
 		log.Fatal("Couldn't write file")
 	}
 	w.Flush()
+}
+
+// writeResult creates a file and writes all the elements in it
+// it should be used to write a single time a specific result
+// in the given path
+func writeResult(path string, elems Elements) {
+	f, err := os.Create(path)
+	writer := csv.NewWriter(f)
+	writer.Comma = '\t'
+	checkError(err)
+	writeHeader(elems, writer)
+	writeGeneration(elems, writer)
+	f.Close()
 }

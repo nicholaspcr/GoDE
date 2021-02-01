@@ -6,6 +6,7 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -70,6 +71,22 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 	for v := range lastGenChan {
 		lastGenPareto = append(lastGenPareto, v...)
 		lastGenPareto, _ = filterDominated(lastGenPareto)
+
+		calculateCrwdDist(lastGenPareto)
+
+		// leaves first the non border points in the rank zero
+		sort.SliceStable(lastGenPareto, func(i, j int) bool {
+			// smaller than max float32
+			if lastGenPareto[i].crwdst >= math.MaxFloat32-10.0 {
+				return false
+			}
+			return lastGenPareto[i].crwdst > lastGenPareto[j].crwdst
+		})
+
+		// puts a cap on the solution's amount of points
+		if len(lastGenPareto) > 2*params.NP {
+			lastGenPareto = lastGenPareto[:2*params.NP]
+		}
 	}
 
 	// gets data from the pareto created by rank[0] of each gen
@@ -77,6 +94,22 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 	for v := range rankedChan {
 		rankedPareto = append(rankedPareto, v...)
 		rankedPareto, _ = filterDominated(rankedPareto)
+
+		calculateCrwdDist(rankedPareto)
+
+		// leaves first the non border points in the rank zero
+		sort.SliceStable(rankedPareto, func(i, j int) bool {
+			// smaller than max float32
+			if rankedPareto[i].crwdst >= math.MaxFloat32-10.0 {
+				return false
+			}
+			return rankedPareto[i].crwdst > rankedPareto[j].crwdst
+		})
+
+		// puts a cap on the solution's amount of points
+		if len(rankedPareto) > 2*params.NP {
+			rankedPareto = rankedPareto[:2*params.NP]
+		}
 	}
 	// checks path for the path used to store the details of each generation
 	multiExecutionsPath := "/.go-de/mode/multiExecutions/" + prob.Name + "/" + variant.Name
@@ -114,7 +147,7 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 
 // tokens is a counting semaphore use to
 // enforce  a limit of 5 concurrent requests
-var tokens = make(chan struct{}, 5)
+var tokens = make(chan struct{}, 10)
 
 // GD3 -> runs a simple multiObjective DE in the ZDT1 case
 func GD3(
@@ -150,6 +183,15 @@ func GD3(
 
 	for ; p.GEN > 0; p.GEN-- {
 		trial := population.Copy() // trial population slice
+
+		// leaves first the non border points in the rank zero
+		sort.SliceStable(genRankZero, func(i, j int) bool {
+			// smaller than max float32
+			if genRankZero[i].crwdst >= math.MaxFloat32-10.0 {
+				return false
+			}
+			return genRankZero[i].crwdst > genRankZero[j].crwdst
+		})
 		for i, t := range trial {
 			v, err := variant.fn(
 				population,
@@ -190,6 +232,23 @@ func GD3(
 
 		population, genRankZero = reduceByCrowdDistance(population, p.NP)
 		bestElems = append(bestElems, genRankZero...)
+
+		// testing the filter of the bestElemetns here
+		calculateCrwdDist(bestElems)
+
+		// leaves first the non border points in the rank zero
+		sort.SliceStable(bestElems, func(i, j int) bool {
+			// smaller than max float32
+			if bestElems[i].crwdst >= math.MaxFloat32-10.0 {
+				return false
+			}
+			return bestElems[i].crwdst > bestElems[j].crwdst
+		})
+
+		// puts a cap on the solution's amount of points
+		if len(bestElems) > p.NP {
+			bestElems = bestElems[:p.NP]
+		}
 
 		writeGeneration(population, writer)
 

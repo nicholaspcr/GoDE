@@ -62,7 +62,7 @@ func reduceByCrowdDistance(elems Elements, NP int) (reduceElements, rankZero Ele
 	for _, rank := range ranks {
 		elems = append(elems, rank...)
 		if len(elems) > NP {
-			elems = elems[:50]
+			elems = elems[:NP]
 			break
 		}
 	}
@@ -183,7 +183,7 @@ func calculateCrwdDist(elems Elements) {
 		objMin := elems[0].objs[m]
 		objMax := elems[len(elems)-1].objs[m]
 		elems[0].crwdst = math.MaxFloat64
-		elems[len(elems)-1].crwdst = math.MaxFloat64
+		elems[len(elems)-1].crwdst = math.MaxFloat32
 		for i := 1; i < len(elems)-1; i++ {
 			distance := elems[i+1].objs[m] - elems[i-1].objs[m]
 			if math.Abs(objMax-objMin) != 0 {

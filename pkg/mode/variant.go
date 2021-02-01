@@ -73,7 +73,7 @@ var rand1 VariantFn = VariantFn{
 var rand2 VariantFn = VariantFn{
 	fn: func(elems, rankZero Elements, p varParams) (Elem, error) {
 		// generating random indices different from current pos
-		ind := make([]int, 7)
+		ind := make([]int, 6)
 		ind[0] = p.currPos
 		err := generateIndices(1, len(elems), ind)
 		if err != nil {
@@ -184,17 +184,18 @@ var pbest VariantFn = VariantFn{
 	fn: func(elems, rankZero Elements, p varParams) (Elem, error) {
 		ind := make([]int, 3)
 		ind[0] = p.currPos
+
 		err := generateIndices(1, len(elems), ind)
+		if err != nil {
+			return Elem{}, errors.New("insufficient size for the population, must me equal or greater than 5")
+		}
+
 		var randBestIndex int
 		pThRankZeroSz := int(math.Floor(float64(len(rankZero)) * p.P))
 		if pThRankZeroSz == 0 {
 			randBestIndex = 0
 		} else {
 			randBestIndex = rand.Int() % pThRankZeroSz
-		}
-
-		if err != nil {
-			return Elem{}, errors.New("insufficient size for the population, must me equal or greater than 5")
 		}
 
 		arr := make([]float64, p.DIM)

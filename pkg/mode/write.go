@@ -70,7 +70,33 @@ func writeResult(path string, elems Elements) {
 	writer := csv.NewWriter(f)
 	writer.Comma = '\t'
 	checkError(err)
-	writeHeader(elems, writer)
-	writeGeneration(elems, writer)
+
+	// header
+	headerData := []string{"elems"}
+	collumn := 'A'
+	for range elems[0].objs {
+		headerData = append(headerData, string(collumn))
+		collumn++
+	}
+	err = writer.Write(headerData)
+	if err != nil {
+		log.Fatal("Couldn't write file")
+	}
+	writer.Flush()
+
+	bodyData := [][]string{}
+	for i := range elems {
+		tmpData := []string{}
+		tmpData = append(tmpData, fmt.Sprintf("elem[%d]", i))
+		for _, p := range elems[i].objs {
+			tmpData = append(tmpData, fmt.Sprint(p))
+		}
+		bodyData = append(bodyData, tmpData)
+	}
+	err = writer.WriteAll(bodyData)
+	if err != nil {
+		log.Fatal("Couldn't write file")
+	}
+	writer.Flush()
 	f.Close()
 }

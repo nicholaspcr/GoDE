@@ -8,10 +8,3 @@ A differential evolution experiment written in golang.
 This is a work in progress, the project itself has two purposes.
   - Learning how to use golang efficiently
   - Making available the packages containing the implementation of the differential evolution.
-
-### Todo
-
-  - [x] modularize functions
-  - [x] use cobra for subcommands and flags
-  - [ ] figure out how to properly write the files 
-  - [ ] look up testing

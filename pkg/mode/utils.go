@@ -82,17 +82,17 @@ func fastNonDominatedRanking(elems Elements) map[int]Elements {
 
 	for p := 0; p < len(elems)-1; p++ {
 		for q := p + 1; q < len(elems); q++ {
-			// dominanceTestResult := dominanceTest(&elems[p].objs, &elems[q].objs)
-			// if dominanceTestResult == -1 {
-			// 	ithDominated[p] = append(ithDominated[p], elems[q])
-			// } else if dominanceTestResult == 1 {
-			// 	dominatingIth[p]++
-			// }
-			if elems[p].dominates(elems[q]) {
+			dominanceTestResult := dominanceTest(&elems[p].objs, &elems[q].objs)
+			if dominanceTestResult == -1 {
 				ithDominated[p] = append(ithDominated[p], elems[q])
-			} else if elems[q].dominates(elems[p]) {
+			} else if dominanceTestResult == 1 {
 				dominatingIth[p]++
 			}
+			// if elems[p].dominates(elems[q]) {
+			// 	ithDominated[p] = append(ithDominated[p], elems[q])
+			// } else if elems[q].dominates(elems[p]) {
+			// 	dominatingIth[p]++
+			// }
 		}
 		if dominatingIth[p] == 0 {
 			fronts[0] = append(fronts[0], p)
@@ -142,27 +142,24 @@ func dominanceTest(x, y *[]float64) int {
 
 // filterDominated -> returns elements that are not dominated in the set
 func filterDominated(elems Elements) (nonDominated, dominated Elements) {
-	sort.Sort(byFirstObj(elems))
-	nonDom := make(Elements, 0)
-	dom := make(Elements, 0)
-	for i := len(elems) - 1; i >= 0; i-- {
-		flag := true
-		for j, second := range elems {
-			if i == j {
-				continue
-			}
-			if second.dominates(elems[i]) {
-				flag = false
-				break
+	dominatingIth := make([]int, len(elems))
+	nonDominated = make(Elements, 0)
+	dominated = make(Elements, 0)
+
+	for p := 0; p < len(elems)-1; p++ {
+		for q := p + 1; q < len(elems); q++ {
+			// q dominates the p element
+			if dominanceTest(&elems[p].objs, &elems[q].objs) == 1 {
+				dominatingIth[p]++
 			}
 		}
-		if flag {
-			nonDom = append(nonDom, elems[i])
+		if dominatingIth[p] == 0 {
+			nonDominated = append(nonDominated, elems[p])
 		} else {
-			dom = append(dom, elems[i])
+			dominated = append(dominated, elems[p])
 		}
 	}
-	return nonDom, dom
+	return nonDominated, dominated
 }
 
 // assumes that the slice is composed of non dominated elements

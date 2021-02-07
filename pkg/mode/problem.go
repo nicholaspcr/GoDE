@@ -477,7 +477,7 @@ var dtlz6 = ProblemFn{
 
 		return nil
 	},
-	Name: "dtlz7",
+	Name: "dtlz6",
 }
 
 // DTLZ7 multiObjective testcase

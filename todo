@@ -7,58 +7,25 @@ Todo:
             - sortear aleatóriamente um elemento do rank 1
         - x_pbest é um escolhido aleatoriamente entre os p% melhores de rank 1
             - decidir:
-                5%, 10%, 15%, 20% -> P different values
+                - 5%, 10%, 15%, 20% -> P different values
+                ///// 
+                - não tendo elementos suficientes no rankZero pegar dos ranks subsequentes
     - hypervolume:
         - rodar todas as variantes em todos os problemas, 30x cada um.
             -> armazenando o maiores valores de F[0],F[1] e f[2] de cada problema.
             -> considerando todas as gerações.
 
 
+
+
+
+
 maximum values found in 30 execs:
 - default values
     - np = 100
     - gen = 300
+    - execs = 30
     - dim = 12 ( with the exception of the dtlz1, that is 7 )
     - CR = 0.9
     - F = 0.5
     - variables values [0,1]
-
--DTLZ1
-    -RAND_1:
-        [505.9430821325077 529.5783239940317 519.6206172754897]
-    -RAND_2:
-        [500.37865993029044 513.1333158433846 499.8024948165335]
-    -BEST_1:
-        [513.4182992390643 512.4094178713706 514.9289386848102]
-    -BEST_2:
-        [513.0109188852198 501.8221846658215 503.575167123148]
-    -CURRENT_TO_BEST_1:
-        
-    -P-BEST_0.05:
-        
-    -P-BEST_0.10:
-        
-    -P-BEST_0.15:
-        
-    -P-BEST_0.20:
-        
-
--DTLZ2
-    -RAND_1:
-
-    -RAND_2:
-        
-    -BEST_1:
-        
-    -BEST_2:
-        
-    -CURRENT_TO_BEST_1:
-        
-    -P-BEST_0.05:
-        
-    -P-BEST_0.10:
-        
-    -P-BEST_0.15:
-        
-    -P-BEST_0.20:
-        

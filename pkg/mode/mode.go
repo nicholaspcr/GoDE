@@ -168,8 +168,8 @@ func GD3(
 	}
 
 	if f != nil {
-		writeHeader(population, writer)
-		writeGeneration(population, writer)
+		// writeHeader(population, writer)
+		// writeGeneration(population, writer)
 	}
 
 	// stores the rank[0] of each generation
@@ -178,11 +178,11 @@ func GD3(
 	// it is used in the variants best1, best2 and currToBest1
 	_, genRankZero := filterDominated(population)
 
-	for ; p.GEN > 0; p.GEN-- {
+	for g := 0; g < p.GEN; g++ {
 		trial := population.Copy() // trial population slice
 
 		for i, t := range trial {
-			v, err := variant.fn(
+			vr, err := variant.fn(
 				population,
 				genRankZero,
 				varParams{
@@ -194,10 +194,11 @@ func GD3(
 
 			// CROSS OVER
 			currInd := rand.Int() % p.DIM
+			randLucky := rand.Int() % p.DIM
 			for j := 0; j < p.DIM; j++ {
 				changeProb := rand.Float64()
-				if changeProb < p.CR || currInd == p.DIM-1 {
-					t.X[currInd] = v.X[currInd]
+				if changeProb < p.CR || currInd == randLucky {
+					t.X[currInd] = vr.X[currInd]
 				}
 				if t.X[currInd] < p.FLOOR {
 					t.X[currInd] = p.FLOOR
@@ -223,7 +224,7 @@ func GD3(
 		bestElems = append(bestElems, genRankZero...)
 
 		// if f != nil {
-		writeGeneration(population, writer)
+		// writeGeneration(population, writer)
 		// }
 
 		// checks for the biggest objective

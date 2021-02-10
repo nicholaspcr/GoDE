@@ -51,15 +51,3 @@ func (e Elements) Copy() Elements {
 	}
 	return arr
 }
-
-type byCrwdst Elements
-
-func (x byCrwdst) Len() int           { return len(x) }
-func (x byCrwdst) Less(i, j int) bool { return x[i].crwdst > x[j].crwdst }
-func (x byCrwdst) Swap(i, j int)      { t := x[i].Copy(); x[i] = x[j].Copy(); x[j] = t }
-
-type byFirstObj Elements
-
-func (x byFirstObj) Len() int           { return len(x) }
-func (x byFirstObj) Less(i, j int) bool { return x[i].objs[0] < x[j].objs[0] }
-func (x byFirstObj) Swap(i, j int)      { t := x[i].Copy(); x[i] = x[j].Copy(); x[j] = t }

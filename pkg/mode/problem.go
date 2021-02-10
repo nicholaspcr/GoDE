@@ -266,21 +266,25 @@ var dtlz1 = ProblemFn{
 		}
 
 		k := len(e.X) - M + 1
-		g := 0.0
-		varSz := len(e.X)
-		for _, v := range e.X[varSz-k:] {
-			g += (v-0.5)*(v-0.5) - math.Cos(20.0*math.Pi*(v-0.5))
+		evalG := func(x []float64) float64 {
+			q := 0.0
+			for _, v := range x {
+				q += (v-0.5)*(v-0.5) - math.Cos(20.0*math.Pi*(v-0.5))
+			}
+			return 100.0 * (float64(k) + q)
 		}
-		g = 100 * (float64(k) + g)
+		g := evalG(e.X[len(e.X)-k:])
 		objs := make([]float64, M)
-		for i := range objs {
-			objs[i] = 0.5 * (1.0 + g)
+
+		for i := 0; i < M; i++ {
+			prod := (1 + g)
 			for j := 0; j < M-(i+1); j++ {
-				objs[i] *= e.X[j]
+				prod *= e.X[j]
 			}
 			if i != 0 {
-				objs[i] *= 1 - e.X[M-(i+1)]
+				prod *= 1 - e.X[M-(i+1)]
 			}
+			objs[i] = prod
 		}
 		e.objs = make([]float64, M)
 		copy(e.objs, objs)
@@ -334,22 +338,27 @@ var dtlz3 = ProblemFn{
 		}
 
 		k := len(e.X) - M + 1
-		g := 0.0
-		varSz := len(e.X)
-		for _, v := range e.X[varSz-k:] {
-			g += (v-0.5)*(v-0.5) - math.Cos(20*math.Pi*(v-0.5))
+		evalG := func(x []float64) float64 {
+			q := 0.0
+			for _, v := range x {
+				q += (v-0.5)*(v-0.5) - math.Cos(20.0*math.Pi*(v-0.5))
+			}
+			return 100.0 * (float64(k) + q)
 		}
-		g = 100 * (float64(k) + g)
+		g := evalG(e.X[len(e.X)-k:])
 		objs := make([]float64, M)
-		for i := range objs {
-			objs[i] = (1.0 + g)
+
+		for i := 0; i < M; i++ {
+			prod := (1 + g)
 			for j := 0; j < M-(i+1); j++ {
-				objs[i] *= math.Cos(e.X[j] * 0.5 * math.Pi)
+				prod *= math.Cos(e.X[j] * 0.5 * math.Pi)
 			}
 			if i != 0 {
-				objs[i] *= math.Sin(e.X[M-(i+1)] * 0.5 * math.Pi)
+				prod *= math.Sin(e.X[M-(i+1)] * 0.5 * math.Pi)
 			}
+			objs[i] = prod
 		}
+
 		// puts new objectives into the elem
 		e.objs = make([]float64, len(objs))
 		copy(e.objs, objs)

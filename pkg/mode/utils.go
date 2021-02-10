@@ -48,51 +48,47 @@ func checkError(e error) {
 // returns NP elements filtered by rank and crwod distance
 func reduceByCrowdDistance(elems Elements, NP int) (reduceElements, rankZero Elements) {
 	ranks := fastNonDominatedRanking(elems)
-	totalRanksElements := 0
+	qtdElems := 0
 	for _, r := range ranks {
-		totalRanksElements += len(r)
+		qtdElems += len(r)
+	}
+	if qtdElems < NP {
+		log.Println("elems -> ", qtdElems)
+		log.Fatal("less elements than NP")
 	}
 	elems = make(Elements, 0)
-	//sorting each rank by crowd distance
+
 	for i := range ranks {
 		calculateCrwdDist(ranks[i])
-		sort.Sort(byCrwdst(ranks[i]))
-	}
+		sort.SliceStable(ranks[i], func(l, r int) bool {
+			return ranks[i][l].crwdst > ranks[i][r].crwdst
+		})
 
-	for _, rank := range ranks {
-		elems = append(elems, rank...)
+		elems = append(elems, ranks[i]...)
 		if len(elems) > NP {
 			elems = elems[:NP]
 			break
 		}
-	}
-
-	// todo: REVIEW quick fix for the ranking generating less than np elements
-	for len(elems) < NP {
-		randIndex := rand.Int() % len(elems)
-		elems = append(elems, elems[randIndex])
 	}
 	return elems, ranks[0]
 }
 
 func fastNonDominatedRanking(elems Elements) map[int]Elements {
 	dominatingIth := make([]int, len(elems))
-	ithDominated := make([][]Elem, len(elems))
+	ithDominated := make([][]int, len(elems))
 	fronts := make([][]int, len(elems)+1)
 
-	for p := 0; p < len(elems)-1; p++ {
-		for q := p + 1; q < len(elems); q++ {
+	for p := 0; p < len(elems); p++ {
+		for q := 0; q < len(elems); q++ {
+			if p == q {
+				continue
+			}
 			dominanceTestResult := dominanceTest(&elems[p].objs, &elems[q].objs)
 			if dominanceTestResult == -1 {
-				ithDominated[p] = append(ithDominated[p], elems[q])
+				ithDominated[p] = append(ithDominated[p], q)
 			} else if dominanceTestResult == 1 {
 				dominatingIth[p]++
 			}
-			// if elems[p].dominates(elems[q]) {
-			// 	ithDominated[p] = append(ithDominated[p], elems[q])
-			// } else if elems[q].dominates(elems[p]) {
-			// 	dominatingIth[p]++
-			// }
 		}
 		if dominatingIth[p] == 0 {
 			fronts[0] = append(fronts[0], p)
@@ -100,8 +96,8 @@ func fastNonDominatedRanking(elems Elements) map[int]Elements {
 	}
 
 	for i := 1; i < len(fronts); i++ {
-		for p := range fronts[i-1] {
-			for q := range ithDominated[p] {
+		for _, p := range fronts[i-1] {
+			for _, q := range ithDominated[p] {
 				dominatingIth[q]--
 				if dominatingIth[q] == 0 {
 					fronts[i] = append(fronts[i], q)
@@ -130,7 +126,8 @@ func dominanceTest(x, y *[]float64) int {
 				return 0
 			}
 			result = 1
-		} else if (*y)[i] > (*x)[i] {
+		}
+		if (*y)[i] > (*x)[i] {
 			if result == 1 {
 				return 0
 			}

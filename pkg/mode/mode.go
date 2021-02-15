@@ -6,7 +6,6 @@ import (
 	"math"
 	"math/rand"
 	"os"
-	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -29,7 +28,7 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn, disablePl
 
 	startTimer := time.Now()                 //	timer start
 	rand.Seed(time.Now().UTC().UnixNano())   // Rand Seed
-	population := generatePopulation(params) // random generated population
+	population := GeneratePopulation(params) // random generated population
 
 	lastGenChan := make(chan Elements, params.EXECS) // channel to get elems related to the last gen
 	rankedChan := make(chan Elements, params.EXECS)  // channel to get elems related to rank[0] pareto
@@ -81,7 +80,7 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn, disablePl
 		var lastGenPareto Elements
 		for v := range lastGenChan {
 			lastGenPareto = append(lastGenPareto, v...)
-			lastGenPareto, _ = filterDominated(lastGenPareto)
+			lastGenPareto, _ = FilterDominated(lastGenPareto)
 			rand.Shuffle(len(lastGenPareto), func(i, j int) {
 				lastGenPareto[i], lastGenPareto[j] = lastGenPareto[j].Copy(), lastGenPareto[i].Copy()
 			})
@@ -99,12 +98,12 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn, disablePl
 			counter++
 
 			rankedPareto = append(rankedPareto, v...)
-			rankedPareto, _ = filterDominated(rankedPareto)
+			rankedPareto, _ = FilterDominated(rankedPareto)
 			rand.Shuffle(len(rankedPareto), func(i, j int) {
 				rankedPareto[i], rankedPareto[j] = rankedPareto[j].Copy(), rankedPareto[i].Copy()
 			})
-			if len(rankedPareto) > 5000 {
-				rankedPareto = rankedPareto[:5000]
+			if len(rankedPareto) > 1000 {
+				rankedPareto = rankedPareto[:1000]
 			}
 		}
 
@@ -185,21 +184,9 @@ func GD3(
 	var bestInGen Elements
 
 	for g := 0; g < p.GEN; g++ {
-		trial := population.Copy() // trial population slice
+		genRankZero, _ = FilterDominated(population)
 
-		genRankZero, _ = filterDominated(population)
-		sort.SliceStable(genRankZero, func(i, j int) bool {
-			if genRankZero[i].crwdst > genRankZero[j].crwdst {
-				if genRankZero[i].crwdst > (math.MaxFloat32 - 10.0) {
-					return false
-				}
-				return true
-			} else {
-				return false
-			}
-		})
-
-		for i := range trial {
+		for i := 0; i < len(population); i++ {
 			vr, err := variant.fn(
 				population,
 				genRankZero,
@@ -211,35 +198,45 @@ func GD3(
 				})
 			checkError(err)
 
+			// trial element
+			trial := population[i].Copy()
+
 			// CROSS OVER
 			currInd := rand.Int() % p.DIM
 			randLucky := rand.Int() % p.DIM
 			for j := 0; j < p.DIM; j++ {
 				changeProb := rand.Float64()
 				if changeProb < p.CR || currInd == randLucky {
-					trial[i].X[currInd] = vr.X[currInd]
+					trial.X[currInd] = vr.X[currInd]
 				}
-				if trial[i].X[currInd] < p.FLOOR {
-					trial[i].X[currInd] = p.FLOOR
+				if trial.X[currInd] < p.FLOOR {
+					trial.X[currInd] = p.FLOOR
 				}
-				if trial[i].X[currInd] > p.CEIL {
-					trial[i].X[currInd] = p.CEIL
+				if trial.X[currInd] > p.CEIL {
+					trial.X[currInd] = p.CEIL
 				}
 				currInd = (currInd + 1) % p.DIM
 			}
 
-			evalErr := evaluate(&trial[i], p.M)
+			evalErr := evaluate(&trial, p.M)
 			checkError(evalErr)
 
 			// SELECTION
-			if trial[i].dominates(population[i]) {
-				population[i] = trial[i].Copy()
-			} else if !population[i].dominates(trial[i]) {
-				population = append(population, trial[i].Copy())
+			// if trial.dominates(population[i]) {
+			// 	population[i] = trial.Copy()
+			// } else if !population[i].dominates(trial) {
+			// 	population = append(population, trial.Copy())
+			// }
+
+			comp := DominanceTest(&population[i].objs, &trial.objs)
+			if comp == 1 {
+				population[i] = trial.Copy()
+			} else if comp == 0 {
+				population = append(population, trial.Copy())
 			}
 		}
 
-		population, bestInGen = reduceByCrowdDistance(population, p.NP)
+		population, bestInGen = ReduceByCrowdDistance(population, p.NP)
 		bestElems = append(bestElems, bestInGen...)
 
 		writeGeneration(population, writer)

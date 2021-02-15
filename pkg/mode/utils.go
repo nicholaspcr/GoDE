@@ -8,7 +8,8 @@ import (
 	"sort"
 )
 
-func generatePopulation(p Params) Elements {
+// GeneratePopulation - creates a population without objs calculates
+func GeneratePopulation(p Params) Elements {
 	ret := make(Elements, p.NP)
 	constant := p.CEIL - p.FLOOR // range between floor and ceiling
 	for i := 0; i < p.NP; i++ {
@@ -45,9 +46,9 @@ func checkError(e error) {
 	}
 }
 
-// returns NP elements filtered by rank and crwod distance
-func reduceByCrowdDistance(elems Elements, NP int) (reduceElements, rankZero Elements) {
-	ranks := fastNonDominatedRanking(elems)
+// ReduceByCrowdDistance - returns NP elements filtered by rank and crwod distance
+func ReduceByCrowdDistance(elems Elements, NP int) (reduceElements, rankZero Elements) {
+	ranks := FastNonDominatedRanking(elems)
 
 	qtdElems := 0
 	for _, r := range ranks {
@@ -60,7 +61,7 @@ func reduceByCrowdDistance(elems Elements, NP int) (reduceElements, rankZero Ele
 
 	elems = make(Elements, 0)
 	for i := range ranks {
-		calculateCrwdDist(ranks[i])
+		CalculateCrwdDist(ranks[i])
 		sort.SliceStable(ranks[i], func(l, r int) bool {
 			return ranks[i][l].crwdst > ranks[i][r].crwdst
 		})
@@ -74,7 +75,8 @@ func reduceByCrowdDistance(elems Elements, NP int) (reduceElements, rankZero Ele
 	return elems, ranks[0]
 }
 
-func fastNonDominatedRanking(elems Elements) map[int]Elements {
+// FastNonDominatedRanking - ranks the elements and returns a map with elements per rank
+func FastNonDominatedRanking(elems Elements) map[int]Elements {
 	dominatingIth := make([]int, len(elems))
 	ithDominated := make([][]int, len(elems))
 	fronts := make([][]int, len(elems)+1)
@@ -84,7 +86,7 @@ func fastNonDominatedRanking(elems Elements) map[int]Elements {
 			if p == q {
 				continue
 			}
-			dominanceTestResult := dominanceTest(&elems[p].objs, &elems[q].objs)
+			dominanceTestResult := DominanceTest(&elems[p].objs, &elems[q].objs)
 			if dominanceTestResult == -1 {
 				ithDominated[p] = append(ithDominated[p], q)
 			} else if dominanceTestResult == 1 {
@@ -116,12 +118,12 @@ func fastNonDominatedRanking(elems Elements) map[int]Elements {
 	return rankedSubList
 }
 
-// dominanceTest
+// DominanceTest - results meanings:
 //
 //  - '-1': x is best
 //  - '1': y is best
 //  - '0': nobody dominates
-func dominanceTest(x, y *[]float64) int {
+func DominanceTest(x, y *[]float64) int {
 	result := 0
 	for i := range *x {
 		if (*x)[i] > (*y)[i] {
@@ -140,33 +142,37 @@ func dominanceTest(x, y *[]float64) int {
 	return result
 }
 
-// filterDominated -> returns elements that are not dominated in the set
-func filterDominated(elems Elements) (nonDominated, dominated Elements) {
-	dominatingIth := make([]int, len(elems))
+// FilterDominated -> returns elements that are not dominated in the set
+func FilterDominated(elems Elements) (nonDominated, dominated Elements) {
 	nonDominated = make(Elements, 0)
 	dominated = make(Elements, 0)
 
 	for p := 0; p < len(elems); p++ {
+		counter := 0
 		for q := 0; q < len(elems); q++ {
 			if p == q {
 				continue
 			}
 			// q dominates the p element
-			if dominanceTest(&elems[p].objs, &elems[q].objs) == 1 {
-				dominatingIth[p]++
+			if DominanceTest(&elems[p].objs, &elems[q].objs) == 1 {
+				counter++
 			}
 		}
-		if dominatingIth[p] == 0 {
+		if counter == 0 {
 			nonDominated = append(nonDominated, elems[p].Copy())
 		} else {
 			dominated = append(dominated, elems[p].Copy())
 		}
 	}
+
+	rand.Shuffle(len(nonDominated), func(i, j int) {
+		nonDominated[i], nonDominated[j] = nonDominated[j], nonDominated[i]
+	})
 	return nonDominated, dominated
 }
 
-// assumes that the slice is composed of non dominated elements
-func calculateCrwdDist(elems Elements) {
+// CalculateCrwdDist - assumes that the slice is composed of non dominated elements
+func CalculateCrwdDist(elems Elements) {
 	if len(elems) <= 3 {
 		return
 	}
@@ -186,7 +192,7 @@ func calculateCrwdDist(elems Elements) {
 		elems[len(elems)-1].crwdst = math.MaxFloat32
 		for i := 1; i < len(elems)-1; i++ {
 			distance := elems[i+1].objs[m] - elems[i-1].objs[m]
-			if math.Abs(objMax-objMin) != 0 {
+			if math.Abs(objMax-objMin) > 0 {
 				distance = distance / (objMax - objMin)
 			}
 			elems[i].crwdst += distance

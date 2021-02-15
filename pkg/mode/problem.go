@@ -265,26 +265,26 @@ var dtlz1 = ProblemFn{
 			return errors.New("need to have an M lesser than the amount of variables")
 		}
 
-		k := len(e.X) - M + 1
+		varSz := len(e.X)
+		k := varSz - M + 1
 		evalG := func(x []float64) float64 {
-			q := 0.0
+			g := 0.0
 			for _, v := range x {
-				q += (v-0.5)*(v-0.5) - math.Cos(20.0*math.Pi*(v-0.5))
+				g += (v-0.5)*(v-0.5) - math.Cos(20.0*math.Pi*(v-0.5))
 			}
-			return 100.0 * (float64(k) + q)
+			return 100.0 * (float64(k) + g)
 		}
-		g := evalG(e.X[len(e.X)-k:])
+		g := evalG(e.X[varSz-k:])
 		objs := make([]float64, M)
 
-		for i := 0; i < M; i++ {
-			prod := (1 + g)
+		for i := range objs {
+			objs[i] = (1.0 + g) * 0.5
 			for j := 0; j < M-(i+1); j++ {
-				prod *= e.X[j]
+				objs[i] *= e.X[j]
 			}
 			if i != 0 {
-				prod *= 1 - e.X[M-(i+1)]
+				objs[i] *= (1 - e.X[M-(i+1)])
 			}
-			objs[i] = prod
 		}
 		e.objs = make([]float64, M)
 		copy(e.objs, objs)
@@ -300,6 +300,8 @@ var dtlz2 = ProblemFn{
 			return errors.New("need to have an M lesser than the amount of variables")
 		}
 
+		varSz := len(e.X)
+		k := varSz - M + 1
 		evalG := func(x []float64) float64 {
 			g := 0.0
 			for _, v := range x {
@@ -307,7 +309,7 @@ var dtlz2 = ProblemFn{
 			}
 			return g
 		}
-		g := evalG(e.X[M:])
+		g := evalG(e.X[varSz-k:])
 
 		newObjs := make([]float64, M)
 		for i := 0; i < M; i++ {
@@ -337,19 +339,20 @@ var dtlz3 = ProblemFn{
 			return errors.New("need to have an M lesser than the amount of variables")
 		}
 
-		k := len(e.X) - M + 1
+		varSz := len(e.X)
+		k := varSz - M + 1
 		evalG := func(x []float64) float64 {
-			q := 0.0
+			g := 0.0
 			for _, v := range x {
-				q += (v-0.5)*(v-0.5) - math.Cos(20.0*math.Pi*(v-0.5))
+				g += math.Pow(v-0.5, 2) - math.Cos(20.0*math.Pi*(v-0.5))
 			}
-			return 100.0 * (float64(k) + q)
+			return 100.0 * (float64(k) + g)
 		}
-		g := evalG(e.X[len(e.X)-k:])
+		g := evalG(e.X[(varSz - k):])
 		objs := make([]float64, M)
 
 		for i := 0; i < M; i++ {
-			prod := (1 + g)
+			prod := (1.0 + g)
 			for j := 0; j < M-(i+1); j++ {
 				prod *= math.Cos(e.X[j] * 0.5 * math.Pi)
 			}
@@ -373,6 +376,8 @@ var dtlz4 = ProblemFn{
 		if len(e.X) <= M {
 			return errors.New("need to have an M lesser than the amount of variables")
 		}
+		varSz := len(e.X)
+		k := varSz - M + 1
 		evalG := func(x []float64) float64 {
 			g := 0.0
 			for _, v := range x {
@@ -380,7 +385,7 @@ var dtlz4 = ProblemFn{
 			}
 			return g
 		}
-		g := evalG(e.X[M:])
+		g := evalG(e.X[varSz-k:])
 
 		newObjs := make([]float64, M)
 		for i := 0; i < M; i++ {
@@ -409,6 +414,9 @@ var dtlz5 = ProblemFn{
 		if len(e.X) <= M {
 			return errors.New("need to have an M lesser than the amount of variables")
 		}
+
+		varSz := len(e.X)
+		k := varSz - M + 1
 		evalG := func(x []float64) float64 {
 			g := 0.0
 			for _, v := range x {
@@ -416,7 +424,7 @@ var dtlz5 = ProblemFn{
 			}
 			return g
 		}
-		g := evalG(e.X[M:])
+		g := evalG(e.X[varSz-k:])
 		t := math.Pi / (4.0 * (1 + g))
 
 		newObjs := make([]float64, M)
@@ -452,6 +460,9 @@ var dtlz6 = ProblemFn{
 		if len(e.X) <= M {
 			return errors.New("need to have an M lesser than the amount of variables")
 		}
+
+		varSz := len(e.X)
+		k := varSz - M + 1
 		evalG := func(x []float64) float64 {
 			g := 0.0
 			for _, v := range x {
@@ -459,7 +470,7 @@ var dtlz6 = ProblemFn{
 			}
 			return g
 		}
-		g := evalG(e.X[M:])
+		g := evalG(e.X[varSz-k:])
 		t := math.Pi / (4.0 * (1 + g))
 
 		theta := make([]float64, M-1)

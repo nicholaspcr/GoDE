@@ -6,6 +6,7 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -15,12 +16,15 @@ import (
 var writeAllPoints = true
 
 // MultiExecutions returns the pareto front of the total of 30 executions of the same problem
-func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
+func MultiExecutions(params Params, prob ProblemFn, variant VariantFn, disablePlot bool) {
 	homePath := os.Getenv("HOME")
 	paretoPath := "/.go-de/mode/paretoFront/" + prob.Name + "/" + variant.Name
 	if variant.Name == "pbest" {
 		paretoPath += "/P-" + fmt.Sprint(params.P)
 	}
+
+	fmt.Println(prob.Name)
+
 	checkFilePath(homePath, paretoPath)
 
 	startTimer := time.Now()                 //	timer start
@@ -39,7 +43,6 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 	}
 
 	var wg sync.WaitGroup // number of working go routines
-	wg.Add(params.EXECS)  // waits for len(EXECS) routines
 
 	// runs GDE3 for EXECS amount of times
 	for i := 0; i < params.EXECS; i++ {
@@ -47,12 +50,11 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 		var f *os.File
 		var err error
 
-		if writeAllPoints {
-			f, err = os.Create(filePath)
-			checkError(err)
-		} else {
-			f = nil
-		}
+		f, err = os.Create(filePath)
+		checkError(err)
+
+		wg.Add(1)
+
 		// worker
 		go func(i int) {
 			defer wg.Done()
@@ -69,61 +71,67 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn) {
 		}(i)
 	}
 	// closer
-	go func() {
-		wg.Wait()
-		close(lastGenChan)
-		close(rankedChan)
-	}()
+	fmt.Println("waiting for the executions to be done")
+	wg.Wait()
+	close(lastGenChan)
+	close(rankedChan)
 
-	// gets data from the pareto created in the last generation
-	var lastGenPareto Elements
-	for v := range lastGenChan {
-		lastGenPareto = append(lastGenPareto, v...)
-		lastGenPareto, _ = filterDominated(lastGenPareto)
-		rand.Shuffle(len(lastGenPareto), func(i, j int) {
-			lastGenPareto[i], lastGenPareto[j] = lastGenPareto[j].Copy(), lastGenPareto[i].Copy()
-		})
-		// puts a cap on the solution's amount of points
-		if len(lastGenPareto) > 500 {
-			lastGenPareto = lastGenPareto[:500]
+	if !disablePlot {
+		// gets data from the pareto created in the last generation
+		var lastGenPareto Elements
+		for v := range lastGenChan {
+			lastGenPareto = append(lastGenPareto, v...)
+			lastGenPareto, _ = filterDominated(lastGenPareto)
+			rand.Shuffle(len(lastGenPareto), func(i, j int) {
+				lastGenPareto[i], lastGenPareto[j] = lastGenPareto[j].Copy(), lastGenPareto[i].Copy()
+			})
+			// puts a cap on the solution's amount of points
+			if len(lastGenPareto) > 500 {
+				lastGenPareto = lastGenPareto[:500]
+			}
 		}
-	}
 
-	// gets data from the pareto created by rank[0] of each gen
-	var rankedPareto Elements
-	for v := range rankedChan {
-		rankedPareto = append(rankedPareto, v...)
-		rankedPareto, _ = filterDominated(rankedPareto)
-		rand.Shuffle(len(rankedPareto), func(i, j int) {
-			rankedPareto[i], rankedPareto[j] = rankedPareto[j].Copy(), rankedPareto[i].Copy()
-		})
-		if len(rankedPareto) > 5000 {
-			rankedPareto = rankedPareto[:5000]
+		counter := 0
+		// gets data from the pareto created by rank[0] of each gen
+		var rankedPareto Elements
+		for v := range rankedChan {
+			fmt.Printf("exec-%d\n", counter)
+			counter++
+
+			rankedPareto = append(rankedPareto, v...)
+			rankedPareto, _ = filterDominated(rankedPareto)
+			rand.Shuffle(len(rankedPareto), func(i, j int) {
+				rankedPareto[i], rankedPareto[j] = rankedPareto[j].Copy(), rankedPareto[i].Copy()
+			})
+			if len(rankedPareto) > 5000 {
+				rankedPareto = rankedPareto[:5000]
+			}
 		}
+
+		// checks path for the path used to store the details of each generation
+		multiExecutionsPath := "/.go-de/mode/multiExecutions/" + prob.Name + "/" + variant.Name
+		if variant.Name == "pbest" {
+			multiExecutionsPath += "/P-" + fmt.Sprint(params.P)
+		}
+		checkFilePath(homePath, multiExecutionsPath)
+
+		// results of the normal pareto
+		writeResult(
+			homePath+multiExecutionsPath+"/lastPareto.csv",
+			lastGenPareto,
+		)
+
+		// result of the ranked pareto
+		writeResult(
+			homePath+multiExecutionsPath+"/rankedPareto.csv",
+			rankedPareto,
+		)
+
+		fmt.Println(rankedPareto[0].X)
 	}
-	// checks path for the path used to store the details of each generation
-	multiExecutionsPath := "/.go-de/mode/multiExecutions/" + prob.Name + "/" + variant.Name
-	if variant.Name == "pbest" {
-		multiExecutionsPath += "/P-" + fmt.Sprint(params.P)
-	}
-	checkFilePath(homePath, multiExecutionsPath)
-
-	// results of the normal pareto
-	writeResult(
-		homePath+multiExecutionsPath+"/lastPareto.csv",
-		lastGenPareto,
-	)
-
-	// result of the ranked pareto
-	writeResult(
-		homePath+multiExecutionsPath+"/rankedPareto.csv",
-		rankedPareto,
-	)
-
 	fmt.Println("Done writing file!")
 	timeSpent := time.Since(startTimer)
 	fmt.Println("time spend on executions: ", timeSpent)
-
 	// getting biggest objs values
 	maxObjs := make([]float64, len(execsObjsValues[0]))
 	for i := range maxObjs {
@@ -167,21 +175,31 @@ func GD3(
 		checkError(err)
 	}
 
-	if f != nil {
-		// writeHeader(population, writer)
-		// writeGeneration(population, writer)
-	}
+	writeHeader(population, writer)
+	writeGeneration(population, writer)
 
 	// stores the rank[0] of each generation
 	bestElems := make(Elements, 0)
-	// genRankZero -> stores the previous generation rank zero
-	// it is used in the variants best1, best2 and currToBest1
-	_, genRankZero := filterDominated(population)
+
+	var genRankZero Elements
+	var bestInGen Elements
 
 	for g := 0; g < p.GEN; g++ {
 		trial := population.Copy() // trial population slice
 
-		for i, t := range trial {
+		genRankZero, _ = filterDominated(population)
+		sort.SliceStable(genRankZero, func(i, j int) bool {
+			if genRankZero[i].crwdst > genRankZero[j].crwdst {
+				if genRankZero[i].crwdst > (math.MaxFloat32 - 10.0) {
+					return false
+				}
+				return true
+			} else {
+				return false
+			}
+		})
+
+		for i := range trial {
 			vr, err := variant.fn(
 				population,
 				genRankZero,
@@ -189,6 +207,7 @@ func GD3(
 					currPos: i,
 					DIM:     p.DIM,
 					F:       p.F,
+					P:       p.P,
 				})
 			checkError(err)
 
@@ -198,34 +217,32 @@ func GD3(
 			for j := 0; j < p.DIM; j++ {
 				changeProb := rand.Float64()
 				if changeProb < p.CR || currInd == randLucky {
-					t.X[currInd] = vr.X[currInd]
+					trial[i].X[currInd] = vr.X[currInd]
 				}
-				if t.X[currInd] < p.FLOOR {
-					t.X[currInd] = p.FLOOR
+				if trial[i].X[currInd] < p.FLOOR {
+					trial[i].X[currInd] = p.FLOOR
 				}
-				if t.X[currInd] > p.CEIL {
-					t.X[currInd] = p.CEIL
+				if trial[i].X[currInd] > p.CEIL {
+					trial[i].X[currInd] = p.CEIL
 				}
 				currInd = (currInd + 1) % p.DIM
 			}
 
-			evalErr := evaluate(&t, p.M)
+			evalErr := evaluate(&trial[i], p.M)
 			checkError(evalErr)
 
 			// SELECTION
-			if t.dominates(population[i]) {
-				population[i] = t.Copy()
-			} else if !population[i].dominates(t) {
-				population = append(population, t.Copy())
+			if trial[i].dominates(population[i]) {
+				population[i] = trial[i].Copy()
+			} else if !population[i].dominates(trial[i]) {
+				population = append(population, trial[i].Copy())
 			}
 		}
 
-		population, genRankZero = reduceByCrowdDistance(population, p.NP)
-		bestElems = append(bestElems, genRankZero...)
+		population, bestInGen = reduceByCrowdDistance(population, p.NP)
+		bestElems = append(bestElems, bestInGen...)
 
-		// if f != nil {
-		// writeGeneration(population, writer)
-		// }
+		writeGeneration(population, writer)
 
 		// checks for the biggest objective
 		for _, p := range population {

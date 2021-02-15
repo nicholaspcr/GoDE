@@ -48,6 +48,7 @@ func checkError(e error) {
 // returns NP elements filtered by rank and crwod distance
 func reduceByCrowdDistance(elems Elements, NP int) (reduceElements, rankZero Elements) {
 	ranks := fastNonDominatedRanking(elems)
+
 	qtdElems := 0
 	for _, r := range ranks {
 		qtdElems += len(r)
@@ -56,8 +57,8 @@ func reduceByCrowdDistance(elems Elements, NP int) (reduceElements, rankZero Ele
 		log.Println("elems -> ", qtdElems)
 		log.Fatal("less elements than NP")
 	}
-	elems = make(Elements, 0)
 
+	elems = make(Elements, 0)
 	for i := range ranks {
 		calculateCrwdDist(ranks[i])
 		sort.SliceStable(ranks[i], func(l, r int) bool {
@@ -106,7 +107,7 @@ func fastNonDominatedRanking(elems Elements) map[int]Elements {
 		}
 	}
 	rankedSubList := make(map[int]Elements)
-	for i := range fronts {
+	for i := 0; i < len(fronts); i++ {
 		for m := range fronts[i] {
 			rankedSubList[i] = append(rankedSubList[i], elems[fronts[i][m]].Copy())
 		}
@@ -115,9 +116,11 @@ func fastNonDominatedRanking(elems Elements) map[int]Elements {
 	return rankedSubList
 }
 
-// x is best 	-> -1
-// y is best 	-> 	1
-// else 			->	0
+// dominanceTest
+//
+//  - '-1': x is best
+//  - '1': y is best
+//  - '0': nobody dominates
 func dominanceTest(x, y *[]float64) int {
 	result := 0
 	for i := range *x {
@@ -143,17 +146,20 @@ func filterDominated(elems Elements) (nonDominated, dominated Elements) {
 	nonDominated = make(Elements, 0)
 	dominated = make(Elements, 0)
 
-	for p := 0; p < len(elems)-1; p++ {
-		for q := p + 1; q < len(elems); q++ {
+	for p := 0; p < len(elems); p++ {
+		for q := 0; q < len(elems); q++ {
+			if p == q {
+				continue
+			}
 			// q dominates the p element
 			if dominanceTest(&elems[p].objs, &elems[q].objs) == 1 {
 				dominatingIth[p]++
 			}
 		}
 		if dominatingIth[p] == 0 {
-			nonDominated = append(nonDominated, elems[p])
+			nonDominated = append(nonDominated, elems[p].Copy())
 		} else {
-			dominated = append(dominated, elems[p])
+			dominated = append(dominated, elems[p].Copy())
 		}
 	}
 	return nonDominated, dominated

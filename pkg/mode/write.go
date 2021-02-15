@@ -8,7 +8,6 @@ import (
 	"strings"
 )
 
-// todo manage interfaces with type
 type fileManager struct {
 	f *os.File
 }

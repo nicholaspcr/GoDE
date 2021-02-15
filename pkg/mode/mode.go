@@ -62,7 +62,7 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn, disablePl
 				rankedChan,
 				&execsObjsValues[i],
 				params,
-				prob.fn,
+				prob.Fn,
 				variant,
 				population.Copy(),
 				f,
@@ -228,7 +228,7 @@ func GD3(
 			// 	population = append(population, trial.Copy())
 			// }
 
-			comp := DominanceTest(&population[i].objs, &trial.objs)
+			comp := DominanceTest(&population[i].Objs, &trial.Objs)
 			if comp == 1 {
 				population[i] = trial.Copy()
 			} else if comp == 0 {
@@ -243,9 +243,9 @@ func GD3(
 
 		// checks for the biggest objective
 		for _, p := range population {
-			for i := range p.objs {
-				if p.objs[i] > (*maximumObjs)[i] {
-					(*maximumObjs)[i] = p.objs[i]
+			for i := range p.Objs {
+				if p.Objs[i] > (*maximumObjs)[i] {
+					(*maximumObjs)[i] = p.Objs[i]
 				}
 			}
 		}

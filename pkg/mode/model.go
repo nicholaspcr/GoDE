@@ -9,31 +9,31 @@ type Params struct {
 // Elem -> Element of population
 type Elem struct {
 	X      []float64
-	objs   []float64
-	crwdst float64
+	Objs   []float64
+	Crwdst float64
 }
 
 // Copy the entire struct
 func (e *Elem) Copy() Elem {
 	var ret Elem
 	ret.X = make([]float64, len(e.X))
-	ret.objs = make([]float64, len(e.objs))
+	ret.Objs = make([]float64, len(e.Objs))
 	copy(ret.X, e.X)
-	copy(ret.objs, e.objs)
-	ret.crwdst = e.crwdst
+	copy(ret.Objs, e.Objs)
+	ret.Crwdst = e.Crwdst
 	return ret
 }
 
 func (e *Elem) dominates(other Elem) bool {
-	if len(e.objs) != len(other.objs) {
+	if len(e.Objs) != len(other.Objs) {
 		return false
 	}
 	dominates := false
-	for i := range e.objs {
-		if e.objs[i] > other.objs[i] {
+	for i := range e.Objs {
+		if e.Objs[i] > other.Objs[i] {
 			return false
 		}
-		if e.objs[i] < other.objs[i] {
+		if e.Objs[i] < other.Objs[i] {
 			dominates = true
 		}
 	}

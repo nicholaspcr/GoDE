@@ -8,7 +8,7 @@ import (
 
 // ProblemFn definition of the test case functions
 type ProblemFn struct {
-	fn   func(e *Elem, M int) error
+	Fn   func(e *Elem, M int) error
 	Name string
 }
 
@@ -42,7 +42,7 @@ func GetProblemByName(Name string) ProblemFn {
 
 // ZDT1 -> bi-objetive evaluation
 var zdt1 = ProblemFn{
-	fn: func(e *Elem, M int) error {
+	Fn: func(e *Elem, M int) error {
 		if len(e.X) < 2 {
 			return errors.New("Need at least two variables/dimensions")
 		}
@@ -70,8 +70,8 @@ var zdt1 = ProblemFn{
 		newObjs = append(newObjs, g*h)
 
 		// puts new objectives into the elem
-		e.objs = make([]float64, len(newObjs))
-		copy(e.objs, newObjs)
+		e.Objs = make([]float64, len(newObjs))
+		copy(e.Objs, newObjs)
 
 		return nil
 	},
@@ -80,7 +80,7 @@ var zdt1 = ProblemFn{
 
 // ZDT2 -> bi-objetive evaluation
 var zdt2 = ProblemFn{
-	fn: func(e *Elem, M int) error {
+	Fn: func(e *Elem, M int) error {
 		if len(e.X) < 2 {
 			return errors.New("Need at least two variables/dimensions")
 		}
@@ -104,8 +104,8 @@ var zdt2 = ProblemFn{
 		newObjs = append(newObjs, g*h)
 
 		// puts new objectives into the elem
-		e.objs = make([]float64, len(newObjs))
-		copy(e.objs, newObjs)
+		e.Objs = make([]float64, len(newObjs))
+		copy(e.Objs, newObjs)
 
 		return nil
 	},
@@ -114,7 +114,7 @@ var zdt2 = ProblemFn{
 
 // ZDT3 -> bi-objetive evaluation
 var zdt3 = ProblemFn{
-	fn: func(e *Elem, M int) error {
+	Fn: func(e *Elem, M int) error {
 		if len(e.X) < 2 {
 			return errors.New("Need at least two variables/dimensions")
 		}
@@ -140,8 +140,8 @@ var zdt3 = ProblemFn{
 		newObjs = append(newObjs, g*h)
 
 		// puts new objectives into the elem
-		e.objs = make([]float64, len(newObjs))
-		copy(e.objs, newObjs)
+		e.Objs = make([]float64, len(newObjs))
+		copy(e.Objs, newObjs)
 
 		return nil
 	},
@@ -150,7 +150,7 @@ var zdt3 = ProblemFn{
 
 // ZDT4 -> bi-objetive evaluation
 var zdt4 = ProblemFn{
-	fn: func(e *Elem, M int) error {
+	Fn: func(e *Elem, M int) error {
 		if len(e.X) < 2 {
 			return errors.New("Need at least two variables/dimensions")
 		}
@@ -174,8 +174,8 @@ var zdt4 = ProblemFn{
 		newObjs = append(newObjs, g*h)
 
 		// puts new objectives into the elem
-		e.objs = make([]float64, len(newObjs))
-		copy(e.objs, newObjs)
+		e.Objs = make([]float64, len(newObjs))
+		copy(e.Objs, newObjs)
 
 		return nil
 	},
@@ -184,7 +184,7 @@ var zdt4 = ProblemFn{
 
 // ZDT6 -> bi-objetive evaluation
 var zdt6 = ProblemFn{
-	fn: func(e *Elem, M int) error {
+	Fn: func(e *Elem, M int) error {
 		if len(e.X) < 2 {
 			return errors.New("Need at least two variables/dimensions")
 		}
@@ -216,8 +216,8 @@ var zdt6 = ProblemFn{
 		newObjs = append(newObjs, G*H)
 
 		// puts new objectives into the elem
-		e.objs = make([]float64, len(newObjs))
-		copy(e.objs, newObjs)
+		e.Objs = make([]float64, len(newObjs))
+		copy(e.Objs, newObjs)
 
 		return nil
 	},
@@ -227,7 +227,7 @@ var zdt6 = ProblemFn{
 // VNT1 -> https://ti.arc.nasa.gov/m/pub-archive/archive/1163.pdf
 // VNT1 -> recebe 2 variaveis e otimiza 3 funções objetivo
 var vnt1 = ProblemFn{
-	fn: func(e *Elem, M int) error {
+	Fn: func(e *Elem, M int) error {
 		if len(e.X) != 2 {
 			return errors.New("Need at have only two variables/dimensions")
 		}
@@ -245,8 +245,8 @@ var vnt1 = ProblemFn{
 		newObjs = append(newObjs, f3)
 
 		// puts new objectives into the elem
-		e.objs = make([]float64, len(newObjs))
-		copy(e.objs, newObjs)
+		e.Objs = make([]float64, len(newObjs))
+		copy(e.Objs, newObjs)
 
 		return nil
 	},
@@ -260,7 +260,7 @@ https://pymoo.org/problems/many/dtlz.html
 
 // DTLZ1 multiObjective testcase
 var dtlz1 = ProblemFn{
-	fn: func(e *Elem, M int) error {
+	Fn: func(e *Elem, M int) error {
 		if len(e.X) <= M {
 			return errors.New("need to have an M lesser than the amount of variables")
 		}
@@ -286,8 +286,8 @@ var dtlz1 = ProblemFn{
 				objs[i] *= (1 - e.X[M-(i+1)])
 			}
 		}
-		e.objs = make([]float64, M)
-		copy(e.objs, objs)
+		e.Objs = make([]float64, M)
+		copy(e.Objs, objs)
 		return nil
 	},
 	Name: "dtlz1",
@@ -295,7 +295,7 @@ var dtlz1 = ProblemFn{
 
 // DTLZ2  multiObjective testcase
 var dtlz2 = ProblemFn{
-	fn: func(e *Elem, M int) error {
+	Fn: func(e *Elem, M int) error {
 		if len(e.X) <= M {
 			return errors.New("need to have an M lesser than the amount of variables")
 		}
@@ -324,8 +324,8 @@ var dtlz2 = ProblemFn{
 		}
 
 		// puts new objectives into the elem
-		e.objs = make([]float64, len(newObjs))
-		copy(e.objs, newObjs)
+		e.Objs = make([]float64, len(newObjs))
+		copy(e.Objs, newObjs)
 
 		return nil
 	},
@@ -334,7 +334,7 @@ var dtlz2 = ProblemFn{
 
 // DTLZ3 multiObjective testcase
 var dtlz3 = ProblemFn{
-	fn: func(e *Elem, M int) error {
+	Fn: func(e *Elem, M int) error {
 		if len(e.X) <= M {
 			return errors.New("need to have an M lesser than the amount of variables")
 		}
@@ -363,8 +363,8 @@ var dtlz3 = ProblemFn{
 		}
 
 		// puts new objectives into the elem
-		e.objs = make([]float64, len(objs))
-		copy(e.objs, objs)
+		e.Objs = make([]float64, len(objs))
+		copy(e.Objs, objs)
 		return nil
 	},
 	Name: "dtlz3",
@@ -372,7 +372,7 @@ var dtlz3 = ProblemFn{
 
 // DTLZ4 multiObjective testcase
 var dtlz4 = ProblemFn{
-	fn: func(e *Elem, M int) error {
+	Fn: func(e *Elem, M int) error {
 		if len(e.X) <= M {
 			return errors.New("need to have an M lesser than the amount of variables")
 		}
@@ -400,8 +400,8 @@ var dtlz4 = ProblemFn{
 		}
 
 		// puts new objectives into the elem
-		e.objs = make([]float64, len(newObjs))
-		copy(e.objs, newObjs)
+		e.Objs = make([]float64, len(newObjs))
+		copy(e.Objs, newObjs)
 
 		return nil
 	},
@@ -410,7 +410,7 @@ var dtlz4 = ProblemFn{
 
 // DTLZ5 multiObjective testcase
 var dtlz5 = ProblemFn{
-	fn: func(e *Elem, M int) error {
+	Fn: func(e *Elem, M int) error {
 		if len(e.X) <= M {
 			return errors.New("need to have an M lesser than the amount of variables")
 		}
@@ -446,8 +446,8 @@ var dtlz5 = ProblemFn{
 		}
 
 		// puts new objectives into the elem
-		e.objs = make([]float64, len(newObjs))
-		copy(e.objs, newObjs)
+		e.Objs = make([]float64, len(newObjs))
+		copy(e.Objs, newObjs)
 
 		return nil
 	},
@@ -456,7 +456,7 @@ var dtlz5 = ProblemFn{
 
 // DTLZ6 multiObjective testcase
 var dtlz6 = ProblemFn{
-	fn: func(e *Elem, M int) error {
+	Fn: func(e *Elem, M int) error {
 		if len(e.X) <= M {
 			return errors.New("need to have an M lesser than the amount of variables")
 		}
@@ -492,8 +492,8 @@ var dtlz6 = ProblemFn{
 		}
 
 		// puts new objectives into the elem
-		e.objs = make([]float64, len(newObjs))
-		copy(e.objs, newObjs)
+		e.Objs = make([]float64, len(newObjs))
+		copy(e.Objs, newObjs)
 
 		return nil
 	},
@@ -502,7 +502,7 @@ var dtlz6 = ProblemFn{
 
 // DTLZ7 multiObjective testcase
 var dtlz7 = ProblemFn{
-	fn: func(e *Elem, M int) error {
+	Fn: func(e *Elem, M int) error {
 		if len(e.X) <= M {
 			return errors.New("need to have an M lesser than the amount of variables")
 		}
@@ -530,8 +530,8 @@ var dtlz7 = ProblemFn{
 		}
 		objs[M-1] = (1.0 + g) * h
 		// puts new objectives into the elem
-		e.objs = make([]float64, len(objs))
-		copy(e.objs, objs)
+		e.Objs = make([]float64, len(objs))
+		copy(e.Objs, objs)
 
 		return nil
 	},

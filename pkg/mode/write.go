@@ -46,11 +46,11 @@ func writeGeneration(elems Elements, w *csv.Writer) {
 		return
 	}
 	data := [][]string{}
-	objs := len(elems[0].objs)
+	objs := len(elems[0].Objs)
 	for i := 0; i < objs; i++ {
 		tmpData := []string{}
 		for _, p := range elems {
-			tmpData = append(tmpData, fmt.Sprintf("%5.3f", p.objs[i]))
+			tmpData = append(tmpData, fmt.Sprintf("%5.3f", p.Objs[i]))
 		}
 		data = append(data, tmpData)
 	}
@@ -73,7 +73,7 @@ func writeResult(path string, elems Elements) {
 	// header
 	headerData := []string{"elems"}
 	collumn := 'A'
-	for range elems[0].objs {
+	for range elems[0].Objs {
 		headerData = append(headerData, string(collumn))
 		collumn++
 	}
@@ -87,7 +87,7 @@ func writeResult(path string, elems Elements) {
 	for i := range elems {
 		tmpData := []string{}
 		tmpData = append(tmpData, fmt.Sprintf("elem[%d]", i))
-		for _, p := range elems[i].objs {
+		for _, p := range elems[i].Objs {
 			tmpData = append(tmpData, fmt.Sprint(p))
 		}
 		bodyData = append(bodyData, tmpData)

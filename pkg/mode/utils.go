@@ -63,7 +63,7 @@ func ReduceByCrowdDistance(elems Elements, NP int) (reduceElements, rankZero Ele
 	for i := range ranks {
 		CalculateCrwdDist(ranks[i])
 		sort.SliceStable(ranks[i], func(l, r int) bool {
-			return ranks[i][l].crwdst > ranks[i][r].crwdst
+			return ranks[i][l].Crwdst > ranks[i][r].Crwdst
 		})
 
 		elems = append(elems, ranks[i]...)
@@ -86,7 +86,7 @@ func FastNonDominatedRanking(elems Elements) map[int]Elements {
 			if p == q {
 				continue
 			}
-			dominanceTestResult := DominanceTest(&elems[p].objs, &elems[q].objs)
+			dominanceTestResult := DominanceTest(&elems[p].Objs, &elems[q].Objs)
 			if dominanceTestResult == -1 {
 				ithDominated[p] = append(ithDominated[p], q)
 			} else if dominanceTestResult == 1 {
@@ -154,7 +154,7 @@ func FilterDominated(elems Elements) (nonDominated, dominated Elements) {
 				continue
 			}
 			// q dominates the p element
-			if DominanceTest(&elems[p].objs, &elems[q].objs) == 1 {
+			if DominanceTest(&elems[p].Objs, &elems[q].Objs) == 1 {
 				counter++
 			}
 		}
@@ -177,25 +177,25 @@ func CalculateCrwdDist(elems Elements) {
 		return
 	}
 	for i := range elems {
-		elems[i].crwdst = 0 // resets the crwdst
+		elems[i].Crwdst = 0 // resets the crwdst
 	}
-	szObjs := len(elems[0].objs)
+	szObjs := len(elems[0].Objs)
 	for m := 0; m < szObjs; m++ {
 		// sort by current objective
 		sort.SliceStable(elems, func(i, j int) bool {
-			return elems[i].objs[m] < elems[j].objs[m]
+			return elems[i].Objs[m] < elems[j].Objs[m]
 		})
 
-		objMin := elems[0].objs[m]
-		objMax := elems[len(elems)-1].objs[m]
-		elems[0].crwdst = math.MaxFloat64
-		elems[len(elems)-1].crwdst = math.MaxFloat32
+		objMin := elems[0].Objs[m]
+		objMax := elems[len(elems)-1].Objs[m]
+		elems[0].Crwdst = math.MaxFloat64
+		elems[len(elems)-1].Crwdst = math.MaxFloat32
 		for i := 1; i < len(elems)-1; i++ {
-			distance := elems[i+1].objs[m] - elems[i-1].objs[m]
+			distance := elems[i+1].Objs[m] - elems[i-1].Objs[m]
 			if math.Abs(objMax-objMin) > 0 {
 				distance = distance / (objMax - objMin)
 			}
-			elems[i].crwdst += distance
+			elems[i].Crwdst += distance
 		}
 	}
 }

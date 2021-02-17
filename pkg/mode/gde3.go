@@ -15,7 +15,6 @@ var tokens = make(chan struct{}, 10)
 // GD3 -> runs a simple multiObjective DE in the ZDT1 case
 func GD3(
 	wg *sync.WaitGroup,
-	normalCh chan<- Elements,
 	rankedCh chan<- Elements,
 	maximumObjs chan<- []float64,
 	p Params,
@@ -124,7 +123,6 @@ func GD3(
 	}
 
 	// sending via channel the data
-	normalCh <- population
 	rankedCh <- bestElems
 	maximumObjs <- maxObjs
 

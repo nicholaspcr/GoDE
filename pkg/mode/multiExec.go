@@ -26,30 +26,26 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn, disablePl
 	rand.Seed(time.Now().UnixNano())         // Rand Seed
 	population := GeneratePopulation(params) // random generated population
 
-	lastGenChan := make(chan Elements, params.EXECS) // channel to get elems related to the last gen
-	rankedChan := make(chan Elements, params.EXECS)  // channel to get elems related to rank[0] pareto
+	rankedChan := make(chan Elements, params.EXECS) // channel to get elems related to rank[0] pareto
 
 	// getting the maximum calculated value for each objective
-	execsObjsValues := make(chan []float64, params.EXECS)
+	maximumObjs := make(chan []float64, params.EXECS)
 
 	wg := &sync.WaitGroup{}
 
 	// runs GDE3 for EXECS amount of times
 	for i := 0; i < params.EXECS; i++ {
 		filePath := homePath + paretoPath + "/exec-" + strconv.Itoa(i+1) + ".csv"
-		var f *os.File
-		var err error
 
-		f, err = os.Create(filePath)
+		f, err := os.Create(filePath)
 		checkError(err)
 
 		wg.Add(1)
 		// worker
 		go GD3(
 			wg,
-			lastGenChan,
 			rankedChan,
-			execsObjsValues,
+			maximumObjs,
 			params,
 			prob.Fn,
 			variant,
@@ -62,21 +58,9 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn, disablePl
 
 	go func() {
 		wg.Wait()
-		close(lastGenChan)
 		close(rankedChan)
-		close(execsObjsValues)
+		close(maximumObjs)
 	}()
-
-	// gets data from the pareto created in the last generation
-	var lastGenPareto Elements
-	for v := range lastGenChan {
-		lastGenPareto = append(lastGenPareto, v...)
-		lastGenPareto, _ = FilterDominated(lastGenPareto)
-		// puts a cap on the solution's amount of points
-		if len(lastGenPareto) > 500 {
-			lastGenPareto = lastGenPareto[:500]
-		}
-	}
 
 	fmt.Printf("execs: ")
 	counter := 0
@@ -101,12 +85,6 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn, disablePl
 	}
 	checkFilePath(homePath, multiExecutionsPath)
 
-	// results of the normal pareto
-	writeResult(
-		homePath+multiExecutionsPath+"/lastPareto.csv",
-		lastGenPareto,
-	)
-
 	// result of the ranked pareto
 	writeResult(
 		homePath+multiExecutionsPath+"/rankedPareto.csv",
@@ -119,7 +97,7 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn, disablePl
 
 	// getting biggest objs values
 	maxObjs := make([]float64, params.M)
-	for arr := range execsObjsValues {
+	for arr := range maximumObjs {
 		for i, obj := range arr {
 			maxObjs[i] = math.Max(maxObjs[i], obj)
 		}

@@ -191,14 +191,8 @@ var pbest VariantFn = VariantFn{
 			return Elem{}, errors.New("insufficient size for the population, must me equal or greater than 5")
 		}
 
-		pThRankZeroSz := int(math.Floor(float64(len(rankZero)) * p.P))
-
-		var bestIndex int
-		if pThRankZeroSz == 0 {
-			bestIndex = 0
-		} else {
-			bestIndex = rand.Int() % pThRankZeroSz
-		}
+		indexLimit := int(math.Ceil(float64(len(rankZero)) * p.P))
+		bestIndex := rand.Int() % indexLimit
 
 		arr := make([]float64, p.DIM)
 

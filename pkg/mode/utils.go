@@ -47,8 +47,8 @@ func checkError(e error) {
 }
 
 // ReduceByCrowdDistance - returns NP elements filtered by rank and crwod distance
-func ReduceByCrowdDistance(elems Elements, NP int) (reduceElements, rankZero Elements) {
-	ranks := FastNonDominatedRanking(elems)
+func ReduceByCrowdDistance(elems *Elements, NP int) (reduceElements, rankZero Elements) {
+	ranks := FastNonDominatedRanking(*elems)
 
 	qtdElems := 0
 	for _, r := range ranks {
@@ -59,20 +59,25 @@ func ReduceByCrowdDistance(elems Elements, NP int) (reduceElements, rankZero Ele
 		log.Fatal("less elements than NP")
 	}
 
-	elems = make(Elements, 0)
+	*elems = make(Elements, 0)
 	for i := range ranks {
 		CalculateCrwdDist(ranks[i])
 		sort.SliceStable(ranks[i], func(l, r int) bool {
 			return ranks[i][l].Crwdst > ranks[i][r].Crwdst
 		})
 
-		elems = append(elems, ranks[i]...)
-		if len(elems) > NP {
-			elems = elems[:NP]
+		if len(*elems)+len(ranks[i]) > NP {
+			counter := 0
+			for len(*elems) < NP {
+				*elems = append(*elems, ranks[i][counter])
+				counter++
+			}
 			break
+		} else {
+			*elems = append(*elems, ranks[i]...)
 		}
 	}
-	return elems, ranks[0]
+	return *elems, ranks[0]
 }
 
 // FastNonDominatedRanking - ranks the elements and returns a map with elements per rank

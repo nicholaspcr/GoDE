@@ -265,28 +265,32 @@ var dtlz1 = ProblemFn{
 			return errors.New("need to have an M lesser than the amount of variables")
 		}
 
-		varSz := len(e.X)
-		k := varSz - M + 1
-
-		g := 0.0
-		for _, x := range e.X[varSz-k:] {
-			g += (x-0.5)*(x-0.5) - math.Cos(20.0*math.Pi*(x-0.5))
+		evalG := func(v []float64) float64 {
+			g := 0.0
+			for _, x := range v {
+				g += (x-0.5)*(x-0.5) - math.Cos(20.0*math.Pi*(x-0.5))
+			}
+			k := float64(len(v))
+			return 100.0 * (k + g)
 		}
-		g = 100.0 * (float64(k) + g)
+		g := evalG(e.X[M-1:])
 
-		objs := make([]float64, M)
-
-		for i := range objs {
-			objs[i] = (1.0 + g) * 0.5
+		newObjs := make([]float64, M)
+		for i := 0; i < M; i++ {
+			prod := (1.0 + g) * 0.5
 			for j := 0; j < M-(i+1); j++ {
-				objs[i] *= e.X[j]
+				prod *= e.X[j]
 			}
 			if i != 0 {
-				objs[i] *= (1 - e.X[M-(i+1)])
+				prod *= (1 - e.X[M-(i+1)])
 			}
+			newObjs[i] = prod
 		}
-		e.Objs = make([]float64, M)
-		copy(e.Objs, objs)
+
+		// puts new objectives into the elem
+		e.Objs = make([]float64, len(newObjs))
+		copy(e.Objs, newObjs)
+
 		return nil
 	},
 	Name: "dtlz1",
@@ -348,6 +352,7 @@ var dtlz3 = ProblemFn{
 			return 100.0 * (float64(k) + g)
 		}
 		g := evalG(e.X[(varSz - k):])
+
 		objs := make([]float64, M)
 
 		for i := 0; i < M; i++ {
@@ -460,16 +465,15 @@ var dtlz6 = ProblemFn{
 			return errors.New("need to have an M lesser than the amount of variables")
 		}
 
-		varSz := len(e.X)
-		k := varSz - M + 1
 		evalG := func(x []float64) float64 {
+			k := len(x) - M + 1
 			g := 0.0
-			for _, v := range x {
-				g += math.Pow(v, 0.1)
+			for i := len(x) - k; i < len(x); i++ {
+				g += math.Pow(x[i], 0.1)
 			}
 			return g
 		}
-		g := evalG(e.X[varSz-k:])
+		g := evalG(e.X)
 		t := math.Pi / (4.0 * (1 + g))
 
 		theta := make([]float64, M-1)

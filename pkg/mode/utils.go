@@ -81,6 +81,10 @@ func FastNonDominatedRanking(elems Elements) map[int]Elements {
 	ithDominated := make([][]int, len(elems))
 	fronts := make([][]int, len(elems)+1)
 
+	rand.Shuffle(len(elems), func(l, r int) {
+		elems[l], elems[r] = elems[r].Copy(), elems[l].Copy()
+	})
+
 	for p := 0; p < len(elems); p++ {
 		for q := 0; q < len(elems); q++ {
 			if p == q {
@@ -164,10 +168,6 @@ func FilterDominated(elems Elements) (nonDominated, dominated Elements) {
 			dominated = append(dominated, elems[p].Copy())
 		}
 	}
-
-	rand.Shuffle(len(nonDominated), func(i, j int) {
-		nonDominated[i], nonDominated[j] = nonDominated[j], nonDominated[i]
-	})
 	return nonDominated, dominated
 }
 
@@ -188,14 +188,13 @@ func CalculateCrwdDist(elems Elements) {
 
 		objMin := elems[0].Objs[m]
 		objMax := elems[len(elems)-1].Objs[m]
-		elems[0].Crwdst = math.MaxFloat64
+		elems[0].Crwdst = math.MaxFloat32
 		elems[len(elems)-1].Crwdst = math.MaxFloat32
 		for i := 1; i < len(elems)-1; i++ {
 			distance := elems[i+1].Objs[m] - elems[i-1].Objs[m]
 			if math.Abs(objMax-objMin) > 0 {
-				distance = distance / (objMax - objMin)
+				elems[i].Crwdst += distance / (objMax - objMin)
 			}
-			elems[i].Crwdst += distance
 		}
 	}
 }

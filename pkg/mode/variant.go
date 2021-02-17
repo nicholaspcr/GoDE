@@ -107,7 +107,7 @@ var best1 VariantFn = VariantFn{
 
 		arr := make([]float64, p.DIM)
 
-		best := rankZero[rand.Int()%len(rankZero)]
+		best := rankZero[rand.Intn(len(rankZero))]
 		r1, r2 := elems[index[1]], elems[index[2]]
 		for i := 0; i < p.DIM; i++ {
 			arr[i] = best.X[i] + p.F*(r1.X[i]-r2.X[i])
@@ -167,6 +167,7 @@ var currToBest1 VariantFn = VariantFn{
 		r1, r2, r3 := elems[ind[1]], elems[ind[2]], elems[ind[3]]
 		curr := elems[p.currPos]
 		best := rankZero[rand.Int()%len(rankZero)]
+
 		for i := 0; i < p.DIM; i++ {
 			arr[i] = curr.X[i] + p.F*(best.X[i]-r1.X[i]) + p.F*(r2.X[i]-r3.X[i])
 		}
@@ -190,19 +191,21 @@ var pbest VariantFn = VariantFn{
 			return Elem{}, errors.New("insufficient size for the population, must me equal or greater than 5")
 		}
 
-		var randBestIndex int
 		pThRankZeroSz := int(math.Floor(float64(len(rankZero)) * p.P))
+
+		var bestIndex int
 		if pThRankZeroSz == 0 {
-			randBestIndex = 0
+			bestIndex = 0
 		} else {
-			randBestIndex = rand.Int() % pThRankZeroSz
+			bestIndex = rand.Int() % pThRankZeroSz
 		}
 
 		arr := make([]float64, p.DIM)
 
 		r1, r2 := elems[ind[1]], elems[ind[2]]
 		curr := elems[p.currPos]
-		best := rankZero[randBestIndex]
+		best := rankZero[bestIndex]
+
 		for i := 0; i < p.DIM; i++ {
 			arr[i] = curr.X[i] + p.F*(best.X[i]-curr.X[i]) + p.F*(r1.X[i]-r2.X[i])
 		}

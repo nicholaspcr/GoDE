@@ -16,18 +16,18 @@ var writeAllPoints = true
 
 // MultiExecutions returns the pareto front of the total of 30 executions of the same problem
 func MultiExecutions(params Params, prob ProblemFn, variant VariantFn, disablePlot bool) {
+
 	homePath := os.Getenv("HOME")
 	paretoPath := "/.go-de/mode/paretoFront/" + prob.Name + "/" + variant.Name
+
 	if variant.Name == "pbest" {
 		paretoPath += "/P-" + fmt.Sprint(params.P)
 	}
 
-	fmt.Println(prob.Name)
-
 	checkFilePath(homePath, paretoPath)
 
 	startTimer := time.Now()                 //	timer start
-	rand.Seed(time.Now().UTC().UnixNano())   // Rand Seed
+	rand.Seed(time.Now().UnixNano())         // Rand Seed
 	population := GeneratePopulation(params) // random generated population
 
 	lastGenChan := make(chan Elements, params.EXECS) // channel to get elems related to the last gen
@@ -75,59 +75,52 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn, disablePl
 	close(lastGenChan)
 	close(rankedChan)
 
-	if !disablePlot {
-		// gets data from the pareto created in the last generation
-		var lastGenPareto Elements
-		for v := range lastGenChan {
-			lastGenPareto = append(lastGenPareto, v...)
-			lastGenPareto, _ = FilterDominated(lastGenPareto)
-			rand.Shuffle(len(lastGenPareto), func(i, j int) {
-				lastGenPareto[i], lastGenPareto[j] = lastGenPareto[j].Copy(), lastGenPareto[i].Copy()
-			})
-			// puts a cap on the solution's amount of points
-			if len(lastGenPareto) > 500 {
-				lastGenPareto = lastGenPareto[:500]
-			}
+	// gets data from the pareto created in the last generation
+	var lastGenPareto Elements
+	for v := range lastGenChan {
+		lastGenPareto = append(lastGenPareto, v...)
+		lastGenPareto, _ = FilterDominated(lastGenPareto)
+		// puts a cap on the solution's amount of points
+		if len(lastGenPareto) > 500 {
+			lastGenPareto = lastGenPareto[:500]
 		}
-
-		counter := 0
-		// gets data from the pareto created by rank[0] of each gen
-		var rankedPareto Elements
-		for v := range rankedChan {
-			fmt.Printf("exec-%d\n", counter)
-			counter++
-
-			rankedPareto = append(rankedPareto, v...)
-			rankedPareto, _ = FilterDominated(rankedPareto)
-			rand.Shuffle(len(rankedPareto), func(i, j int) {
-				rankedPareto[i], rankedPareto[j] = rankedPareto[j].Copy(), rankedPareto[i].Copy()
-			})
-			if len(rankedPareto) > 1000 {
-				rankedPareto = rankedPareto[:1000]
-			}
-		}
-
-		// checks path for the path used to store the details of each generation
-		multiExecutionsPath := "/.go-de/mode/multiExecutions/" + prob.Name + "/" + variant.Name
-		if variant.Name == "pbest" {
-			multiExecutionsPath += "/P-" + fmt.Sprint(params.P)
-		}
-		checkFilePath(homePath, multiExecutionsPath)
-
-		// results of the normal pareto
-		writeResult(
-			homePath+multiExecutionsPath+"/lastPareto.csv",
-			lastGenPareto,
-		)
-
-		// result of the ranked pareto
-		writeResult(
-			homePath+multiExecutionsPath+"/rankedPareto.csv",
-			rankedPareto,
-		)
-
-		fmt.Println(rankedPareto[0].X)
 	}
+
+	counter := 0
+	// gets data from the pareto created by rank[0] of each gen
+	var rankedPareto Elements
+	for v := range rankedChan {
+		fmt.Printf("exec-%d\n", counter)
+		counter++
+
+		rankedPareto = append(rankedPareto, v...)
+		rankedPareto, _ = FilterDominated(rankedPareto)
+		if len(rankedPareto) > 5000 {
+			rankedPareto = rankedPareto[:5000]
+		}
+	}
+
+	// checks path for the path used to store the details of each generation
+	multiExecutionsPath := "/.go-de/mode/multiExecutions/" + prob.Name + "/" + variant.Name
+	if variant.Name == "pbest" {
+		multiExecutionsPath += "/P-" + fmt.Sprint(params.P)
+	}
+	checkFilePath(homePath, multiExecutionsPath)
+
+	// results of the normal pareto
+	writeResult(
+		homePath+multiExecutionsPath+"/lastPareto.csv",
+		lastGenPareto,
+	)
+
+	// result of the ranked pareto
+	writeResult(
+		homePath+multiExecutionsPath+"/rankedPareto.csv",
+		rankedPareto,
+	)
+
+	fmt.Println(rankedPareto[0].X)
+
 	fmt.Println("Done writing file!")
 	timeSpent := time.Since(startTimer)
 	fmt.Println("time spend on executions: ", timeSpent)
@@ -160,9 +153,6 @@ func GD3(
 	// adding to  concurrent queue
 	tokens <- struct{}{}
 	defer f.Close()
-
-	// gets new random token
-	rand.Seed(time.Now().UnixNano())
 
 	// var writer *csv.Writer
 	writer := csv.NewWriter(f)
@@ -199,7 +189,7 @@ func GD3(
 			checkError(err)
 
 			// trial element
-			trial := population[i].Copy()
+			trial := Elem{}
 
 			// CROSS OVER
 			currInd := rand.Int() % p.DIM
@@ -208,7 +198,10 @@ func GD3(
 				changeProb := rand.Float64()
 				if changeProb < p.CR || currInd == randLucky {
 					trial.X[currInd] = vr.X[currInd]
+				} else {
+					trial.X[currInd] = population[i].X[currInd]
 				}
+
 				if trial.X[currInd] < p.FLOOR {
 					trial.X[currInd] = p.FLOOR
 				}
@@ -228,6 +221,7 @@ func GD3(
 			// 	population = append(population, trial.Copy())
 			// }
 
+			// SELECTION
 			comp := DominanceTest(&population[i].Objs, &trial.Objs)
 			if comp == 1 {
 				population[i] = trial.Copy()

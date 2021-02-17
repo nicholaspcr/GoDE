@@ -23,7 +23,9 @@ func GD3(
 	population Elements,
 	f *os.File,
 ) {
-	// adding to  concurrent queue
+	defer wg.Done()
+
+	// adding to concurrent queue
 	tokens <- struct{}{}
 	defer f.Close()
 
@@ -73,10 +75,11 @@ func GD3(
 
 			// CROSS OVER
 			currInd := rand.Int() % p.DIM
-			randLucky := rand.Int() % p.DIM
+			luckyIndex := rand.Int() % p.DIM
+
 			for j := 0; j < p.DIM; j++ {
 				changeProb := rand.Float64()
-				if changeProb < p.CR || currInd == randLucky {
+				if changeProb < p.CR || currInd == luckyIndex {
 					trial.X[currInd] = vr.X[currInd]
 				}
 
@@ -93,20 +96,12 @@ func GD3(
 			checkError(evalErr)
 
 			// SELECTION
-			// if trial.dominates(population[i]) {
-			// 	population[i] = trial.Copy()
-			// } else if !population[i].dominates(trial) {
-			// 	population = append(population, trial.Copy())
-			// }
-
-			// SELECTION
 			comp := DominanceTest(&population[i].Objs, &trial.Objs)
 			if comp == 1 {
 				population[i] = trial.Copy()
 			} else if comp == 0 {
 				population = append(population, trial.Copy())
 			}
-
 		}
 
 		population, bestInGen = ReduceByCrowdDistance(&population, p.NP)
@@ -128,5 +123,4 @@ func GD3(
 
 	// clearing concurrent queue
 	<-tokens
-	wg.Done()
 }

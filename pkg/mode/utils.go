@@ -60,13 +60,14 @@ func ReduceByCrowdDistance(elems *Elements, NP int) (reduceElements, rankZero El
 	}
 
 	*elems = make(Elements, 0)
-	for i := range ranks {
+	for i := 0; i < len(ranks); i++ {
+
 		CalculateCrwdDist(ranks[i])
 		sort.SliceStable(ranks[i], func(l, r int) bool {
 			return ranks[i][l].Crwdst > ranks[i][r].Crwdst
 		})
 
-		if len(*elems)+len(ranks[i]) > NP {
+		if len(*elems)+len(ranks[i]) >= NP {
 			counter := 0
 			for len(*elems) < NP {
 				*elems = append(*elems, ranks[i][counter])
@@ -86,19 +87,24 @@ func FastNonDominatedRanking(elems Elements) map[int]Elements {
 	ithDominated := make([][]int, len(elems))
 	fronts := make([][]int, len(elems)+1)
 
-	rand.Shuffle(len(elems), func(l, r int) {
-		elems[l], elems[r] = elems[r].Copy(), elems[l].Copy()
-	})
+	// rand.Shuffle(len(elems), func(l, r int) {
+	// 	elems[l], elems[r] = elems[r].Copy(), elems[l].Copy()
+	// })
+
+	for i := range fronts {
+		fronts[i] = make([]int, 0)
+	}
 
 	for p := 0; p < len(elems); p++ {
+		ithDominated[p] = make([]int, 0) // S_p size 0
+		dominatingIth[p] = 0             // N_p = 0
+
 		for q := 0; q < len(elems); q++ {
-			if p == q {
-				continue
-			}
 			dominanceTestResult := DominanceTest(&elems[p].Objs, &elems[q].Objs)
-			if dominanceTestResult == -1 {
+
+			if dominanceTestResult == -1 { // p dominates q
 				ithDominated[p] = append(ithDominated[p], q)
-			} else if dominanceTestResult == 1 {
+			} else if dominanceTestResult == 1 { // q dominates p
 				dominatingIth[p]++
 			}
 		}
@@ -108,8 +114,8 @@ func FastNonDominatedRanking(elems Elements) map[int]Elements {
 	}
 
 	for i := 1; i < len(fronts); i++ {
-		for _, p := range fronts[i-1] {
-			for _, q := range ithDominated[p] {
+		for _, p := range fronts[i-1] { // for each p in F_i
+			for _, q := range ithDominated[p] { // for each q in S_p
 				dominatingIth[q]--
 				if dominatingIth[q] == 0 {
 					fronts[i] = append(fronts[i], q)
@@ -117,6 +123,8 @@ func FastNonDominatedRanking(elems Elements) map[int]Elements {
 			}
 		}
 	}
+
+	// getting ranked elements from their index
 	rankedSubList := make(map[int]Elements)
 	for i := 0; i < len(fronts); i++ {
 		for m := range fronts[i] {

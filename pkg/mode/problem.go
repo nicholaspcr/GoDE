@@ -342,16 +342,15 @@ var dtlz3 = ProblemFn{
 			return errors.New("need to have an M lesser than the amount of variables")
 		}
 
-		varSz := len(e.X)
-		k := varSz - M + 1
-		evalG := func(x []float64) float64 {
+		evalG := func(v []float64) float64 {
 			g := 0.0
-			for _, v := range x {
-				g += math.Pow(v-0.5, 2) - math.Cos(20.0*math.Pi*(v-0.5))
+			for _, x := range v {
+				g += math.Pow(x-0.5, 2) - math.Cos(20.0*math.Pi*(x-0.5))
 			}
-			return 100.0 * (float64(k) + g)
+			k := float64(len(v))
+			return 100.0 * (k + g)
 		}
-		g := evalG(e.X[(varSz - k):])
+		g := evalG(e.X[M-1:])
 
 		objs := make([]float64, M)
 

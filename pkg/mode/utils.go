@@ -87,9 +87,9 @@ func FastNonDominatedRanking(elems Elements) map[int]Elements {
 	ithDominated := make([][]int, len(elems))
 	fronts := make([][]int, len(elems)+1)
 
-	// rand.Shuffle(len(elems), func(l, r int) {
-	// 	elems[l], elems[r] = elems[r].Copy(), elems[l].Copy()
-	// })
+	rand.Shuffle(len(elems), func(l, r int) {
+		elems[l], elems[r] = elems[r].Copy(), elems[l].Copy()
+	})
 
 	for i := range fronts {
 		fronts[i] = make([]int, 0)

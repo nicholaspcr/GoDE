@@ -457,6 +457,9 @@ var dtlz5 = ProblemFn{
 	Name: "dtlz5",
 }
 
+// trying to prevent memory leak
+var dtlzG float64
+
 // DTLZ6 multiObjective testcase
 var dtlz6 = ProblemFn{
 	Fn: func(e *Elem, M int) error {
@@ -466,11 +469,11 @@ var dtlz6 = ProblemFn{
 
 		evalG := func(x []float64) float64 {
 			k := len(x) - M + 1
-			g := 0.0
+			dtlzG = 0.0
 			for i := len(x) - k; i < len(x); i++ {
-				g += math.Pow(x[i], 0.1)
+				dtlzG += math.Pow(x[i], 1.0/10.0)
 			}
-			return g
+			return dtlzG
 		}
 		g := evalG(e.X)
 		t := math.Pi / (4.0 * (1 + g))

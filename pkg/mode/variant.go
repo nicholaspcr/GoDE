@@ -17,7 +17,7 @@ type varParams struct {
 
 // VariantFn function type of the multiple variants
 type VariantFn struct {
-	fn   func(elems Elements, p varParams) (Elem, error)
+	fn   func(elems, rankZero Elements, p varParams) (Elem, error)
 	Name string
 }
 
@@ -29,7 +29,7 @@ func GetVariantByName(name string) VariantFn {
 		"rand2":       rand2,
 		"best1":       best1,
 		"best2":       best2,
-		"currtobest1": currToBest1,		
+		"currtobest1": currToBest1,
 		"pbest":       pbest,
 	}
 	for k, v := range variants {
@@ -43,20 +43,25 @@ func GetVariantByName(name string) VariantFn {
 // Rand1 variant -> a + F(b - c)
 // a,b,c are random elements
 var rand1 VariantFn = VariantFn{
-	fn: func(elems Elements, p varParams) (Elem, error) {
+	fn: func(elems, rankZero Elements, p varParams) (Elem, error) {
 		if len(elems) < 3 {
 			return Elem{}, fmt.Errorf("no sufficient amount of elements in the population, should be bigger than three")
 		}
-		inds := make([]int, 3)
-		err := generateIndices(0, len(elems), inds)
+
+		// generating random indices different from current pos
+		inds := make([]int, 4)
+		inds[0] = p.currPos
+		err := generateIndices(1, len(elems), inds)
 		if err != nil {
 			return Elem{}, err
 		}
 
 		result := Elem{}
 		result.X = make([]float64, p.DIM)
+
+		r1, r2, r3 := elems[inds[1]], elems[inds[2]], elems[inds[3]]
 		for i := 0; i < p.DIM; i++ {
-			result.X[i] = elems[inds[0]].X[i] + p.F*(elems[inds[1]].X[i]-elems[inds[2]].X[i])
+			result.X[i] = r1.X[i] + p.F*(r2.X[i]-r3.X[i])
 		}
 		return result, nil
 	},
@@ -66,8 +71,9 @@ var rand1 VariantFn = VariantFn{
 // rand2 a + F(b-c) + F(d-e)
 // a,b,c,d,e are random elements
 var rand2 VariantFn = VariantFn{
-	fn: func(elems Elements, p varParams) (Elem, error) {
-		ind := make([]int, 7)
+	fn: func(elems, rankZero Elements, p varParams) (Elem, error) {
+		// generating random indices different from current pos
+		ind := make([]int, 6)
 		ind[0] = p.currPos
 		err := generateIndices(1, len(elems), ind)
 		if err != nil {
@@ -75,9 +81,9 @@ var rand2 VariantFn = VariantFn{
 		}
 
 		arr := make([]float64, p.DIM)
-		a, b, c, d, e := elems[ind[1]], elems[ind[2]], elems[ind[3]], elems[ind[4]], elems[ind[5]]
+		r1, r2, r3, r4, r5 := elems[ind[1]], elems[ind[2]], elems[ind[3]], elems[ind[4]], elems[ind[5]]
 		for i := 0; i < p.DIM; i++ {
-			arr[i] = a.X[i] + p.F*(b.X[i]-c.X[i]) + p.F*(d.X[i]-e.X[i])
+			arr[i] = r1.X[i] + p.F*(r2.X[i]-r3.X[i]) + p.F*(r4.X[i]-r5.X[i])
 		}
 		ret := Elem{
 			X: arr,
@@ -90,20 +96,23 @@ var rand2 VariantFn = VariantFn{
 // best1  current_best + F(a-b)
 // a,b are random elements
 var best1 VariantFn = VariantFn{
-	fn: func(elems Elements, p varParams) (Elem, error) {
-		index := make([]int, 4)
+	fn: func(elems, rankZero Elements, p varParams) (Elem, error) {
+		index := make([]int, 3)
 		index[0] = p.currPos
-		index[1] = 0 // best in pop
-		err := generateIndices(2, len(elems), index)
+		err := generateIndices(1, len(elems), index)
+
 		if err != nil {
 			return Elem{}, errors.New("insufficient size for the population, must me equal or greater than 4")
 		}
 
 		arr := make([]float64, p.DIM)
-		a, b, c := elems[index[1]], elems[index[2]], elems[index[3]]
+
+		best := rankZero[rand.Int()%len(rankZero)]
+		r1, r2 := elems[index[1]], elems[index[2]]
 		for i := 0; i < p.DIM; i++ {
-			arr[i] = a.X[i] + p.F*(b.X[i]-c.X[i])
+			arr[i] = best.X[i] + p.F*(r1.X[i]-r2.X[i])
 		}
+
 		ret := Elem{
 			X: arr,
 		}
@@ -115,20 +124,25 @@ var best1 VariantFn = VariantFn{
 // Best2 current_best + F(a-b) + F(c-d)
 // a,b,c,d are random elements
 var best2 VariantFn = VariantFn{
-	fn: func(elems Elements, p varParams) (Elem, error) {
-		ind := make([]int, 6)
+	fn: func(elems, rankZero Elements, p varParams) (Elem, error) {
+		// indices of the
+		ind := make([]int, 5)
 		ind[0] = p.currPos
-		ind[1] = 0 // best in elems
-		err := generateIndices(2, len(elems), ind)
+		err := generateIndices(1, len(elems), ind)
+
 		if err != nil {
 			return Elem{}, errors.New("insufficient size for the population, must me equal or greater than 4")
 		}
 
 		arr := make([]float64, p.DIM)
-		a, b, c, d, e := elems[ind[1]], elems[ind[2]], elems[ind[3]], elems[ind[4]], elems[ind[5]]
+
+		// random element from rankZero
+		best := rankZero[rand.Int()%len(rankZero)]
+		r1, r2, r3, r4 := elems[ind[1]], elems[ind[2]], elems[ind[3]], elems[ind[4]]
 		for i := 0; i < p.DIM; i++ {
-			arr[i] = a.X[i] + p.F*(b.X[i]-c.X[i]) + p.F*(d.X[i]-e.X[i])
+			arr[i] = best.X[i] + p.F*(r1.X[i]-r2.X[i]) + p.F*(r3.X[i]-r4.X[i])
 		}
+
 		ret := Elem{
 			X: arr,
 		}
@@ -137,51 +151,62 @@ var best2 VariantFn = VariantFn{
 	Name: "best2",
 }
 
+// currToBest1 -> variant defined in JADE paper
 var currToBest1 VariantFn = VariantFn{
-	fn: func(elems Elements, p varParams) (Elem, error) {
-		ind := make([]int, 5)
+	fn: func(elems, rankZero Elements, p varParams) (Elem, error) {
+		ind := make([]int, 4)
 		ind[0] = p.currPos
-		ind[1] = 0 // best in pop
-		err := generateIndices(2, len(elems), ind)
+		err := generateIndices(1, len(elems), ind)
+
 		if err != nil {
 			return Elem{}, errors.New("insufficient size for the population, must me equal or greater than 5")
 		}
+
 		arr := make([]float64, p.DIM)
-		a, b, c, d, e := elems[ind[0]], elems[ind[1]], elems[ind[2]], elems[ind[3]], elems[ind[4]]
+
+		r1, r2, r3 := elems[ind[1]], elems[ind[2]], elems[ind[3]]
+		curr := elems[p.currPos]
+		best := rankZero[rand.Int()%len(rankZero)]
 		for i := 0; i < p.DIM; i++ {
-			arr[i] = a.X[i] + p.F*(b.X[i]-c.X[i]) + p.F*(d.X[i]-e.X[i])
+			arr[i] = curr.X[i] + p.F*(best.X[i]-r1.X[i]) + p.F*(r2.X[i]-r3.X[i])
 		}
+
 		ret := Elem{
 			X: arr,
 		}
 		return ret, nil
 	},
-	Name: "current-to-best-1",
+	Name: "currtobest1",
 }
 
 // PBest implementation
 var pbest VariantFn = VariantFn{
-	fn: func(elems Elements, p varParams) (Elem, error) {
-		popSz := float64(len(elems))
-		ceilRand := int(math.Floor(popSz * p.P))
-		var randPIndex int
-		if ceilRand == 0 {
-			randPIndex = ceilRand
-		} else {
-			randPIndex = rand.Int() % ceilRand
-		}
-		index := make([]int, 4)
-		index[0] = p.currPos
-		index[1] = randPIndex
-		err := generateIndices(2, len(elems), index)
+	fn: func(elems, rankZero Elements, p varParams) (Elem, error) {
+		ind := make([]int, 3)
+		ind[0] = p.currPos
+
+		err := generateIndices(1, len(elems), ind)
 		if err != nil {
-			return Elem{}, errors.New("insufficient size for the population, must me equal or greater than 4")
+			return Elem{}, errors.New("insufficient size for the population, must me equal or greater than 5")
 		}
+
+		var randBestIndex int
+		pThRankZeroSz := int(math.Floor(float64(len(rankZero)) * p.P))
+		if pThRankZeroSz == 0 {
+			randBestIndex = 0
+		} else {
+			randBestIndex = rand.Int() % pThRankZeroSz
+		}
+
 		arr := make([]float64, p.DIM)
-		curr, pB, a, b := index[0], index[1], index[2], index[3]
+
+		r1, r2 := elems[ind[1]], elems[ind[2]]
+		curr := elems[p.currPos]
+		best := rankZero[randBestIndex]
 		for i := 0; i < p.DIM; i++ {
-			arr[i] = elems[curr].X[i] + p.F*(elems[pB].X[i]-elems[curr].X[i]) + p.F*(elems[a].X[i]-elems[b].X[i])
+			arr[i] = curr.X[i] + p.F*(best.X[i]-curr.X[i]) + p.F*(r1.X[i]-r2.X[i])
 		}
+
 		ret := Elem{
 			X: arr,
 		}

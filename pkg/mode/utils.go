@@ -2,16 +2,14 @@ package mo
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"math"
 	"math/rand"
-	"os"
 	"sort"
-	"strings"
 )
 
-func generatePopulation(p Params) Elements {
+// GeneratePopulation - creates a population without objs calculates
+func GeneratePopulation(p Params) Elements {
 	ret := make(Elements, p.NP)
 	constant := p.CEIL - p.FLOOR // range between floor and ceiling
 	for i := 0; i < p.NP; i++ {
@@ -41,20 +39,6 @@ func generateIndices(startInd, NP int, r []int) error {
 	return nil
 }
 
-// checks existance of filePath
-func checkFilePath(basePath, filePath string) {
-	folders := strings.Split(filePath, "/")
-	for _, folder := range folders {
-		basePath += "/" + folder
-		if _, err := os.Stat(basePath); os.IsNotExist(err) {
-			err = os.Mkdir(basePath, os.ModePerm)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-	}
-}
-
 // todo: create a proper error handler
 func checkError(e error) {
 	if e != nil {
@@ -62,52 +46,84 @@ func checkError(e error) {
 	}
 }
 
-// returns NP elements filtered by rank and crwod distance
-func reduceByCrowdDistance(elems Elements, pareto *Elements, NP int) Elements {
-	ranks := fastNonDominatedRanking(elems)
-	fmt.Println(len(elems))
+// ReduceByCrowdDistance - returns NP elements filtered by rank and crwod distance
+func ReduceByCrowdDistance(elems Elements, NP int) (reduceElements, rankZero Elements) {
+	ranks := FastNonDominatedRanking(elems)
+
+	qtdElems := 0
 	for _, r := range ranks {
-		fmt.Print(fmt.Sprint(len(r)) + " ")
+		qtdElems += len(r)
 	}
+	if qtdElems < NP {
+		log.Println("elems -> ", qtdElems)
+		log.Fatal("less elements than NP")
+	}
+
 	elems = make(Elements, 0)
-	//sorting each rank by crowd distance
 	for i := range ranks {
-		calculateCrwdDist(ranks[i])
-		sort.Sort(byCrwdst(ranks[i]))
-	}
+		CalculateCrwdDist(ranks[i])
+		sort.SliceStable(ranks[i], func(l, r int) bool {
+			return ranks[i][l].Crwdst > ranks[i][r].Crwdst
+		})
 
-	// writes the pareto ranked into the pareto db
-	*pareto = append(*pareto, ranks[0]...)
-
-	for _, rank := range ranks {
-		elems = append(elems, rank...)
+		elems = append(elems, ranks[i]...)
 		if len(elems) > NP {
-			elems = elems[:50]
+			elems = elems[:NP]
 			break
 		}
 	}
-	return elems
+	return elems, ranks[0]
 }
 
-// rankElements returna  map of dominating elements in ascending order
-// destroys the slice provided
-func rankElements(elems Elements) map[int]Elements {
-	ranks := make(map[int]Elements)
-	currentRank := 0
-	for len(elems) > 0 {
-		ranked, nonRanked := filterDominated(elems)
-		ranks[currentRank] = append(ranks[currentRank], ranked...)
-		currentRank++
-		elems = make(Elements, 0)
-		elems = append(elems, nonRanked...)
+// FastNonDominatedRanking - ranks the elements and returns a map with elements per rank
+func FastNonDominatedRanking(elems Elements) map[int]Elements {
+	dominatingIth := make([]int, len(elems))
+	ithDominated := make([][]int, len(elems))
+	fronts := make([][]int, len(elems)+1)
+
+	for p := 0; p < len(elems); p++ {
+		for q := 0; q < len(elems); q++ {
+			if p == q {
+				continue
+			}
+			dominanceTestResult := DominanceTest(&elems[p].Objs, &elems[q].Objs)
+			if dominanceTestResult == -1 {
+				ithDominated[p] = append(ithDominated[p], q)
+			} else if dominanceTestResult == 1 {
+				dominatingIth[p]++
+			}
+		}
+		if dominatingIth[p] == 0 {
+			fronts[0] = append(fronts[0], p)
+		}
 	}
-	return ranks
+
+	for i := 1; i < len(fronts); i++ {
+		for _, p := range fronts[i-1] {
+			for _, q := range ithDominated[p] {
+				dominatingIth[q]--
+				if dominatingIth[q] == 0 {
+					fronts[i] = append(fronts[i], q)
+				}
+			}
+		}
+	}
+	rankedSubList := make(map[int]Elements)
+	for i := 0; i < len(fronts); i++ {
+		for m := range fronts[i] {
+			rankedSubList[i] = append(rankedSubList[i], elems[fronts[i][m]].Copy())
+		}
+	}
+
+	return rankedSubList
 }
 
-// x is best 	-> -1
-// y is best 	-> 	1
-// else 			->	0
-func dominanceTest(x, y *[]float64) int {
+// DominanceTest - results meanings:
+//
+//  - '-1': x is best
+//  - '1': y is best
+//  - '0': nobody dominates
+func DominanceTest(x, y *[]float64) int {
 	result := 0
 	for i := range *x {
 		if (*x)[i] > (*y)[i] {
@@ -115,7 +131,8 @@ func dominanceTest(x, y *[]float64) int {
 				return 0
 			}
 			result = 1
-		} else if (*y)[i] > (*x)[i] {
+		}
+		if (*y)[i] > (*x)[i] {
 			if result == 1 {
 				return 0
 			}
@@ -125,101 +142,60 @@ func dominanceTest(x, y *[]float64) int {
 	return result
 }
 
-func fastNonDominatedRanking(elems Elements) map[int]Elements {
-	dominatingIth := make([]int, len(elems))
-	ithDominated := make([][]Elem, len(elems))
-	front := make([][]int, len(elems)+1)
+// FilterDominated -> returns elements that are not dominated in the set
+func FilterDominated(elems Elements) (nonDominated, dominated Elements) {
+	nonDominated = make(Elements, 0)
+	dominated = make(Elements, 0)
 
-	for p := 0; p < len(elems)-1; p++ {
-		for q := p + 1; q < len(elems); q++ {
-			dominanceTestResult := dominanceTest(&elems[p].objs, &elems[q].objs)
-			if dominanceTestResult == -1 {
-				ithDominated[p] = append(ithDominated[p], elems[q])
-				dominatingIth[q]++
-			} else if dominanceTestResult == 1 {
-				ithDominated[q] = append(ithDominated[q], elems[p])
-				dominatingIth[p]++
-			}
-		}
-	}
-	for i := 0; i < len(elems); i++ {
-		if dominatingIth[i] == 0 {
-			front[0] = append(front[0], i)
-		}
-	}
-	i := 0
-	for len(front[i]) != 0 {
-		i++
-		for p := range front[i-1] {
-			if p <= len(ithDominated) {
-				for q := range ithDominated[p] {
-					dominatingIth[q]--
-					if dominatingIth[q] == 0 {
-						front[i] = append(front[i], q)
-					}
-				}
-			}
-		}
-	}
-	rankedSubList := make(map[int]Elements)
-	for j := 0; j < i; j++ {
-		for m := range front[j] {
-			rankedSubList[j] = append(rankedSubList[j], elems[front[j][m]].Copy())
-		}
-	}
-	return rankedSubList
-}
-
-// filterDominated -> returns elements that are not dominated in the set
-func filterDominated(elems Elements) (nonDominated, dominated Elements) {
-	sort.Sort(byFirstObj(elems))
-	nonDom := make(Elements, 0)
-	dom := make(Elements, 0)
-	for i := len(elems) - 1; i >= 0; i-- {
-		flag := true
-		for j, second := range elems {
-			if i == j {
+	for p := 0; p < len(elems); p++ {
+		counter := 0
+		for q := 0; q < len(elems); q++ {
+			if p == q {
 				continue
 			}
-			if second.dominates(elems[i]) {
-				flag = false
-				break
+			// q dominates the p element
+			if DominanceTest(&elems[p].Objs, &elems[q].Objs) == 1 {
+				counter++
 			}
 		}
-		if flag {
-			nonDom = append(nonDom, elems[i])
+		if counter == 0 {
+			nonDominated = append(nonDominated, elems[p].Copy())
 		} else {
-			dom = append(dom, elems[i])
+			dominated = append(dominated, elems[p].Copy())
 		}
 	}
-	return nonDom, dom
+
+	rand.Shuffle(len(nonDominated), func(i, j int) {
+		nonDominated[i], nonDominated[j] = nonDominated[j], nonDominated[i]
+	})
+	return nonDominated, dominated
 }
 
-// assumes that the slice is composed of non dominated elements
-func calculateCrwdDist(elems Elements) {
+// CalculateCrwdDist - assumes that the slice is composed of non dominated elements
+func CalculateCrwdDist(elems Elements) {
 	if len(elems) <= 3 {
 		return
 	}
 	for i := range elems {
-		elems[i].crwdst = 0 // resets the crwdst
+		elems[i].Crwdst = 0 // resets the crwdst
 	}
-	szObjs := len(elems[0].objs)
+	szObjs := len(elems[0].Objs)
 	for m := 0; m < szObjs; m++ {
 		// sort by current objective
 		sort.SliceStable(elems, func(i, j int) bool {
-			return elems[i].objs[m] < elems[j].objs[m]
+			return elems[i].Objs[m] < elems[j].Objs[m]
 		})
 
-		objMin := elems[0].objs[m]
-		objMax := elems[len(elems)-1].objs[m]
-		elems[0].crwdst = math.MaxFloat64
-		elems[len(elems)-1].crwdst = math.MaxFloat64
+		objMin := elems[0].Objs[m]
+		objMax := elems[len(elems)-1].Objs[m]
+		elems[0].Crwdst = math.MaxFloat64
+		elems[len(elems)-1].Crwdst = math.MaxFloat32
 		for i := 1; i < len(elems)-1; i++ {
-			distance := elems[i+1].objs[m] - elems[i-1].objs[m]
-			if math.Abs(objMax-objMin) != 0 {
+			distance := elems[i+1].Objs[m] - elems[i-1].Objs[m]
+			if math.Abs(objMax-objMin) > 0 {
 				distance = distance / (objMax - objMin)
 			}
-			elems[i].crwdst += distance
+			elems[i].Crwdst += distance
 		}
 	}
 }

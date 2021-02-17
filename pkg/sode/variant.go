@@ -110,8 +110,8 @@ var best2 Variant = Variant{
 }
 
 // TODO:
-// link do artigo ->
-var currToBestv1 Variant = Variant{
+// currToBest
+var currToBest1 Variant = Variant{
 	makeMutant: func(pop []Elem, F, P float64, currPos, dim int) (Elem, error) {
 		index := make([]int, 5)
 		index[0] = currPos
@@ -132,31 +132,6 @@ var currToBestv1 Variant = Variant{
 		return ret, nil
 	},
 	funcName: "current-to-best-1",
-}
-
-// TODO
-// link do artigo ->
-var currToBestv2 Variant = Variant{
-	makeMutant: func(pop []Elem, F, P float64, currPos, dim int) (Elem, error) {
-		index := make([]int, 4)
-		index[0] = currPos
-		index[1] = 0 // best in pop
-		err := generateIndices(2, len(pop), index)
-		if err != nil {
-			return Elem{}, errors.New("insufficient size for the population, must me equal or greater than 4")
-		}
-		arr := make([]float64, dim)
-		a, b, c, d := pop[index[0]], pop[index[1]], pop[index[2]], pop[index[3]]
-		for i := 0; i < dim; i++ {
-			arr[i] = a.X[i] + F*(b.X[i]-a.X[i]) + F*(c.X[i]-d.X[i])
-		}
-		ret := Elem{
-			X:   arr,
-			fit: 0.0,
-		}
-		return ret, nil
-	},
-	funcName: "current-to-best-2",
 }
 
 // PBest implementation

@@ -10,9 +10,9 @@ import (
 
 // PBest implementation
 var pbest VariantFn = VariantFn{
-	fn: func(elems, rankZero models.Elements, p varParams) (models.Elem, error) {
+	Fn: func(elems, rankZero models.Elements, p Params) (models.Elem, error) {
 		ind := make([]int, 3)
-		ind[0] = p.currPos
+		ind[0] = p.CurrPos
 
 		err := generateIndices(1, len(elems), ind)
 		if err != nil {
@@ -25,7 +25,7 @@ var pbest VariantFn = VariantFn{
 		arr := make([]float64, p.DIM)
 
 		r1, r2 := elems[ind[1]], elems[ind[2]]
-		curr := elems[p.currPos]
+		curr := elems[p.CurrPos]
 		best := rankZero[bestIndex]
 
 		for i := 0; i < p.DIM; i++ {

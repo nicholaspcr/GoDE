@@ -10,9 +10,9 @@ import (
 // best1  current_best + F(a-b)
 // a,b are random elements
 var best1 VariantFn = VariantFn{
-	fn: func(elems, rankZero models.Elements, p varParams) (models.Elem, error) {
+	Fn: func(elems, rankZero models.Elements, p Params) (models.Elem, error) {
 		index := make([]int, 3)
-		index[0] = p.currPos
+		index[0] = p.CurrPos
 		err := generateIndices(1, len(elems), index)
 
 		if err != nil {

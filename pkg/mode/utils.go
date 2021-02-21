@@ -1,16 +1,17 @@
 package mo
 
 import (
-	"errors"
 	"log"
 	"math"
 	"math/rand"
 	"sort"
+
+	"gitlab.com/nicholaspcr/go-de/pkg/problems/models"
 )
 
 // GeneratePopulation - creates a population without objs calculates
-func GeneratePopulation(p Params) Elements {
-	ret := make(Elements, p.NP)
+func GeneratePopulation(p models.Params) models.Elements {
+	ret := make(models.Elements, p.NP)
 	constant := p.CEIL - p.FLOOR // range between floor and ceiling
 	for i := 0; i < p.NP; i++ {
 		ret[i].X = make([]float64, p.DIM)
@@ -22,23 +23,6 @@ func GeneratePopulation(p Params) Elements {
 	return ret
 }
 
-// generates random indices in the int slice, r -> it's a pointer
-func generateIndices(startInd, NP int, r []int) error {
-	if len(r) > NP {
-		return errors.New("insufficient elements in population to generate random indices")
-	}
-	for i := startInd; i < len(r); i++ {
-		for done := false; !done; {
-			r[i] = rand.Int() % NP
-			done = true
-			for j := 0; j < i; j++ {
-				done = done && r[j] != r[i]
-			}
-		}
-	}
-	return nil
-}
-
 // todo: create a proper error handler
 func checkError(e error) {
 	if e != nil {
@@ -46,8 +30,8 @@ func checkError(e error) {
 	}
 }
 
-// ReduceByCrowdDistance - returns NP elements filtered by rank and crwod distance
-func ReduceByCrowdDistance(elems *Elements, NP int) (reduceElements, rankZero Elements) {
+// ReduceByCrowdDistance - returns NP models.elements filtered by rank and crwod distance
+func ReduceByCrowdDistance(elems *models.Elements, NP int) (reduceElements, rankZero models.Elements) {
 	ranks := FastNonDominatedRanking(*elems)
 
 	qtdElems := 0
@@ -56,10 +40,11 @@ func ReduceByCrowdDistance(elems *Elements, NP int) (reduceElements, rankZero El
 	}
 	if qtdElems < NP {
 		log.Println("elems -> ", qtdElems)
-		log.Fatal("less elements than NP")
+		log.Fatal("less models.elements than NP")
 	}
 
-	*elems = make(Elements, 0)
+	*elems = make(models.Elements, 0)
+
 	for i := 0; i < len(ranks); i++ {
 
 		CalculateCrwdDist(ranks[i])
@@ -81,8 +66,8 @@ func ReduceByCrowdDistance(elems *Elements, NP int) (reduceElements, rankZero El
 	return *elems, ranks[0]
 }
 
-// FastNonDominatedRanking - ranks the elements and returns a map with elements per rank
-func FastNonDominatedRanking(elems Elements) map[int]Elements {
+// FastNonDominatedRanking - ranks the models.elements and returns a map with models.elements per rank
+func FastNonDominatedRanking(elems models.Elements) map[int]models.Elements {
 	dominatingIth := make([]int, len(elems))
 	ithDominated := make([][]int, len(elems))
 	fronts := make([][]int, len(elems)+1)
@@ -124,8 +109,8 @@ func FastNonDominatedRanking(elems Elements) map[int]Elements {
 		}
 	}
 
-	// getting ranked elements from their index
-	rankedSubList := make(map[int]Elements)
+	// getting ranked models.elements from their index
+	rankedSubList := make(map[int]models.Elements)
 	for i := 0; i < len(fronts); i++ {
 		for m := range fronts[i] {
 			rankedSubList[i] = append(rankedSubList[i], elems[fronts[i][m]].Copy())
@@ -159,10 +144,10 @@ func DominanceTest(x, y *[]float64) int {
 	return result
 }
 
-// FilterDominated -> returns elements that are not dominated in the set
-func FilterDominated(elems Elements) (nonDominated, dominated Elements) {
-	nonDominated = make(Elements, 0)
-	dominated = make(Elements, 0)
+// FilterDominated -> returns models.elements that are not dominated in the set
+func FilterDominated(elems models.Elements) (nonDominated, dominated models.Elements) {
+	nonDominated = make(models.Elements, 0)
+	dominated = make(models.Elements, 0)
 
 	for p := 0; p < len(elems); p++ {
 		counter := 0
@@ -184,8 +169,8 @@ func FilterDominated(elems Elements) (nonDominated, dominated Elements) {
 	return nonDominated, dominated
 }
 
-// CalculateCrwdDist - assumes that the slice is composed of non dominated elements
-func CalculateCrwdDist(elems Elements) {
+// CalculateCrwdDist - assumes that the slice is composed of non dominated models.elements
+func CalculateCrwdDist(elems models.Elements) {
 	if len(elems) <= 3 {
 		return
 	}

@@ -8,10 +8,18 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"gitlab.com/nicholaspcr/go-de/pkg/problems/models"
+	"gitlab.com/nicholaspcr/go-de/pkg/variants"
 )
 
 // MultiExecutions returns the pareto front of the total of 30 executions of the same problem
-func MultiExecutions(params Params, prob ProblemFn, variant VariantFn, disablePlot bool) {
+func MultiExecutions(
+	params models.Params,
+	prob models.ProblemFn,
+	variant variants.VariantFn,
+	disablePlot bool,
+) {
 
 	homePath := os.Getenv("HOME")
 	paretoPath := "/.go-de/mode/paretoFront/" + prob.Name + "/" + variant.Name
@@ -26,7 +34,7 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn, disablePl
 	rand.Seed(time.Now().UnixNano())         // Rand Seed
 	population := GeneratePopulation(params) // random generated population
 
-	rankedChan := make(chan Elements, params.EXECS) // channel to get elems related to rank[0] pareto
+	rankedChan := make(chan models.Elements, params.EXECS) // channel to get elems related to rank[0] pareto
 
 	// getting the maximum calculated value for each objective
 	maximumObjs := make(chan []float64, params.EXECS)
@@ -65,7 +73,7 @@ func MultiExecutions(params Params, prob ProblemFn, variant VariantFn, disablePl
 	fmt.Printf("execs: ")
 	counter := 0
 	// gets data from the pareto created by rank[0] of each gen
-	var rankedPareto Elements
+	var rankedPareto models.Elements
 	for v := range rankedChan {
 		counter++
 		fmt.Printf("%d, ", counter)

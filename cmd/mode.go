@@ -5,6 +5,9 @@ import (
 
 	"github.com/spf13/cobra"
 	mo "gitlab.com/nicholaspcr/go-de/pkg/mode"
+	"gitlab.com/nicholaspcr/go-de/pkg/problems"
+	"gitlab.com/nicholaspcr/go-de/pkg/problems/models"
+	"gitlab.com/nicholaspcr/go-de/pkg/variants"
 )
 
 // local flags
@@ -20,8 +23,8 @@ var modeCmd = &cobra.Command{
 	Long:  `An implementation that allows the processing of multiple objective functions, these are a bit more complex and time consuming overall.`,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		problem := mo.GetProblemByName(functionName)
-		variant := mo.GetVariantByName(variantName)
+		problem := problems.GetProblemByName(functionName)
+		variant := variants.GetVariantByName(variantName)
 		if problem.Name == "" {
 			fmt.Println("Invalid problem")
 			return
@@ -30,7 +33,7 @@ var modeCmd = &cobra.Command{
 			fmt.Println("Invalid variant.")
 			return
 		}
-		params := mo.Params{
+		params := models.Params{
 			NP:    np,
 			M:     mConst,
 			DIM:   dim,

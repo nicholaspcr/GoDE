@@ -9,10 +9,10 @@ import (
 // rand2 a + F(b-c) + F(d-e)
 // a,b,c,d,e are random elements
 var rand2 VariantFn = VariantFn{
-	fn: func(elems, rankZero models.Elements, p varParams) (models.Elem, error) {
+	Fn: func(elems, rankZero models.Elements, p Params) (models.Elem, error) {
 		// generating random indices different from current pos
 		ind := make([]int, 6)
-		ind[0] = p.currPos
+		ind[0] = p.CurrPos
 		err := generateIndices(1, len(elems), ind)
 		if err != nil {
 			return models.Elem{}, errors.New("insufficient size for the population, must me equal or greater than 4")

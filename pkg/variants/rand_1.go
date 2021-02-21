@@ -9,14 +9,14 @@ import (
 // Rand1 variant -> a + F(b - c)
 // a,b,c are random elements
 var rand1 VariantFn = VariantFn{
-	fn: func(elems, rankZero models.Elements, p varParams) (models.Elem, error) {
+	Fn: func(elems, rankZero models.Elements, p Params) (models.Elem, error) {
 		if len(elems) < 3 {
 			return models.Elem{}, fmt.Errorf("no sufficient amount of elements in the population, should be bigger than three")
 		}
 
 		// generating random indices different from current pos
 		inds := make([]int, 4)
-		inds[0] = p.currPos
+		inds[0] = p.CurrPos
 		err := generateIndices(1, len(elems), inds)
 		if err != nil {
 			return models.Elem{}, err

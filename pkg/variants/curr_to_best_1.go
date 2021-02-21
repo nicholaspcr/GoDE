@@ -9,9 +9,9 @@ import (
 
 // currToBest1 -> variant defined in JADE paper
 var currToBest1 VariantFn = VariantFn{
-	fn: func(elems, rankZero models.Elements, p varParams) (models.Elem, error) {
+	Fn: func(elems, rankZero models.Elements, p Params) (models.Elem, error) {
 		ind := make([]int, 4)
-		ind[0] = p.currPos
+		ind[0] = p.CurrPos
 		err := generateIndices(1, len(elems), ind)
 
 		if err != nil {
@@ -21,7 +21,7 @@ var currToBest1 VariantFn = VariantFn{
 		arr := make([]float64, p.DIM)
 
 		r1, r2, r3 := elems[ind[1]], elems[ind[2]], elems[ind[3]]
-		curr := elems[p.currPos]
+		curr := elems[p.CurrPos]
 		best := rankZero[rand.Int()%len(rankZero)]
 
 		for i := 0; i < p.DIM; i++ {

@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"strings"
+
+	"gitlab.com/nicholaspcr/go-de/pkg/problems/models"
 )
 
 type fileManager struct {
@@ -28,7 +30,7 @@ func checkFilePath(basePath, filePath string) {
 }
 
 // writeHeader writes the header of the csv writer file
-func writeHeader(pop []Elem, w *csv.Writer) {
+func writeHeader(pop []models.Elem, w *csv.Writer) {
 	tmpData := []string{}
 	for i := range pop {
 		tmpData = append(tmpData, fmt.Sprintf("elem[%d]", i))
@@ -41,7 +43,7 @@ func writeHeader(pop []Elem, w *csv.Writer) {
 }
 
 // writeGeneration writes the objectives in the csv writer file
-func writeGeneration(elems Elements, w *csv.Writer) {
+func writeGeneration(elems models.Elements, w *csv.Writer) {
 	if len(elems) == 0 {
 		return
 	}
@@ -64,7 +66,7 @@ func writeGeneration(elems Elements, w *csv.Writer) {
 // writeResult creates a file and writes all the elements in it
 // it should be used to write a single time a specific result
 // in the given path
-func writeResult(path string, elems Elements) {
+func writeResult(path string, elems models.Elements) {
 	f, err := os.Create(path)
 	writer := csv.NewWriter(f)
 	writer.Comma = '\t'

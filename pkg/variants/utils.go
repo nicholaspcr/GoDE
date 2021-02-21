@@ -3,6 +3,7 @@ package variants
 import (
 	"errors"
 	"math/rand"
+	"strings"
 )
 
 // generates random indices in the int slice, r -> it's a pointer
@@ -20,4 +21,23 @@ func generateIndices(startInd, NP int, r []int) error {
 		}
 	}
 	return nil
+}
+
+// GetVariantByName -> Returns the variant function
+func GetVariantByName(name string) VariantFn {
+	name = strings.ToLower(name)
+	variants := map[string]VariantFn{
+		"rand1":       rand1,
+		"rand2":       rand2,
+		"best1":       best1,
+		"best2":       best2,
+		"currtobest1": currToBest1,
+		"pbest":       pbest,
+	}
+	for k, v := range variants {
+		if name == k {
+			return v
+		}
+	}
+	return VariantFn{}
 }

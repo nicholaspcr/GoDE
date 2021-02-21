@@ -4,15 +4,16 @@ import "gitlab.com/nicholaspcr/go-de/pkg/problems/models"
 
 // shared variables and definitions
 
-type varParams struct {
+// Params are the necessary values that a variant uses
+type Params struct {
 	DIM     int
 	F       float64
-	currPos int
+	CurrPos int
 	P       float64
 }
 
 // VariantFn function type of the multiple variants
 type VariantFn struct {
-	fn   func(elems, rankZero models.Elements, p varParams) (models.Elem, error)
+	Fn   func(elems, rankZero models.Elements, p Params) (models.Elem, error)
 	Name string
 }

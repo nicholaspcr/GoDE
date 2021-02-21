@@ -6,6 +6,6 @@ package many
 // these instead of being instantiated in each call
 // they are cleaned and reused
 var (
-	// trying to prevent memory leak
-	dtlzG float64
+// trying to prevent memory leak
+// dtlzG float64
 )

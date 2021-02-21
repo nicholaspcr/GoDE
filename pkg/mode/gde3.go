@@ -6,21 +6,24 @@ import (
 	"math/rand"
 	"os"
 	"sync"
+
+	"gitlab.com/nicholaspcr/go-de/pkg/problems/models"
+	"gitlab.com/nicholaspcr/go-de/pkg/variants"
 )
 
 // tokens is a counting semaphore use to
 // enforce  a limit of 10 concurrent requests
-var tokens = make(chan struct{}, 5)
+var tokens = make(chan struct{}, 10)
 
 // GD3 -> runs a simple multiObjective DE in the ZDT1 case
 func GD3(
 	wg *sync.WaitGroup,
-	rankedCh chan<- Elements,
+	rankedCh chan<- models.Elements,
 	maximumObjs chan<- []float64,
-	p Params,
-	evaluate func(e *Elem, M int) error,
-	variant VariantFn,
-	population Elements,
+	p models.Params,
+	evaluate func(e *models.Elem, M int) error,
+	variant variants.VariantFn,
+	population models.Elements,
 	f *os.File,
 ) {
 	defer wg.Done()
@@ -50,28 +53,29 @@ func GD3(
 	writeGeneration(population, writer)
 
 	// stores the rank[0] of each generation
-	bestElems := make(Elements, 0)
+	bestElems := make(models.Elements, 0)
 
-	var genRankZero Elements
-	var bestInGen Elements
+	var genRankZero models.Elements
+	var bestInGen models.Elements
+	var trial models.Elem
 
 	for g := 0; g < p.GEN; g++ {
 		genRankZero, _ = FilterDominated(population)
 
 		for i := 0; i < len(population); i++ {
-			vr, err := variant.fn(
+			vr, err := variant.Fn(
 				population,
 				genRankZero,
-				varParams{
-					currPos: i,
+				variants.Params{
 					DIM:     p.DIM,
 					F:       p.F,
+					CurrPos: i,
 					P:       p.P,
 				})
 			checkError(err)
 
 			// trial element
-			trial := population[i].Copy()
+			trial = population[i].Copy()
 
 			// CROSS OVER
 			currInd := rand.Int() % p.DIM

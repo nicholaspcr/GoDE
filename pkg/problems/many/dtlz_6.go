@@ -14,15 +14,15 @@ var DTLZ6 = models.ProblemFn{
 			return errors.New("need to have an M lesser than the amount of variables")
 		}
 
-		evalG := func(x []float64) float64 {
-			k := len(x) - M + 1
+		var dtlzG float64
+		evalG := func(v []float64) float64 {
 			dtlzG = 0.0
-			for i := len(x) - k; i < len(x); i++ {
-				dtlzG += math.Pow(x[i], 1.0/10.0)
+			for _, x := range v {
+				dtlzG += math.Pow(x, 1.0/10.0)
 			}
 			return dtlzG
 		}
-		g := evalG(e.X)
+		g := evalG(e.X[M-1:])
 		t := math.Pi / (4.0 * (1 + g))
 
 		theta := make([]float64, M-1)

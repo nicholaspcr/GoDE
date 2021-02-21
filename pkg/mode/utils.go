@@ -73,7 +73,7 @@ func FastNonDominatedRanking(elems models.Elements) map[int]models.Elements {
 	fronts := make([][]int, len(elems)+1)
 
 	rand.Shuffle(len(elems), func(l, r int) {
-		elems[l], elems[r] = elems[r].Copy(), elems[l].Copy()
+		elems[l], elems[r] = elems[r], elems[l]
 	})
 
 	for i := range fronts {
@@ -171,9 +171,14 @@ func FilterDominated(elems models.Elements) (nonDominated, dominated models.Elem
 
 // CalculateCrwdDist - assumes that the slice is composed of non dominated models.elements
 func CalculateCrwdDist(elems models.Elements) {
-	if len(elems) <= 3 {
+
+	if len(elems) <= 2 {
+		for i := range elems {
+			elems[i].Crwdst = math.MaxFloat32
+		}
 		return
 	}
+
 	for i := range elems {
 		elems[i].Crwdst = 0 // resets the crwdst
 	}

@@ -104,7 +104,7 @@ func GD3(
 			}
 		}
 
-		population, bestInGen = ReduceByCrowdDistance(&population, p.NP)
+		bestInGen = ReduceByCrowdDistance(&population, p.NP)
 		bestElems = append(bestElems, bestInGen...)
 
 		writeGeneration(population, writer)

@@ -47,7 +47,7 @@ func checkError(e error) {
 }
 
 // ReduceByCrowdDistance - returns NP elements filtered by rank and crwod distance
-func ReduceByCrowdDistance(elems *Elements, NP int) (reduceElements, rankZero Elements) {
+func ReduceByCrowdDistance(elems *Elements, NP int) (rankZero Elements) {
 	ranks := FastNonDominatedRanking(*elems)
 
 	qtdElems := 0
@@ -78,7 +78,7 @@ func ReduceByCrowdDistance(elems *Elements, NP int) (reduceElements, rankZero El
 			*elems = append(*elems, ranks[i]...)
 		}
 	}
-	return *elems, ranks[0]
+	return ranks[0]
 }
 
 // FastNonDominatedRanking - ranks the elements and returns a map with elements per rank
@@ -88,7 +88,7 @@ func FastNonDominatedRanking(elems Elements) map[int]Elements {
 	fronts := make([][]int, len(elems)+1)
 
 	rand.Shuffle(len(elems), func(l, r int) {
-		elems[l], elems[r] = elems[r].Copy(), elems[l].Copy()
+		elems[l], elems[r] = elems[r], elems[l]
 	})
 
 	for i := range fronts {

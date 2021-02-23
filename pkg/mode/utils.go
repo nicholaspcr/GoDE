@@ -176,9 +176,9 @@ func FilterDominated(elems Elements) (nonDominated, dominated Elements) {
 			}
 		}
 		if counter == 0 {
-			nonDominated = append(nonDominated, elems[p].Copy())
+			nonDominated = append(nonDominated, elems[p])
 		} else {
-			dominated = append(dominated, elems[p].Copy())
+			dominated = append(dominated, elems[p])
 		}
 	}
 	return nonDominated, dominated

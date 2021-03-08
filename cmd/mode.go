@@ -2,6 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"runtime"
+	"runtime/pprof"
 
 	"github.com/spf13/cobra"
 	mo "gitlab.com/nicholaspcr/go-de/pkg/mode"
@@ -15,6 +19,10 @@ var mConst int
 var functionName string
 var variantName string
 var disablePlot bool
+
+// pprofs
+var cpuprofile string
+var memprofile string
 
 // modeCmd represents the mode command
 var modeCmd = &cobra.Command{
@@ -45,7 +53,32 @@ var modeCmd = &cobra.Command{
 			F:     fConst,
 			P:     pConst,
 		}
+		if cpuprofile != "" {
+			cpuF, err := os.Create(cpuprofile)
+			if err != nil {
+				log.Fatal("could not create CPU profile: ", err)
+			}
+			defer cpuF.Close() // error handling omitted for example
+			if err := pprof.StartCPUProfile(cpuF); err != nil {
+				log.Fatal("could not start CPU profile: ", err)
+			}
+			defer pprof.StopCPUProfile()
+
+		}
+
 		mo.MultiExecutions(params, problem, variant, disablePlot)
+
+		if memprofile != "" {
+			memF, err := os.Create(memprofile)
+			if err != nil {
+				log.Fatal("could not create memory profile: ", err)
+			}
+			defer memF.Close() // error handling omitted for example
+			runtime.GC()       // get up-to-date statistics
+			if err := pprof.WriteHeapProfile(memF); err != nil {
+				log.Fatal("could not write memory profile: ", err)
+			}
+		}
 	},
 }
 
@@ -71,4 +104,13 @@ func init() {
 		false,
 		"to write in files the result of the gde3 to be able to plot it with the python scripts")
 
+	modeCmd.Flags().StringVar(&cpuprofile,
+		"cpuprofile",
+		"",
+		"write cpu profile to `file`")
+
+	modeCmd.Flags().StringVar(&memprofile,
+		"memprofile",
+		"",
+		"write memory profile to `file`")
 }

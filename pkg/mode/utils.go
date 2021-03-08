@@ -30,8 +30,8 @@ func checkError(e error) {
 	}
 }
 
-// ReduceByCrowdDistance - returns NP models.elements filtered by rank and crwod distance
-func ReduceByCrowdDistance(elems *models.Elements, NP int) (reduceElements, rankZero models.Elements) {
+// ReduceByCrowdDistance - returns NP models.elements filtered by rank and crowd distance
+func ReduceByCrowdDistance(elems *models.Elements, NP int) models.Elements {
 	ranks := FastNonDominatedRanking(*elems)
 
 	qtdElems := 0
@@ -63,7 +63,7 @@ func ReduceByCrowdDistance(elems *models.Elements, NP int) (reduceElements, rank
 			*elems = append(*elems, ranks[i]...)
 		}
 	}
-	return *elems, ranks[0]
+	return ranks[0]
 }
 
 // FastNonDominatedRanking - ranks the models.elements and returns a map with models.elements per rank
@@ -161,9 +161,9 @@ func FilterDominated(elems models.Elements) (nonDominated, dominated models.Elem
 			}
 		}
 		if counter == 0 {
-			nonDominated = append(nonDominated, elems[p].Copy())
+			nonDominated = append(nonDominated, elems[p])
 		} else {
-			dominated = append(dominated, elems[p].Copy())
+			dominated = append(dominated, elems[p])
 		}
 	}
 	return nonDominated, dominated

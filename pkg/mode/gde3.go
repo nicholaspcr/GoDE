@@ -13,7 +13,7 @@ import (
 
 // tokens is a counting semaphore use to
 // enforce  a limit of 10 concurrent requests
-var tokens = make(chan struct{}, 10)
+var tokens = make(chan struct{}, 3)
 
 // GD3 -> runs a simple multiObjective DE in the ZDT1 case
 func GD3(
@@ -108,7 +108,7 @@ func GD3(
 			}
 		}
 
-		population, bestInGen = ReduceByCrowdDistance(&population, p.NP)
+		bestInGen = ReduceByCrowdDistance(&population, p.NP)
 		bestElems = append(bestElems, bestInGen...)
 
 		writeGeneration(population, writer)

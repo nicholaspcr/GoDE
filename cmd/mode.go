@@ -20,10 +20,6 @@ var functionName string
 var variantName string
 var disablePlot bool
 
-// pprofs
-var cpuprofile string
-var memprofile string
-
 // modeCmd represents the mode command
 var modeCmd = &cobra.Command{
 	Use:   "multi",
@@ -104,13 +100,4 @@ func init() {
 		false,
 		"to write in files the result of the gde3 to be able to plot it with the python scripts")
 
-	modeCmd.Flags().StringVar(&cpuprofile,
-		"cpuprofile",
-		"",
-		"write cpu profile to `file`")
-
-	modeCmd.Flags().StringVar(&memprofile,
-		"memprofile",
-		"",
-		"write memory profile to `file`")
 }

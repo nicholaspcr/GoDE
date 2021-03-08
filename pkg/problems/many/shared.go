@@ -6,6 +6,6 @@ package many
 // these instead of being instantiated in each call
 // they are cleaned and reused
 var (
-// trying to prevent memory leak
-// dtlzG float64
+	FIVE   = float64(0.5)
+	TWENTY = float64(20.0)
 )

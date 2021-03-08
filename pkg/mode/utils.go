@@ -113,7 +113,10 @@ func FastNonDominatedRanking(elems models.Elements) map[int]models.Elements {
 	rankedSubList := make(map[int]models.Elements)
 	for i := 0; i < len(fronts); i++ {
 		for m := range fronts[i] {
-			rankedSubList[i] = append(rankedSubList[i], elems[fronts[i][m]].Copy())
+			rankedSubList[i] = append(
+				rankedSubList[i],
+				elems[fronts[i][m]].Copy(),
+			)
 		}
 	}
 
@@ -195,7 +198,12 @@ func CalculateCrwdDist(elems models.Elements) {
 		elems[len(elems)-1].Crwdst = math.MaxFloat32
 		for i := 1; i < len(elems)-1; i++ {
 			distance := elems[i+1].Objs[m] - elems[i-1].Objs[m]
-			if math.Abs(objMax-objMin) > 0 {
+
+			op := objMax - objMin
+			if op < 0 {
+				op *= -1
+			}
+			if op > 0 {
 				elems[i].Crwdst += distance / (objMax - objMin)
 			}
 		}

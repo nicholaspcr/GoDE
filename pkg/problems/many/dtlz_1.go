@@ -21,7 +21,7 @@ var DTLZ1 = models.ProblemFn{
 		}
 
 		evalG := func(v []float64) float64 {
-			g := 0.0
+			g := float64(0.0)
 			for _, x := range v {
 				g += (x-0.5)*(x-0.5) - math.Cos(20.0*math.Pi*(x-0.5))
 			}

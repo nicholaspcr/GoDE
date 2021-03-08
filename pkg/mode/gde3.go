@@ -2,7 +2,6 @@ package mo
 
 import (
 	"encoding/csv"
-	"math"
 	"math/rand"
 	"os"
 	"sync"
@@ -45,7 +44,9 @@ func GD3(
 		checkError(err)
 
 		for j, obj := range population[i].Objs {
-			maxObjs[j] = math.Max(maxObjs[j], obj)
+			if obj > maxObjs[j] {
+				maxObjs[j] = obj
+			}
 		}
 	}
 
@@ -55,8 +56,8 @@ func GD3(
 	// stores the rank[0] of each generation
 	bestElems := make(models.Elements, 0)
 
-	var genRankZero models.Elements
-	var bestInGen models.Elements
+	var genRankZero = make(models.Elements, 0)
+	var bestInGen = make(models.Elements, 0)
 	var trial models.Elem
 
 	for g := 0; g < p.GEN; g++ {
@@ -116,7 +117,9 @@ func GD3(
 		// checks for the biggest objective
 		for _, p := range population {
 			for j, obj := range p.Objs {
-				maxObjs[j] = math.Max(maxObjs[j], obj)
+				if obj > maxObjs[j] {
+					maxObjs[j] = obj
+				}
 			}
 		}
 	}

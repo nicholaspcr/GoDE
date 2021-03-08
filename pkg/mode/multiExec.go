@@ -2,7 +2,6 @@ package mo
 
 import (
 	"fmt"
-	"math"
 	"math/rand"
 	"os"
 	"strconv"
@@ -107,7 +106,9 @@ func MultiExecutions(
 	maxObjs := make([]float64, params.M)
 	for arr := range maximumObjs {
 		for i, obj := range arr {
-			maxObjs[i] = math.Max(maxObjs[i], obj)
+			if obj > maxObjs[i] {
+				maxObjs[i] = obj
+			}
 		}
 	}
 	fmt.Println("maximum objective values found")

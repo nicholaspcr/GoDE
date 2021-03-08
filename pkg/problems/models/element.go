@@ -10,16 +10,16 @@ type Elem struct {
 // Copy the entire struct
 func (e *Elem) Copy() Elem {
 	var ret Elem
-	// ret.X = make([]float64, len(e.X))
-	// ret.Objs = make([]float64, len(e.Objs))
-	// copy(ret.X, e.X)
-	// copy(ret.Objs, e.Objs)
+	ret.X = make([]float64, len(e.X))
+	copy(ret.X, e.X)
+	ret.Objs = make([]float64, len(e.Objs))
+	copy(ret.Objs, e.Objs)
 
-	// TODO REVIEW
-	ret.X = e.X
-	ret.Objs = e.Objs
+	// // TODO REVIEW
+	// ret.X = e.X
+	// ret.Objs = e.Objs
 
-	ret.Crwdst = e.Crwdst
+	// ret.Crwdst = e.Crwdst
 	return ret
 }
 

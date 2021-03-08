@@ -56,8 +56,8 @@ func GD3(
 	// stores the rank[0] of each generation
 	bestElems := make(models.Elements, 0)
 
-	var genRankZero = make(models.Elements, 0)
-	var bestInGen = make(models.Elements, 0)
+	var genRankZero models.Elements
+	var bestInGen models.Elements
 	var trial models.Elem
 
 	for g := 0; g < p.GEN; g++ {
@@ -101,7 +101,7 @@ func GD3(
 			checkError(evalErr)
 
 			// SELECTION
-			comp := DominanceTest(&population[i].Objs, &trial.Objs)
+			comp := DominanceTest(population[i].Objs, trial.Objs)
 			if comp == 1 {
 				population[i] = trial.Copy()
 			} else if comp == 0 {
@@ -109,8 +109,11 @@ func GD3(
 			}
 		}
 
-		bestInGen = ReduceByCrowdDistance(&population, p.NP)
-		bestElems = append(bestElems, bestInGen...)
+		population, bestInGen = ReduceByCrowdDistance(population, p.NP)
+
+		tmpBestGen := make(models.Elements, len(bestInGen))
+		copy(tmpBestGen, bestInGen)
+		bestElems = append(bestElems, tmpBestGen...)
 
 		writeGeneration(population, writer)
 

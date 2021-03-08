@@ -31,8 +31,8 @@ func checkError(e error) {
 }
 
 // ReduceByCrowdDistance - returns NP models.elements filtered by rank and crowd distance
-func ReduceByCrowdDistance(elems *models.Elements, NP int) models.Elements {
-	ranks := FastNonDominatedRanking(*elems)
+func ReduceByCrowdDistance(elems models.Elements, NP int) (models.Elements, models.Elements) {
+	ranks := FastNonDominatedRanking(elems)
 
 	qtdElems := 0
 	for _, r := range ranks {
@@ -43,27 +43,31 @@ func ReduceByCrowdDistance(elems *models.Elements, NP int) models.Elements {
 		log.Fatal("less models.elements than NP")
 	}
 
-	*elems = make(models.Elements, 0)
+	elems = models.Elements{} // clears it
 
 	for i := 0; i < len(ranks); i++ {
-
 		CalculateCrwdDist(ranks[i])
 		sort.SliceStable(ranks[i], func(l, r int) bool {
 			return ranks[i][l].Crwdst > ranks[i][r].Crwdst
 		})
 
-		if len(*elems)+len(ranks[i]) >= NP {
+		if len(elems)+len(ranks[i]) >= NP {
 			counter := 0
-			for len(*elems) < NP {
-				*elems = append(*elems, ranks[i][counter])
+			for len(elems) < NP {
+				elems = append(elems, ranks[i][counter])
 				counter++
 			}
 			break
 		} else {
-			*elems = append(*elems, ranks[i]...)
+			elems = append(elems, ranks[i]...)
 		}
 	}
-	return ranks[0]
+
+	newElems := make(models.Elements, len(elems))
+	copy(newElems, elems)
+	zero := make(models.Elements, len(ranks[0]))
+	copy(zero, ranks[0])
+	return newElems, zero
 }
 
 // FastNonDominatedRanking - ranks the models.elements and returns a map with models.elements per rank
@@ -85,7 +89,7 @@ func FastNonDominatedRanking(elems models.Elements) map[int]models.Elements {
 		dominatingIth[p] = 0             // N_p = 0
 
 		for q := 0; q < len(elems); q++ {
-			dominanceTestResult := DominanceTest(&elems[p].Objs, &elems[q].Objs)
+			dominanceTestResult := DominanceTest(elems[p].Objs, elems[q].Objs)
 
 			if dominanceTestResult == -1 { // p dominates q
 				ithDominated[p] = append(ithDominated[p], q)
@@ -128,16 +132,16 @@ func FastNonDominatedRanking(elems models.Elements) map[int]models.Elements {
 //  - '-1': x is best
 //  - '1': y is best
 //  - '0': nobody dominates
-func DominanceTest(x, y *[]float64) int {
+func DominanceTest(x, y []float64) int {
 	result := 0
-	for i := range *x {
-		if (*x)[i] > (*y)[i] {
+	for i := range x {
+		if (x)[i] > (y)[i] {
 			if result == -1 {
 				return 0
 			}
 			result = 1
 		}
-		if (*y)[i] > (*x)[i] {
+		if (y)[i] > (x)[i] {
 			if result == 1 {
 				return 0
 			}
@@ -148,9 +152,9 @@ func DominanceTest(x, y *[]float64) int {
 }
 
 // FilterDominated -> returns models.elements that are not dominated in the set
-func FilterDominated(elems models.Elements) (nonDominated, dominated models.Elements) {
-	nonDominated = make(models.Elements, 0)
-	dominated = make(models.Elements, 0)
+func FilterDominated(elems models.Elements) (models.Elements, models.Elements) {
+	nonDominated := make(models.Elements, 0)
+	dominated := make(models.Elements, 0)
 
 	for p := 0; p < len(elems); p++ {
 		counter := 0
@@ -159,7 +163,7 @@ func FilterDominated(elems models.Elements) (nonDominated, dominated models.Elem
 				continue
 			}
 			// q dominates the p element
-			if DominanceTest(&elems[p].Objs, &elems[q].Objs) == 1 {
+			if DominanceTest(elems[p].Objs, elems[q].Objs) == 1 {
 				counter++
 			}
 		}
@@ -169,12 +173,18 @@ func FilterDominated(elems models.Elements) (nonDominated, dominated models.Elem
 			dominated = append(dominated, elems[p])
 		}
 	}
-	return nonDominated, dominated
+
+	nd := make(models.Elements, len(nonDominated))
+	copy(nd, nonDominated)
+
+	d := make(models.Elements, len(dominated))
+	copy(d, dominated)
+
+	return nd, d
 }
 
 // CalculateCrwdDist - assumes that the slice is composed of non dominated models.elements
 func CalculateCrwdDist(elems models.Elements) {
-
 	if len(elems) <= 2 {
 		for i := range elems {
 			elems[i].Crwdst = math.MaxFloat32

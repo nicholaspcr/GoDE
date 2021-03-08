@@ -48,6 +48,10 @@ func MultiExecutions(
 		checkError(err)
 
 		wg.Add(1)
+
+		cpyPopulation := make(models.Elements, len(population))
+		copy(cpyPopulation, population)
+
 		// worker
 		go GD3(
 			wg,
@@ -56,7 +60,7 @@ func MultiExecutions(
 			params,
 			prob.Fn,
 			variant,
-			population.Copy(),
+			cpyPopulation,
 			f,
 		)
 	}

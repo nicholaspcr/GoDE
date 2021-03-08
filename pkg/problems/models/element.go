@@ -9,28 +9,25 @@ type Elem struct {
 
 // Copy the entire struct
 func (e *Elem) Copy() Elem {
-	var ret Elem
+	var ret = Elem{}
+
 	ret.X = make([]float64, len(e.X))
 	copy(ret.X, e.X)
+
 	ret.Objs = make([]float64, len(e.Objs))
 	copy(ret.Objs, e.Objs)
 
-	// // TODO REVIEW
-	// ret.X = e.X
-	// ret.Objs = e.Objs
-
-	// ret.Crwdst = e.Crwdst
 	return ret
 }
 
 // Elements is a slice of the type Elem
 type Elements []Elem
 
-// Copy of the []Elem slice
-func (e Elements) Copy() Elements {
-	arr := make(Elements, len(e))
-	for i, v := range e {
-		arr[i] = v.Copy()
-	}
-	return arr
-}
+// // Copy of the []Elem slice
+// func (e Elements) Copy() Elements {
+// 	arr := make(Elements, len(e))
+// 	for i, v := range e {
+// 		arr[i] = v.Copy()
+// 	}
+// 	return arr
+// }

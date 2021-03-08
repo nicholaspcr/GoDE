@@ -14,38 +14,42 @@ var DTLZ6 = models.ProblemFn{
 			return errors.New("need to have an M lesser than the amount of variables")
 		}
 
-		varSz := len(e.X)
-		k := varSz - M + 1
 		evalG := func(v []float64) float64 {
 			g := 0.0
 			for _, x := range v {
-				g += math.Pow(x, 0.1)
+				op := math.Pow(x, 0.1) // consumes huge memory
+				g += op
 			}
 			return g
 		}
-		g := evalG(e.X[varSz-k:])
+		g := evalG(e.X[M-1:])
 		t := math.Pi / (4.0 * (1.0 + g))
 
-		newObjs := make([]float64, M)
+		objs := make([]float64, M)
 		theta := make([]float64, M-1)
+
 		theta[0] = e.X[0] * math.Pi / 2.0
 		for i := 1; i < M-1; i++ {
 			theta[i] = t * (1.0 + 2.0*g*e.X[i])
 		}
 
 		for i := 0; i < M; i++ {
-			newObjs[i] = (1 + g)
+			prod := (1 + g)
 			for j := 0; j < M-(i+1); j++ {
-				newObjs[i] *= math.Cos(theta[j])
+				prod *= math.Cos(theta[j])
 			}
 			if i != 0 {
-				newObjs[i] *= math.Sin(theta[M-(i+1)])
+				aux := M - (i + 1)
+				prod *= math.Sin(theta[aux])
 			}
+
+			objs[i] = prod
 		}
 
 		// puts new objectives into the elem
-		e.Objs = make([]float64, len(newObjs))
-		copy(e.Objs, newObjs)
+		e.Objs = *(new([]float64))
+		e.Objs = make([]float64, len(objs))
+		copy(e.Objs, objs)
 		return nil
 	},
 	Name: "dtlz6",

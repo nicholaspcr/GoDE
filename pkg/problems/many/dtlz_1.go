@@ -1,4 +1,4 @@
-// many package has the implementation of the dtlz problems
+// Package many package has the implementation of the dtlz problems
 ///
 /*
 The implementations are translations of the python code made by pymoo

@@ -2,16 +2,46 @@ package mo
 
 import (
 	"fmt"
+	"log"
 	"math"
 	"math/rand"
 	"os"
+	"runtime"
+	"runtime/pprof"
 	"strconv"
 	"sync"
 	"time"
 )
 
 // MultiExecutions returns the pareto front of the total of 30 executions of the same problem
-func MultiExecutions(params Params, prob ProblemFn, variant VariantFn, disablePlot bool) {
+func MultiExecutions(
+	params Params,
+	prob ProblemFn,
+	variant VariantFn,
+	disablePlot bool,
+) {
+	if params.CPUProf != "" {
+		f, err := os.Create(params.CPUProf)
+		if err != nil {
+			log.Fatal("could not create CPU profile: ", err)
+		}
+		defer f.Close() // error handling omitted for example
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal("could not start CPU profile: ", err)
+		}
+		defer pprof.StopCPUProfile()
+	}
+	if params.MemProf != "" {
+		f, err := os.Create(params.MemProf)
+		if err != nil {
+			log.Fatal("could not create memory profile: ", err)
+		}
+		defer f.Close() // error handling omitted for example
+		runtime.GC()    // get up-to-date statistics
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			log.Fatal("could not write memory profile: ", err)
+		}
+	}
 
 	homePath := os.Getenv("HOME")
 	paretoPath := "/.go-de/mode/paretoFront/" + prob.Name + "/" + variant.Name

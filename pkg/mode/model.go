@@ -4,6 +4,7 @@ package mo
 type Params struct {
 	EXECS, NP, M, DIM, GEN int
 	FLOOR, CEIL, CR, F, P  float64
+	MemProf, CPUProf       string
 }
 
 // Elem -> Element of population

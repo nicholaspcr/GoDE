@@ -2,6 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"runtime"
+	"runtime/pprof"
 
 	"github.com/spf13/cobra"
 	mo "gitlab.com/nicholaspcr/go-de/pkg/mode"
@@ -12,6 +16,10 @@ var mConst int
 var functionName string
 var variantName string
 var disablePlot bool
+
+// pprofs
+var cpuprofile string
+var memprofile string
 
 // modeCmd represents the mode command
 var modeCmd = &cobra.Command{
@@ -31,18 +39,45 @@ var modeCmd = &cobra.Command{
 			return
 		}
 		params := mo.Params{
-			NP:    np,
-			M:     mConst,
-			DIM:   dim,
-			GEN:   gen,
-			EXECS: execs,
-			FLOOR: floor,
-			CEIL:  ceil,
-			CR:    crConst,
-			F:     fConst,
-			P:     pConst,
+			NP:      np,
+			M:       mConst,
+			DIM:     dim,
+			GEN:     gen,
+			EXECS:   execs,
+			FLOOR:   floor,
+			CEIL:    ceil,
+			CR:      crConst,
+			F:       fConst,
+			P:       pConst,
+			MemProf: memprofile,
+			CPUProf: cpuprofile,
 		}
+		if cpuprofile != "" {
+			f, err := os.Create(cpuprofile)
+			if err != nil {
+				log.Fatal("could not create CPU profile: ", err)
+			}
+			defer f.Close() // error handling omitted for example
+			if err := pprof.StartCPUProfile(f); err != nil {
+				log.Fatal("could not start CPU profile: ", err)
+			}
+			defer pprof.StopCPUProfile()
+		}
+
+		// ... rest of the program ...
+
 		mo.MultiExecutions(params, problem, variant, disablePlot)
+		if memprofile != "" {
+			f, err := os.Create(memprofile)
+			if err != nil {
+				log.Fatal("could not create memory profile: ", err)
+			}
+			defer f.Close() // error handling omitted for example
+			runtime.GC()    // get up-to-date statistics
+			if err := pprof.WriteHeapProfile(f); err != nil {
+				log.Fatal("could not write memory profile: ", err)
+			}
+		}
 	},
 }
 
@@ -68,4 +103,13 @@ func init() {
 		false,
 		"to write in files the result of the gde3 to be able to plot it with the python scripts")
 
+	modeCmd.Flags().StringVar(&cpuprofile,
+		"cpuprofile",
+		"",
+		"write cpu profile to `file`")
+
+	modeCmd.Flags().StringVar(&memprofile,
+		"memprofile",
+		"",
+		"write memory profile to `file`")
 }

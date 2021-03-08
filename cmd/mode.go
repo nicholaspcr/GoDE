@@ -39,42 +39,40 @@ var modeCmd = &cobra.Command{
 			return
 		}
 		params := mo.Params{
-			NP:      np,
-			M:       mConst,
-			DIM:     dim,
-			GEN:     gen,
-			EXECS:   execs,
-			FLOOR:   floor,
-			CEIL:    ceil,
-			CR:      crConst,
-			F:       fConst,
-			P:       pConst,
-			MemProf: memprofile,
-			CPUProf: cpuprofile,
+			NP:    np,
+			M:     mConst,
+			DIM:   dim,
+			GEN:   gen,
+			EXECS: execs,
+			FLOOR: floor,
+			CEIL:  ceil,
+			CR:    crConst,
+			F:     fConst,
+			P:     pConst,
 		}
 		if cpuprofile != "" {
-			f, err := os.Create(cpuprofile)
+			cpuF, err := os.Create(cpuprofile)
 			if err != nil {
 				log.Fatal("could not create CPU profile: ", err)
 			}
-			defer f.Close() // error handling omitted for example
-			if err := pprof.StartCPUProfile(f); err != nil {
+			defer cpuF.Close() // error handling omitted for example
+			if err := pprof.StartCPUProfile(cpuF); err != nil {
 				log.Fatal("could not start CPU profile: ", err)
 			}
 			defer pprof.StopCPUProfile()
+
 		}
 
-		// ... rest of the program ...
-
 		mo.MultiExecutions(params, problem, variant, disablePlot)
+
 		if memprofile != "" {
-			f, err := os.Create(memprofile)
+			memF, err := os.Create(memprofile)
 			if err != nil {
 				log.Fatal("could not create memory profile: ", err)
 			}
-			defer f.Close() // error handling omitted for example
-			runtime.GC()    // get up-to-date statistics
-			if err := pprof.WriteHeapProfile(f); err != nil {
+			defer memF.Close() // error handling omitted for example
+			runtime.GC()       // get up-to-date statistics
+			if err := pprof.WriteHeapProfile(memF); err != nil {
 				log.Fatal("could not write memory profile: ", err)
 			}
 		}

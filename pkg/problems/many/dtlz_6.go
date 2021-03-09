@@ -17,8 +17,10 @@ var DTLZ6 = models.ProblemFn{
 		evalG := func(v []float64) float64 {
 			g := 0.0
 			for _, x := range v {
-				op := math.Pow(x, 0.1) // consumes huge memory
-				g += op
+				if math.Abs(x) < 0.000001 {
+					x = 0.000001
+				}
+				g += math.Pow(x, 0.1) // consumes huge memory
 			}
 			return g
 		}

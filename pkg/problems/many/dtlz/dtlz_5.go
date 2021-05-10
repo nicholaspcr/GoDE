@@ -1,4 +1,4 @@
-package many
+package dtlz
 
 import (
 	"errors"
@@ -7,29 +7,27 @@ import (
 	"gitlab.com/nicholaspcr/go-de/pkg/problems/models"
 )
 
-// DTLZ6 multiObjective testcase
-var DTLZ6 = models.ProblemFn{
+// DTLZ5 multiObjective testcase
+var DTLZ5 = models.ProblemFn{
 	Fn: func(e *models.Elem, M int) error {
 		if len(e.X) <= M {
 			return errors.New("need to have an M lesser than the amount of variables")
 		}
 
-		evalG := func(v []float64) float64 {
+		varSz := len(e.X)
+		k := varSz - M + 1
+		evalG := func(x []float64) float64 {
 			g := 0.0
-			for _, x := range v {
-				if math.Abs(x) < 0.000001 {
-					x = 0.000001
-				}
-				g += math.Pow(x, 0.1) // consumes huge memory
+			for _, v := range x {
+				g += (v - 0.5) * (v - 0.5)
 			}
 			return g
 		}
-		g := evalG(e.X[M-1:])
-		t := math.Pi / (4.0 * (1.0 + g))
+		g := evalG(e.X[varSz-k:])
+		t := math.Pi / (4.0 * (1 + g))
 
-		objs := make([]float64, M)
+		newObjs := make([]float64, M)
 		theta := make([]float64, M-1)
-
 		theta[0] = e.X[0] * math.Pi / 2.0
 		for i := 1; i < M-1; i++ {
 			theta[i] = t * (1.0 + 2.0*g*e.X[i])
@@ -41,18 +39,16 @@ var DTLZ6 = models.ProblemFn{
 				prod *= math.Cos(theta[j])
 			}
 			if i != 0 {
-				aux := M - (i + 1)
-				prod *= math.Sin(theta[aux])
+				prod *= math.Sin(theta[M-(i+1)])
 			}
-
-			objs[i] = prod
+			newObjs[i] = prod
 		}
 
 		// puts new objectives into the elem
-		e.Objs = *(new([]float64))
-		e.Objs = make([]float64, len(objs))
-		copy(e.Objs, objs)
+		e.Objs = make([]float64, len(newObjs))
+		copy(e.Objs, newObjs)
+
 		return nil
 	},
-	Name: "dtlz6",
+	Name: "dtlz5",
 }

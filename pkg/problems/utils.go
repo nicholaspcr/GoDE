@@ -3,7 +3,7 @@ package problems
 import (
 	"strings"
 
-	"gitlab.com/nicholaspcr/go-de/pkg/problems/many"
+	"gitlab.com/nicholaspcr/go-de/pkg/problems/many/dtlz"
 	"gitlab.com/nicholaspcr/go-de/pkg/problems/models"
 	"gitlab.com/nicholaspcr/go-de/pkg/problems/multi"
 )
@@ -19,13 +19,13 @@ func GetProblemByName(Name string) models.ProblemFn {
 		multi.ZDT6.Name: multi.ZDT6,
 		multi.VNT1.Name: multi.VNT1,
 
-		many.DTLZ1.Name: many.DTLZ1,
-		many.DTLZ2.Name: many.DTLZ2,
-		many.DTLZ3.Name: many.DTLZ3,
-		many.DTLZ4.Name: many.DTLZ4,
-		many.DTLZ5.Name: many.DTLZ5,
-		many.DTLZ6.Name: many.DTLZ6,
-		many.DTLZ7.Name: many.DTLZ7,
+		dtlz.DTLZ1.Name: dtlz.DTLZ1,
+		dtlz.DTLZ2.Name: dtlz.DTLZ2,
+		dtlz.DTLZ3.Name: dtlz.DTLZ3,
+		dtlz.DTLZ4.Name: dtlz.DTLZ4,
+		dtlz.DTLZ5.Name: dtlz.DTLZ5,
+		dtlz.DTLZ6.Name: dtlz.DTLZ6,
+		dtlz.DTLZ7.Name: dtlz.DTLZ7,
 	}
 	var problem models.ProblemFn
 	for k, v := range problems {

@@ -1,4 +1,4 @@
-package many
+package dtlz
 
 import (
 	"errors"

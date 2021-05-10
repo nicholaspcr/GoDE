@@ -4,7 +4,7 @@
 The implementations are translations of the python code made by pymoo
 https://pymoo.org/problems/many/dtlz.html
 */
-package many
+package dtlz
 
 import (
 	"errors"
@@ -12,6 +12,7 @@ import (
 
 	"gitlab.com/nicholaspcr/go-de/pkg/problems/models"
 )
+
 
 // DTLZ1 multiObjective testcase
 var DTLZ1 = models.ProblemFn{
@@ -49,4 +50,6 @@ var DTLZ1 = models.ProblemFn{
 		return nil
 	},
 	Name: "dtlz1",
+}}
 }
+

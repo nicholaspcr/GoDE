@@ -1,4 +1,4 @@
-package many
+package dtlz
 
 import (
 	"errors"
@@ -7,8 +7,8 @@ import (
 	"gitlab.com/nicholaspcr/go-de/pkg/problems/models"
 )
 
-// DTLZ5 multiObjective testcase
-var DTLZ5 = models.ProblemFn{
+// DTLZ2  multiObjective testcase
+var DTLZ2 = models.ProblemFn{
 	Fn: func(e *models.Elem, M int) error {
 		if len(e.X) <= M {
 			return errors.New("need to have an M lesser than the amount of variables")
@@ -24,22 +24,15 @@ var DTLZ5 = models.ProblemFn{
 			return g
 		}
 		g := evalG(e.X[varSz-k:])
-		t := math.Pi / (4.0 * (1 + g))
 
 		newObjs := make([]float64, M)
-		theta := make([]float64, M-1)
-		theta[0] = e.X[0] * math.Pi / 2.0
-		for i := 1; i < M-1; i++ {
-			theta[i] = t * (1.0 + 2.0*g*e.X[i])
-		}
-
 		for i := 0; i < M; i++ {
 			prod := (1 + g)
 			for j := 0; j < M-(i+1); j++ {
-				prod *= math.Cos(theta[j])
+				prod *= math.Cos(e.X[j] * 0.5 * math.Pi)
 			}
 			if i != 0 {
-				prod *= math.Sin(theta[M-(i+1)])
+				prod *= math.Sin(0.5 * math.Pi * e.X[M-(i+1)])
 			}
 			newObjs[i] = prod
 		}
@@ -50,5 +43,5 @@ var DTLZ5 = models.ProblemFn{
 
 		return nil
 	},
-	Name: "dtlz5",
+	Name: "dtlz2",
 }

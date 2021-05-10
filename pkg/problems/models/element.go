@@ -23,11 +23,11 @@ func (e *Elem) Copy() Elem {
 // Elements is a slice of the type Elem
 type Elements []Elem
 
-// // Copy of the []Elem slice
-// func (e Elements) Copy() Elements {
-// 	arr := make(Elements, len(e))
-// 	for i, v := range e {
-// 		arr[i] = v.Copy()
-// 	}
-// 	return arr
-// }
+// Copy of the []Elem slice
+func (e Elements) Copy() Elements {
+	arr := make(Elements, len(e))
+	for i, v := range e {
+		arr[i] = v.Copy()
+	}
+	return arr
+}

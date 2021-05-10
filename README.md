@@ -1,10 +1,5 @@
-# goDE
+# golang GDE3
 
-A differential evolution experiment written in golang.
+A differential evolution experiment written in golang, this implementation of
+the GDE3 algorithm is used for the research done in the CEFET-MG institute.
 
-
-### Important
-
-This is a work in progress, the project itself has two purposes.
-  - Learning how to use golang efficiently
-  - Making available the packages containing the implementation of the differential evolution.

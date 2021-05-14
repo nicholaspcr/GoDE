@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	so "github.com/nicholaspcr/IC-GDE3/pkg/sode"
+	so "github.com/nicholaspcr/gde3/pkg/sode"
 	"github.com/spf13/cobra"
 )
 

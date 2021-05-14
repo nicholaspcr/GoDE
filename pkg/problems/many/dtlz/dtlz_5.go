@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math"
 
-	"github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/problems/models"
 )
 
 // DTLZ5 multiObjective testcase

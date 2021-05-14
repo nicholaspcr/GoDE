@@ -6,8 +6,8 @@ import (
 	"os"
 	"sync"
 
-	"github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
-	"github.com/nicholaspcr/IC-GDE3/pkg/variants"
+	"github.com/nicholaspcr/gde3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/variants"
 )
 
 // tokens is a counting semaphore use to

@@ -7,10 +7,10 @@ import (
 	"runtime"
 	"runtime/pprof"
 
-	mo "github.com/nicholaspcr/IC-GDE3/pkg/mode"
-	"github.com/nicholaspcr/IC-GDE3/pkg/problems"
-	"github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
-	"github.com/nicholaspcr/IC-GDE3/pkg/variants"
+	mo "github.com/nicholaspcr/gde3/pkg/mode"
+	"github.com/nicholaspcr/gde3/pkg/problems"
+	"github.com/nicholaspcr/gde3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/variants"
 	"github.com/spf13/cobra"
 )
 

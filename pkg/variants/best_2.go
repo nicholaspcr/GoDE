@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math/rand"
 
-	"github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/problems/models"
 )
 
 // Best2 current_best + F(a-b) + F(c-d)

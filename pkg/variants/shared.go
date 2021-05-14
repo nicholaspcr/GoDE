@@ -1,6 +1,6 @@
 package variants
 
-import "github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
+import "github.com/nicholaspcr/gde3/pkg/problems/models"
 
 // shared variables and definitions
 

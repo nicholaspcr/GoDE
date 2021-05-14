@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"sort"
 
-	"github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/problems/models"
 )
 
 // GeneratePopulation - creates a population without objs calculates

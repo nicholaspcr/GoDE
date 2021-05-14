@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math"
 
-	"github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/problems/models"
 )
 
 // VNT1 -> https://ti.arc.nasa.gov/m/pub-archive/archive/1163.pdf

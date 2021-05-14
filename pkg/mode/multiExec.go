@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
-	"github.com/nicholaspcr/IC-GDE3/pkg/variants"
+	"github.com/nicholaspcr/gde3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/variants"
 )
 
 // MultiExecutions returns the pareto front of the total of 30 executions of the same problem
@@ -90,7 +90,7 @@ func MultiExecutions(
 	fmt.Printf("\n")
 
 	// checks path for the path used to store the details of each generation
-	multiExecutionsPath := "/.go-de/mode/multiExecutions/" + prob.Name + "/" + variant.Name
+	multiExecutionsPath := "/.gode/mode/multiExecutions/" + prob.Name + "/" + variant.Name
 	if variant.Name == "pbest" {
 		multiExecutionsPath += "/P-" + fmt.Sprint(params.P)
 	}

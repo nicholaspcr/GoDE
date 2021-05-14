@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/problems/models"
 )
 
 type fileManager struct {

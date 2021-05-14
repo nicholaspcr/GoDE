@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "github.com/nicholaspcr/IC-GDE3/cmd"
+import "github.com/nicholaspcr/gde3/cmd"
 
 func main() {
 	cmd.Execute()

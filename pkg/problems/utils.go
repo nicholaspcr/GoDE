@@ -3,9 +3,9 @@ package problems
 import (
 	"strings"
 
-	"github.com/nicholaspcr/IC-GDE3/pkg/problems/many/dtlz"
-	"github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
-	"github.com/nicholaspcr/IC-GDE3/pkg/problems/multi"
+	"github.com/nicholaspcr/gde3/pkg/problems/many/dtlz"
+	"github.com/nicholaspcr/gde3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/problems/multi"
 )
 
 // GetProblemByName -> returns the problem function

@@ -1,7 +1,7 @@
 package wfg
 
 import (
-	"github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/problems/models"
 )
 
 var WFG1 = models.ProblemFn{

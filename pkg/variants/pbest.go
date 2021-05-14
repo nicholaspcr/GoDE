@@ -5,7 +5,7 @@ import (
 	"math"
 	"math/rand"
 
-	"github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/problems/models"
 )
 
 // PBest implementation

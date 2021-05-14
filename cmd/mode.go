@@ -7,11 +7,11 @@ import (
 	"runtime"
 	"runtime/pprof"
 
+	mo "github.com/nicholaspcr/IC-GDE3/pkg/mode"
+	"github.com/nicholaspcr/IC-GDE3/pkg/problems"
+	"github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
+	"github.com/nicholaspcr/IC-GDE3/pkg/variants"
 	"github.com/spf13/cobra"
-	mo "gitlab.com/nicholaspcr/go-de/pkg/mode"
-	"gitlab.com/nicholaspcr/go-de/pkg/problems"
-	"gitlab.com/nicholaspcr/go-de/pkg/problems/models"
-	"gitlab.com/nicholaspcr/go-de/pkg/variants"
 )
 
 // local flags

@@ -6,8 +6,8 @@ import (
 	"os"
 	"sync"
 
-	"gitlab.com/nicholaspcr/go-de/pkg/problems/models"
-	"gitlab.com/nicholaspcr/go-de/pkg/variants"
+	"github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
+	"github.com/nicholaspcr/IC-GDE3/pkg/variants"
 )
 
 // tokens is a counting semaphore use to
@@ -104,7 +104,7 @@ func GD3(
 			comp := DominanceTest(population[i].Objs, trial.Objs)
 			if comp == 1 {
 				population[i] = trial.Copy()
-			} else if comp == 0 {
+			} else if comp == 0 && len(population) <= 2*p.NP {
 				population = append(population, trial.Copy())
 			}
 		}

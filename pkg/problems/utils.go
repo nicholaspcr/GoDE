@@ -3,9 +3,9 @@ package problems
 import (
 	"strings"
 
-	"gitlab.com/nicholaspcr/go-de/pkg/problems/many/dtlz"
-	"gitlab.com/nicholaspcr/go-de/pkg/problems/models"
-	"gitlab.com/nicholaspcr/go-de/pkg/problems/multi"
+	"github.com/nicholaspcr/IC-GDE3/pkg/problems/many/dtlz"
+	"github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
+	"github.com/nicholaspcr/IC-GDE3/pkg/problems/multi"
 )
 
 // GetProblemByName -> returns the problem function

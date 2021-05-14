@@ -1,4 +1,4 @@
-package many
+package dtlz
 
 // VARIABLES USED IN THE DTLZs
 // all of them are private

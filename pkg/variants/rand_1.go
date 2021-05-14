@@ -3,7 +3,7 @@ package variants
 import (
 	"fmt"
 
-	"gitlab.com/nicholaspcr/go-de/pkg/problems/models"
+	"github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
 )
 
 // Rand1 variant -> a + F(b - c)

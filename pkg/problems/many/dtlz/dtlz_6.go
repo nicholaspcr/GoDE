@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math"
 
-	"gitlab.com/nicholaspcr/go-de/pkg/problems/models"
+	"github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
 )
 
 // DTLZ6 multiObjective testcase
@@ -17,9 +17,6 @@ var DTLZ6 = models.ProblemFn{
 		evalG := func(v []float64) float64 {
 			g := 0.0
 			for _, x := range v {
-				if math.Abs(x) < 1e-4 { // 10^(-3)
-					x = 1e-4
-				}
 				g += math.Pow(x, 0.1) // consumes huge memory
 			}
 			return g

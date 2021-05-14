@@ -1,6 +1,6 @@
 package variants
 
-import "gitlab.com/nicholaspcr/go-de/pkg/problems/models"
+import "github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
 
 // shared variables and definitions
 

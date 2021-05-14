@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"gitlab.com/nicholaspcr/go-de/pkg/problems/models"
+	"github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
 )
 
 type fileManager struct {

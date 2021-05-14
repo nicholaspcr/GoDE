@@ -10,9 +10,8 @@ import (
 	"errors"
 	"math"
 
-	"gitlab.com/nicholaspcr/go-de/pkg/problems/models"
+	"github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
 )
-
 
 // DTLZ1 multiObjective testcase
 var DTLZ1 = models.ProblemFn{
@@ -50,6 +49,4 @@ var DTLZ1 = models.ProblemFn{
 		return nil
 	},
 	Name: "dtlz1",
-}}
 }
-

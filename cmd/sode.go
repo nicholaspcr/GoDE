@@ -1,8 +1,8 @@
 package cmd
 
 import (
+	so "github.com/nicholaspcr/IC-GDE3/pkg/sode"
 	"github.com/spf13/cobra"
-	so "gitlab.com/nicholaspcr/go-de/pkg/sode"
 )
 
 // sodeCmd represents the sode command

@@ -5,7 +5,7 @@ import (
 	"math"
 	"math/rand"
 
-	"gitlab.com/nicholaspcr/go-de/pkg/problems/models"
+	"github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
 )
 
 // PBest implementation

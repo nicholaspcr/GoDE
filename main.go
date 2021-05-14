@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "gitlab.com/nicholaspcr/go-de/cmd"
+import "github.com/nicholaspcr/IC-GDE3/cmd"
 
 func main() {
 	cmd.Execute()

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math"
 
-	"gitlab.com/nicholaspcr/go-de/pkg/problems/models"
+	"github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
 )
 
 // ZDT6 -> bi-objetive evaluation

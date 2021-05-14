@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math/rand"
 
-	"gitlab.com/nicholaspcr/go-de/pkg/problems/models"
+	"github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
 )
 
 // best1  current_best + F(a-b)

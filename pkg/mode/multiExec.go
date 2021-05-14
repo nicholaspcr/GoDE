@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"gitlab.com/nicholaspcr/go-de/pkg/problems/models"
-	"gitlab.com/nicholaspcr/go-de/pkg/variants"
+	"github.com/nicholaspcr/IC-GDE3/pkg/problems/models"
+	"github.com/nicholaspcr/IC-GDE3/pkg/variants"
 )
 
 // MultiExecutions returns the pareto front of the total of 30 executions of the same problem
@@ -21,7 +21,7 @@ func MultiExecutions(
 ) {
 
 	homePath := os.Getenv("HOME")
-	paretoPath := "/.go-de/mode/paretoFront/" + prob.Name + "/" + variant.Name
+	paretoPath := "/.gode/mode/paretoFront/" + prob.Name + "/" + variant.Name
 
 	if variant.Name == "pbest" {
 		paretoPath += "/P-" + fmt.Sprint(params.P)

@@ -14,6 +14,10 @@ var (
 	floor, ceil             float64
 	crConst, fConst, pConst float64
 
+	mConst       int
+	functionName string
+	disablePlot  bool
+
 	// pprofs
 	cpuprofile string
 	memprofile string
@@ -92,6 +96,21 @@ func init() {
 		0.2,
 		"P -> DE constant",
 	)
+
+	rootCmd.PersistentFlags().IntVar(&mConst,
+		"M",
+		3,
+		"M -> DE constant")
+
+	rootCmd.PersistentFlags().StringVar(&functionName,
+		"fn",
+		"DTLZ1",
+		"name of the problem to be used.")
+
+	rootCmd.PersistentFlags().BoolVar(&disablePlot,
+		"disable-plot",
+		false,
+		"to write in files the result of the gde3 to be able to plot it with the python scripts")
 
 	rootCmd.PersistentFlags().StringVar(&cpuprofile,
 		"cpuprofile",

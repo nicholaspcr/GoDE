@@ -3,11 +3,13 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"runtime"
 	"runtime/pprof"
+	"time"
 
-	mo "github.com/nicholaspcr/gde3/pkg/mode"
+	"github.com/nicholaspcr/gde3/pkg/mode"
 	"github.com/nicholaspcr/gde3/pkg/problems"
 	"github.com/nicholaspcr/gde3/pkg/problems/models"
 	"github.com/nicholaspcr/gde3/pkg/variants"
@@ -15,10 +17,7 @@ import (
 )
 
 // local flags
-var mConst int
-var functionName string
 var variantName string
-var disablePlot bool
 
 // modeCmd represents the mode command
 var modeCmd = &cobra.Command{
@@ -38,16 +37,17 @@ var modeCmd = &cobra.Command{
 			return
 		}
 		params := models.Params{
-			NP:    np,
-			M:     mConst,
-			DIM:   dim,
-			GEN:   gen,
-			EXECS: execs,
-			FLOOR: floor,
-			CEIL:  ceil,
-			CR:    crConst,
-			F:     fConst,
-			P:     pConst,
+			NP:          np,
+			M:           mConst,
+			DIM:         dim,
+			GEN:         gen,
+			EXECS:       execs,
+			FLOOR:       floor,
+			CEIL:        ceil,
+			CR:          crConst,
+			F:           fConst,
+			P:           pConst,
+			DisablePlot: disablePlot,
 		}
 		if cpuprofile != "" {
 			cpuF, err := os.Create(cpuprofile)
@@ -62,7 +62,16 @@ var modeCmd = &cobra.Command{
 
 		}
 
-		mo.MultiExecutions(params, problem, variant, disablePlot)
+		startTimer := time.Now() // time spent on script
+
+		rand.Seed(time.Now().UnixNano())
+		// generating shared initial population
+		initialPopulation := mode.GeneratePopulation(params)
+
+		mode.MultiExecutions(params, problem, variant, initialPopulation)
+
+		timeSpent := time.Since(startTimer)
+		fmt.Println("Time spend on the script: ", timeSpent)
 
 		if memprofile != "" {
 			memF, err := os.Create(memprofile)
@@ -80,24 +89,8 @@ var modeCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(modeCmd)
-	modeCmd.Flags().IntVar(&mConst,
-		"M",
-		3,
-		"M -> DE constant")
-
-	modeCmd.Flags().StringVar(&functionName,
-		"fn",
-		"DTLZ1",
-		"name of the problem to be used.")
-
 	modeCmd.Flags().StringVar(&variantName,
 		"vr",
 		"rand1",
 		"name fo the variant to be used")
-
-	modeCmd.Flags().BoolVar(&disablePlot,
-		"disable-plot",
-		false,
-		"to write in files the result of the gde3 to be able to plot it with the python scripts")
-
 }

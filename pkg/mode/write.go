@@ -1,4 +1,4 @@
-package mo
+package mode
 
 import (
 	"encoding/csv"

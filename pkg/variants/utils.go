@@ -41,3 +41,26 @@ func GetVariantByName(name string) VariantFn {
 	}
 	return VariantFn{}
 }
+
+// GetAllVariants returns all the variants implemented in this package
+func GetAllVariants() []VariantFn {
+	variants := []VariantFn{
+		rand1,
+		rand2,
+		best1,
+		best2,
+		currToBest1,
+		pbest,
+	}
+	return variants
+}
+
+// GetStandardPValues returns the default values used for Pbest variants
+func GetStandardPValues() []float64 {
+	return []float64{
+		0.05,
+		0.10,
+		0.15,
+		0.20,
+	}
+}

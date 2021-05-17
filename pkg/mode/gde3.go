@@ -1,4 +1,4 @@
-package mo
+package mode
 
 import (
 	"encoding/csv"
@@ -12,7 +12,7 @@ import (
 
 // tokens is a counting semaphore use to
 // enforce  a limit of 10 concurrent requests
-var tokens = make(chan struct{}, 3)
+var tokens = make(chan struct{}, 15)
 
 // GD3 -> runs a simple multiObjective DE in the ZDT1 case
 func GD3(

@@ -1,12 +1,10 @@
-package mo
+package mode
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/nicholaspcr/gde3/pkg/problems/models"
 	"github.com/nicholaspcr/gde3/pkg/variants"
@@ -17,9 +15,8 @@ func MultiExecutions(
 	params models.Params,
 	prob models.ProblemFn,
 	variant variants.VariantFn,
-	disablePlot bool,
+	initialPopulation models.Elements,
 ) {
-
 	homePath := os.Getenv("HOME")
 	paretoPath := "/.gode/mode/paretoFront/" + prob.Name + "/" + variant.Name
 
@@ -29,11 +26,8 @@ func MultiExecutions(
 
 	checkFilePath(homePath, paretoPath)
 
-	startTimer := time.Now()                 //	timer start
-	rand.Seed(time.Now().UnixNano())         // Rand Seed
-	population := GeneratePopulation(params) // random generated population
-
-	rankedChan := make(chan models.Elements, params.EXECS) // channel to get elems related to rank[0] pareto
+	// channel to get elems related to rank[0] pareto
+	rankedChan := make(chan models.Elements, params.EXECS)
 
 	// getting the maximum calculated value for each objective
 	maximumObjs := make(chan []float64, params.EXECS)
@@ -49,8 +43,8 @@ func MultiExecutions(
 
 		wg.Add(1)
 
-		cpyPopulation := make(models.Elements, len(population))
-		copy(cpyPopulation, population)
+		cpyPopulation := make(models.Elements, len(initialPopulation))
+		copy(cpyPopulation, initialPopulation)
 
 		// worker
 		go GD3(
@@ -101,10 +95,6 @@ func MultiExecutions(
 		homePath+multiExecutionsPath+"/rankedPareto.csv",
 		rankedPareto,
 	)
-
-	fmt.Println("Done writing file!")
-	timeSpent := time.Since(startTimer)
-	fmt.Println("time spend on executions: ", timeSpent)
 
 	// getting biggest objs values
 	maxObjs := make([]float64, params.M)

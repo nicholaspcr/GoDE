@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/nicholaspcr/gde3/pkg/problems/many/dtlz"
+	"github.com/nicholaspcr/gde3/pkg/problems/many/wfg"
 	"github.com/nicholaspcr/gde3/pkg/problems/models"
 	"github.com/nicholaspcr/gde3/pkg/problems/multi"
 )
@@ -26,6 +27,10 @@ func GetProblemByName(Name string) models.ProblemFn {
 		dtlz.DTLZ5.Name: dtlz.DTLZ5,
 		dtlz.DTLZ6.Name: dtlz.DTLZ6,
 		dtlz.DTLZ7.Name: dtlz.DTLZ7,
+
+		wfg.WFG1.Name: wfg.WFG1,
+		wfg.WFG2.Name: wfg.WFG2,
+		wfg.WFG3.Name: wfg.WFG3,
 	}
 	var problem models.ProblemFn
 	for k, v := range problems {

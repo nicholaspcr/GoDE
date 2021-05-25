@@ -6,6 +6,8 @@ import "math"
 // utils
 // ---------------------------------------------------------------------------------------------------------
 
+// _correct_to_01 handles the values that are between 0 +- 1e-10 and 1 +- e1-10, replaces with a fixed value
+// instead of leaving floating points
 func _correct_to_01(x float64) float64 {
 	epsilon := 1e-10
 	if x < 0.0 && x >= 0-epsilon {
@@ -17,20 +19,21 @@ func _correct_to_01(x float64) float64 {
 	return x
 }
 
-func _absolutes(X []float64) []float64 {
-	x := make([]float64, len(X))
-	copy(x, X)
+// func _absolutes(X []float64) []float64 {
+// 	x := make([]float64, len(X))
+// 	copy(x, X)
 
-	for i := range x {
-		x[i] = math.Abs(x[i])
-	}
-	return x
-}
+// 	for i := range x {
+// 		x[i] = math.Abs(x[i])
+// 	}
+// 	return x
+// }
 
 // ---------------------------------------------------------------------------------------------------------
 // transformations
 // ---------------------------------------------------------------------------------------------------------
 
+// _shiftLinear
 func _shiftLinear(value, shift float64) float64 {
 	if shift == 0.0 {
 		shift = 0.35
@@ -47,6 +50,13 @@ func _biasPoly(value, alpha float64) float64 {
 	return _correct_to_01(math.Pow(value, alpha))
 }
 
+func _transformation_shift_multi_modal(X []float64, A, B, C float64) []float64 {
+	// for _, v := range X {
+
+	// }
+	return nil
+}
+
 // ---------------------------------------------------------------------------------------------------------
 // WFG init
 // ---------------------------------------------------------------------------------------------------------
@@ -59,12 +69,30 @@ func arrange(start, end, steps int) []float64 {
 	return s
 }
 
-func createOnes(n int) []int {
-	a := make([]int, 0)
+func _ones(n int) []float64 {
+	a := make([]float64, 0)
 	for i := 0; i < n; i++ {
 		a = append(a, 1)
 	}
 	return a
+}
+
+func _post(t, a []float64) []float64 {
+	var x []float64
+	lastIndex := len(t) - 1
+	for i := 0; i < lastIndex; i++ {
+		x = append(x, math.Max(t[lastIndex], a[i]*(t[i]-0.5)+0.5))
+	}
+	x = append(x, t[lastIndex])
+	return x
+}
+
+func _calculate(Y, S, H []float64) []float64 {
+	var x []float64
+	for i := 0; i < len(Y); i++ {
+		x = append(x, Y[i]+S[i]*H[i])
+	}
+	return x
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -81,11 +109,35 @@ func _reduction_weighted_sum(_y, _w []float64) float64 {
 	return _correct_to_01(internal_product / w_sum)
 }
 
+func _reduction_non_sep(x []float64, A int) float64 {
+
+	val := math.Ceil(float64(A) / 2.0)
+	var num float64
+	m := len(x)
+
+	for i := range x {
+		num += x[i]
+		for k := 0; k < A-1; k++ {
+			num += math.Abs(x[i] - x[(1+i+k)%m])
+		}
+	}
+
+	denom := float64(m) * val * (1.0 + 2.*float64(A) - 2*val) / float64(A)
+
+	return _correct_to_01(num / denom)
+}
+
+func _reduction_weighted_sum_uniform(y []float64) float64 {
+	var mean float64
+	for _, v := range y {
+		mean += v
+	}
+	mean = mean / float64(len(y))
+	return _correct_to_01(mean)
+}
+
 // def _reduction_weighted_sum(y, w):
 //     return correct_to_01(np.dot(y, w) / w.sum())
-
-// def _reduction_weighted_sum_uniform(y):
-//     return correct_to_01(y.mean(axis=1))
 
 // def _reduction_non_sep(y, A):
 //     n, m = y.shape
@@ -105,21 +157,57 @@ func _reduction_weighted_sum(_y, _w []float64) float64 {
 // SHAPE
 // ---------------------------------------------------------------------------------------------------------
 
-func _shape_convex(X [][]float64, m int) []float64 {
+func _shape_convex(X []float64, m int) float64 {
 	shape := len(X)
-	var ret []float64
-	if shape == 1 {
+	var ret float64 = 1.0
+	if m == 1 {
 		for i := 0; i < shape; i++ {
-			ret = append(ret, math.Sin(0.5*X[0][i]*math.Pi))
+			ret = ret * math.Sin(0.5*X[i]*math.Pi)
 		}
-	} else if m >= 1 && m <= shape {
+	} else if m > 1 && m <= shape {
 		for i := 0; i < shape-m+1; i++ {
-			ret = append(ret, math.Sin(0.5*X[0][i]*math.Pi))
+			ret = ret * math.Sin(0.5*X[i]*math.Pi)
 		}
+		ret *= 1.0 - math.Sin(X[shape-m+1]*math.Pi)
 	} else {
-
+		ret = 1.0 - math.Sin(0.5*X[0]*math.Pi)
 	}
 	return ret
+}
+
+func _shape_mixed(X, A, alpha float64) float64 {
+	if A == 0.0 {
+		A = 5.0
+	}
+	if alpha == 0.0 {
+		alpha = 1.0
+	}
+	aux := 2.0 * A * math.Pi
+	ret := math.Pow(1.0-X-(math.Cos(aux*X+0.5*math.Pi)/aux), alpha)
+	return ret
+}
+
+func _shape_disconnected(X, alpha, beta, A float64) float64 {
+	aux := math.Cos(A * math.Pi * math.Pow(X, beta))
+	return _correct_to_01((1 - .0 - math.Pow(X, alpha)*math.Pow(aux, 2)))
+}
+
+func _shape_linear(X []float64, m int) float64 {
+	M := len(X)
+	var ret float64 = 1.0
+	if m == 1 {
+		// prod
+		for _, v := range X {
+			ret *= v
+		}
+	} else if m > 1 && m <= M {
+		// prod
+		for i := 0; i < M-m+1; i++ {
+			ret *= X[i]
+		}
+		ret *= 1.0 - X[M-m+1]
+	}
+	return _correct_to_01(ret)
 }
 
 // def _shape_concave(x, m):
@@ -143,23 +231,3 @@ func _shape_convex(X [][]float64, m int) []float64 {
 //     else:
 //         ret = 1.0 - np.sin(0.5 * x[:, 0] * np.pi)
 //     return correct_to_01(ret)
-
-// def _shape_linear(x, m):
-//     M = x.shape[1]
-//     if m == 1:
-//         ret = np.prod(x, axis=1)
-//     elif 1 < m <= M:
-//         ret = np.prod(x[:, :M - m + 1], axis=1)
-//         ret *= 1.0 - x[:, M - m + 1]
-//     else:
-//         ret = 1.0 - x[:, 0]
-//     return correct_to_01(ret)
-
-// def _shape_mixed(x, A=5.0, alpha=1.0):
-//     aux = 2.0 * A * np.pi
-//     ret = np.power(1.0 - x - (np.cos(aux * x + 0.5 * np.pi) / aux), alpha)
-//     return correct_to_01(ret)
-
-// def _shape_disconnected(x, alpha=1.0, beta=1.0, A=5.0):
-//     aux = np.cos(A * np.pi * x ** beta)
-//     return correct_to_01(1.0 - x ** alpha * aux ** 2)

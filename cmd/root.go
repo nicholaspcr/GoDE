@@ -55,7 +55,7 @@ func init() {
 	rootCmd.PersistentFlags().IntVarP(&dim,
 		"dim",
 		"d",
-		5,
+		7,
 		"quantity of dimension used for the problem.")
 
 	rootCmd.PersistentFlags().IntVarP(&gen,

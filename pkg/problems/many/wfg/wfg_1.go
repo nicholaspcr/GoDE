@@ -10,7 +10,10 @@ var WFG1 = models.ProblemFn{
 		n_obj := M
 		k := 2 * (n_obj - 1)
 
-		xu := arrange(1, n_var+1, 2)
+		xu := arrange(1, n_var+1, 1)
+		for i := range xu {
+			xu[i] *= 2
+		}
 
 		var y []float64
 		for i := 0; i < n_var; i++ {
@@ -22,21 +25,27 @@ var WFG1 = models.ProblemFn{
 		y = wfg1_t3(y, n_var)
 		y = wfg1_t4(y, n_obj, n_var, k)
 
-		// python code
-		// y = self._post(y, self.A)
+		// post
+		y = _post(y, _ones(n_obj-1))
 
-		// h = [_shape_convex(y[:, :-1], m + 1) for m in range(self.n_obj - 1)]
-		// h.append(_shape_mixed(y[:, 0], alpha=1.0, A=5.0))
+		var h []float64
+		for m := 0; m < n_obj-1; m++ {
+			h = append(h, _shape_convex(y[:len(y)-1], m+1))
+		}
+		h = append(h, _shape_mixed(y[0], 1, 5))
 
-		// out["F"] = self._calculate(y, self.S, h)
+		S := arrange(2, 2*n_obj+1, 2)
+		newObjs := _calculate(y, S, h)
 
+		e.Objs = make([]float64, len(newObjs))
+		copy(e.Objs, newObjs)
 		return nil
 	},
-	Name: "WFG1",
+	Name: "wfg1",
 }
 
 // ---------------------------------------------------------------------------------------------------------
-// t1-t4 implementations
+// wfg1 -> t1-t4 implementations
 // ---------------------------------------------------------------------------------------------------------
 
 // t1 implementations

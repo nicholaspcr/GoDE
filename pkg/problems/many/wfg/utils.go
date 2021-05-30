@@ -154,23 +154,6 @@ func _reduction_weighted_sum_uniform(y []float64) float64 {
 	return _correct_to_01(mean)
 }
 
-// def _reduction_weighted_sum(y, w):
-//     return correct_to_01(np.dot(y, w) / w.sum())
-
-// def _reduction_non_sep(y, A):
-//     n, m = y.shape
-//     val = np.ceil(A / 2.0)
-
-//     num = np.zeros(n)
-//     for j in range(m):
-//         num += y[:, j]
-//         for k in range(A - 1):
-//             num += np.fabs(y[:, j] - y[:, (1 + j + k) % m])
-
-//     denom = m * val * (1.0 + 2.0 * A - 2 * val) / A
-
-//     return correct_to_01(num / denom)
-
 // ---------------------------------------------------------------------------------------------------------
 // SHAPE
 // ---------------------------------------------------------------------------------------------------------
@@ -245,14 +228,3 @@ func _shape_concave(X []float64, m int) float64 {
 	}
 	return _correct_to_01(ret)
 }
-
-// def _shape_convex(x, m):
-//     M = x.shape[1]
-//     if m == 1:
-//         ret = np.prod(1.0 - np.cos(0.5 * x[:, :M] * np.pi), axis=1)
-//     elif 1 < m <= M:
-//         ret = np.prod(1.0 - np.cos(0.5 * x[:, :M - m + 1] * np.pi), axis=1)
-//         ret *= 1.0 - np.sin(0.5 * x[:, M - m + 1] * np.pi)
-//     else:
-//         ret = 1.0 - np.sin(0.5 * x[:, 0] * np.pi)
-//     return correct_to_01(ret)

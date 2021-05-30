@@ -4,6 +4,8 @@ import (
 	"github.com/nicholaspcr/gde3/pkg/problems/models"
 )
 
+// n_var = n_obj + 9
+
 var WFG1 = models.ProblemFn{
 	Fn: func(e *models.Elem, M int) error {
 		n_var := len(e.X)
@@ -45,7 +47,7 @@ var WFG1 = models.ProblemFn{
 }
 
 // ---------------------------------------------------------------------------------------------------------
-// wfg1 -> t1-t4 implementations
+// wfg1 -> t implementations
 // ---------------------------------------------------------------------------------------------------------
 
 // t1 implementations

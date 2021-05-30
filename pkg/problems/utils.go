@@ -31,6 +31,12 @@ func GetProblemByName(Name string) models.ProblemFn {
 		wfg.WFG1.Name: wfg.WFG1,
 		wfg.WFG2.Name: wfg.WFG2,
 		wfg.WFG3.Name: wfg.WFG3,
+		wfg.WFG4.Name: wfg.WFG4,
+		wfg.WFG5.Name: wfg.WFG5,
+		wfg.WFG6.Name: wfg.WFG6,
+		wfg.WFG7.Name: wfg.WFG7,
+		wfg.WFG8.Name: wfg.WFG8,
+		wfg.WFG9.Name: wfg.WFG9,
 	}
 	var problem models.ProblemFn
 	for k, v := range problems {

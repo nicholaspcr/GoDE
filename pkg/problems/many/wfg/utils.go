@@ -19,16 +19,6 @@ func _correct_to_01(x float64) float64 {
 	return x
 }
 
-// func _absolutes(X []float64) []float64 {
-// 	x := make([]float64, len(X))
-// 	copy(x, X)
-
-// 	for i := range x {
-// 		x[i] = math.Abs(x[i])
-// 	}
-// 	return x
-// }
-
 // ---------------------------------------------------------------------------------------------------------
 // transformations
 // ---------------------------------------------------------------------------------------------------------
@@ -50,11 +40,39 @@ func _biasPoly(value, alpha float64) float64 {
 	return _correct_to_01(math.Pow(value, alpha))
 }
 
-func _transformation_shift_multi_modal(X []float64, A, B, C float64) []float64 {
-	// for _, v := range X {
+func _transformation_shift_deceptive(y, A, B, C float64) float64 {
+	tmp1 := math.Floor(y-A+B) * (1.0 - C + (A-B)/B) / (A - B)
+	tmp2 := math.Floor(A+B-y) * (1.0 - C + (1.0-A-B)/B) / (1.0 - A - B)
+	ret := 1.0 + (math.Abs(y-A)-B)*(tmp1+tmp2+1.0/B)
+	return _correct_to_01(ret)
+}
 
-	// }
-	return nil
+func _transformation_shift_multi_modal(y, A, B, C float64) float64 {
+	tmp1 := math.Abs(y-C) / (2.0 * (math.Floor(C-y) + C))
+	tmp2 := (4.0*A + 2.0) * math.Pi * (0.5 - tmp1)
+	ret := (1.0 + math.Cos(tmp2) + 4.0*B*math.Pow(tmp1, 2.0)) / (B + 2.0)
+	return _correct_to_01(ret)
+}
+
+func _transformation_param_deceptive(y float64, A, B, C float64) float64 {
+	tmp1 := math.Abs(y-C) / (2.0 * (math.Floor(C-y) + C))
+	tmp2 := (4.0*A + 2.0) * math.Pi * (0.5 - tmp1)
+	ret := (1.0 + math.Cos(tmp2) + 4.0*B*math.Pow(tmp1, 2.0)) / (B + 2.0)
+	return _correct_to_01(ret)
+}
+
+func _transformation_param_deeptive(y, A, B, C float64) float64 {
+
+	tmp1 := math.Floor(y-A+B) * (1.0 - C + (A-B)/B) / (A - B)
+	tmp2 := math.Floor(A+B-y) * (1.0 - C + (1.0-A-B)/B) / (1.0 - A - B)
+	ret := 1.0 + (math.Abs(y-A)-B)*(tmp1+tmp2+1.0/B)
+	return _correct_to_01(ret)
+}
+
+func _transformation_param_dependent(y, y_deg, A, B, C float64) float64 {
+	aux := A - (1.0-2.0*y_deg)*math.Abs(math.Floor(0.5-y_deg)+A)
+	ret := math.Pow(y, B+(C-B)*aux)
+	return _correct_to_01(ret)
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -210,16 +228,23 @@ func _shape_linear(X []float64, m int) float64 {
 	return _correct_to_01(ret)
 }
 
-// def _shape_concave(x, m):
-//     M = x.shape[1]
-//     if m == 1:
-//         ret = np.prod(np.sin(0.5 * x[:, :M] * np.pi), axis=1)
-//     elif 1 < m <= M:
-//         ret = np.prod(np.sin(0.5 * x[:, :M - m + 1] * np.pi), axis=1)
-//         ret *= np.cos(0.5 * x[:, M - m + 1] * np.pi)
-//     else:
-//         ret = np.cos(0.5 * x[:, 0] * np.pi)
-//     return correct_to_01(ret)
+func _shape_concave(X []float64, m int) float64 {
+	M := len(X)
+	var ret float64 = 1.0
+	if m == 1 {
+		for _, x := range X[:M] {
+			ret *= math.Sin(0.5 * x * math.Pi)
+		}
+	} else if 1 < m && m <= M {
+		for _, x := range X[:(M - m + 1)] {
+			ret *= math.Cos(0.5 * x * math.Pi)
+		}
+		ret *= math.Cos(0.5 * X[M-m+1] * math.Pi)
+	} else {
+		ret *= math.Cos(0.5 * X[0] * math.Pi)
+	}
+	return _correct_to_01(ret)
+}
 
 // def _shape_convex(x, m):
 //     M = x.shape[1]

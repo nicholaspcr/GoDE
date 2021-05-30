@@ -18,14 +18,13 @@ var WFG4 = models.ProblemFn{
 			y = append(y, e.X[i]/xu[i])
 		}
 
-		y = wfg1_t1(y, n_var, k)
-		y = wfg2_t2(y, n_var, k)
-		y = wfg2_t3(y, n_obj, n_var, k)
+		y = wfg4_t1(y, n_var, k)
+		y = wfg4_t2(y, n_obj, k)
 		y = _post(y, _ones(n_obj-1)) // post
 
 		var h []float64
 		for m := 0; m < n_obj; m++ {
-			h = append(h, _shape_linear(y[:len(y)-1], m+1))
+			h = append(h, _shape_concave(y[:len(y)-1], m+1))
 		}
 
 		S := arrange(2, 2*n_obj+1, 2)
@@ -39,29 +38,30 @@ var WFG4 = models.ProblemFn{
 }
 
 // ---------------------------------------------------------------------------------------------------------
-// wfg4 -> t1-t2 implementations
+// wfg4 -> t implementations
 // ---------------------------------------------------------------------------------------------------------
 
 // wfg4_t1 implementation
 func wfg4_t1(X []float64, n, k int) []float64 {
-	x := make([]float64, len(X[:k]))
-	copy(x, X[:k])
-	return _transformation_shift_multi_modal(X, 30.0, 10.0, 0.35)
+	var ret []float64
+	for _, x := range X {
+		ret = append(ret, _transformation_param_deceptive(x, 30.0, 10.0, 0.35))
+	}
+	return ret
 }
 
 // wfg4_t2 implementation
-func wfg4_t2(X []float64, m, n, k int) []float64 {
+func wfg4_t2(X []float64, m, k int) []float64 {
 	x := make([]float64, len(X))
 	copy(x, X)
 
-	ind_r_sum := k + (n-k)/2
 	gap := k / (m - 1)
 
 	var t []float64
 	for i := 1; i < m; i++ {
 		t = append(t, _reduction_weighted_sum_uniform(x[(m-1)*gap:(m*gap)]))
 	}
-	t = append(t, _reduction_weighted_sum_uniform(x[k:ind_r_sum]))
+	t = append(t, _reduction_weighted_sum_uniform(x[k:]))
 
 	return t
 }

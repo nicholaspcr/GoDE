@@ -2,7 +2,7 @@ package wfg
 
 import "github.com/nicholaspcr/gde3/pkg/problems/models"
 
-var WFG5 = models.ProblemFn{
+var WFG8 = models.ProblemFn{
 	Fn: func(e *models.Elem, M int) error {
 		n_var := len(e.X)
 		n_obj := M
@@ -18,7 +18,10 @@ var WFG5 = models.ProblemFn{
 			y = append(y, e.X[i]/xu[i])
 		}
 
-		y = wfg5_t1(y)
+		t_temp := wfg8_t1(y, k, n_var)
+		copy(y[k:n_var], t_temp) // transfers to these position of the y vector
+
+		y = wfg1_t1(y, n_var, k)
 		y = wfg4_t2(y, n_obj, k)
 		y = _post(y, _ones(n_obj-1)) // post
 
@@ -34,19 +37,20 @@ var WFG5 = models.ProblemFn{
 		copy(e.Objs, newObjs)
 		return nil
 	},
-	Name: "wfg5",
+	Name: "wfg8",
 }
 
 // ---------------------------------------------------------------------------------------------------------
-// wfg5 -> t implementations
+// wfg8 -> t implementations
 // ---------------------------------------------------------------------------------------------------------
 
-// wfg5_t1 implementation
-func wfg5_t1(X []float64) []float64 {
-
+func wfg8_t1(X []float64, k, n int) []float64 {
+	x := make([]float64, len(X))
+	copy(x, X)
 	var ret []float64
-	for _, x := range X {
-		ret = append(ret, _transformation_param_deeptive(x, 0.35, 0.001, 0.05))
+	for i := k; i < n; i++ {
+		aux := _reduction_weighted_sum_uniform(x[:i])
+		ret = append(ret, _transformation_param_dependent(x[i], aux, 0.98/49.98, 0.02, 50.0))
 	}
 	return ret
 }

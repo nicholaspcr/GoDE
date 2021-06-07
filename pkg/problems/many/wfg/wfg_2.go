@@ -23,7 +23,10 @@ var WFG2 = models.ProblemFn{
 		y = wfg1_t1(y, n_var, k)
 		y = wfg2_t2(y, n_var, k)
 		y = wfg2_t3(y, n_obj, n_var, k)
-		y = _post(y, _ones(n_obj-1)) // post
+
+		// post section
+		A := _ones(n_obj - 1)
+		y = _post(y, A)
 
 		var h []float64
 		for m := 0; m < n_obj-1; m++ {
@@ -52,16 +55,13 @@ func wfg2_t2(X []float64, n, k int) []float64 {
 
 	l := n - k
 	ind_non_sep := k + l/2
+
 	i := k + 1
 	for i <= ind_non_sep {
 		head := k + 2*(i-k) - 2
 		tail := k + 2*(i-k)
 
-		// copies seciton of the original array
-		x_copy := make([]float64, tail-head)
-		copy(x_copy, X[head:tail])
-
-		x = append(x, _reduction_non_sep(x_copy, 2))
+		x = append(x, _reduction_non_sep(X[head:tail], 2))
 		i++
 	}
 	return x
@@ -69,17 +69,14 @@ func wfg2_t2(X []float64, n, k int) []float64 {
 
 // wfg2_t3 implementation
 func wfg2_t3(X []float64, m, n, k int) []float64 {
-	x := make([]float64, len(X))
-	copy(x, X)
-
 	ind_r_sum := k + (n-k)/2
 	gap := k / (m - 1)
 
 	var t []float64
 	for i := 1; i < m; i++ {
-		t = append(t, _reduction_weighted_sum_uniform(x[(m-1)*gap:(m*gap)]))
+		t = append(t, _reduction_weighted_sum_uniform(X[(m-1)*gap:(m*gap)]))
 	}
-	t = append(t, _reduction_weighted_sum_uniform(x[k:ind_r_sum]))
+	t = append(t, _reduction_weighted_sum_uniform(X[k:ind_r_sum]))
 
 	return t
 }

@@ -19,7 +19,7 @@ var WFG7 = models.ProblemFn{
 		}
 
 		y = wfg7_t1(y, k)
-		y = wfg1_t2(y, n_var, k)
+		y = wfg1_t1(y, n_var, k)
 		y = wfg4_t2(y, n_obj, k)
 		y = _post(y, _ones(n_obj-1)) // post
 
@@ -46,11 +46,9 @@ func wfg7_t1(X []float64, k int) []float64 {
 	x := make([]float64, len(X))
 	copy(x, X)
 
-	var ret []float64
-
 	for i := 0; i < k; i++ {
 		aux := _reduction_weighted_sum_uniform(x[i+1:])
-		ret = append(ret, _transformation_param_dependent(x[i], aux, 0.98/49.98, 0.02, 50.0))
+		x[i] = _transformation_param_dependent(x[i], aux, 0.98/49.98, 0.02, 50.0)
 	}
-	return ret
+	return x
 }

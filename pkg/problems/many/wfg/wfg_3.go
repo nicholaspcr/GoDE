@@ -21,7 +21,13 @@ var WFG3 = models.ProblemFn{
 		y = wfg1_t1(y, n_var, k)
 		y = wfg2_t2(y, n_var, k)
 		y = wfg2_t3(y, n_obj, n_var, k)
-		y = _post(y, _ones(n_obj-1)) // post
+
+		// post section
+		A := _ones(n_obj - 1)
+		for i := 1; i < len(A); i++ {
+			A[i] = 0
+		}
+		y = _post(y, A)
 
 		var h []float64
 		for m := 0; m < n_obj; m++ {

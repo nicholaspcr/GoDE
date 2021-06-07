@@ -42,14 +42,11 @@ var WFG6 = models.ProblemFn{
 // ---------------------------------------------------------------------------------------------------------
 
 func wfg6_t2(X []float64, m, n, k int) []float64 {
-	x := make([]float64, len(X))
-	copy(x, X)
-
 	gap := k / (m - 1)
 	var ret []float64
 	for i := 1; i < m; i++ {
 		ret = append(ret, _reduction_non_sep(X[(m-1)*gap:(m*gap)], gap))
 	}
-	ret = append(ret, _reduction_non_sep(x[k:], n-k))
+	ret = append(ret, _reduction_non_sep(X[k:], n-k))
 	return ret
 }

@@ -46,7 +46,7 @@ func wfg5_t1(X []float64) []float64 {
 
 	var ret []float64
 	for _, x := range X {
-		ret = append(ret, _transformation_param_deeptive(x, 0.35, 0.001, 0.05))
+		ret = append(ret, _transformation_param_deceptive(x, 0.35, 0.001, 0.05))
 	}
 	return ret
 }

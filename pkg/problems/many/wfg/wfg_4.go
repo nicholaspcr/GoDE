@@ -20,6 +20,7 @@ var WFG4 = models.ProblemFn{
 
 		y = wfg4_t1(y, n_var, k)
 		y = wfg4_t2(y, n_obj, k)
+
 		y = _post(y, _ones(n_obj-1)) // post
 
 		var h []float64
@@ -45,7 +46,7 @@ var WFG4 = models.ProblemFn{
 func wfg4_t1(X []float64, n, k int) []float64 {
 	var ret []float64
 	for _, x := range X {
-		ret = append(ret, _transformation_param_deceptive(x, 30.0, 10.0, 0.35))
+		ret = append(ret, _transformation_shift_multi_modal(x, 30.0, 10.0, 0.35))
 	}
 	return ret
 }

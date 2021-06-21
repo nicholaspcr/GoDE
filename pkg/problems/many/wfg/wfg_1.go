@@ -4,8 +4,6 @@ import (
 	"github.com/nicholaspcr/gde3/pkg/problems/models"
 )
 
-// n_var = n_obj + 9
-
 var WFG1 = models.ProblemFn{
 	Fn: func(e *models.Elem, M int) error {
 		n_var := len(e.X)
@@ -13,7 +11,7 @@ var WFG1 = models.ProblemFn{
 		k := 2 * (n_obj - 1)
 
 		var y []float64
-		xu := arrange(2, 2*n_var+1, 2)
+		xu := arange(2, 2*n_var+1, 2)
 
 		for i := 0; i < n_var; i++ {
 			y = append(y, e.X[i]/xu[i])
@@ -30,11 +28,13 @@ var WFG1 = models.ProblemFn{
 
 		var h []float64
 		for m := 0; m < n_obj-1; m++ {
-			h = append(h, _shape_convex(y[:len(y)-1], m+1))
+			h = append(h, _shape_convex(y[:(len(y)-1)], m+1))
 		}
-		h = append(h, _shape_mixed(y[0], 1.0, 5.0))
+		h = append(h, _shape_mixed(y[0], 5.0, 1.0))
 
-		S := arrange(2, 2*n_obj+1, 2)
+		S := arange(2, 2*n_obj+1, 2)
+
+		// fmt.Println(y, S, h)
 		newObjs := _calculate(y, S, h)
 
 		e.Objs = make([]float64, len(newObjs))
@@ -86,7 +86,7 @@ func wfg1_t4(X []float64, m, n, k int) []float64 {
 	x := make([]float64, len(X))
 	copy(x, X)
 
-	w := arrange(2, 2*n+1, 2)
+	w := arange(2, 2*n+1, 2)
 	gap := k / (m - 1)
 	var t []float64
 

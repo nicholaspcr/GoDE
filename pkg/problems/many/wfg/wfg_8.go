@@ -8,12 +8,9 @@ var WFG8 = models.ProblemFn{
 		n_obj := M
 		k := 2 * (n_obj - 1)
 
-		xu := arrange(1, n_var+1, 1)
-		for i := range xu {
-			xu[i] *= 2
-		}
-
 		var y []float64
+		xu := arange(2, 2*n_var+1, 2)
+
 		for i := 0; i < n_var; i++ {
 			y = append(y, e.X[i]/xu[i])
 		}
@@ -30,7 +27,7 @@ var WFG8 = models.ProblemFn{
 			h = append(h, _shape_concave(y[:len(y)-1], m+1))
 		}
 
-		S := arrange(2, 2*n_obj+1, 2)
+		S := arange(2, 2*n_obj+1, 2)
 		newObjs := _calculate(y, S, h)
 
 		e.Objs = make([]float64, len(newObjs))

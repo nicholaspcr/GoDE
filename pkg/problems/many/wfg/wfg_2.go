@@ -10,12 +10,9 @@ var WFG2 = models.ProblemFn{
 		n_obj := M
 		k := 2 * (n_obj - 1)
 
-		xu := arrange(1, n_var+1, 1)
-		for i := range xu {
-			xu[i] *= 2
-		}
-
 		var y []float64
+		xu := arange(2, 2*n_var+1, 2)
+
 		for i := 0; i < n_var; i++ {
 			y = append(y, e.X[i]/xu[i])
 		}
@@ -23,7 +20,6 @@ var WFG2 = models.ProblemFn{
 		y = wfg1_t1(y, n_var, k)
 		y = wfg2_t2(y, n_var, k)
 		y = wfg2_t3(y, n_obj, n_var, k)
-
 		// post section
 		A := _ones(n_obj - 1)
 		y = _post(y, A)
@@ -34,7 +30,7 @@ var WFG2 = models.ProblemFn{
 		}
 		h = append(h, _shape_disconnected(y[0], 1, 1, 5))
 
-		S := arrange(2, 2*n_obj+1, 2)
+		S := arange(2, 2*n_obj+1, 2)
 		newObjs := _calculate(y, S, h)
 
 		e.Objs = make([]float64, len(newObjs))
@@ -74,7 +70,7 @@ func wfg2_t3(X []float64, m, n, k int) []float64 {
 
 	var t []float64
 	for i := 1; i < m; i++ {
-		t = append(t, _reduction_weighted_sum_uniform(X[(m-1)*gap:(m*gap)]))
+		t = append(t, _reduction_weighted_sum_uniform(X[((i-1)*gap):(i*gap)]))
 	}
 	t = append(t, _reduction_weighted_sum_uniform(X[k:ind_r_sum]))
 

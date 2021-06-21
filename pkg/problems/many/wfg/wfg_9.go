@@ -10,9 +10,9 @@ var WFG9 = models.ProblemFn{
 		n_obj := M
 		k := 2 * (n_obj - 1)
 
-		xu := arrange(2, 2*n_var+1, 2)
-
 		var y []float64
+		xu := arange(2, 2*n_var+1, 2)
+
 		for i := 0; i < n_var; i++ {
 			y = append(y, e.X[i]/xu[i])
 		}
@@ -27,7 +27,7 @@ var WFG9 = models.ProblemFn{
 			h = append(h, _shape_concave(y[:len(y)-1], m+1))
 		}
 
-		S := arrange(2, 2*n_obj+1, 2)
+		S := arange(2, 2*n_obj+1, 2)
 		newObjs := _calculate(y, S, h)
 
 		e.Objs = make([]float64, len(newObjs))
@@ -64,24 +64,9 @@ func wfg9_t2(X []float64, n, k int) []float64 {
 		b = append(b, _transformation_shift_multi_modal(x[i], 30.0, 95.0, 0.35))
 	}
 
-	// sums `a` and `b`
-	sz := len(a)
-	if len(b) > sz {
-		sz = len(b)
-	}
-
 	var ret []float64
-
-	for i := 0; i < sz; i++ {
-		var valA, valB float64
-		if i < len(a) {
-			valA = a[i]
-		}
-		if i < len(b) {
-			valB = b[i]
-		}
-		ret = append(ret, valA+valB)
-	}
+	ret = append(ret, a...)
+	ret = append(ret, b...)
 
 	return ret
 }
@@ -91,7 +76,7 @@ func wfg9_t3(X []float64, m, n, k int) []float64 {
 	var ret []float64
 
 	for i := 1; i < m; i++ {
-		ret = append(ret, _reduction_non_sep(X[(m-1)*gap:(m*gap)], gap))
+		ret = append(ret, _reduction_non_sep(X[(i-1)*gap:(i*gap)], gap))
 	}
 	ret = append(ret, _reduction_non_sep(X[k:], n-k))
 

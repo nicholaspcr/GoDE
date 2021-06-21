@@ -8,12 +8,9 @@ var WFG6 = models.ProblemFn{
 		n_obj := M
 		k := 2 * (n_obj - 1)
 
-		xu := arrange(1, n_var+1, 1)
-		for i := range xu {
-			xu[i] *= 2
-		}
-
 		var y []float64
+		xu := arange(2, 2*n_var+1, 2)
+
 		for i := 0; i < n_var; i++ {
 			y = append(y, e.X[i]/xu[i])
 		}
@@ -27,7 +24,7 @@ var WFG6 = models.ProblemFn{
 			h = append(h, _shape_concave(y[:len(y)-1], m+1))
 		}
 
-		S := arrange(2, 2*n_obj+1, 2)
+		S := arange(2, 2*n_obj+1, 2)
 		newObjs := _calculate(y, S, h)
 
 		e.Objs = make([]float64, len(newObjs))
@@ -45,7 +42,7 @@ func wfg6_t2(X []float64, m, n, k int) []float64 {
 	gap := k / (m - 1)
 	var ret []float64
 	for i := 1; i < m; i++ {
-		ret = append(ret, _reduction_non_sep(X[(m-1)*gap:(m*gap)], gap))
+		ret = append(ret, _reduction_non_sep(X[(i-1)*gap:(i*gap)], gap))
 	}
 	ret = append(ret, _reduction_non_sep(X[k:], n-k))
 	return ret

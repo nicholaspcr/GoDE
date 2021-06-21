@@ -22,8 +22,8 @@ var DTLZ3 = models.ProblemFn{
 			k := float64(len(v))
 			return 100.0 * (k + g)
 		}
-		g := evalG(e.X[M-1:])
 
+		g := evalG(e.X[M-1:])
 		objs := make([]float64, M)
 
 		for i := 0; i < M; i++ {

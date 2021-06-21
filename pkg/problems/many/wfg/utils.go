@@ -1,12 +1,14 @@
 package wfg
 
-import "math"
+import (
+	"math"
+)
 
 // ---------------------------------------------------------------------------------------------------------
 // WFG init
 // ---------------------------------------------------------------------------------------------------------
 
-func arrange(start, end, steps int) []float64 {
+func arange(start, end, steps int) []float64 {
 	s := make([]float64, 0)
 	for i := start; i < end; i += steps {
 		s = append(s, float64(i))
@@ -35,8 +37,12 @@ func _post(t, a []float64) []float64 {
 func _calculate(X, S, H []float64) []float64 {
 	var x []float64
 
+	// debug printing
+	// fmt.Println("X -> ", X)
+	// fmt.Println("S -> ", S)
+	// fmt.Println("H -> ", H)
 	for i := 0; i < len(H); i++ {
-		x = append(x, X[i]+S[i]*H[i])
+		x = append(x, X[len(X)-1]+S[i]*H[i])
 	}
 	return x
 }
@@ -175,9 +181,9 @@ func _shape_convex(X []float64, m int) float64 {
 		}
 	} else if m > 1 && m <= M {
 		for _, x := range X[:M-m+1] {
-			ret *= 1.0 - math.Cos(0.5*x*math.Pi)
+			ret *= (1.0 - math.Cos(0.5*x*math.Pi))
 		}
-		ret *= 1.0 - math.Sin(X[M-m+1]*math.Pi)
+		ret *= (1.0 - math.Sin(0.5*X[M-m+1]*math.Pi))
 	} else {
 		ret = 1.0 - math.Sin(0.5*X[0]*math.Pi)
 	}
@@ -198,6 +204,8 @@ func _shape_linear(X []float64, m int) float64 {
 			ret *= x
 		}
 		ret *= 1.0 - X[M-m+1]
+	} else {
+		ret = 1.0 - X[0]
 	}
 	return _correct_to_01(ret)
 }
@@ -210,5 +218,5 @@ func _shape_mixed(X, A, alpha float64) float64 {
 
 func _shape_disconnected(X, alpha, beta, A float64) float64 {
 	aux := math.Cos(A * math.Pi * math.Pow(X, beta))
-	return _correct_to_01((1.0 - math.Pow(X, alpha)*math.Pow(aux, 2)))
+	return _correct_to_01(1.0 - math.Pow(X, alpha)*math.Pow(aux, 2))
 }

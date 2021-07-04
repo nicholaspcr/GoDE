@@ -76,7 +76,10 @@ func MultiExecutions(
 		fmt.Printf("%d, ", counter)
 
 		rankedPareto = append(rankedPareto, v...)
-		rankedPareto, _ = FilterDominated(rankedPareto)
+
+		// gets non dominated and filters by crowdingDistance
+		_, rankedPareto = ReduceByCrowdDistance(rankedPareto, len(rankedPareto))
+
 		if len(rankedPareto) > 1000 {
 			rankedPareto = rankedPareto[:1000]
 		}

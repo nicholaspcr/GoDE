@@ -15,8 +15,10 @@ limitations under the License.
 */
 package main
 
-import "github.com/nicholaspcr/gde3/cmd"
+import (
+	"github.com/nicholaspcr/gde3/pkg/cli/gde3"
+)
 
 func main() {
-	cmd.Execute()
+	gde3.Execute()
 }

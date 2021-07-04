@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	nVars := 12
+	nVars := 24
 	numObjs := 3
 
 	// random elements
@@ -31,28 +31,28 @@ func main() {
 	fmt.Println("Results:")
 
 	// calling objective function
-	// wfg1(x, numObjs)
+	wfg1(x, numObjs)
 
 	// calling objective function
-	// wfg2(x, numObjs)
+	wfg2(x, numObjs)
 
 	// calling objective function
-	// wfg3(x, numObjs)
+ wfg3(x, numObjs)
 
 	// calling objective function
-	// wfg4(x, numObjs)
+ wfg4(x, numObjs)
 
 	// calling objective function
-	// wfg5(x, numObjs)
+ wfg5(x, numObjs)
 
 	// calling objective function
-	// wfg6(x, numObjs)
+ wfg6(x, numObjs)
 
 	// calling objective function
-	// wfg7(x, numObjs)
+ wfg7(x, numObjs)
 
 	// calling objective function
-	// wfg8(x, numObjs)
+ wfg8(x, numObjs)
 
 	// calling objective function
 	wfg9(x, numObjs)

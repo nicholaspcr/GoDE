@@ -1,4 +1,4 @@
-package cmd
+package gde3
 
 import (
 	"fmt"
@@ -53,8 +53,4 @@ var scriptCmd = &cobra.Command{
 		}
 
 	},
-}
-
-func init() {
-	rootCmd.AddCommand(scriptCmd)
 }

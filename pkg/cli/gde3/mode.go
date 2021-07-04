@@ -1,4 +1,4 @@
-package cmd
+package gde3
 
 import (
 	"fmt"
@@ -85,12 +85,4 @@ var modeCmd = &cobra.Command{
 			}
 		}
 	},
-}
-
-func init() {
-	rootCmd.AddCommand(modeCmd)
-	modeCmd.Flags().StringVar(&variantName,
-		"vr",
-		"rand1",
-		"name fo the variant to be used")
 }

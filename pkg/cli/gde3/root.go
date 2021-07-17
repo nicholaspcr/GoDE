@@ -39,13 +39,15 @@ func init() {
 
 	rootCmd.AddCommand(
 		modeCmd,
-		scriptCmd)
+		scriptCmd,
+	)
 
 	modeCmd.Flags().StringVar(
 		&variantName,
 		"vr",
 		"rand1",
-		"name fo the variant to be used")
+		"name fo the variant to be used",
+	)
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

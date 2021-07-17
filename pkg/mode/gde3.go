@@ -1,22 +1,16 @@
 package mode
 
 import (
-	"encoding/csv"
 	"math/rand"
 	"os"
-	"sync"
 
 	"github.com/nicholaspcr/gde3/pkg/problems/models"
 	"github.com/nicholaspcr/gde3/pkg/variants"
+	"github.com/nicholaspcr/gde3/pkg/writer"
 )
-
-// tokens is a counting semaphore use to
-// enforce  a limit of 10 concurrent requests
-var tokens = make(chan struct{}, 15)
 
 // GD3 -> runs a simple multiObjective DE in the ZDT1 case
 func GD3(
-	wg *sync.WaitGroup,
 	rankedCh chan<- models.Elements,
 	maximumObjs chan<- []float64,
 	p models.Params,
@@ -25,15 +19,11 @@ func GD3(
 	population models.Elements,
 	f *os.File,
 ) {
-	defer wg.Done()
-
-	// adding to concurrent queue
-	tokens <- struct{}{}
 	defer f.Close()
 
 	// var writer *csv.Writer
-	writer := csv.NewWriter(f)
-	writer.Comma = '\t'
+	w := writer.NewWriter(f)
+	w.Comma = ';'
 
 	// maximum objs found
 	maxObjs := make([]float64, p.M)
@@ -50,8 +40,10 @@ func GD3(
 		}
 	}
 
-	writeHeader(population, writer)
-	writeGeneration(population, writer)
+	// writes the header in this execution's file
+	w.WriteHeader(p.M)
+	// writes the inital generation
+	w.ElementsObjs(population)
 
 	// stores the rank[0] of each generation
 	bestElems := make(models.Elements, 0)
@@ -61,9 +53,12 @@ func GD3(
 	var trial models.Elem
 
 	for g := 0; g < p.GEN; g++ {
+		// gets non dominated of the current population
 		genRankZero, _ = FilterDominated(population)
 
 		for i := 0; i < len(population); i++ {
+
+			// generates the mutatated vector
 			vr, err := variant.Fn(
 				population,
 				genRankZero,
@@ -110,12 +105,10 @@ func GD3(
 		}
 
 		population, bestInGen = ReduceByCrowdDistance(population, p.NP)
+		bestElems = append(bestElems, bestInGen...)
 
-		tmpBestGen := make(models.Elements, len(bestInGen))
-		copy(tmpBestGen, bestInGen)
-		bestElems = append(bestElems, tmpBestGen...)
-
-		writeGeneration(population, writer)
+		// writes the objectives of the population
+		w.ElementsObjs(population)
 
 		// checks for the biggest objective
 		for _, p := range population {
@@ -131,6 +124,4 @@ func GD3(
 	rankedCh <- bestElems
 	maximumObjs <- maxObjs
 
-	// clearing concurrent queue
-	<-tokens
 }

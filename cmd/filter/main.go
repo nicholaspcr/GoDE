@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/csv"
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"sync"
@@ -21,7 +22,7 @@ var (
 	// variants being read
 	variants = []string{"rand1"}
 	// problems being read
-	problems = []string{"dtlz1"}
+	problems = []string{"wfg2"}
 
 	// tokens is a counting semaphore use to
 	// enforce  a limit of 3 concurrent requests
@@ -47,6 +48,8 @@ func main() {
 				wg.Add(1)
 
 				go func() {
+					tokens <- struct{}{}
+					defer func() { <-tokens }()
 					defer wg.Done()
 					processFile(fileName, c)
 				}()
@@ -58,18 +61,68 @@ func main() {
 				close(c)
 			}()
 
+			var elems models.Elements
+
 			for v := range c {
-				fmt.Println(len(v))
+				elems = append(elems, v...)
 			}
 
+			filePath := fmt.Sprintf(
+				"%s/.gode/mode/multiExecutions/%s/%s/filteredPareto.csv",
+				dirname,
+				prob,
+				variant,
+			)
+
+			f, err := os.Create(filePath)
+			defer func() { f.Close() }()
+
+			if err != nil {
+				log.Fatalln(f)
+			}
+
+			writer := csv.NewWriter(f)
+			writer.Comma = '\t'
+
+			// header
+			headerData := []string{"elems"}
+			column := 'A'
+			for range elems[0].Objs {
+				headerData = append(headerData, string(column))
+				column++
+			}
+			err = writer.Write(headerData)
+			if err != nil {
+				log.Fatal("Coudln't write file")
+			}
+			writer.Flush()
+
+			// body
+			bodyData := [][]string{}
+			for i := range elems {
+				tmpData := []string{}
+				tmpData = append(
+					tmpData,
+					fmt.Sprintf(
+						"elem[%d]",
+						i,
+					),
+				)
+				for _, p := range elems[i].Objs {
+					tmpData = append(tmpData, fmt.Sprint(p))
+				}
+				bodyData = append(bodyData, tmpData)
+			}
+			err = writer.WriteAll(bodyData)
+			if err != nil {
+				log.Fatalln("failed to write body")
+			}
+			writer.Flush()
 		}
 	}
-
 }
 
 func processFile(fileName string, elemChan chan<- models.Elements) {
-	tokens <- struct{}{}
-	defer func() { <-tokens }()
 
 	b, _ := os.ReadFile(fileName)
 	reader := csv.NewReader(bytes.NewBuffer(b))
@@ -98,7 +151,6 @@ func processFile(fileName string, elemChan chan<- models.Elements) {
 		}
 	}
 
-	mode.CalculateCrwdDist(elems)
 	_, rankZero := mode.ReduceByCrowdDistance(elems, len(elems))
 	elemChan <- rankZero
 }

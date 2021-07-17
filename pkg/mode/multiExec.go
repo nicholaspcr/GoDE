@@ -2,13 +2,19 @@ package mode
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"sync"
 
 	"github.com/nicholaspcr/gde3/pkg/problems/models"
 	"github.com/nicholaspcr/gde3/pkg/variants"
+	"github.com/nicholaspcr/gde3/pkg/writer"
 )
+
+// tokens is a counting semaphore use to
+// enforce  a limit of 10 concurrent requests
+var tokens = make(chan struct{}, 15)
 
 // MultiExecutions returns the pareto front of the total of 30 executions of the same problem
 func MultiExecutions(
@@ -24,7 +30,7 @@ func MultiExecutions(
 		paretoPath += "/P-" + fmt.Sprint(params.P)
 	}
 
-	checkFilePath(homePath, paretoPath)
+	writer.CheckFilePath(homePath, paretoPath)
 
 	// channel to get elems related to rank[0] pareto
 	rankedChan := make(chan models.Elements, params.EXECS)
@@ -41,22 +47,29 @@ func MultiExecutions(
 		f, err := os.Create(filePath)
 		checkError(err)
 
-		wg.Add(1)
-
 		cpyPopulation := make(models.Elements, len(initialPopulation))
 		copy(cpyPopulation, initialPopulation)
 
+		wg.Add(1)
 		// worker
-		go GD3(
-			wg,
-			rankedChan,
-			maximumObjs,
-			params,
-			prob.Fn,
-			variant,
-			cpyPopulation,
-			f,
-		)
+		go func() {
+			// adding to concurrent queue
+			tokens <- struct{}{}
+			// cleaning concurrent queue
+			defer func() { <-tokens }()
+			// finishing worker
+			defer func() { wg.Done() }()
+			// running one execution of the GDE3
+			GD3(
+				rankedChan,
+				maximumObjs,
+				params,
+				prob.Fn,
+				variant,
+				cpyPopulation,
+				f,
+			)
+		}()
 	}
 	// closer
 	fmt.Println("waiting for the executions to be done")
@@ -80,24 +93,30 @@ func MultiExecutions(
 		// gets non dominated and filters by crowdingDistance
 		_, rankedPareto = ReduceByCrowdDistance(rankedPareto, len(rankedPareto))
 
+		// limits the amounts of dots to 1k
 		if len(rankedPareto) > 1000 {
 			rankedPareto = rankedPareto[:1000]
 		}
 	}
-	fmt.Printf("\n")
 
 	// checks path for the path used to store the details of each generation
 	multiExecutionsPath := "/.gode/mode/multiExecutions/" + prob.Name + "/" + variant.Name
 	if variant.Name == "pbest" {
 		multiExecutionsPath += "/P-" + fmt.Sprint(params.P)
 	}
-	checkFilePath(homePath, multiExecutionsPath)
+	writer.CheckFilePath(homePath, multiExecutionsPath)
 
 	// result of the ranked pareto
-	writeResult(
-		homePath+multiExecutionsPath+"/rankedPareto.csv",
-		rankedPareto,
-	)
+	f, err := os.Create(homePath + multiExecutionsPath + "/rankedPareto.csv")
+	if err != nil {
+		log.Fatalln("Failed to create the ranked pareto file")
+	}
+
+	// creates writer and writes the elements objs
+	w := writer.NewWriter(f)
+	w.Comma = ';'
+	w.WriteHeader(params.M)
+	w.ElementsObjs(rankedPareto)
 
 	// getting biggest objs values
 	maxObjs := make([]float64, params.M)

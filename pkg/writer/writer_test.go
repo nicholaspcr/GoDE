@@ -1,6 +1,7 @@
 package writer
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -80,7 +81,10 @@ func TestElementsObjs(t *testing.T) {
 			elems: models.Elements{
 				{Objs: []float64{1.0, 2.0, 3.0}},
 			},
-			expected: "elem[0],1.000,2.000,3.000\n",
+			expected: fmt.Sprintf(
+				"elem[0],%.8f,%.8f,%.8f\n",
+				1.0, 2.0, 3.0,
+			),
 		},
 		{
 			elems: models.Elements{
@@ -88,7 +92,10 @@ func TestElementsObjs(t *testing.T) {
 				{Objs: []float64{0.004, 0.005, 0.006}},
 			},
 			separator: ';',
-			expected:  "elem[0];0.010;0.020;0.030\nelem[1];0.004;0.005;0.006\n",
+			expected: fmt.Sprintf(
+				"elem[0];%.8f;%.8f;%.8f\nelem[1];%.8f;%.8f;%.8f\n",
+				0.01, 0.02, 0.03, 0.004, 0.005, 0.006,
+			),
 		},
 		{
 			err: "empty slice of elements",
@@ -138,7 +145,10 @@ func TestElementsVectors(t *testing.T) {
 			elems: models.Elements{
 				{X: []float64{1.0, 2.0, 3.0}},
 			},
-			expected: "elem[0],1.000,2.000,3.000\n",
+			expected: fmt.Sprintf(
+				"elem[0],%.8f,%.8f,%.8f\n",
+				1.0, 2.0, 3.0,
+			),
 		},
 		{
 			elems: models.Elements{
@@ -146,7 +156,10 @@ func TestElementsVectors(t *testing.T) {
 				{X: []float64{0.004, 0.005, 0.006}},
 			},
 			separator: ';',
-			expected:  "elem[0];0.010;0.020;0.030\nelem[1];0.004;0.005;0.006\n",
+			expected: fmt.Sprintf(
+				"elem[0];%.8f;%.8f;%.8f\nelem[1];%.8f;%.8f;%.8f\n",
+				0.01, 0.02, 0.03, 0.004, 0.005, 0.006,
+			),
 		},
 		{
 			err: "empty slice of elements",

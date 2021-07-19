@@ -64,7 +64,7 @@ func ReduceByCrowdDistance(
 
 		elems = append(elems, ranks[i]...)
 		if len(elems) >= NP {
-			elems = (elems)[:NP]
+			elems = elems[:NP]
 			break
 		}
 	}
@@ -77,17 +77,18 @@ func ReduceByCrowdDistance(
 // FastNonDominatedRanking - ranks the models.elements and returns a map with models.elements per rank
 func FastNonDominatedRanking(elems models.Elements) map[int]models.Elements {
 
-	dominatingIth := make([]int, len(elems))
-	ithDominated := make([][]int, len(elems))
-	fronts := make([][]int, len(elems)+1)
+	// this func is inspired by the DEB_NSGA-II paper
+	// a fast and elitist multiobjective genetic algorithm
 
-	rand.Shuffle(len(elems), func(l, r int) {
-		elems[l], elems[r] = elems[r], elems[l]
-	})
+	dominatingIth := make([]int, len(elems))  // N_p equivalent
+	ithDominated := make([][]int, len(elems)) // S_p equivalent
+	fronts := make([][]int, 1)                // F equivalent
+	fronts[0] = []int{}                       // initializes first front
 
-	for i := range fronts {
-		fronts[i] = make([]int, 0)
-	}
+	// TODO remove section
+	//rand.Shuffle(len(elems), func(l, r int) {
+	//	elems[l], elems[r] = elems[r], elems[l]
+	//})
 
 	for p := 0; p < len(elems); p++ {
 		ithDominated[p] = make([]int, 0) // S_p size 0
@@ -96,27 +97,64 @@ func FastNonDominatedRanking(elems models.Elements) map[int]models.Elements {
 		for q := 0; q < len(elems); q++ {
 			dominanceTestResult := DominanceTest(elems[p].Objs, elems[q].Objs)
 
-			if dominanceTestResult == -1 { // p dominates q
+			if dominanceTestResult == -1 {
+				// p dominates q
+				// add q to the set of solutions dominated by p
 				ithDominated[p] = append(ithDominated[p], q)
-			} else if dominanceTestResult == 1 { // q dominates p
+
+			} else if dominanceTestResult == 1 {
+				// q dominates p
+				// increment the domination counter of p
 				dominatingIth[p]++
 			}
 		}
 		if dominatingIth[p] == 0 {
+			// adds p to the first front
 			fronts[0] = append(fronts[0], p)
 		}
 	}
 
-	for i := 1; i < len(fronts); i++ {
-		for _, p := range fronts[i-1] { // for each p in F_i
-			for _, q := range ithDominated[p] { // for each q in S_p
+	// used to go through the existant fronts
+	for i := 0; len(fronts[i]) > 0; i++ {
+		// slice to be added to the next front
+		nextFront := []int{}
+
+		// for each p in F_i
+		for _, p := range fronts[i] {
+
+			// for each q in S_p
+			for _, q := range ithDominated[p] {
+
 				dominatingIth[q]--
+
 				if dominatingIth[q] == 0 {
-					fronts[i] = append(fronts[i], q)
+					nextFront = append(nextFront, q)
 				}
 			}
 		}
+
+		// adds the next front to the matrix
+		fronts = append(fronts, nextFront)
 	}
+
+	// TODO remove section
+	// previous method with matrix of fronts already instantiated
+	//	for i := 1; i < len(fronts); i++ {
+	//
+	//		// for each p in F_i
+	//		for _, p := range fronts[i-1] {
+	//
+	//			// for each q in S_p
+	//			for _, q := range ithDominated[p] {
+	//
+	//				dominatingIth[q]--
+	//
+	//				if dominatingIth[q] == 0 {
+	//					fronts[i] = append(fronts[i], q)
+	//				}
+	//			}
+	//		}
+	//	}
 
 	// getting ranked models.elements from their index
 	rankedSubList := make(map[int]models.Elements)
@@ -191,8 +229,9 @@ func CalculateCrwdDist(elems models.Elements) {
 		return
 	}
 
+	// resets the crwdst
 	for i := range elems {
-		elems[i].Crwdst = 0 // resets the crwdst
+		elems[i].Crwdst = 0
 	}
 
 	szObjs := len(elems[0].Objs)
@@ -216,7 +255,7 @@ func CalculateCrwdDist(elems models.Elements) {
 			distance := elems[i+1].Objs[m] - elems[i-1].Objs[m]
 
 			// if difference between extremes is less than 1e-8
-			if objMax-objMin > 1e-8 {
+			if objMax-objMin > 0 {
 				distance = distance / (objMax - objMin)
 			}
 

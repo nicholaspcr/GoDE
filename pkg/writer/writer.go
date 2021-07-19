@@ -21,6 +21,10 @@ type Writer struct {
 	*csv.Writer
 }
 
+const (
+	floatFormat = "%.8f"
+)
+
 // NewWriter returns a Writer pointer that contains the methods to write
 // Elements and Elem into a file with a specific path
 func NewWriter(w io.Writer) *Writer {
@@ -96,7 +100,7 @@ func (w *Writer) ElementsObjs(elems models.Elements) error {
 		data[ind][0] = fmt.Sprintf("elem[%d]", ind)
 
 		for i := 0; i < objs; i++ {
-			data[ind][i+1] = fmt.Sprintf("%5.3f", p.Objs[i])
+			data[ind][i+1] = fmt.Sprintf(floatFormat, p.Objs[i])
 		}
 	}
 
@@ -124,7 +128,7 @@ func (w *Writer) ElementsVectors(elems models.Elements) error {
 		data[ind][0] = fmt.Sprintf("elem[%d]", ind)
 
 		for i := 0; i < dim; i++ {
-			data[ind][i+1] = fmt.Sprintf("%5.3f", p.X[i])
+			data[ind][i+1] = fmt.Sprintf(floatFormat, p.X[i])
 		}
 	}
 

@@ -26,16 +26,6 @@ func TestWFG1FN(t *testing.T) {
 				0.8210562785104756},
 			expected: []float64{2.62459718, 1.01342557, 1.23516052},
 		},
-		//		{
-		//			name:     "test_case_2",
-		//			x:        []float64{},
-		//			expected: []float64{},
-		//		},
-		//		{
-		//			name:     "test_case_3",
-		//			x:        []float64{},
-		//			expected: []float64{},
-		//		},
 	}
 
 	for _, tt := range tests {

@@ -31,31 +31,31 @@ func main() {
 	fmt.Println("Results:")
 
 	// calling objective function
-	wfg1(x, numObjs)
+	//	wfg1(x, numObjs)
 
 	// calling objective function
 	wfg2(x, numObjs)
 
 	// calling objective function
- wfg3(x, numObjs)
-
-	// calling objective function
- wfg4(x, numObjs)
-
-	// calling objective function
- wfg5(x, numObjs)
-
-	// calling objective function
- wfg6(x, numObjs)
-
-	// calling objective function
- wfg7(x, numObjs)
-
-	// calling objective function
- wfg8(x, numObjs)
-
-	// calling objective function
-	wfg9(x, numObjs)
+	//  wfg3(x, numObjs)
+	//
+	// 	// calling objective function
+	//  wfg4(x, numObjs)
+	//
+	// 	// calling objective function
+	//  wfg5(x, numObjs)
+	//
+	// 	// calling objective function
+	//  wfg6(x, numObjs)
+	//
+	// 	// calling objective function
+	//  wfg7(x, numObjs)
+	//
+	// 	// calling objective function
+	//  wfg8(x, numObjs)
+	//
+	// 	// calling objective function
+	// 	wfg9(x, numObjs)
 }
 
 func wfg1(x []float64, numObjs int) {

@@ -7,7 +7,7 @@ import (
 	"github.com/nicholaspcr/gde3/pkg/problems/models"
 )
 
-func TestWFG4FN(t *testing.T) {
+func TestWFG9FN(t *testing.T) {
 	tests := []struct {
 		name     string
 		x        []float64
@@ -24,7 +24,7 @@ func TestWFG4FN(t *testing.T) {
 				0.6262800875490805, 0.29995487782600794, 0.24415475358707514,
 				0.9175107784830833, 0.05072118152238865, 0.8066710784368301,
 				0.8210562785104756},
-			expected: []float64{2.13560028, 2.38899281, 4.51873282},
+			expected: []float64{0.77996082, 2.24325509, 5.23004071},
 		},
 	}
 
@@ -33,10 +33,10 @@ func TestWFG4FN(t *testing.T) {
 			e := models.Elem{
 				X: tt.x,
 			}
-			err := WFG4.Fn(&e, len(tt.expected))
+			err := WFG9.Fn(&e, len(tt.expected))
 
 			if err != nil {
-				t.Errorf("failed to run the WFG4 func")
+				t.Errorf("failed to run the WFG9 func")
 			}
 
 			// string representation of the array
@@ -55,7 +55,7 @@ func TestWFG4FN(t *testing.T) {
 			// checks the strings
 			if received != want {
 				t.Errorf(
-					"WFG4 wrong objs. received %v, expected %v",
+					"WFG9 wrong objs. received %v, expected %v",
 					received,
 					want,
 				)

@@ -22,7 +22,7 @@ var (
 	// variants being read
 	variants = []string{"rand1"}
 	// problems being read
-	problems = []string{"wfg2"}
+	problems = []string{"dtlz1"}
 
 	// tokens is a counting semaphore use to
 	// enforce  a limit of 3 concurrent requests
@@ -66,6 +66,9 @@ func main() {
 			for v := range c {
 				elems = append(elems, v...)
 			}
+
+			// reduce by crowdDistance
+			_, elems = mode.ReduceByCrowdDistance(elems, len(elems))
 
 			filePath := fmt.Sprintf(
 				"%s/.gode/mode/multiExecutions/%s/%s/filteredPareto.csv",

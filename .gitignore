@@ -1,6 +1,5 @@
 # General
 .vscode
-.prof
 
 # vim
 *.swp
@@ -20,6 +19,7 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 *.cov
+*.prof
 
 # Dependency directories (remove the comment below to include it)
 vendor/

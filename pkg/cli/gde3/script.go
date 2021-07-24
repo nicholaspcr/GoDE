@@ -2,7 +2,9 @@ package gde3
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
+	"os"
 	"time"
 
 	"github.com/nicholaspcr/gde3/pkg/mode"
@@ -10,6 +12,7 @@ import (
 	"github.com/nicholaspcr/gde3/pkg/problems/models"
 	"github.com/nicholaspcr/gde3/pkg/variants"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 )
 
 var scriptCmd = &cobra.Command{
@@ -22,19 +25,36 @@ var scriptCmd = &cobra.Command{
 			fmt.Println("invalid problem")
 		}
 
-		params := models.Params{
-			NP:          np,
-			M:           mConst,
-			DIM:         dim,
-			GEN:         gen,
-			EXECS:       execs,
-			FLOOR:       floor,
-			CEIL:        ceil,
-			CR:          crConst,
-			F:           fConst,
-			P:           pConst,
-			DisablePlot: disablePlot,
+		var params models.Params
+		if filename != "" {
+			data, err := os.ReadFile(filename)
+			if err != nil {
+				log.Fatalln("failed to open file")
+			}
+
+			yaml.Unmarshal(data, &params)
+		} else {
+			params = models.Params{
+				NP:          np,
+				M:           mConst,
+				DIM:         dim,
+				GEN:         gen,
+				EXECS:       execs,
+				FLOOR:       floor,
+				CEIL:        ceil,
+				CR:          crConst,
+				F:           fConst,
+				P:           pConst,
+				DisablePlot: disablePlot,
+			}
 		}
+
+		// checking for the ceil and floor slices
+		if len(params.CEIL) != params.DIM ||
+			len(params.FLOOR) != params.DIM {
+			log.Fatalln("floor and ceil vector should have the same size as DIM")
+		}
+
 		allVariants := variants.GetAllVariants()
 		defaultPValues := variants.GetStandardPValues()
 

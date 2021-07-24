@@ -83,11 +83,11 @@ func GD3(
 					trial.X[currInd] = vr.X[currInd]
 				}
 
-				if trial.X[currInd] < p.FLOOR {
-					trial.X[currInd] = p.FLOOR
+				if trial.X[currInd] < p.FLOOR[currInd] {
+					trial.X[currInd] = p.FLOOR[currInd]
 				}
-				if trial.X[currInd] > p.CEIL {
-					trial.X[currInd] = p.CEIL
+				if trial.X[currInd] > p.CEIL[currInd] {
+					trial.X[currInd] = p.CEIL[currInd]
 				}
 				currInd = (currInd + 1) % p.DIM
 			}

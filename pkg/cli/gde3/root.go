@@ -11,7 +11,7 @@ import (
 var (
 	np, dim                 int
 	gen, execs              int
-	floor, ceil             float64
+	floor, ceil             []float64
 	crConst, fConst, pConst float64
 
 	mConst       int
@@ -21,6 +21,9 @@ var (
 	// pprofs
 	cpuprofile string
 	memprofile string
+
+	// filename for the yaml file
+	filename string
 
 	// rootCmd represents the base command when called without any subcommands
 	rootCmd = &cobra.Command{
@@ -85,14 +88,16 @@ func addGlobalFlags(cmd *cobra.Command) {
 		1,
 		"amount of times to run DE")
 
-	cmd.PersistentFlags().Float64Var(&floor,
+	cmd.PersistentFlags().Float64SliceVarP(&floor,
 		"floor",
-		0.0,
+		"",
+		[]float64{1.0},
 		"floor of the float64 generator (default 0)")
 
-	cmd.PersistentFlags().Float64Var(&ceil,
+	cmd.PersistentFlags().Float64SliceVarP(&ceil,
 		"ceil",
-		1.0,
+		"",
+		[]float64{1.0},
 		"ceil of the float64 generator")
 
 	cmd.PersistentFlags().Float64Var(&crConst,
@@ -136,4 +141,9 @@ func addGlobalFlags(cmd *cobra.Command) {
 		"memprofile",
 		"",
 		"write memory profile to `file`")
+
+	cmd.PersistentFlags().StringVar(&filename,
+		"filename",
+		"",
+		"filename path to the yaml file that contains the values of the problem")
 }

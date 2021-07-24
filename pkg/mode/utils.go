@@ -17,12 +17,12 @@ var (
 // GeneratePopulation - creates a population without objs calculates
 func GeneratePopulation(p models.Params) models.Elements {
 	ret := make(models.Elements, p.NP)
-	constant := p.CEIL - p.FLOOR // range between floor and ceiling
 	for i := 0; i < p.NP; i++ {
 		ret[i].X = make([]float64, p.DIM)
 
 		for j := 0; j < p.DIM; j++ {
-			ret[i].X[j] = rand.Float64()*constant + p.FLOOR // value varies within [ceil,upper]
+			constant := p.CEIL[j] - p.FLOOR[j]                 // range between floor and ceiling
+			ret[i].X[j] = rand.Float64()*constant + p.FLOOR[j] // value varies within [ceil,upper]
 		}
 	}
 	return ret

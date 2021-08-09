@@ -123,5 +123,4 @@ func GD3(
 	// sending via channel the data
 	rankedCh <- bestElems
 	maximumObjs <- maxObjs
-
 }

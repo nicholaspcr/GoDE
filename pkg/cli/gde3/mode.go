@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"net/http/pprof"
 	"os"
-	"runtime"
 	"time"
 
 	"github.com/nicholaspcr/gde3/pkg/mode"
@@ -67,33 +65,12 @@ var modeCmd = &cobra.Command{
 		// checking for the ceil and floor slices
 		if len(params.CEIL) != params.DIM ||
 			len(params.FLOOR) != params.DIM {
-			log.Fatalln("floor and ceil vector should have the same size as DIM")
+			fmt.Println("floor and ceil vector should have the same size as DIM")
+			fmt.Println("ceil = ", params.CEIL)
+			fmt.Println("floor  = ", params.FLOOR)
+			fmt.Println("dim = ", params.DIM)
+			return
 		}
-
-		if cpuprofile != "" {
-			cpuF, err := os.Create(cpuprofile)
-			if err != nil {
-				log.Fatal("could not create CPU profile: ", err)
-			}
-			defer cpuF.Close() // error handling omitted for example
-			if err := pprof.StartCPUProfile(cpuF); err != nil {
-				log.Fatal("could not start CPU profile: ", err)
-			}
-			defer pprof.StopCPUProfile()
-		}
-
-		if memprofile != "" {
-			memF, err := os.Create(memprofile)
-			if err != nil {
-				log.Fatal("could not create memory profile: ", err)
-			}
-			defer memF.Close() // error handling omitted for example
-			runtime.GC()       // get up-to-date statistics
-			if err := pprof.WriteHeapProfile(memF); err != nil {
-				log.Fatal("could not write memory profile: ", err)
-			}
-		}
-
 		startTimer := time.Now() // time spent on script
 
 		rand.Seed(time.Now().UnixNano())

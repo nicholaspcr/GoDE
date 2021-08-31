@@ -27,28 +27,47 @@ func MultiExecutions(
 	paretoPath := "/.gode/mode/paretoFront/" + prob.Name + "/" + variant.Name
 
 	if variant.Name == "pbest" {
-		paretoPath += "/P-" + fmt.Sprint(params.P)
+		paretoPath += "/P-" + fmt.Sprint(
+			params.P,
+		)
 	}
 
-	writer.CheckFilePath(homePath, paretoPath)
+	writer.CheckFilePath(
+		homePath,
+		paretoPath,
+	)
 
 	// channel to get elems related to rank[0] pareto
-	rankedChan := make(chan models.Elements, params.EXECS)
+	rankedChan := make(
+		chan models.Elements,
+		params.EXECS,
+	)
 
 	// getting the maximum calculated value for each objective
-	maximumObjs := make(chan []float64, params.EXECS)
+	maximumObjs := make(
+		chan []float64,
+		params.EXECS,
+	)
 
 	wg := &sync.WaitGroup{}
 
 	// runs GDE3 for EXECS amount of times
 	for i := 0; i < params.EXECS; i++ {
-		filePath := homePath + paretoPath + "/exec-" + strconv.Itoa(i+1) + ".csv"
+		filePath := homePath + paretoPath + "/exec-" + strconv.Itoa(
+			i+1,
+		) + ".csv"
 
 		f, err := os.Create(filePath)
 		checkError(err)
 
-		cpyPopulation := make(models.Elements, len(initialPopulation))
-		copy(cpyPopulation, initialPopulation)
+		cpyPopulation := make(
+			models.Elements,
+			len(initialPopulation),
+		)
+		copy(
+			cpyPopulation,
+			initialPopulation,
+		)
 
 		wg.Add(1)
 		// worker
@@ -72,7 +91,9 @@ func MultiExecutions(
 		}()
 	}
 	// closer
-	fmt.Println("waiting for the executions to be done")
+	fmt.Println(
+		"waiting for the executions to be done",
+	)
 
 	go func() {
 		wg.Wait()
@@ -88,10 +109,15 @@ func MultiExecutions(
 		counter++
 		fmt.Printf("%d, ", counter)
 
-		rankedPareto = append(rankedPareto, v...)
+		rankedPareto = append(
+			rankedPareto,
+			v...)
 
 		// gets non dominated and filters by crowdingDistance
-		_, rankedPareto = ReduceByCrowdDistance(rankedPareto, len(rankedPareto))
+		_, rankedPareto = ReduceByCrowdDistance(
+			rankedPareto,
+			len(rankedPareto),
+		)
 
 		// limits the amounts of dots to 1k
 		if len(rankedPareto) > 1000 {
@@ -102,14 +128,23 @@ func MultiExecutions(
 	// checks path for the path used to store the details of each generation
 	multiExecutionsPath := "/.gode/mode/multiExecutions/" + prob.Name + "/" + variant.Name
 	if variant.Name == "pbest" {
-		multiExecutionsPath += "/P-" + fmt.Sprint(params.P)
+		multiExecutionsPath += "/P-" + fmt.Sprint(
+			params.P,
+		)
 	}
-	writer.CheckFilePath(homePath, multiExecutionsPath)
+	writer.CheckFilePath(
+		homePath,
+		multiExecutionsPath,
+	)
 
 	// result of the ranked pareto
-	f, err := os.Create(homePath + multiExecutionsPath + "/rankedPareto.csv")
+	f, err := os.Create(
+		homePath + multiExecutionsPath + "/rankedPareto.csv",
+	)
 	if err != nil {
-		log.Fatalln("Failed to create the ranked pareto file")
+		log.Fatalln(
+			"Failed to create the ranked pareto file",
+		)
 	}
 
 	// creates writer and writes the elements objs
@@ -127,6 +162,8 @@ func MultiExecutions(
 			}
 		}
 	}
-	fmt.Println("maximum objective values found")
+	fmt.Println(
+		"maximum objective values found",
+	)
 	fmt.Println(maxObjs)
 }

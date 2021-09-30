@@ -1,8 +1,0 @@
-cff-version: 1.2.0
-message: "If you use this software, please cite it as below."
-authors:
-  - family-names: Cristofaro
-    given-names: Nicholas
-title: "Comparative Analysis of Performance Gained in GDE3 when changing variants"
-version: 0.0.1
-date-released: 2021-08-31

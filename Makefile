@@ -40,5 +40,13 @@ go/coverage:
 go/clean:
 	rm profile.cov
 	rm profile.cov.tmp
+# }
+
+
+# Python {
+
+.PHONY: python
+## TODO
+python:
 
 # }

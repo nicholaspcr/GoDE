@@ -47,7 +47,10 @@ func wfg8_t1(X []float64, k, n int) []float64 {
 	var ret []float64
 	for i := k; i < n; i++ {
 		aux := _reduction_weighted_sum_uniform(x[:i])
-		ret = append(ret, _transformation_param_dependent(x[i], aux, 0.98/49.98, 0.02, 50.0))
+		ret = append(
+			ret,
+			_transformation_param_dependent(x[i], aux, 0.98/49.98, 0.02, 50.0),
+		)
 	}
 	return ret
 }

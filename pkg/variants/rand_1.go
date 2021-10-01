@@ -11,7 +11,9 @@ import (
 var rand1 VariantFn = VariantFn{
 	Fn: func(elems, rankZero models.Elements, p Params) (models.Elem, error) {
 		if len(elems) < 3 {
-			return models.Elem{}, fmt.Errorf("no sufficient amount of elements in the population, should be bigger than three")
+			return models.Elem{}, fmt.Errorf(
+				"no sufficient amount of elements in the population, should be bigger than three",
+			)
 		}
 
 		// generating random indices different from current pos

@@ -65,7 +65,9 @@ var modeCmd = &cobra.Command{
 		// checking for the ceil and floor slices
 		if len(params.CEIL) != params.DIM ||
 			len(params.FLOOR) != params.DIM {
-			fmt.Println("floor and ceil vector should have the same size as DIM")
+			fmt.Println(
+				"floor and ceil vector should have the same size as DIM",
+			)
 			fmt.Println("ceil = ", params.CEIL)
 			fmt.Println("floor  = ", params.FLOOR)
 			fmt.Println("dim = ", params.DIM)

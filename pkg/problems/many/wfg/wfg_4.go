@@ -45,7 +45,10 @@ var WFG4 = models.ProblemFn{
 func wfg4_t1(X []float64, n, k int) []float64 {
 	var ret []float64
 	for _, x := range X {
-		ret = append(ret, _transformation_shift_multi_modal(x, 30.0, 10.0, 0.35))
+		ret = append(
+			ret,
+			_transformation_shift_multi_modal(x, 30.0, 10.0, 0.35),
+		)
 	}
 	return ret
 }

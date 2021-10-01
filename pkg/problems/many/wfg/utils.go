@@ -70,7 +70,9 @@ func _correct_to_01(x float64) float64 {
 
 // _transformation_shift_linear
 func _transformation_shift_linear(y, shift float64) float64 {
-	return _correct_to_01(math.Abs(y-shift) / math.Abs(math.Floor(shift-y)+shift))
+	return _correct_to_01(
+		math.Abs(y-shift) / math.Abs(math.Floor(shift-y)+shift),
+	)
 }
 
 func _transformation_shift_deceptive(y, A, B, C float64) float64 {
@@ -88,7 +90,13 @@ func _transformation_shift_multi_modal(y, A, B, C float64) float64 {
 }
 
 func _transformation_bias_flat(y, a, b, c float64) float64 {
-	ret := a + math.Min(0.0, math.Floor(y-b))*(a*(b-y)/b) - math.Min(0, math.Floor(c-y))*((1.0-a)*(y-c)/(1.0-c))
+	ret := a + math.Min(
+		0.0,
+		math.Floor(y-b),
+	)*(a*(b-y)/b) - math.Min(
+		0,
+		math.Floor(c-y),
+	)*((1.0-a)*(y-c)/(1.0-c))
 	return _correct_to_01(ret)
 }
 

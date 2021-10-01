@@ -17,7 +17,10 @@ var WFG9 = models.ProblemFn{
 			y = append(y, e.X[i]/xu[i])
 		}
 
-		copy(y[:n_var-1], wfg9_t1(y, n_var)) // transfers to these position of the y vector
+		copy(
+			y[:n_var-1],
+			wfg9_t1(y, n_var),
+		) // transfers to these position of the y vector
 		y = wfg9_t2(y, n_var, k)
 		y = wfg9_t3(y, n_obj, n_var, k)
 		y = _post(y, _ones(n_obj-1)) // post
@@ -47,7 +50,10 @@ func wfg9_t1(X []float64, n int) []float64 {
 	var ret []float64
 	for i := 0; i < n-1; i++ {
 		aux := _reduction_weighted_sum_uniform(x[i+1:])
-		ret = append(ret, _transformation_param_dependent(x[i], aux, 0.98/49.98, 0.02, 50.0))
+		ret = append(
+			ret,
+			_transformation_param_dependent(x[i], aux, 0.98/49.98, 0.02, 50.0),
+		)
 	}
 	return ret
 }

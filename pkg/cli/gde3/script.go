@@ -52,7 +52,9 @@ var scriptCmd = &cobra.Command{
 		// checking for the ceil and floor slices
 		if len(params.CEIL) != params.DIM ||
 			len(params.FLOOR) != params.DIM {
-			log.Fatalln("floor and ceil vector should have the same size as DIM")
+			log.Fatalln(
+				"floor and ceil vector should have the same size as DIM",
+			)
 		}
 
 		allVariants := variants.GetAllVariants()
@@ -65,7 +67,12 @@ var scriptCmd = &cobra.Command{
 			if variant.Name == "pbest" {
 				for _, pvalue := range defaultPValues {
 					params.P = pvalue
-					mode.MultiExecutions(params, problem, variant, initialPopulation)
+					mode.MultiExecutions(
+						params,
+						problem,
+						variant,
+						initialPopulation,
+					)
 				}
 			} else {
 				mode.MultiExecutions(params, problem, variant, initialPopulation)

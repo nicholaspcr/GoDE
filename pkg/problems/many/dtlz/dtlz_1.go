@@ -17,7 +17,9 @@ import (
 var DTLZ1 = models.ProblemFn{
 	Fn: func(e *models.Elem, M int) error {
 		if len(e.X) <= M {
-			return errors.New("need to have an M lesser than the amount of variables")
+			return errors.New(
+				"need to have an M lesser than the amount of variables",
+			)
 		}
 
 		evalG := func(v []float64) float64 {

@@ -15,7 +15,9 @@ var currToBest1 VariantFn = VariantFn{
 		err := generateIndices(1, len(elems), ind)
 
 		if err != nil {
-			return models.Elem{}, errors.New("insufficient size for the population, must me equal or greater than 5")
+			return models.Elem{}, errors.New(
+				"insufficient size for the population, must me equal or greater than 5",
+			)
 		}
 
 		arr := make([]float64, p.DIM)

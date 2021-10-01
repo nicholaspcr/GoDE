@@ -15,7 +15,9 @@ var rand2 VariantFn = VariantFn{
 		ind[0] = p.CurrPos
 		err := generateIndices(1, len(elems), ind)
 		if err != nil {
-			return models.Elem{}, errors.New("insufficient size for the population, must me equal or greater than 4")
+			return models.Elem{}, errors.New(
+				"insufficient size for the population, must me equal or greater than 4",
+			)
 		}
 
 		arr := make([]float64, p.DIM)

@@ -9,7 +9,9 @@ import (
 // generates random indices in the int slice, r -> it's a pointer
 func generateIndices(startInd, NP int, r []int) error {
 	if len(r) > NP {
-		return errors.New("insufficient elements in population to generate random indices")
+		return errors.New(
+			"insufficient elements in population to generate random indices",
+		)
 	}
 	for i := startInd; i < len(r); i++ {
 		for done := false; !done; {

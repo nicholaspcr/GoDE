@@ -16,7 +16,9 @@ var pbest VariantFn = VariantFn{
 
 		err := generateIndices(1, len(elems), ind)
 		if err != nil {
-			return models.Elem{}, errors.New("insufficient size for the population, must me equal or greater than 5")
+			return models.Elem{}, errors.New(
+				"insufficient size for the population, must me equal or greater than 5",
+			)
 		}
 
 		indexLimit := int(math.Ceil(float64(len(rankZero)) * p.P))

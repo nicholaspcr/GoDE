@@ -1,6 +1,9 @@
 # General
 .vscode
 
+# custom notes
+note.md
+
 # vim
 *.swp
 *.swo

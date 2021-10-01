@@ -18,7 +18,10 @@ import (
 var scriptCmd = &cobra.Command{
 	Use:   "script",
 	Short: "runs all the variants for the problem specified",
-	Long:  `script is the subcommand responsible for running the gde algorithm into the specified problem, it will test for all variants and each of them will start with the same initial population`,
+	Long: `
+script is the subcommand responsible for running the gde algorithm 
+into the specified problem, it will test for all variants and each
+of them will start with the same initial population.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		problem := problems.GetProblemByName(functionName)
 		if problem.Name == "" {

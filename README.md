@@ -18,23 +18,23 @@ python3 to generate the text.
 
 ### TODO
 - Create Makefile with commands:
-    - [] Install gde3
-    - [] Install python libraries needed
-    - [] Run
-        - [] installs
-        - [] runs the gde3 with default parameters
-    - [] Python Graphs
-        - [] Plots
-        - [] Hypervolume
-        - [] IGDPlus
-    - [] Tests
-        - [] General command for running tests
-        - [] Generate tests via `pymoo`
-    - [] Help command
+    - [ ] Install gde3
+    - [ ] Install python libraries needed
+    - [ ] Run
+        - [ ] installs
+        - [ ] runs the gde3 with default parameters
+    - [ ] Python Graphs
+        - [ ] Plots
+        - [ ] Hypervolume
+        - [ ] IGDPlus
+    - [ ] Tests
+        - [ ] General command for running tests
+        - [ ] Generate tests via `pymoo`
+    - [ ] Help command
 
 - Add requirements for using the makefile
 - refactor the golang sections
-    - [] check if its using proper interfaces
-    - [] is it functional as it can be?
-    - [] proper testing, use framework or just write base tests
+    - [ ] check if its using proper interfaces
+    - [ ] is it functional as it can be?
+    - [ ] proper testing, use framework or just write base tests
 

@@ -51,7 +51,8 @@ func _calculate(X, S, H []float64) []float64 {
 // utils
 // ---------------------------------------------------------------------------------------------------------
 
-// _correct_to_01 handles the values that are between 0 +- 1e-10 and 1 +- e1-10, replaces with a fixed value
+// _correct_to_01 handles the values that are between 0 +- 1e-10 and 1 +- e1-10,
+// replaces with a fixed value
 // instead of leaving floating points
 func _correct_to_01(x float64) float64 {
 	epsilon := 1e-10

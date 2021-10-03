@@ -1,22 +1,31 @@
-package mode
+package algorithms
 
 import (
 	"math/rand"
 	"os"
 
-	"github.com/nicholaspcr/gde3/pkg/problems/models"
-	"github.com/nicholaspcr/gde3/pkg/variants"
+	"github.com/nicholaspcr/gde3/pkg/models"
 	"github.com/nicholaspcr/gde3/pkg/writer"
 )
 
-// GD3 -> runs a simple multiObjective DE in the ZDT1 case
-func GD3(
-	rankedCh chan<- models.Elements,
+// type that contains the definition of the GDE3 algorithm
+type gde3 struct{}
+
+// GDE3 Returns an instance of an object that implements the GDE3 algorithm. It
+// is compliant with the ModeInterface
+func GDE3() models.ModeInterface {
+	return &gde3{}
+}
+
+// Execute is responsible for receiving the standard parameters defined in the
+// ModeInterface and executing the gde3 algorithm
+func (g *gde3) Execute(
+	rankedCh chan<- models.Population,
 	maximumObjs chan<- []float64,
-	p models.Params,
-	evaluate func(e *models.Elem, M int) error,
-	variant variants.VariantFn,
-	population models.Elements,
+	p models.AlgorithmParams,
+	problem models.ProblemInterface,
+	variant models.VariantInterface,
+	population models.Population,
 	f *os.File,
 ) {
 	defer f.Close()
@@ -30,7 +39,7 @@ func GD3(
 
 	// calculates the objs of the inital population
 	for i := range population {
-		err := evaluate(&population[i], p.M)
+		err := problem.Evaluate(&population[i], p.M)
 		checkError(err)
 
 		for j, obj := range population[i].Objs {
@@ -46,11 +55,11 @@ func GD3(
 	w.ElementsObjs(population)
 
 	// stores the rank[0] of each generation
-	bestElems := make(models.Elements, 0)
+	bestElems := make(models.Population, 0)
 
-	var genRankZero models.Elements
-	var bestInGen models.Elements
-	var trial models.Elem
+	var genRankZero models.Population
+	var bestInGen models.Population
+	var trial models.Vector
 
 	for g := 0; g < p.GEN; g++ {
 		// gets non dominated of the current population
@@ -59,10 +68,10 @@ func GD3(
 		for i := 0; i < len(population); i++ {
 
 			// generates the mutatated vector
-			vr, err := variant.Fn(
+			vr, err := variant.Mutate(
 				population,
 				genRankZero,
-				variants.Params{
+				models.VariantParams{
 					DIM:     p.DIM,
 					F:       p.F,
 					CurrPos: i,
@@ -92,7 +101,7 @@ func GD3(
 				currInd = (currInd + 1) % p.DIM
 			}
 
-			evalErr := evaluate(&trial, p.M)
+			evalErr := problem.Evaluate(&trial, p.M)
 			checkError(evalErr)
 
 			// SELECTION

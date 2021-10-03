@@ -19,7 +19,6 @@ python3 to generate the text.
 ### TODO
 - Create Makefile with commands:
     - [ ] Install gde3
-    - [ ] Install python libraries needed
     - [ ] Run
         - [ ] installs
         - [ ] runs the gde3 with default parameters
@@ -31,8 +30,13 @@ python3 to generate the text.
         - [ ] General command for running tests
         - [ ] Generate tests via `pymoo`
     - [ ] Help command
+    - [ ] Setup command
+        - [ ] Install python libraries needed
 
 - Add requirements for using the makefile
+    - [ ] Golang minimal version
+    - [ ] Python3 minimal version
+
 - refactor the golang sections
     - [ ] check if its using proper interfaces
     - [ ] is it functional as it can be?

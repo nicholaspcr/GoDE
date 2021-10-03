@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nicholaspcr/gde3/pkg/models"
 	"github.com/nicholaspcr/gde3/pkg/problems/many/wfg"
-	"github.com/nicholaspcr/gde3/pkg/problems/models"
 )
 
 func main() {
@@ -31,37 +31,37 @@ func main() {
 	fmt.Println("Results:")
 
 	// calling objective function
-	//	wfg1(x, numObjs)
+	wfg1(x, numObjs)
 
 	// calling objective function
 	wfg2(x, numObjs)
 
 	// calling objective function
-	//  wfg3(x, numObjs)
-	//
-	// 	// calling objective function
-	//  wfg4(x, numObjs)
-	//
-	// 	// calling objective function
-	//  wfg5(x, numObjs)
-	//
-	// 	// calling objective function
-	//  wfg6(x, numObjs)
-	//
-	// 	// calling objective function
-	//  wfg7(x, numObjs)
-	//
-	// 	// calling objective function
-	//  wfg8(x, numObjs)
-	//
-	// 	// calling objective function
-	// 	wfg9(x, numObjs)
+	wfg3(x, numObjs)
+
+	// calling objective function
+	wfg4(x, numObjs)
+
+	// calling objective function
+	wfg5(x, numObjs)
+
+	// calling objective function
+	wfg6(x, numObjs)
+
+	// calling objective function
+	wfg7(x, numObjs)
+
+	// calling objective function
+	wfg8(x, numObjs)
+
+	// calling objective function
+	wfg9(x, numObjs)
 }
 
 func wfg1(x []float64, numObjs int) {
 	_x := make([]float64, len(x))
 	copy(_x, x)
-	e := models.Elem{
+	e := models.Vector{
 		X: x,
 	}
 	wfg.WFG1.Fn(&e, numObjs)
@@ -71,7 +71,7 @@ func wfg1(x []float64, numObjs int) {
 func wfg2(x []float64, numObjs int) {
 	_x := make([]float64, len(x))
 	copy(_x, x)
-	e := models.Elem{
+	e := models.Vector{
 		X: x,
 	}
 	wfg.WFG2.Fn(&e, numObjs)
@@ -81,7 +81,7 @@ func wfg2(x []float64, numObjs int) {
 func wfg3(x []float64, numObjs int) {
 	_x := make([]float64, len(x))
 	copy(_x, x)
-	e := models.Elem{
+	e := models.Vector{
 		X: x,
 	}
 	wfg.WFG3.Fn(&e, numObjs)
@@ -91,7 +91,7 @@ func wfg3(x []float64, numObjs int) {
 func wfg4(x []float64, numObjs int) {
 	_x := make([]float64, len(x))
 	copy(_x, x)
-	e := models.Elem{
+	e := models.Vector{
 		X: x,
 	}
 	wfg.WFG4.Fn(&e, numObjs)
@@ -101,7 +101,7 @@ func wfg4(x []float64, numObjs int) {
 func wfg5(x []float64, numObjs int) {
 	_x := make([]float64, len(x))
 	copy(_x, x)
-	e := models.Elem{
+	e := models.Vector{
 		X: x,
 	}
 	wfg.WFG5.Fn(&e, numObjs)
@@ -111,7 +111,7 @@ func wfg5(x []float64, numObjs int) {
 func wfg6(x []float64, numObjs int) {
 	_x := make([]float64, len(x))
 	copy(_x, x)
-	e := models.Elem{
+	e := models.Vector{
 		X: x,
 	}
 	wfg.WFG6.Fn(&e, numObjs)
@@ -121,7 +121,7 @@ func wfg6(x []float64, numObjs int) {
 func wfg7(x []float64, numObjs int) {
 	_x := make([]float64, len(x))
 	copy(_x, x)
-	e := models.Elem{
+	e := models.Vector{
 		X: x,
 	}
 	wfg.WFG7.Fn(&e, numObjs)
@@ -131,7 +131,7 @@ func wfg7(x []float64, numObjs int) {
 func wfg8(x []float64, numObjs int) {
 	_x := make([]float64, len(x))
 	copy(_x, x)
-	e := models.Elem{
+	e := models.Vector{
 		X: x,
 	}
 	wfg.WFG8.Fn(&e, numObjs)
@@ -141,7 +141,7 @@ func wfg8(x []float64, numObjs int) {
 func wfg9(x []float64, numObjs int) {
 	_x := make([]float64, len(x))
 	copy(_x, x)
-	e := models.Elem{
+	e := models.Vector{
 		X: x,
 	}
 	wfg.WFG9.Fn(&e, numObjs)

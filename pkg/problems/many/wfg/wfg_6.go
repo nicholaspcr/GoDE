@@ -1,9 +1,9 @@
 package wfg
 
-import "github.com/nicholaspcr/gde3/pkg/problems/models"
+import "github.com/nicholaspcr/gde3/pkg/models"
 
-var WFG6 = models.ProblemFn{
-	Fn: func(e *models.Elem, M int) error {
+var WFG6 = models.Problem{
+	Fn: func(e *models.Vector, M int) error {
 		n_var := len(e.X)
 		n_obj := M
 		k := 2 * (n_obj - 1)
@@ -31,7 +31,7 @@ var WFG6 = models.ProblemFn{
 		copy(e.Objs, newObjs)
 		return nil
 	},
-	Name: "wfg6",
+	ProblemName: "wfg6",
 }
 
 // ---------------------------------------------------------------------------------------------------------

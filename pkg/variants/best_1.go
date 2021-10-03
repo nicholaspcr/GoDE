@@ -4,19 +4,19 @@ import (
 	"errors"
 	"math/rand"
 
-	"github.com/nicholaspcr/gde3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/models"
 )
 
 // best1  current_best + F(a-b)
 // a,b are random elements
-var best1 VariantFn = VariantFn{
-	Fn: func(elems, rankZero models.Elements, p Params) (models.Elem, error) {
+var best1 = models.Variant{
+	Fn: func(elems, rankZero models.Population, p models.VariantParams) (models.Vector, error) {
 		index := make([]int, 3)
 		index[0] = p.CurrPos
 		err := generateIndices(1, len(elems), index)
 
 		if err != nil {
-			return models.Elem{}, errors.New(
+			return models.Vector{}, errors.New(
 				"insufficient size for the population, must me equal or greater than 4",
 			)
 		}
@@ -29,10 +29,10 @@ var best1 VariantFn = VariantFn{
 			arr[i] = best.X[i] + p.F*(r1.X[i]-r2.X[i])
 		}
 
-		ret := models.Elem{
+		ret := models.Vector{
 			X: arr,
 		}
 		return ret, nil
 	},
-	Name: "best1",
+	VariantName: "best1",
 }

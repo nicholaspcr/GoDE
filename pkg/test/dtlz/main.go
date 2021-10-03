@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nicholaspcr/gde3/pkg/models"
 	"github.com/nicholaspcr/gde3/pkg/problems/many/dtlz"
-	"github.com/nicholaspcr/gde3/pkg/problems/models"
 )
 
 func main() {
@@ -41,7 +41,7 @@ func main() {
 func dtlz1(x []float64, numObjs int) {
 	_x := make([]float64, len(x))
 	copy(_x, x)
-	e := models.Elem{
+	e := models.Vector{
 		X: x,
 	}
 	dtlz.DTLZ1.Fn(&e, numObjs)
@@ -51,7 +51,7 @@ func dtlz1(x []float64, numObjs int) {
 func dtlz2(x []float64, numObjs int) {
 	_x := make([]float64, len(x))
 	copy(_x, x)
-	e := models.Elem{
+	e := models.Vector{
 		X: x,
 	}
 	dtlz.DTLZ2.Fn(&e, numObjs)
@@ -61,7 +61,7 @@ func dtlz2(x []float64, numObjs int) {
 func dtlz3(x []float64, numObjs int) {
 	_x := make([]float64, len(x))
 	copy(_x, x)
-	e := models.Elem{
+	e := models.Vector{
 		X: x,
 	}
 	dtlz.DTLZ3.Fn(&e, numObjs)
@@ -71,7 +71,7 @@ func dtlz3(x []float64, numObjs int) {
 func dtlz4(x []float64, numObjs int) {
 	_x := make([]float64, len(x))
 	copy(_x, x)
-	e := models.Elem{
+	e := models.Vector{
 		X: x,
 	}
 	dtlz.DTLZ4.Fn(&e, numObjs)
@@ -81,7 +81,7 @@ func dtlz4(x []float64, numObjs int) {
 func dtlz5(x []float64, numObjs int) {
 	_x := make([]float64, len(x))
 	copy(_x, x)
-	e := models.Elem{
+	e := models.Vector{
 		X: x,
 	}
 	dtlz.DTLZ5.Fn(&e, numObjs)
@@ -91,7 +91,7 @@ func dtlz5(x []float64, numObjs int) {
 func dtlz6(x []float64, numObjs int) {
 	_x := make([]float64, len(x))
 	copy(_x, x)
-	e := models.Elem{
+	e := models.Vector{
 		X: x,
 	}
 	dtlz.DTLZ6.Fn(&e, numObjs)
@@ -101,7 +101,7 @@ func dtlz6(x []float64, numObjs int) {
 func dtlz7(x []float64, numObjs int) {
 	_x := make([]float64, len(x))
 	copy(_x, x)
-	e := models.Elem{
+	e := models.Vector{
 		X: x,
 	}
 	dtlz.DTLZ7.Fn(&e, numObjs)

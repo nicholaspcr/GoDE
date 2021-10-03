@@ -3,15 +3,15 @@ package variants
 import (
 	"fmt"
 
-	"github.com/nicholaspcr/gde3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/models"
 )
 
 // Rand1 variant -> a + F(b - c)
 // a,b,c are random elements
-var rand1 VariantFn = VariantFn{
-	Fn: func(elems, rankZero models.Elements, p Params) (models.Elem, error) {
+var rand1 = models.Variant{
+	Fn: func(elems, rankZero models.Population, p models.VariantParams) (models.Vector, error) {
 		if len(elems) < 3 {
-			return models.Elem{}, fmt.Errorf(
+			return models.Vector{}, fmt.Errorf(
 				"no sufficient amount of elements in the population, should be bigger than three",
 			)
 		}
@@ -21,10 +21,10 @@ var rand1 VariantFn = VariantFn{
 		inds[0] = p.CurrPos
 		err := generateIndices(1, len(elems), inds)
 		if err != nil {
-			return models.Elem{}, err
+			return models.Vector{}, err
 		}
 
-		result := models.Elem{}
+		result := models.Vector{}
 		result.X = make([]float64, p.DIM)
 
 		r1, r2, r3 := elems[inds[1]], elems[inds[2]], elems[inds[3]]
@@ -33,5 +33,5 @@ var rand1 VariantFn = VariantFn{
 		}
 		return result, nil
 	},
-	Name: "rand1",
+	VariantName: "rand1",
 }

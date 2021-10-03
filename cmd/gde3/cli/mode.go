@@ -1,4 +1,4 @@
-package gde3
+package cli
 
 import (
 	"fmt"
@@ -8,27 +8,39 @@ import (
 	"time"
 
 	"github.com/nicholaspcr/gde3/pkg/mode"
+	"github.com/nicholaspcr/gde3/pkg/models"
 	"github.com/nicholaspcr/gde3/pkg/problems"
-	"github.com/nicholaspcr/gde3/pkg/problems/models"
 	"github.com/nicholaspcr/gde3/pkg/variants"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
 
-var scriptCmd = &cobra.Command{
-	Use:   "script",
-	Short: "runs all the variants for the problem specified",
+// local flags
+var variantName string
+
+// modeCmd represents the mode command
+var modeCmd = &cobra.Command{
+	Use:   "multi",
+	Short: "Multi-objective implementation of DE",
 	Long: `
-script is the subcommand responsible for running the gde algorithm 
-into the specified problem, it will test for all variants and each
-of them will start with the same initial population.`,
+An implementation that allows the processing of multiple objective functions,
+these are a bit more complex and time consuming overall.`,
+
 	Run: func(cmd *cobra.Command, args []string) {
 		problem := problems.GetProblemByName(functionName)
-		if problem.Name == "" {
-			fmt.Println("invalid problem")
+		variant := variants.GetVariantByName(variantName)
+
+		if problem.Name() == "" {
+			fmt.Println("Invalid problem")
+			return
 		}
 
-		var params models.Params
+		if variant.Name() == "" {
+			fmt.Println("Invalid variant.")
+			return
+		}
+
+		var params models.AlgorithmParams
 		if filename != "" {
 			data, err := os.ReadFile(filename)
 			if err != nil {
@@ -37,7 +49,7 @@ of them will start with the same initial population.`,
 
 			yaml.Unmarshal(data, &params)
 		} else {
-			params = models.Params{
+			params = models.AlgorithmParams{
 				NP:          np,
 				M:           mConst,
 				DIM:         dim,
@@ -55,32 +67,24 @@ of them will start with the same initial population.`,
 		// checking for the ceil and floor slices
 		if len(params.CEIL) != params.DIM ||
 			len(params.FLOOR) != params.DIM {
-			log.Fatalln(
+			fmt.Println(
 				"floor and ceil vector should have the same size as DIM",
 			)
+			fmt.Println("ceil = ", params.CEIL)
+			fmt.Println("floor  = ", params.FLOOR)
+			fmt.Println("dim = ", params.DIM)
+			return
 		}
-
-		allVariants := variants.GetAllVariants()
-		defaultPValues := variants.GetStandardPValues()
+		startTimer := time.Now() // time spent on script
 
 		rand.Seed(time.Now().UnixNano())
+		// generating shared initial population
 		initialPopulation := mode.GeneratePopulation(params)
 
-		for _, variant := range allVariants {
-			if variant.Name == "pbest" {
-				for _, pvalue := range defaultPValues {
-					params.P = pvalue
-					mode.MultiExecutions(
-						params,
-						problem,
-						variant,
-						initialPopulation,
-					)
-				}
-			} else {
-				mode.MultiExecutions(params, problem, variant, initialPopulation)
-			}
-		}
+		mode.MultiExecutions(params, problem, variant, initialPopulation)
+
+		timeSpent := time.Since(startTimer)
+		fmt.Println("Time spend on the script: ", timeSpent)
 
 	},
 }

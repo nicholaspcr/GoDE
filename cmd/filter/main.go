@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/nicholaspcr/gde3/pkg/mode"
-	"github.com/nicholaspcr/gde3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/algorithms"
+	"github.com/nicholaspcr/gde3/pkg/models"
 )
 
 var (
@@ -35,7 +35,7 @@ func main() {
 	for _, prob := range problems {
 		for _, variant := range variants {
 			wg := &sync.WaitGroup{}
-			c := make(chan models.Elements)
+			c := make(chan models.Population)
 
 			for exec := 1; exec <= execs; exec++ {
 				fileName := fmt.Sprintf(
@@ -61,14 +61,14 @@ func main() {
 				close(c)
 			}()
 
-			var elems models.Elements
+			var elems models.Population
 
 			for v := range c {
 				elems = append(elems, v...)
 			}
 
 			// reduce by crowdDistance
-			_, elems = mode.ReduceByCrowdDistance(elems, len(elems))
+			_, elems = algorithms.ReduceByCrowdDistance(elems, len(elems))
 
 			filePath := fmt.Sprintf(
 				"%s/.gode/mode/multiExecutions/%s/%s/filteredPareto.csv",
@@ -125,13 +125,13 @@ func main() {
 	}
 }
 
-func processFile(fileName string, elemChan chan<- models.Elements) {
+func processFile(fileName string, elemChan chan<- models.Population) {
 
 	b, _ := os.ReadFile(fileName)
 	reader := csv.NewReader(bytes.NewBuffer(b))
 	reader.Comma = '\t'
 
-	var elems models.Elements
+	var elems models.Population
 
 	// Filling the elems slice
 	matStr, _ := reader.ReadAll()
@@ -141,7 +141,7 @@ func processFile(fileName string, elemChan chan<- models.Elements) {
 
 	for i := 0; i < gens; i++ {
 		for j := 0; j < columns; j++ {
-			var e models.Elem
+			var e models.Vector
 			e.Objs = make([]float64, numObjs)
 
 			for k := 0; k < numObjs; k++ {
@@ -154,6 +154,6 @@ func processFile(fileName string, elemChan chan<- models.Elements) {
 		}
 	}
 
-	_, rankZero := mode.ReduceByCrowdDistance(elems, len(elems))
+	_, rankZero := algorithms.ReduceByCrowdDistance(elems, len(elems))
 	elemChan <- rankZero
 }

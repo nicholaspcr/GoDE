@@ -4,6 +4,8 @@ import (
 	"errors"
 	"math/rand"
 	"strings"
+
+	"github.com/nicholaspcr/gde3/pkg/models"
 )
 
 // generates random indices in the int slice, r -> it's a pointer
@@ -25,34 +27,34 @@ func generateIndices(startInd, NP int, r []int) error {
 	return nil
 }
 
-// GetVariantByName -> Returns the variant function
-func GetVariantByName(name string) VariantFn {
+// GetVariantByVariantName -> Returns the variant function
+func GetVariantByName(name string) models.VariantInterface {
 	name = strings.ToLower(name)
-	variants := map[string]VariantFn{
-		"rand1":       rand1,
-		"rand2":       rand2,
-		"best1":       best1,
-		"best2":       best2,
-		"currtobest1": currToBest1,
-		"pbest":       pbest,
+	variants := map[string]models.VariantInterface{
+		rand1.VariantName:       &rand1,
+		rand2.VariantName:       &rand2,
+		best1.VariantName:       &best1,
+		best2.VariantName:       &best2,
+		currToBest1.VariantName: &currToBest1,
+		pbest.VariantName:       &pbest,
 	}
 	for k, v := range variants {
 		if name == k {
 			return v
 		}
 	}
-	return VariantFn{}
+	return &models.Variant{}
 }
 
 // GetAllVariants returns all the variants implemented in this package
-func GetAllVariants() []VariantFn {
-	variants := []VariantFn{
-		rand1,
-		rand2,
-		best1,
-		best2,
-		currToBest1,
-		pbest,
+func GetAllVariants() []models.VariantInterface {
+	variants := []models.VariantInterface{
+		&rand1,
+		&rand2,
+		&best1,
+		&best2,
+		&currToBest1,
+		&pbest,
 	}
 	return variants
 }

@@ -4,18 +4,18 @@ import (
 	"errors"
 	"math/rand"
 
-	"github.com/nicholaspcr/gde3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/models"
 )
 
 // currToBest1 -> variant defined in JADE paper
-var currToBest1 VariantFn = VariantFn{
-	Fn: func(elems, rankZero models.Elements, p Params) (models.Elem, error) {
+var currToBest1 = models.Variant{
+	Fn: func(elems, rankZero models.Population, p models.VariantParams) (models.Vector, error) {
 		ind := make([]int, 4)
 		ind[0] = p.CurrPos
 		err := generateIndices(1, len(elems), ind)
 
 		if err != nil {
-			return models.Elem{}, errors.New(
+			return models.Vector{}, errors.New(
 				"insufficient size for the population, must me equal or greater than 5",
 			)
 		}
@@ -30,10 +30,10 @@ var currToBest1 VariantFn = VariantFn{
 			arr[i] = curr.X[i] + p.F*(best.X[i]-r1.X[i]) + p.F*(r2.X[i]-r3.X[i])
 		}
 
-		ret := models.Elem{
+		ret := models.Vector{
 			X: arr,
 		}
 		return ret, nil
 	},
-	Name: "currtobest1",
+	VariantName: "currtobest1",
 }

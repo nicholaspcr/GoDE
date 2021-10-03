@@ -4,12 +4,12 @@ import (
 	"errors"
 	"math"
 
-	"github.com/nicholaspcr/gde3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/models"
 )
 
 // DTLZ2  multiObjective testcase
-var DTLZ2 = models.ProblemFn{
-	Fn: func(e *models.Elem, M int) error {
+var DTLZ2 = models.Problem{
+	Fn: func(e *models.Vector, M int) error {
 		if len(e.X) <= M {
 			return errors.New(
 				"need to have an M lesser than the amount of variables",
@@ -45,5 +45,5 @@ var DTLZ2 = models.ProblemFn{
 
 		return nil
 	},
-	Name: "dtlz2",
+	ProblemName: "dtlz2",
 }

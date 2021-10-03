@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/nicholaspcr/gde3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/models"
 )
 
 func TestWFG3FN(t *testing.T) {
 	tests := []struct {
-		name     string
-		x        []float64
-		expected []float64
+		ProblemName string
+		x           []float64
+		expected    []float64
 	}{
 		{
-			name: "test_case_1",
+			ProblemName: "test_case_1",
 			x: []float64{0.24199364597771478, 0.06294085809752699,
 				0.682979237196795, 0.20919587856003843, 0.8615217135283674,
 				0.7476546016437432, 0.9409038322828246, 0.1680378421996956,
@@ -29,8 +29,8 @@ func TestWFG3FN(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			e := models.Elem{
+		t.Run(tt.ProblemName, func(t *testing.T) {
+			e := models.Vector{
 				X: tt.x,
 			}
 			err := WFG3.Fn(&e, len(tt.expected))

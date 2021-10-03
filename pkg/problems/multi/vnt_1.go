@@ -4,15 +4,15 @@ import (
 	"errors"
 	"math"
 
-	"github.com/nicholaspcr/gde3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/models"
 )
 
 // VNT1 -> https://ti.arc.nasa.gov/m/pub-archive/archive/1163.pdf
 // VNT1 -> recebe 2 variaveis e otimiza 3 funções objetivo
-var VNT1 = models.ProblemFn{
-	Fn: func(e *models.Elem, M int) error {
+var VNT1 = models.Problem{
+	Fn: func(e *models.Vector, M int) error {
 		if len(e.X) != 2 {
-			return errors.New("Need at have only two variables/dimensions")
+			return errors.New("need at have only two variables/dimensions")
 		}
 
 		a, b := e.X[0], e.X[1]
@@ -33,5 +33,5 @@ var VNT1 = models.ProblemFn{
 
 		return nil
 	},
-	Name: "vnt1",
+	ProblemName: "vnt1",
 }

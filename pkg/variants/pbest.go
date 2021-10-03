@@ -5,18 +5,18 @@ import (
 	"math"
 	"math/rand"
 
-	"github.com/nicholaspcr/gde3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/models"
 )
 
-// PBest implementation
-var pbest VariantFn = VariantFn{
-	Fn: func(elems, rankZero models.Elements, p Params) (models.Elem, error) {
+// pBest implementation
+var pbest = models.Variant{
+	Fn: func(elems, rankZero models.Population, p models.VariantParams) (models.Vector, error) {
 		ind := make([]int, 3)
 		ind[0] = p.CurrPos
 
 		err := generateIndices(1, len(elems), ind)
 		if err != nil {
-			return models.Elem{}, errors.New(
+			return models.Vector{}, errors.New(
 				"insufficient size for the population, must me equal or greater than 5",
 			)
 		}
@@ -34,10 +34,10 @@ var pbest VariantFn = VariantFn{
 			arr[i] = curr.X[i] + p.F*(best.X[i]-curr.X[i]) + p.F*(r1.X[i]-r2.X[i])
 		}
 
-		ret := models.Elem{
+		ret := models.Vector{
 			X: arr,
 		}
 		return ret, nil
 	},
-	Name: "pbest",
+	VariantName: "pbest",
 }

@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nicholaspcr/gde3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/models"
 )
 
 func TestNewWriter(t *testing.T) {
@@ -78,14 +78,14 @@ func TestWriteHeader(t *testing.T) {
 func TestElementsObjs(t *testing.T) {
 
 	tests := []struct {
-		elems     models.Elements
+		elems     models.Population
 		separator rune
 		expected  string
 		err       string
 	}{
 		{
-			elems: models.Elements{
-				{Objs: []float64{1.0, 2.0, 3.0}},
+			elems: models.Population{
+				models.Vector{Objs: []float64{1.0, 2.0, 3.0}},
 			},
 			expected: fmt.Sprintf(
 				"elem[0],%.8f,%.8f,%.8f\n",
@@ -93,9 +93,9 @@ func TestElementsObjs(t *testing.T) {
 			),
 		},
 		{
-			elems: models.Elements{
-				{Objs: []float64{0.01, 0.02, 0.03}},
-				{Objs: []float64{0.004, 0.005, 0.006}},
+			elems: models.Population{
+				models.Vector{Objs: []float64{0.01, 0.02, 0.03}},
+				models.Vector{Objs: []float64{0.004, 0.005, 0.006}},
 			},
 			separator: ';',
 			expected: fmt.Sprintf(
@@ -142,14 +142,14 @@ func TestElementsObjs(t *testing.T) {
 func TestElementsVectors(t *testing.T) {
 
 	tests := []struct {
-		elems     models.Elements
+		elems     models.Population
 		separator rune
 		expected  string
 		err       string
 	}{
 		{
-			elems: models.Elements{
-				{X: []float64{1.0, 2.0, 3.0}},
+			elems: models.Population{
+				models.Vector{X: []float64{1.0, 2.0, 3.0}},
 			},
 			expected: fmt.Sprintf(
 				"elem[0],%.8f,%.8f,%.8f\n",
@@ -157,9 +157,9 @@ func TestElementsVectors(t *testing.T) {
 			),
 		},
 		{
-			elems: models.Elements{
-				{X: []float64{0.01, 0.02, 0.03}},
-				{X: []float64{0.004, 0.005, 0.006}},
+			elems: models.Population{
+				models.Vector{X: []float64{0.01, 0.02, 0.03}},
+				models.Vector{X: []float64{0.004, 0.005, 0.006}},
 			},
 			separator: ';',
 			expected: fmt.Sprintf(

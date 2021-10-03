@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"sync"
 
-	"github.com/nicholaspcr/gde3/pkg/problems/models"
-	"github.com/nicholaspcr/gde3/pkg/variants"
+	"github.com/nicholaspcr/gde3/pkg/algorithms"
+	"github.com/nicholaspcr/gde3/pkg/models"
 	"github.com/nicholaspcr/gde3/pkg/writer"
 )
 
@@ -16,17 +15,21 @@ import (
 // enforce  a limit of 10 concurrent requests
 var tokens = make(chan struct{}, 15)
 
-// MultiExecutions returns the pareto front of the total of 30 executions of the same problem
+// MultiExecutions returns the pareto front of the total of 30 executions of the
+// same problem
 func MultiExecutions(
-	params models.Params,
-	prob models.ProblemFn,
-	variant variants.VariantFn,
-	initialPopulation models.Elements,
+	params models.AlgorithmParams,
+	problem models.ProblemInterface,
+	variant models.VariantInterface,
+	initialPopulation models.Population,
 ) {
 	homePath := os.Getenv("HOME")
-	paretoPath := "/.gode/mode/paretoFront/" + prob.Name + "/" + variant.Name
+	paretoPath := fmt.Sprintf(
+		"/.gode/mode/paretoFront/%s/%s",
+		problem.Name(),
+		variant.Name())
 
-	if variant.Name == "pbest" {
+	if variant.Name() == "pbest" {
 		paretoPath += "/P-" + fmt.Sprint(
 			params.P,
 		)
@@ -39,7 +42,7 @@ func MultiExecutions(
 
 	// channel to get elems related to rank[0] pareto
 	rankedChan := make(
-		chan models.Elements,
+		chan models.Population,
 		params.EXECS,
 	)
 
@@ -53,15 +56,20 @@ func MultiExecutions(
 
 	// runs GDE3 for EXECS amount of times
 	for i := 0; i < params.EXECS; i++ {
-		filePath := homePath + paretoPath + "/exec-" + strconv.Itoa(
+		filePath := fmt.Sprintf(
+			"%s%s/exec-%d.csv",
+			homePath,
+			paretoPath,
 			i+1,
-		) + ".csv"
+		)
 
 		f, err := os.Create(filePath)
-		checkError(err)
+		if err != nil {
+			panic(err)
+		}
 
 		cpyPopulation := make(
-			models.Elements,
+			models.Population,
 			len(initialPopulation),
 		)
 		copy(
@@ -79,11 +87,11 @@ func MultiExecutions(
 			// finishing worker
 			defer func() { wg.Done() }()
 			// running one execution of the GDE3
-			GD3(
+			algorithms.GDE3().Execute(
 				rankedChan,
 				maximumObjs,
 				params,
-				prob.Fn,
+				problem,
 				variant,
 				cpyPopulation,
 				f,
@@ -104,7 +112,7 @@ func MultiExecutions(
 	fmt.Printf("execs: ")
 	counter := 0
 	// gets data from the pareto created by rank[0] of each gen
-	var rankedPareto models.Elements
+	var rankedPareto models.Population
 	for v := range rankedChan {
 		counter++
 		fmt.Printf("%d, ", counter)
@@ -114,7 +122,7 @@ func MultiExecutions(
 			v...)
 
 		// gets non dominated and filters by crowdingDistance
-		_, rankedPareto = ReduceByCrowdDistance(
+		_, rankedPareto = algorithms.ReduceByCrowdDistance(
 			rankedPareto,
 			len(rankedPareto),
 		)
@@ -126,8 +134,13 @@ func MultiExecutions(
 	}
 
 	// checks path for the path used to store the details of each generation
-	multiExecutionsPath := "/.gode/mode/multiExecutions/" + prob.Name + "/" + variant.Name
-	if variant.Name == "pbest" {
+	multiExecutionsPath := fmt.Sprintf(
+		"/.gode/mode/multiExecutions/%s/%s",
+		problem.Name(),
+		variant.Name(),
+	)
+
+	if variant.Name() == "pbest" {
 		multiExecutionsPath += "/P-" + fmt.Sprint(
 			params.P,
 		)

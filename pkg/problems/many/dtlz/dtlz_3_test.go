@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/nicholaspcr/gde3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/models"
 )
 
 func TestDTLZ3FN(t *testing.T) {
 	tests := []struct {
-		name     string
-		x        []float64
-		expected []float64
+		ProblemName string
+		x           []float64
+		expected    []float64
 	}{
 		{
-			name: "test_case_1",
+			ProblemName: "test_case_1",
 			x: []float64{0.040971105531507235, 0.550373235584878,
 				0.6817311625009819, 0.6274478938025135, 0.9234111071427142,
 				0.02499901960750534, 0.136171616578574, 0.9084459589232222,
@@ -25,8 +25,8 @@ func TestDTLZ3FN(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			e := models.Elem{
+		t.Run(tt.ProblemName, func(t *testing.T) {
+			e := models.Vector{
 				X: tt.x,
 			}
 			err := DTLZ3.Fn(&e, len(tt.expected))

@@ -4,14 +4,14 @@ import (
 	"errors"
 	"math"
 
-	"github.com/nicholaspcr/gde3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/models"
 )
 
 // ZDT6 -> bi-objetive evaluation
-var ZDT6 = models.ProblemFn{
-	Fn: func(e *models.Elem, M int) error {
+var ZDT6 = models.Problem{
+	Fn: func(e *models.Vector, M int) error {
 		if len(e.X) < 2 {
-			return errors.New("Need at least two variables/dimensions")
+			return errors.New("need at least two variables/dimensions")
 		}
 		evalF := func(x float64) float64 {
 			f := math.Exp(-4.0 * x)
@@ -46,5 +46,5 @@ var ZDT6 = models.ProblemFn{
 
 		return nil
 	},
-	Name: "zdt6",
+	ProblemName: "zdt6",
 }

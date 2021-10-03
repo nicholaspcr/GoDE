@@ -4,14 +4,14 @@ import (
 	"errors"
 	"math"
 
-	"github.com/nicholaspcr/gde3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/models"
 )
 
 // ZDT1 - multi-objective problem
-var ZDT1 = models.ProblemFn{
-	Fn: func(e *models.Elem, M int) error {
+var ZDT1 = models.Problem{
+	Fn: func(e *models.Vector, M int) error {
 		if len(e.X) < 2 {
-			return errors.New("Need at least two variables/dimensions")
+			return errors.New("need at least two variables/dimensions")
 		}
 		evalG := func(x []float64) float64 {
 			g := 0.0
@@ -28,8 +28,8 @@ var ZDT1 = models.ProblemFn{
 		g := evalG(e.X)
 		h := evalH(e.X[0], g)
 
-		if math.IsNaN(h) == true {
-			return errors.New("Sqrt of a negative number")
+		if math.IsNaN(h) {
+			return errors.New("sqrt of a negative number")
 		}
 
 		var newObjs []float64
@@ -42,5 +42,5 @@ var ZDT1 = models.ProblemFn{
 
 		return nil
 	},
-	Name: "zdt1",
+	ProblemName: "zdt1",
 }

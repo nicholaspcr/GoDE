@@ -1,5 +1,5 @@
 // package writer is responsible for writing data related
-// to the Elem struct that can be found on the models pkg
+// to the Vector struct that can be found on the models pkg
 
 package writer
 
@@ -12,11 +12,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/nicholaspcr/gde3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/models"
 )
 
 // Writer is the custom writer provided by the gode package, it contains the
-// methods used to write the information regarding Elements and Elem
+// methods used to write the information regarding Population and Vector
 type Writer struct {
 	*csv.Writer
 }
@@ -26,7 +26,7 @@ const (
 )
 
 // NewWriter returns a Writer pointer that contains the methods to write
-// Elements and Elem into a file with a specific path
+// Population and Vector into a file with a specific path
 func NewWriter(w io.Writer) *Writer {
 	return &Writer{
 		Writer: csv.NewWriter(w),
@@ -85,7 +85,7 @@ func incrementHeader(h string) string {
 }
 
 // WriteGeneration writes the objectives in the csv writer file
-func (w *Writer) ElementsObjs(elems models.Elements) error {
+func (w *Writer) ElementsObjs(elems models.Population) error {
 	if len(elems) == 0 {
 		return errors.New("empty slice of elements")
 	}
@@ -113,7 +113,7 @@ func (w *Writer) ElementsObjs(elems models.Elements) error {
 	return nil
 }
 
-func (w *Writer) ElementsVectors(elems models.Elements) error {
+func (w *Writer) ElementsVectors(elems models.Population) error {
 	if len(elems) == 0 {
 		return errors.New("empty slice of elements")
 	}

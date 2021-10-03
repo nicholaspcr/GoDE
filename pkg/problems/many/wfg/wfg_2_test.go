@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/nicholaspcr/gde3/pkg/problems/models"
+	"github.com/nicholaspcr/gde3/pkg/models"
 )
 
 func TestWFG2FN(t *testing.T) {
 	tests := []struct {
-		name     string
-		x        []float64
-		expected []float64
+		ProblemName string
+		x           []float64
+		expected    []float64
 	}{
 		{
-			name: "test_case_1",
+			ProblemName: "test_case_1",
 			x: []float64{0.24199364597771478, 0.06294085809752699,
 				0.682979237196795, 0.20919587856003843, 0.8615217135283674,
 				0.7476546016437432, 0.9409038322828246, 0.1680378421996956,
@@ -27,7 +27,7 @@ func TestWFG2FN(t *testing.T) {
 			expected: []float64{0.64677672, 0.66722164, 6.55349009},
 		},
 		{
-			name: "test_case_2",
+			ProblemName: "test_case_2",
 			x: []float64{0.046812816038915586, 0.27965700782202974,
 				0.755529270669409, 0.17423804874084414, 0.0601426129551884,
 				0.5775324962743565, 0.10860410926044652, 0.5838059492224881,
@@ -40,7 +40,7 @@ func TestWFG2FN(t *testing.T) {
 			expected: []float64{0.66618332, 0.6756434, 6.51150653},
 		},
 		{
-			name: "test_case_3",
+			ProblemName: "test_case_3",
 			x: []float64{0.046812816038915586, 0.27965700782202974,
 				0.755529270669409, 0.17423804874084414, 0.0601426129551884,
 				0.5775324962743565, 0.10860410926044652, 0.5838059492224881,
@@ -55,8 +55,8 @@ func TestWFG2FN(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			e := models.Elem{
+		t.Run(tt.ProblemName, func(t *testing.T) {
+			e := models.Vector{
 				X: tt.x,
 			}
 			err := WFG2.Fn(&e, len(tt.expected))

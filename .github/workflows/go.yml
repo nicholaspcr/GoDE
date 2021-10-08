@@ -8,8 +8,8 @@ on:
       - master
 
 name: run tests
-jobs:
 
+jobs:
   test:
     runs-on: ubuntu-latest
     steps:
@@ -28,7 +28,7 @@ jobs:
           args: -D errcheck -D deadcode -D varcheck --timeout 5m
           skip-pkg-cache: true
             
-   coverage:
+  coverage:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

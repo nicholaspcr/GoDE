@@ -5,59 +5,27 @@ on:
       - master
   pull_request:
     branches:
-      - masterc
+      - master
 
 name: run tests
 jobs:
-  lint:
+
+  build:
     runs-on: ubuntu-latest
     steps:
-    - name: Install Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: 1.15.x
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Run linters
-      uses: golangci/golangci-lint-action@v2
-      with:
-        version: v1.29
+    - uses: actions/checkout@v2
 
-  test:
-    strategy:
-      matrix:
-        go-version: [1.15.x]
-        platform: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.platform }}
-    steps:
-    - name: Install Go
-      if: success()
+    - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: ${{ matrix.go-version }}
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Run tests
-      run: go test -v -covermode=count
+        go-version: 1.17
 
-  coverage:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Install Go
-      if: success()
-      uses: actions/setup-go@v2
-      with:
-        go-version: 1.15.x
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Calc coverage
-      run: |
-        go test -v -covermode=count -coverprofile=coverage.out
-    - name: Convert coverage.out to coverage.lcov
-      uses: jandelgado/gcov2lcov-action@v1.0.6
-    - name: Coveralls
-      uses: coverallsapp/github-action@v1.1.2
-      with:
-          github-token: ${{ secrets.github_token }}
-          path-to-lcov: coverage.lcov
+    - name: Build
+      run: go build -v ./...
+
+    - name: Test
+      run: go test -v ./...
+
+    - name: Run golangci-lint
+      uses: golangci/golangci-lint-action@v2.5.2
 

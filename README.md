@@ -1,3 +1,6 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/nicholaspcr/GDE3)](https://goreportcard.com/report/github.com/nicholaspcr/GDE3)
+[![codecov](https://codecov.io/gh/nicholaspcr/GDE3/branch/master/graph/badge.svg?token=X96TDQSMFI)](https://codecov.io/gh/nicholaspcr/GDE3)
+
 # GDE3 - Third Generalized Differentianl Evolution
 
 gde3 is the golang cli for running the algorithm GDE3 with a set of well

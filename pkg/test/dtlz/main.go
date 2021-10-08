@@ -44,7 +44,7 @@ func dtlz1(x []float64, numObjs int) {
 	e := models.Vector{
 		X: x,
 	}
-	dtlz.DTLZ1.Fn(&e, numObjs)
+	dtlz.Dtlz1().Evaluate(&e, numObjs)
 
 	fmt.Println(e.Objs)
 }
@@ -54,7 +54,7 @@ func dtlz2(x []float64, numObjs int) {
 	e := models.Vector{
 		X: x,
 	}
-	dtlz.DTLZ2.Fn(&e, numObjs)
+	dtlz.Dtlz2().Evaluate(&e, numObjs)
 
 	fmt.Println(e.Objs)
 }
@@ -64,7 +64,7 @@ func dtlz3(x []float64, numObjs int) {
 	e := models.Vector{
 		X: x,
 	}
-	dtlz.DTLZ3.Fn(&e, numObjs)
+	dtlz.Dtlz3().Evaluate(&e, numObjs)
 
 	fmt.Println(e.Objs)
 }
@@ -74,7 +74,7 @@ func dtlz4(x []float64, numObjs int) {
 	e := models.Vector{
 		X: x,
 	}
-	dtlz.DTLZ4.Fn(&e, numObjs)
+	dtlz.Dtlz4().Evaluate(&e, numObjs)
 
 	fmt.Println(e.Objs)
 }
@@ -84,7 +84,7 @@ func dtlz5(x []float64, numObjs int) {
 	e := models.Vector{
 		X: x,
 	}
-	dtlz.DTLZ5.Fn(&e, numObjs)
+	dtlz.Dtlz5().Evaluate(&e, numObjs)
 
 	fmt.Println(e.Objs)
 }
@@ -94,7 +94,7 @@ func dtlz6(x []float64, numObjs int) {
 	e := models.Vector{
 		X: x,
 	}
-	dtlz.DTLZ6.Fn(&e, numObjs)
+	dtlz.Dtlz6().Evaluate(&e, numObjs)
 
 	fmt.Println(e.Objs)
 }
@@ -104,7 +104,7 @@ func dtlz7(x []float64, numObjs int) {
 	e := models.Vector{
 		X: x,
 	}
-	dtlz.DTLZ7.Fn(&e, numObjs)
+	dtlz.Dtlz7().Evaluate(&e, numObjs)
 
 	fmt.Println(e.Objs)
 }

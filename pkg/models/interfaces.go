@@ -3,28 +3,29 @@ package models
 import "os"
 
 type (
-	// ProblemInterface contains the definition of what a problem should have
-	ProblemInterface interface {
+	// Problem contains the definition of what a problem should have
+	Problem interface {
 		Name() string
 		// Evaluate is the function responsible for altering the objective
 		// slice of a vector, therefore is assumed that the Vector passed will
 		// be modified by this func
-		Evaluate(e *Vector, M int) error
+		Evaluate(*Vector, int) error
 	}
 
-	VariantInterface interface {
+	// Var
+	Variant interface {
 		Name() string
 		// Mutate is the funtion responsible for creating the trial vector
 		Mutate(elems, rankZero Population, p VariantParams) (Vector, error)
 	}
 
-	ModeInterface interface {
+	Mode interface {
 		Execute(
 			chan<- Population,
 			chan<- []float64,
 			AlgorithmParams,
-			ProblemInterface,
-			VariantInterface,
+			Problem,
+			Variant,
 			Population,
 			*os.File,
 		)

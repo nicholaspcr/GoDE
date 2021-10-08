@@ -2,41 +2,49 @@ package wfg
 
 import "github.com/nicholaspcr/gde3/pkg/models"
 
-var WFG5 = models.Problem{
-	Fn: func(e *models.Vector, M int) error {
-		n_var := len(e.X)
-		n_obj := M
-		k := 2 * (n_obj - 1)
+type wfg5 struct{}
 
-		var y []float64
-		xu := arange(2, 2*n_var+1, 2)
-
-		for i := 0; i < n_var; i++ {
-			y = append(y, e.X[i]/xu[i])
-		}
-
-		y = wfg5_t1(y)
-		y = wfg4_t2(y, n_obj, k)
-		y = _post(y, _ones(n_obj-1)) // post
-
-		var h []float64
-		for m := 0; m < n_obj; m++ {
-			h = append(h, _shape_concave(y[:len(y)-1], m+1))
-		}
-
-		S := arange(2, 2*n_obj+1, 2)
-		newObjs := _calculate(y, S, h)
-
-		e.Objs = make([]float64, len(newObjs))
-		copy(e.Objs, newObjs)
-		return nil
-	},
-	ProblemName: "wfg5",
+func Wfg5() models.Problem {
+	return &wfg5{}
 }
 
-// ---------------------------------------------------------------------------------------------------------
+func (w *wfg5) Name() string {
+	return "wfg5"
+}
+
+func (w *wfg5) Evaluate(e *models.Vector, M int) error {
+
+	n_var := len(e.X)
+	n_obj := M
+	k := 2 * (n_obj - 1)
+
+	var y []float64
+	xu := arange(2, 2*n_var+1, 2)
+
+	for i := 0; i < n_var; i++ {
+		y = append(y, e.X[i]/xu[i])
+	}
+
+	y = wfg5_t1(y)
+	y = wfg4_t2(y, n_obj, k)
+	y = _post(y, _ones(n_obj-1)) // post
+
+	var h []float64
+	for m := 0; m < n_obj; m++ {
+		h = append(h, _shape_concave(y[:len(y)-1], m+1))
+	}
+
+	S := arange(2, 2*n_obj+1, 2)
+	newObjs := _calculate(y, S, h)
+
+	e.Objs = make([]float64, len(newObjs))
+	copy(e.Objs, newObjs)
+	return nil
+}
+
+// ----------------------------------------------------------------------------
 // wfg5 -> t implementations
-// ---------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 
 // wfg5_t1 implementation
 func wfg5_t1(X []float64) []float64 {

@@ -7,40 +7,47 @@ import (
 	"github.com/nicholaspcr/gde3/pkg/models"
 )
 
-// ZDT1 - multi-objective problem
-var ZDT1 = models.Problem{
-	Fn: func(e *models.Vector, M int) error {
-		if len(e.X) < 2 {
-			return errors.New("need at least two variables/dimensions")
+type zdt1 struct{}
+
+func Zdt1() models.Problem {
+	return &zdt1{}
+}
+
+func (v *zdt1) Name() string {
+	return "zdt1"
+}
+
+func (v *zdt1) Evaluate(e *models.Vector, M int) error {
+
+	if len(e.X) < 2 {
+		return errors.New("need at least two variables/dimensions")
+	}
+	evalG := func(x []float64) float64 {
+		g := 0.0
+		for i := 1; i < len(x); i++ {
+			g += x[i]
 		}
-		evalG := func(x []float64) float64 {
-			g := 0.0
-			for i := 1; i < len(x); i++ {
-				g += x[i]
-			}
-			constant := 9.0 / (float64(len(x)) - 1.0)
+		constant := 9.0 / (float64(len(x)) - 1.0)
 
-			return 1.0 + constant*g
-		}
-		evalH := func(f, g float64) float64 {
-			return 1.0 - math.Sqrt(f/g)
-		}
-		g := evalG(e.X)
-		h := evalH(e.X[0], g)
+		return 1.0 + constant*g
+	}
+	evalH := func(f, g float64) float64 {
+		return 1.0 - math.Sqrt(f/g)
+	}
+	g := evalG(e.X)
+	h := evalH(e.X[0], g)
 
-		if math.IsNaN(h) {
-			return errors.New("sqrt of a negative number")
-		}
+	if math.IsNaN(h) {
+		return errors.New("sqrt of a negative number")
+	}
 
-		var newObjs []float64
-		newObjs = append(newObjs, e.X[0])
-		newObjs = append(newObjs, g*h)
+	var newObjs []float64
+	newObjs = append(newObjs, e.X[0])
+	newObjs = append(newObjs, g*h)
 
-		// puts new objectives into the elem
-		e.Objs = make([]float64, len(newObjs))
-		copy(e.Objs, newObjs)
+	// puts new objectives into the elem
+	e.Objs = make([]float64, len(newObjs))
+	copy(e.Objs, newObjs)
 
-		return nil
-	},
-	ProblemName: "zdt1",
+	return nil
 }

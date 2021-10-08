@@ -4,45 +4,53 @@ import (
 	"github.com/nicholaspcr/gde3/pkg/models"
 )
 
-var WFG9 = models.Problem{
-	Fn: func(e *models.Vector, M int) error {
-		n_var := len(e.X)
-		n_obj := M
-		k := 2 * (n_obj - 1)
+type wfg9 struct{}
 
-		var y []float64
-		xu := arange(2, 2*n_var+1, 2)
-
-		for i := 0; i < n_var; i++ {
-			y = append(y, e.X[i]/xu[i])
-		}
-
-		copy(
-			y[:n_var-1],
-			wfg9_t1(y, n_var),
-		) // transfers to these position of the y vector
-		y = wfg9_t2(y, n_var, k)
-		y = wfg9_t3(y, n_obj, n_var, k)
-		y = _post(y, _ones(n_obj-1)) // post
-
-		var h []float64
-		for m := 0; m < n_obj; m++ {
-			h = append(h, _shape_concave(y[:len(y)-1], m+1))
-		}
-
-		S := arange(2, 2*n_obj+1, 2)
-		newObjs := _calculate(y, S, h)
-
-		e.Objs = make([]float64, len(newObjs))
-		copy(e.Objs, newObjs)
-		return nil
-	},
-	ProblemName: "wfg9",
+func Wfg9() models.Problem {
+	return &wfg9{}
 }
 
-// ---------------------------------------------------------------------------------------------------------
+func (w *wfg9) Name() string {
+	return "wfg9"
+}
+
+func (w *wfg9) Evaluate(e *models.Vector, M int) error {
+
+	n_var := len(e.X)
+	n_obj := M
+	k := 2 * (n_obj - 1)
+
+	var y []float64
+	xu := arange(2, 2*n_var+1, 2)
+
+	for i := 0; i < n_var; i++ {
+		y = append(y, e.X[i]/xu[i])
+	}
+
+	copy(
+		y[:n_var-1],
+		wfg9_t1(y, n_var),
+	) // transfers to these position of the y vector
+	y = wfg9_t2(y, n_var, k)
+	y = wfg9_t3(y, n_obj, n_var, k)
+	y = _post(y, _ones(n_obj-1)) // post
+
+	var h []float64
+	for m := 0; m < n_obj; m++ {
+		h = append(h, _shape_concave(y[:len(y)-1], m+1))
+	}
+
+	S := arange(2, 2*n_obj+1, 2)
+	newObjs := _calculate(y, S, h)
+
+	e.Objs = make([]float64, len(newObjs))
+	copy(e.Objs, newObjs)
+	return nil
+}
+
+// ----------------------------------------------------------------------------
 // wfg8 -> t implementations
-// ---------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 
 func wfg9_t1(X []float64, n int) []float64 {
 	x := make([]float64, len(X))

@@ -29,7 +29,7 @@ func TestDTLZ3FN(t *testing.T) {
 			e := models.Vector{
 				X: tt.x,
 			}
-			err := DTLZ3.Fn(&e, len(tt.expected))
+			err := Dtlz3().Evaluate(&e, len(tt.expected))
 
 			if err != nil {
 				t.Errorf("failed to run the DTLZ3 func")

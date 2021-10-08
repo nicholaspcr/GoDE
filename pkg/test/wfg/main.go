@@ -64,7 +64,7 @@ func wfg1(x []float64, numObjs int) {
 	e := models.Vector{
 		X: x,
 	}
-	wfg.WFG1.Fn(&e, numObjs)
+	wfg.Wfg1().Evaluate(&e, numObjs)
 
 	fmt.Println(e.Objs)
 }
@@ -74,7 +74,7 @@ func wfg2(x []float64, numObjs int) {
 	e := models.Vector{
 		X: x,
 	}
-	wfg.WFG2.Fn(&e, numObjs)
+	wfg.Wfg2().Evaluate(&e, numObjs)
 
 	fmt.Println(e.Objs)
 }
@@ -84,7 +84,7 @@ func wfg3(x []float64, numObjs int) {
 	e := models.Vector{
 		X: x,
 	}
-	wfg.WFG3.Fn(&e, numObjs)
+	wfg.Wfg3().Evaluate(&e, numObjs)
 
 	fmt.Println(e.Objs)
 }
@@ -94,7 +94,7 @@ func wfg4(x []float64, numObjs int) {
 	e := models.Vector{
 		X: x,
 	}
-	wfg.WFG4.Fn(&e, numObjs)
+	wfg.Wfg4().Evaluate(&e, numObjs)
 
 	fmt.Println(e.Objs)
 }
@@ -104,7 +104,7 @@ func wfg5(x []float64, numObjs int) {
 	e := models.Vector{
 		X: x,
 	}
-	wfg.WFG5.Fn(&e, numObjs)
+	wfg.Wfg5().Evaluate(&e, numObjs)
 
 	fmt.Println(e.Objs)
 }
@@ -114,7 +114,7 @@ func wfg6(x []float64, numObjs int) {
 	e := models.Vector{
 		X: x,
 	}
-	wfg.WFG6.Fn(&e, numObjs)
+	wfg.Wfg6().Evaluate(&e, numObjs)
 
 	fmt.Println(e.Objs)
 }
@@ -124,7 +124,7 @@ func wfg7(x []float64, numObjs int) {
 	e := models.Vector{
 		X: x,
 	}
-	wfg.WFG7.Fn(&e, numObjs)
+	wfg.Wfg7().Evaluate(&e, numObjs)
 
 	fmt.Println(e.Objs)
 }
@@ -134,7 +134,7 @@ func wfg8(x []float64, numObjs int) {
 	e := models.Vector{
 		X: x,
 	}
-	wfg.WFG8.Fn(&e, numObjs)
+	wfg.Wfg8().Evaluate(&e, numObjs)
 
 	fmt.Println(e.Objs)
 }
@@ -144,7 +144,7 @@ func wfg9(x []float64, numObjs int) {
 	e := models.Vector{
 		X: x,
 	}
-	wfg.WFG9.Fn(&e, numObjs)
+	wfg.Wfg9().Evaluate(&e, numObjs)
 
 	fmt.Println(e.Objs)
 }

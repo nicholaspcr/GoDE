@@ -59,7 +59,7 @@ func TestWFG2FN(t *testing.T) {
 			e := models.Vector{
 				X: tt.x,
 			}
-			err := WFG2.Fn(&e, len(tt.expected))
+			err := Wfg2().Evaluate(&e, len(tt.expected))
 
 			if err != nil {
 				t.Errorf("failed to run the WFG2 func")

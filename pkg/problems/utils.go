@@ -9,35 +9,35 @@ import (
 	"github.com/nicholaspcr/gde3/pkg/problems/multi"
 )
 
-var problems = map[string]*models.Problem{
-	multi.ZDT1.ProblemName: &multi.ZDT1,
-	multi.ZDT2.ProblemName: &multi.ZDT2,
-	multi.ZDT3.ProblemName: &multi.ZDT3,
-	multi.ZDT4.ProblemName: &multi.ZDT4,
-	multi.ZDT6.ProblemName: &multi.ZDT6,
-	multi.VNT1.ProblemName: &multi.VNT1,
+var problems = map[string]models.Problem{
+	multi.Zdt1().Name(): multi.Zdt1(),
+	multi.Zdt2().Name(): multi.Zdt2(),
+	multi.Zdt3().Name(): multi.Zdt3(),
+	multi.Zdt4().Name(): multi.Zdt4(),
+	multi.Zdt6().Name(): multi.Zdt6(),
+	multi.Vnt1().Name(): multi.Vnt1(),
 
-	dtlz.DTLZ1.ProblemName: &dtlz.DTLZ1,
-	dtlz.DTLZ2.ProblemName: &dtlz.DTLZ2,
-	dtlz.DTLZ3.ProblemName: &dtlz.DTLZ3,
-	dtlz.DTLZ4.ProblemName: &dtlz.DTLZ4,
-	dtlz.DTLZ5.ProblemName: &dtlz.DTLZ5,
-	dtlz.DTLZ6.ProblemName: &dtlz.DTLZ6,
-	dtlz.DTLZ7.ProblemName: &dtlz.DTLZ7,
+	dtlz.Dtlz1().Name(): dtlz.Dtlz1(),
+	dtlz.Dtlz2().Name(): dtlz.Dtlz2(),
+	dtlz.Dtlz3().Name(): dtlz.Dtlz3(),
+	dtlz.Dtlz4().Name(): dtlz.Dtlz4(),
+	dtlz.Dtlz5().Name(): dtlz.Dtlz5(),
+	dtlz.Dtlz6().Name(): dtlz.Dtlz6(),
+	dtlz.Dtlz7().Name(): dtlz.Dtlz7(),
 
-	wfg.WFG1.ProblemName: &wfg.WFG1,
-	wfg.WFG2.ProblemName: &wfg.WFG2,
-	wfg.WFG3.ProblemName: &wfg.WFG3,
-	wfg.WFG4.ProblemName: &wfg.WFG4,
-	wfg.WFG5.ProblemName: &wfg.WFG5,
-	wfg.WFG6.ProblemName: &wfg.WFG6,
-	wfg.WFG7.ProblemName: &wfg.WFG7,
-	wfg.WFG8.ProblemName: &wfg.WFG8,
-	wfg.WFG9.ProblemName: &wfg.WFG9,
+	wfg.Wfg1().Name(): wfg.Wfg1(),
+	wfg.Wfg2().Name(): wfg.Wfg2(),
+	wfg.Wfg3().Name(): wfg.Wfg3(),
+	wfg.Wfg4().Name(): wfg.Wfg4(),
+	wfg.Wfg5().Name(): wfg.Wfg5(),
+	wfg.Wfg6().Name(): wfg.Wfg6(),
+	wfg.Wfg7().Name(): wfg.Wfg7(),
+	wfg.Wfg8().Name(): wfg.Wfg8(),
+	wfg.Wfg9().Name(): wfg.Wfg9(),
 }
 
 // GetProblemByProblemName -> returns the problem function
-func GetProblemByName(name string) models.ProblemInterface {
+func GetProblemByName(name string) models.Problem {
 	name = strings.ToLower(name)
 
 	for k, v := range problems {
@@ -46,5 +46,5 @@ func GetProblemByName(name string) models.ProblemInterface {
 		}
 	}
 
-	return &models.Problem{}
+	return nil
 }

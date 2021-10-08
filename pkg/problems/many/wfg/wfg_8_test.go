@@ -33,7 +33,7 @@ func TestWFG8FN(t *testing.T) {
 			e := models.Vector{
 				X: tt.x,
 			}
-			err := WFG8.Fn(&e, len(tt.expected))
+			err := Wfg8().Evaluate(&e, len(tt.expected))
 
 			if err != nil {
 				t.Errorf("failed to run the WFG8 func")

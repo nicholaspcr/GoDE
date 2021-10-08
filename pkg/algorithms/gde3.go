@@ -12,19 +12,19 @@ import (
 type gde3 struct{}
 
 // GDE3 Returns an instance of an object that implements the GDE3 algorithm. It
-// is compliant with the ModeInterface
-func GDE3() models.ModeInterface {
+// is compliant with the Mode
+func GDE3() models.Mode {
 	return &gde3{}
 }
 
 // Execute is responsible for receiving the standard parameters defined in the
-// ModeInterface and executing the gde3 algorithm
+// Mode and executing the gde3 algorithm
 func (g *gde3) Execute(
 	rankedCh chan<- models.Population,
 	maximumObjs chan<- []float64,
 	p models.AlgorithmParams,
-	problem models.ProblemInterface,
-	variant models.VariantInterface,
+	problem models.Problem,
+	variant models.Variant,
 	population models.Population,
 	f *os.File,
 ) {

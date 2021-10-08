@@ -4,41 +4,49 @@ import (
 	"github.com/nicholaspcr/gde3/pkg/models"
 )
 
-var WFG3 = models.Problem{
-	Fn: func(e *models.Vector, M int) error {
-		n_var := len(e.X)
-		n_obj := M
-		k := 2 * (n_obj - 1)
+type wfg3 struct{}
 
-		var y []float64
-		xu := arange(2, 2*n_var+1, 2)
+func Wfg3() models.Problem {
+	return &wfg3{}
+}
 
-		for i := 0; i < n_var; i++ {
-			y = append(y, e.X[i]/xu[i])
-		}
+func (w *wfg3) Name() string {
+	return "wfg3"
+}
 
-		y = wfg1_t1(y, n_var, k)
-		y = wfg2_t2(y, n_var, k)
-		y = wfg2_t3(y, n_obj, n_var, k)
+func (w *wfg3) Evaluate(e *models.Vector, M int) error {
 
-		// post section
-		A := _ones(n_obj - 1)
-		for i := 1; i < len(A); i++ {
-			A[i] = 0
-		}
-		y = _post(y, A)
+	n_var := len(e.X)
+	n_obj := M
+	k := 2 * (n_obj - 1)
 
-		var h []float64
-		for m := 0; m < n_obj; m++ {
-			h = append(h, _shape_linear(y[:len(y)-1], m+1))
-		}
+	var y []float64
+	xu := arange(2, 2*n_var+1, 2)
 
-		S := arange(2, 2*n_obj+1, 2)
-		newObjs := _calculate(y, S, h)
+	for i := 0; i < n_var; i++ {
+		y = append(y, e.X[i]/xu[i])
+	}
 
-		e.Objs = make([]float64, len(newObjs))
-		copy(e.Objs, newObjs)
-		return nil
-	},
-	ProblemName: "wfg3",
+	y = wfg1_t1(y, n_var, k)
+	y = wfg2_t2(y, n_var, k)
+	y = wfg2_t3(y, n_obj, n_var, k)
+
+	// post section
+	A := _ones(n_obj - 1)
+	for i := 1; i < len(A); i++ {
+		A[i] = 0
+	}
+	y = _post(y, A)
+
+	var h []float64
+	for m := 0; m < n_obj; m++ {
+		h = append(h, _shape_linear(y[:len(y)-1], m+1))
+	}
+
+	S := arange(2, 2*n_obj+1, 2)
+	newObjs := _calculate(y, S, h)
+
+	e.Objs = make([]float64, len(newObjs))
+	copy(e.Objs, newObjs)
+	return nil
 }

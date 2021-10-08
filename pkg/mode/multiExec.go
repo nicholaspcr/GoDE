@@ -19,8 +19,8 @@ var tokens = make(chan struct{}, 15)
 // same problem
 func MultiExecutions(
 	params models.AlgorithmParams,
-	problem models.ProblemInterface,
-	variant models.VariantInterface,
+	problem models.Problem,
+	variant models.Variant,
 	initialPopulation models.Population,
 ) {
 	homePath := os.Getenv("HOME")

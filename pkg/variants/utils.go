@@ -28,33 +28,33 @@ func generateIndices(startInd, NP int, r []int) error {
 }
 
 // GetVariantByVariantName -> Returns the variant function
-func GetVariantByName(name string) models.VariantInterface {
+func GetVariantByName(name string) models.Variant {
 	name = strings.ToLower(name)
-	variants := map[string]models.VariantInterface{
-		rand1.VariantName:       &rand1,
-		rand2.VariantName:       &rand2,
-		best1.VariantName:       &best1,
-		best2.VariantName:       &best2,
-		currToBest1.VariantName: &currToBest1,
-		pbest.VariantName:       &pbest,
+	variants := map[string]models.Variant{
+		Rand1().Name():       Rand1(),
+		Rand2().Name():       Rand2(),
+		Best1().Name():       Best1(),
+		Best2().Name():       Best2(),
+		CurrToBest1().Name(): CurrToBest1(),
+		Pbest().Name():       Pbest(),
 	}
 	for k, v := range variants {
 		if name == k {
 			return v
 		}
 	}
-	return &models.Variant{}
+	return nil
 }
 
 // GetAllVariants returns all the variants implemented in this package
-func GetAllVariants() []models.VariantInterface {
-	variants := []models.VariantInterface{
-		&rand1,
-		&rand2,
-		&best1,
-		&best2,
-		&currToBest1,
-		&pbest,
+func GetAllVariants() []models.Variant {
+	variants := []models.Variant{
+		Rand1(),
+		Rand2(),
+		Best1(),
+		Best2(),
+		CurrToBest1(),
+		Pbest(),
 	}
 	return variants
 }

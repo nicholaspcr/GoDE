@@ -7,6 +7,7 @@ name = "pypi"
 pymoo = "*"
 matplotlib = "*"
 numpy = "*"
+pandas = "*"
 
 [dev-packages]
 

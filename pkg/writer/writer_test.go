@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nicholaspcr/gde3/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/models"
 )
 
 func TestNewWriter(t *testing.T) {

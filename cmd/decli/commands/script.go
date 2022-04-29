@@ -7,10 +7,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/nicholaspcr/gde3/pkg/mode"
-	"github.com/nicholaspcr/gde3/pkg/models"
-	"github.com/nicholaspcr/gde3/pkg/problems"
-	"github.com/nicholaspcr/gde3/pkg/variants"
+	"github.com/nicholaspcr/GoDE/pkg/mode"
+	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/problems"
+	"github.com/nicholaspcr/GoDE/pkg/variants"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )

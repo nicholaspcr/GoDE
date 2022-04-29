@@ -3,7 +3,7 @@ package variants
 import (
 	"fmt"
 
-	"github.com/nicholaspcr/gde3/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/models"
 )
 
 // rand1

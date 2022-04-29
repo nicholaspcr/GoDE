@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/nicholaspcr/gde3/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/models"
 )
 
 func TestDTLZ5FN(t *testing.T) {

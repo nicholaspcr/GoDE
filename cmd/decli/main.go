@@ -16,7 +16,7 @@ limitations under the License.
 package main
 
 import (
-	"github.com/nicholaspcr/gde3/cmd/decli/commands"
+	"github.com/nicholaspcr/GoDE/cmd/decli/commands"
 )
 
 func main() {

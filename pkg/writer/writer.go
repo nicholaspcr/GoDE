@@ -12,7 +12,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/nicholaspcr/gde3/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/models"
 )
 
 // Writer is the custom writer provided by the gode package, it contains the

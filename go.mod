@@ -1,4 +1,4 @@
-module github.com/nicholaspcr/gde3
+module github.com/nicholaspcr/GoDE
 
 go 1.15
 

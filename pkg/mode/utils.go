@@ -3,7 +3,7 @@ package mode
 import (
 	"math/rand"
 
-	"github.com/nicholaspcr/gde3/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/models"
 )
 
 // GeneratePopulation - creates a population without objs calculates

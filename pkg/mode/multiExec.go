@@ -6,9 +6,9 @@ import (
 	"os"
 	"sync"
 
-	"github.com/nicholaspcr/gde3/pkg/algorithms"
-	"github.com/nicholaspcr/gde3/pkg/models"
-	"github.com/nicholaspcr/gde3/pkg/writer"
+	"github.com/nicholaspcr/GoDE/pkg/algorithms"
+	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/writer"
 )
 
 // tokens is a counting semaphore use to

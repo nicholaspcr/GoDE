@@ -1,6 +1,6 @@
 package wfg
 
-import "github.com/nicholaspcr/gde3/pkg/models"
+import "github.com/nicholaspcr/GoDE/pkg/models"
 
 type wfg6 struct{}
 

@@ -3,7 +3,7 @@ package variants
 import (
 	"errors"
 
-	"github.com/nicholaspcr/gde3/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/models"
 )
 
 // rand2 a + F(b-c) + F(d-e)

@@ -3,10 +3,10 @@ package problems
 import (
 	"strings"
 
-	"github.com/nicholaspcr/gde3/pkg/models"
-	"github.com/nicholaspcr/gde3/pkg/problems/many/dtlz"
-	"github.com/nicholaspcr/gde3/pkg/problems/many/wfg"
-	"github.com/nicholaspcr/gde3/pkg/problems/multi"
+	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/problems/many/dtlz"
+	"github.com/nicholaspcr/GoDE/pkg/problems/many/wfg"
+	"github.com/nicholaspcr/GoDE/pkg/problems/multi"
 )
 
 var problems = map[string]models.Problem{

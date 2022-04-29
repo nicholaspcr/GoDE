@@ -4,8 +4,8 @@ import (
 	"math/rand"
 	"os"
 
-	"github.com/nicholaspcr/gde3/pkg/models"
-	"github.com/nicholaspcr/gde3/pkg/writer"
+	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/writer"
 )
 
 // type that contains the definition of the GDE3 algorithm

@@ -1,4 +1,4 @@
-package cli
+package commands
 
 import (
 	"fmt"
@@ -85,6 +85,5 @@ these are a bit more complex and time consuming overall.`,
 
 		timeSpent := time.Since(startTimer)
 		fmt.Println("Time spend on the script: ", timeSpent)
-
 	},
 }

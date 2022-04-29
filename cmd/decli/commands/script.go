@@ -1,4 +1,4 @@
-package cli
+package commands
 
 import (
 	"fmt"
@@ -81,6 +81,5 @@ with the same initial population.`,
 				mode.MultiExecutions(params, problem, variant, initialPopulation)
 			}
 		}
-
 	},
 }

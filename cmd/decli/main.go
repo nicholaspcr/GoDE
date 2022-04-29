@@ -16,9 +16,9 @@ limitations under the License.
 package main
 
 import (
-	"github.com/nicholaspcr/gde3/cmd/gde3/cli"
+	"github.com/nicholaspcr/gde3/cmd/decli/commands"
 )
 
 func main() {
-	cli.Execute()
+	commands.Execute()
 }

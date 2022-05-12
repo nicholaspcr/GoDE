@@ -1,6 +1,9 @@
 # General
 .vscode
 
+# Env files
+.envrc
+
 # custom notes
 note.md
 

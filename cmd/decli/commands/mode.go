@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/nicholaspcr/GoDE/pkg/mode"
+	"github.com/nicholaspcr/GoDE/pkg/de"
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
@@ -18,7 +18,7 @@ import (
 // local flags
 var variantName string
 
-// modeCmd represents the mode command
+// modeCmd represents the de command
 var modeCmd = &cobra.Command{
 	Use:   "multi",
 	Short: "Multi-objective implementation of DE",
@@ -79,9 +79,9 @@ these are a bit more complex and time consuming overall.`,
 
 		rand.Seed(time.Now().UnixNano())
 		// generating shared initial population
-		initialPopulation := mode.GeneratePopulation(params)
+		initialPopulation := de.GeneratePopulation(params)
 
-		mode.MultiExecutions(params, problem, variant, initialPopulation)
+		de.MultiExecutions(params, problem, variant, initialPopulation)
 
 		timeSpent := time.Since(startTimer)
 		fmt.Println("Time spend on the script: ", timeSpent)

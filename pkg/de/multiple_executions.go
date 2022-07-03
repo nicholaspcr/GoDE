@@ -1,4 +1,4 @@
-package mode
+package de
 
 import (
 	"fmt"
@@ -25,7 +25,7 @@ func MultiExecutions(
 ) {
 	homePath := os.Getenv("HOME")
 	paretoPath := fmt.Sprintf(
-		"/.gode/mode/paretoFront/%s/%s",
+		"/.gode/de/paretoFront/%s/%s",
 		problem.Name(),
 		variant.Name())
 
@@ -135,7 +135,7 @@ func MultiExecutions(
 
 	// checks path for the path used to store the details of each generation
 	multiExecutionsPath := fmt.Sprintf(
-		"/.gode/mode/multiExecutions/%s/%s",
+		"/.gode/de/multiExecutions/%s/%s",
 		problem.Name(),
 		variant.Name(),
 	)

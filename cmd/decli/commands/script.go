@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/nicholaspcr/GoDE/pkg/mode"
+	"github.com/nicholaspcr/GoDE/pkg/de"
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
@@ -64,13 +64,13 @@ with the same initial population.`,
 		defaultPValues := variants.GetStandardPValues()
 
 		rand.Seed(time.Now().UnixNano())
-		initialPopulation := mode.GeneratePopulation(params)
+		initialPopulation := de.GeneratePopulation(params)
 
 		for _, variant := range allVariants {
 			if variant.Name() == "pbest" {
 				for _, pvalue := range defaultPValues {
 					params.P = pvalue
-					mode.MultiExecutions(
+					de.MultiExecutions(
 						params,
 						problem,
 						variant,
@@ -78,7 +78,7 @@ with the same initial population.`,
 					)
 				}
 			} else {
-				mode.MultiExecutions(params, problem, variant, initialPopulation)
+				de.MultiExecutions(params, problem, variant, initialPopulation)
 			}
 		}
 	},

@@ -1,4 +1,4 @@
-package mode
+package de
 
 import (
 	"math/rand"

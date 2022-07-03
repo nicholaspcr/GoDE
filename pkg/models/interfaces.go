@@ -1,16 +1,12 @@
 package models
 
-import "os"
+import (
+	"os"
+
+	"github.com/nicholaspcr/GoDE/pkg/problems"
+)
 
 type (
-	// Problem contains the definition of what a problem should have
-	Problem interface {
-		Name() string
-		// Evaluate is the function responsible for altering the objective
-		// slice of a vector, therefore is assumed that the Vector passed will
-		// be modified by this func
-		Evaluate(*Vector, int) error
-	}
 
 	// Var
 	Variant interface {
@@ -24,7 +20,7 @@ type (
 			chan<- Population,
 			chan<- []float64,
 			AlgorithmParams,
-			Problem,
+			problems.Problem,
 			Variant,
 			Population,
 			*os.File,

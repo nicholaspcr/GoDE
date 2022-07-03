@@ -2,11 +2,12 @@ package wfg
 
 import (
 	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/problems"
 )
 
 type wfg3 struct{}
 
-func Wfg3() models.Problem {
+func Wfg3() problems.Interface {
 	return &wfg3{}
 }
 

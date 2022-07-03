@@ -5,11 +5,12 @@ import (
 	"math"
 
 	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/problems"
 )
 
 type zdt3 struct{}
 
-func Zdt3() models.Problem {
+func Zdt3() problems.Interface {
 	return &zdt3{}
 }
 

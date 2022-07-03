@@ -1,10 +1,13 @@
 package wfg
 
-import "github.com/nicholaspcr/GoDE/pkg/models"
+import (
+	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/problems"
+)
 
 type wfg8 struct{}
 
-func Wfg8() models.Problem {
+func Wfg8() problems.Interface {
 	return &wfg8{}
 }
 

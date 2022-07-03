@@ -8,6 +8,7 @@ import (
 
 	"github.com/nicholaspcr/GoDE/pkg/algorithms"
 	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/problems"
 	"github.com/nicholaspcr/GoDE/pkg/writer"
 )
 
@@ -19,7 +20,7 @@ var tokens = make(chan struct{}, 15)
 // same problem
 func MultiExecutions(
 	params models.AlgorithmParams,
-	problem models.Problem,
+	problem problems.Problem,
 	variant models.Variant,
 	initialPopulation models.Population,
 ) {

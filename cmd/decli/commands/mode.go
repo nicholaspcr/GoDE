@@ -9,7 +9,6 @@ import (
 
 	"github.com/nicholaspcr/GoDE/pkg/de"
 	"github.com/nicholaspcr/GoDE/pkg/models"
-	"github.com/nicholaspcr/GoDE/pkg/problems"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -27,7 +26,7 @@ An implementation that allows the processing of multiple objective functions,
 these are a bit more complex and time consuming overall.`,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		problem := problems.GetProblemByName(functionName)
+		problem := getProblemByName(functionName)
 		variant := variants.GetVariantByName(variantName)
 
 		if problem.Name() == "" {

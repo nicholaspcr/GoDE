@@ -9,7 +9,6 @@ import (
 
 	"github.com/nicholaspcr/GoDE/pkg/de"
 	"github.com/nicholaspcr/GoDE/pkg/models"
-	"github.com/nicholaspcr/GoDE/pkg/problems"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -23,7 +22,7 @@ script is the subcommand responsible for running the gde algorithm into the
 specified problem, it will test for all variants and each of them will start
 with the same initial population.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		problem := problems.GetProblemByName(functionName)
+		problem := getProblemByName(functionName)
 		if problem.Name() == "" {
 			fmt.Println("invalid problem")
 		}

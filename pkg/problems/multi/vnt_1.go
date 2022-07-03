@@ -5,12 +5,13 @@ import (
 	"math"
 
 	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/problems"
 )
 
 type vnt1 struct{}
 
 // Vnt1 -> https://ti.arc.nasa.gov/m/pub-archive/archive/1163.pdf
-func Vnt1() models.Problem {
+func Vnt1() problems.Interface {
 	return &vnt1{}
 }
 

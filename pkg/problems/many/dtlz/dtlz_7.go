@@ -5,11 +5,12 @@ import (
 	"math"
 
 	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/problems"
 )
 
 type dtlz7 struct{}
 
-func Dtlz7() models.Problem {
+func Dtlz7() problems.Interface {
 	return &dtlz7{}
 }
 

@@ -1,15 +1,14 @@
-package problems
+package commands
 
 import (
-	"strings"
-
-	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/problems"
 	"github.com/nicholaspcr/GoDE/pkg/problems/many/dtlz"
 	"github.com/nicholaspcr/GoDE/pkg/problems/many/wfg"
 	"github.com/nicholaspcr/GoDE/pkg/problems/multi"
+	"strings"
 )
 
-var problems = map[string]models.Problem{
+var problemSet = map[string]problems.Problem{
 	multi.Zdt1().Name(): multi.Zdt1(),
 	multi.Zdt2().Name(): multi.Zdt2(),
 	multi.Zdt3().Name(): multi.Zdt3(),
@@ -36,11 +35,11 @@ var problems = map[string]models.Problem{
 	wfg.Wfg9().Name(): wfg.Wfg9(),
 }
 
-// GetProblemByProblemName -> returns the problem function
-func GetProblemByName(name string) models.Problem {
+// getProblemByProblemName -> returns the problem function
+func getProblemByName(name string) problems.Problem {
 	name = strings.ToLower(name)
 
-	for k, v := range problems {
+	for k, v := range problemSet {
 		if name == k {
 			return v
 		}

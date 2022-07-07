@@ -1,16 +1,17 @@
-package variants
+package rand
 
 import (
 	"fmt"
 
 	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/variants"
 )
 
 // rand1
 type rand1 struct{}
 
 // Rand1 variant -> a + F(b - c)
-func Rand1() models.Variant {
+func Rand1() variants.Interface {
 	return &rand1{}
 }
 
@@ -20,7 +21,7 @@ func (r *rand1) Name() string {
 
 func (r *rand1) Mutate(
 	elems, rankZero models.Population,
-	p models.VariantParams,
+	p variants.Parameters,
 ) (models.Vector, error) {
 
 	if len(elems) < 3 {
@@ -32,7 +33,7 @@ func (r *rand1) Mutate(
 	// generating random indices different from current pos
 	inds := make([]int, 4)
 	inds[0] = p.CurrPos
-	err := generateIndices(1, len(elems), inds)
+	err := variants.GenerateIndices(1, len(elems), inds)
 	if err != nil {
 		return models.Vector{}, err
 	}

@@ -1,16 +1,17 @@
-package variants
+package best
 
 import (
 	"errors"
 	"math/rand"
 
 	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/variants"
 )
 
 // best1
 type best1 struct{}
 
-func Best1() models.Variant {
+func Best1() variants.Interface {
 	return &best1{}
 }
 
@@ -20,11 +21,11 @@ func (b *best1) Name() string {
 
 func (b *best1) Mutate(
 	elems, rankZero models.Population,
-	p models.VariantParams,
+	p variants.Parameters,
 ) (models.Vector, error) {
 	index := make([]int, 3)
 	index[0] = p.CurrPos
-	err := generateIndices(1, len(elems), index)
+	err := variants.GenerateIndices(1, len(elems), index)
 
 	if err != nil {
 		return models.Vector{}, errors.New(

@@ -30,12 +30,4 @@ type (
 		// Disables the data generation for the plot
 		DisablePlot bool `json:"disable_plot" yaml:"disable_plot"`
 	}
-
-	// VariantParams are the necessary values that a variant uses
-	VariantParams struct {
-		DIM     int     `json:"dim"      yaml:"dim"`
-		CurrPos int     `json:"curr_pos" yaml:"curr_pos"`
-		F       float64 `json:"f"        yaml:"f"`
-		P       float64 `json:"p"        yaml:"p"`
-	}
 )

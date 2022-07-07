@@ -1,4 +1,4 @@
-package variants
+package pbest
 
 import (
 	"errors"
@@ -6,12 +6,13 @@ import (
 	"math/rand"
 
 	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/variants"
 )
 
 // pbest
 type pbest struct{}
 
-func Pbest() models.Variant {
+func Pbest() variants.Interface {
 	return &pbest{}
 }
 
@@ -21,13 +22,13 @@ func (p *pbest) Name() string {
 
 func (p *pbest) Mutate(
 	elems, rankZero models.Population,
-	params models.VariantParams,
+	params variants.Parameters,
 ) (models.Vector, error) {
 
 	ind := make([]int, 3)
 	ind[0] = params.CurrPos
 
-	err := generateIndices(1, len(elems), ind)
+	err := variants.GenerateIndices(1, len(elems), ind)
 	if err != nil {
 		return models.Vector{}, errors.New(
 			"insufficient size for the population, must me equal or greater than 5",

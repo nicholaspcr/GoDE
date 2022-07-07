@@ -1,15 +1,16 @@
-package variants
+package rand
 
 import (
 	"errors"
 
 	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/variants"
 )
 
 // rand2 a + F(b-c) + F(d-e)
 type rand2 struct{}
 
-func Rand2() models.Variant {
+func Rand2() variants.Interface {
 	return &rand2{}
 }
 
@@ -19,13 +20,13 @@ func (r *rand2) Name() string {
 
 func (r *rand2) Mutate(
 	elems, rankZero models.Population,
-	p models.VariantParams,
+	p variants.Parameters,
 ) (models.Vector, error) {
 
 	// generating random indices different from current pos
 	ind := make([]int, 6)
 	ind[0] = p.CurrPos
-	err := generateIndices(1, len(elems), ind)
+	err := variants.GenerateIndices(1, len(elems), ind)
 	if err != nil {
 		return models.Vector{}, errors.New(
 			"insufficient size for the population, must me equal or greater than 4",

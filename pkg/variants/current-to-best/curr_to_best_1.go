@@ -1,16 +1,17 @@
-package variants
+package currenttobest
 
 import (
 	"errors"
 	"math/rand"
 
 	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/variants"
 )
 
 // currToBest1
 type currToBest1 struct{}
 
-func CurrToBest1() models.Variant {
+func CurrToBest1() variants.Interface {
 	return &currToBest1{}
 }
 
@@ -20,12 +21,12 @@ func (c *currToBest1) Name() string {
 
 func (c *currToBest1) Mutate(
 	elems, rankZero models.Population,
-	p models.VariantParams,
+	p variants.Parameters,
 ) (models.Vector, error) {
 
 	ind := make([]int, 4)
 	ind[0] = p.CurrPos
-	err := generateIndices(1, len(elems), ind)
+	err := variants.GenerateIndices(1, len(elems), ind)
 
 	if err != nil {
 		return models.Vector{}, errors.New(

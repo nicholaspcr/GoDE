@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	problemSet = map[string]problems.Problem{
+	problemSet = map[string]problems.Interface{
 		multi.Zdt1().Name(): multi.Zdt1(),
 		multi.Zdt2().Name(): multi.Zdt2(),
 		multi.Zdt3().Name(): multi.Zdt3(),
@@ -53,7 +53,7 @@ var (
 )
 
 // getProblemByProblemName -> returns the problem function
-func getProblemByName(name string) problems.Problem {
+func getProblemByName(name string) problems.Interface {
 	name = strings.ToLower(name)
 	for k, v := range problemSet {
 		if name == k {

@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/nicholaspcr/GoDE/pkg/de"
-	"github.com/nicholaspcr/GoDE/pkg/models"
-	"github.com/nicholaspcr/GoDE/pkg/variants"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
@@ -27,7 +25,7 @@ these are a bit more complex and time consuming overall.`,
 
 	Run: func(cmd *cobra.Command, args []string) {
 		problem := getProblemByName(functionName)
-		variant := variants.GetVariantByName(variantName)
+		variant := getVariantByName(variantName)
 
 		if problem.Name() == "" {
 			fmt.Println("Invalid problem")
@@ -39,7 +37,7 @@ these are a bit more complex and time consuming overall.`,
 			return
 		}
 
-		var params models.AlgorithmParams
+		var params de.AlgorithmParams
 		if filename != "" {
 			data, err := os.ReadFile(filename)
 			if err != nil {
@@ -48,7 +46,7 @@ these are a bit more complex and time consuming overall.`,
 
 			yaml.Unmarshal(data, &params)
 		} else {
-			params = models.AlgorithmParams{
+			params = de.AlgorithmParams{
 				NP:          np,
 				M:           mConst,
 				DIM:         dim,

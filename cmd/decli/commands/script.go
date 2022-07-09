@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/nicholaspcr/GoDE/pkg/de"
-	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -27,7 +26,7 @@ with the same initial population.`,
 			fmt.Println("invalid problem")
 		}
 
-		var params models.AlgorithmParams
+		var params de.AlgorithmParams
 		if filename != "" {
 			data, err := os.ReadFile(filename)
 			if err != nil {
@@ -36,7 +35,7 @@ with the same initial population.`,
 
 			yaml.Unmarshal(data, &params)
 		} else {
-			params = models.AlgorithmParams{
+			params = de.AlgorithmParams{
 				NP:          np,
 				M:           mConst,
 				DIM:         dim,
@@ -59,7 +58,7 @@ with the same initial population.`,
 			)
 		}
 
-		allVariants := variants.GetAllVariants()
+		allVariants := getAllVariants()
 		defaultPValues := variants.GetStandardPValues()
 
 		rand.Seed(time.Now().UnixNano())

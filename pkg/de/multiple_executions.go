@@ -6,10 +6,10 @@ import (
 	"os"
 	"sync"
 
+	"github.com/nicholaspcr/GoDE/internal/writer"
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
-	"github.com/nicholaspcr/GoDE/pkg/writer"
 )
 
 // tokens is a counting semaphore use to

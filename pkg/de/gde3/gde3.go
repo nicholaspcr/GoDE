@@ -4,11 +4,11 @@ import (
 	"math/rand"
 	"os"
 
+	"github.com/nicholaspcr/GoDE/internal/writer"
 	"github.com/nicholaspcr/GoDE/pkg/de"
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
-	"github.com/nicholaspcr/GoDE/pkg/writer"
 )
 
 // type that contains the definition of the GDE3 algorithm
@@ -133,9 +133,9 @@ func (g *gde3) Execute(
 		bestElems = append(bestElems, bestInGen...)
 
 		// writes the objectives of the population
-    if err := w.ElementsObjs(population); err != nil {
-      panic(err)
-    }
+		if err := w.ElementsObjs(population); err != nil {
+			panic(err)
+		}
 
 		// checks for the biggest objective
 		for _, p := range population {

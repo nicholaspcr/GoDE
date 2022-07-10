@@ -82,12 +82,12 @@ func addGlobalFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().Float64SliceVarP(&floor,
 		"floor",
 		"",
-		[]float64{1.0},
+		DefaultDimensions.Floors,
 		"floor of the float64 generator (default 0)")
 	cmd.PersistentFlags().Float64SliceVarP(&ceil,
 		"ceil",
 		"",
-		[]float64{1.0},
+		DefaultDimensions.Ceils,
 		"ceil of the float64 generator")
 	cmd.PersistentFlags().Float64Var(&crConst,
 		"CR",

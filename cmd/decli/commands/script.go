@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/nicholaspcr/GoDE/pkg/de"
+	"github.com/nicholaspcr/GoDE/pkg/de/gde3"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -33,7 +34,9 @@ with the same initial population.`,
 				log.Fatalln("failed to open file")
 			}
 
-			yaml.Unmarshal(data, &params)
+			if err := yaml.Unmarshal(data, &params); err != nil {
+				panic(err)
+			}
 		} else {
 			params = de.AlgorithmParams{
 				NP:          np,
@@ -72,11 +75,12 @@ with the same initial population.`,
 						params,
 						problem,
 						variant,
+						gde3.GDE3(),
 						initialPopulation,
 					)
 				}
 			} else {
-				de.MultiExecutions(params, problem, variant, initialPopulation)
+				de.MultiExecutions(params, problem, variant, gde3.GDE3(), initialPopulation)
 			}
 		}
 	},

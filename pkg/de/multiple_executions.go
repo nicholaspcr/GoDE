@@ -6,9 +6,9 @@ import (
 	"os"
 	"sync"
 
-	"github.com/nicholaspcr/GoDE/pkg/algorithms"
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
+	"github.com/nicholaspcr/GoDE/pkg/variants"
 	"github.com/nicholaspcr/GoDE/pkg/writer"
 )
 
@@ -19,9 +19,10 @@ var tokens = make(chan struct{}, 15)
 // MultiExecutions returns the pareto front of the total of 30 executions of the
 // same problem
 func MultiExecutions(
-	params models.AlgorithmParams,
-	problem problems.Problem,
-	variant models.Variant,
+	params AlgorithmParams,
+	problem problems.Interface,
+	variant variants.Interface,
+	algorithm Mode,
 	initialPopulation models.Population,
 ) {
 	homePath := os.Getenv("HOME")
@@ -55,7 +56,7 @@ func MultiExecutions(
 
 	wg := &sync.WaitGroup{}
 
-	// runs GDE3 for EXECS amount of times
+	// runs algorithm for EXECS amount of times
 	for i := 0; i < params.EXECS; i++ {
 		filePath := fmt.Sprintf(
 			"%s%s/exec-%d.csv",
@@ -84,11 +85,12 @@ func MultiExecutions(
 			// adding to concurrent queue
 			tokens <- struct{}{}
 			// cleaning concurrent queue
-			defer func() { <-tokens }()
-			// finishing worker
-			defer func() { wg.Done() }()
+			defer func() {
+				<-tokens
+				wg.Done()
+			}()
 			// running one execution of the GDE3
-			algorithms.GDE3().Execute(
+			algorithm.Execute(
 				rankedChan,
 				maximumObjs,
 				params,
@@ -123,7 +125,7 @@ func MultiExecutions(
 			v...)
 
 		// gets non dominated and filters by crowdingDistance
-		_, rankedPareto = algorithms.ReduceByCrowdDistance(
+		_, rankedPareto = ReduceByCrowdDistance(
 			rankedPareto,
 			len(rankedPareto),
 		)
@@ -164,8 +166,12 @@ func MultiExecutions(
 	// creates writer and writes the elements objs
 	w := writer.NewWriter(f)
 	w.Comma = ';'
-	w.WriteHeader(params.M)
-	w.ElementsObjs(rankedPareto)
+  if err := w.WriteHeader(params.M); err != nil {
+    panic(err)
+  }
+  if err := w.ElementsObjs(rankedPareto); err != nil {
+    panic(err)
+  }
 
 	// getting biggest objs values
 	maxObjs := make([]float64, params.M)

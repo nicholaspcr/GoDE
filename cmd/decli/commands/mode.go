@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/nicholaspcr/GoDE/pkg/de"
+	"github.com/nicholaspcr/GoDE/pkg/de/gde3"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
@@ -44,7 +45,9 @@ these are a bit more complex and time consuming overall.`,
 				log.Fatalln("failed to open file")
 			}
 
-			yaml.Unmarshal(data, &params)
+      if err := yaml.Unmarshal(data, &params); err != nil {
+        panic(err)
+      }
 		} else {
 			params = de.AlgorithmParams{
 				NP:          np,
@@ -78,7 +81,7 @@ these are a bit more complex and time consuming overall.`,
 		// generating shared initial population
 		initialPopulation := de.GeneratePopulation(params)
 
-		de.MultiExecutions(params, problem, variant, initialPopulation)
+		de.MultiExecutions(params, problem, variant, gde3.GDE3(), initialPopulation)
 
 		timeSpent := time.Since(startTimer)
 		fmt.Println("Time spend on the script: ", timeSpent)

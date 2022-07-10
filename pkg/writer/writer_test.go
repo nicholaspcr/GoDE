@@ -41,7 +41,7 @@ func TestWriteHeader(t *testing.T) {
 	for _, tt := range tests {
 		tmp := t.TempDir()
 		f, _ := os.CreateTemp(tmp, "")
-		defer func() { f.Close() }()
+		defer func() { _ = f.Close() }()
 
 		w := NewWriter(f)
 		w.Comma = ';'
@@ -111,7 +111,7 @@ func TestElementsObjs(t *testing.T) {
 	for _, tt := range tests {
 		tmp := t.TempDir()
 		f, _ := os.CreateTemp(tmp, "")
-		defer func() { f.Close() }()
+		defer func() { _ = f.Close() }()
 
 		w := NewWriter(f)
 		if tt.separator != 0 {
@@ -175,7 +175,7 @@ func TestElementsVectors(t *testing.T) {
 	for _, tt := range tests {
 		tmp := t.TempDir()
 		f, _ := os.CreateTemp(tmp, "")
-		defer func() { f.Close() }()
+		defer func() { _ = f.Close() }()
 
 		w := NewWriter(f)
 		if tt.separator != 0 {

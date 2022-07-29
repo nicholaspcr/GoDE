@@ -1,16 +1,11 @@
 package models
 
-type (
-	// Vector -> Element of population
-	Vector struct {
-		X      []float64 `json:"x"      yaml:"x"`
-		Objs   []float64 `json:"objs"   yaml:"objs"`
-		Crwdst float64   `json:"crwdst" yaml:"crwdst"`
-	}
-
-	// Population is a slice of the type Vector
-	Population []Vector
-)
+// Vector -> Element of population
+type Vector struct {
+	X      []float64 `json:"x"      yaml:"x"`
+	Objs   []float64 `json:"objs"   yaml:"objs"`
+	Crwdst float64   `json:"crwdst" yaml:"crwdst"`
+}
 
 // Copy the entire struct
 func (e *Vector) Copy() Vector {
@@ -24,6 +19,9 @@ func (e *Vector) Copy() Vector {
 
 	return ret
 }
+
+// Population is a slice of the type Vector
+type Population []Vector
 
 // Copy of the []Vector slice
 func (e Population) Copy() Population {

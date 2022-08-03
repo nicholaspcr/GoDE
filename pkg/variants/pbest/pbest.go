@@ -21,7 +21,7 @@ func (p *pbest) Name() string {
 }
 
 func (p *pbest) Mutate(
-	elems, rankZero models.Population,
+	elems, rankZero []models.Vector,
 	params variants.Parameters,
 ) (models.Vector, error) {
 

@@ -12,5 +12,5 @@ type Parameters struct {
 
 type Interface interface {
 	Name() string
-	Mutate(elems, rankZero models.Population, params Parameters) (models.Vector, error)
+	Mutate(elems, rankZero []models.Vector, params Parameters) (models.Vector, error)
 }

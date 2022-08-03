@@ -20,7 +20,7 @@ func (r *rand1) Name() string {
 }
 
 func (r *rand1) Mutate(
-	elems, rankZero models.Population,
+	elems, rankZero []models.Vector,
 	p variants.Parameters,
 ) (models.Vector, error) {
 

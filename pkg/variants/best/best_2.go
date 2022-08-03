@@ -20,7 +20,7 @@ func (b *best2) Name() string {
 }
 
 func (b *best2) Mutate(
-	elems, rankZero models.Population,
+	elems, rankZero []models.Vector,
 	p variants.Parameters,
 ) (models.Vector, error) {
 

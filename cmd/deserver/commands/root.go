@@ -25,7 +25,7 @@ func Execute() {
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use: "deserver",
+	Use:   "deserver",
 	Short: "Server for executing Differential Evolution algorithms",
 	Long: `Server capable of serving multiple requests of Differential Evolution
 requests, storing the values of each step and the end result in a database and
@@ -38,8 +38,7 @@ making it possible to retrieve those at any point.`,
 	},
 }
 
-
-func init(){
+func init() {
 	rootCmd.AddCommand(
 		startCmd,
 	)

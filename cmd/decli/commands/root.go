@@ -4,13 +4,16 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/nicholaspcr/GoDE/internal/config"
 	"github.com/nicholaspcr/GoDE/internal/log"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
 	// loggers for the CLI
 	logger log.Logger
+	conf   *config.Config
 
 	// pprofs
 	cpuprofile string
@@ -35,26 +38,27 @@ var rootCmd = &cobra.Command{
 	Use:   "decli",
 	Short: "Differential evolution tool build in go",
 	Long:  `A CLI for using the implementation of the differential evolution algorithm`,
-	PreRun: func(*cobra.Command, []string) {
+	PreRunE: func(*cobra.Command, []string) error {
 		logger = log.New()
+		if err := viper.ReadInConfig(); err != nil {
+			return err
+		}
+		return nil
 	},
 	RunE: func(cmd *cobra.Command, _ []string) error {
-	  return cmd.Help()
+		return cmd.Help()
 	},
 }
 
 func init() {
-	addGlobalFlags(rootCmd)
 	rootCmd.AddCommand(
 		modeCmd,
-		scriptCmd,
 	)
-	modeCmd.Flags().StringVar(
-		&variantName,
-		"vr",
-		"rand1",
-		"name fo the variant to be used",
-	)
+	conf = config.New()
+	setDefaults(conf)
+	conf.SetConfigFile(".config")
+	conf.SetConfigType("yaml")
+	_ = conf.ReadInConfig() // ignore if config file doesn't exist
 }
 
 func addGlobalFlags(cmd *cobra.Command) {

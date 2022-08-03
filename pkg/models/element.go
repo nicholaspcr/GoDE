@@ -25,6 +25,15 @@ type Population struct {
 	Vectors        []Vector `json:"vectors" yaml:"vectors"`
 	DimensionsSize int      `json:"dim_size" yaml:"dim_size"`
 	ObjectivesSize int      `json:"obj_size" yaml:"obj_size"`
+	FloorSlice     []float64
+	CeilSlice      []float64
+}
+
+func (p *Population) Get(idx int) Vector {
+	if p == nil {
+		return Vector{}
+	}
+	return p.Vectors[idx]
 }
 
 // Size of the current Vector slice.
@@ -40,6 +49,22 @@ func (p *Population) DimSize() int {
 		return 0
 	}
 	return p.ObjectivesSize
+}
+
+// Floors contains the floor for each dimention in the vector slice.
+func (p *Population) Floors() []float64 {
+	if p == nil {
+		return nil
+	}
+	return p.FloorSlice
+}
+
+// Ceils contains the ceil for each dimention in the vector slice.
+func (p *Population) Ceils() []float64 {
+	if p == nil {
+		return nil
+	}
+	return p.CeilSlice
 }
 
 // ObjsSize of the current Vector slice.

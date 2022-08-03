@@ -1,60 +1,133 @@
 package de
 
-//type mode struct {
-//	p          AlgorithmParams
-//	problem    problems.Interface
-//	variant    variants.Interface
-//	population models.Population
-//}
-//
-//// Option defines a configuration method for the mode struct
-//type Option func(*mode)
-//
-//// New Mode iterface based on the configuration options given.
-//func New(opts ...Option) Mode {
-//	m := &mode{}
-//	for _, opt := range opts {
-//		opt(m)
-//	}
-//	return m
-//}
-//
-//func (m *mode) Execute() error {
-//	return nil
-//}
-//
-//func (m *mode) MultipleExecutions() error {
-//	return nil
-//}
+import (
+	"context"
+	"sync"
 
-type (
-	// AlgorithmParams are the set of parameters that can be used in the gde3
-	// cli
-	AlgorithmParams struct {
-		// EXECS is the amount of times the algorithm will run on top of the
-		// same
-		// initial population
-		EXECS int `json:"execs" yaml:"execs"`
-		// DIM is the size of the dimensions of each vector element
-		DIM int `json:"dim"   yaml:"dim"`
-		// GEN is the amount of generations that the algorithm will execute
-		GEN int `json:"gen"   yaml:"gen"`
-
-		// NP represents the size of the population
-		NP int `json:"np" yaml:"np"`
-		// M represents the amount of objective functions
-		M int `json:"m"  yaml:"m"`
-
-		// limits the search area of the vectors in the population
-		FLOOR []float64 `json:"floor" yaml:"floor"`
-		CEIL  []float64 `json:"ceil"  yaml:"ceil"`
-
-		// constants used for the gde3 algorithm
-		CR float64 `json:"cr" yaml:"cr"`
-		F  float64 `json:"f"  yaml:"f"`
-		P  float64 `json:"p"  yaml:"p"`
-
-		// Disables the data generation for the plot
-		DisablePlot bool `json:"disable_plot" yaml:"disable_plot"`
-	}
+	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/problems"
+	"github.com/nicholaspcr/GoDE/pkg/variants"
 )
+
+// DE contains the necessary methods to setup and execute a Differential
+// Evolutionary algorithm.
+type de struct {
+	constants  Constants
+	problem    problems.Interface
+	variant    variants.Interface
+	population models.Population
+	store      Store
+	algorithm  Algorithm
+}
+
+// New Mode iterface based on the configuration options given.
+func New(opts ...ModeOptions) *de {
+	m := &de{}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// TODO: Make a separate semaphore, responsible for handling how many parallel
+// executions the server can take.
+
+func (m *de) Execute(
+	ctx context.Context,
+	pareto chan<- models.Population,
+	maxObjs chan<- []float64,
+) error {
+	rankedChan := make(chan []models.Vector, m.constants.Executions)
+
+	// TODO: Change this to be just a pipeline pattern, that way there can be a
+	// goroutine in the background that would write the last values.
+	wg := &sync.WaitGroup{}
+
+	// TODO: generate first population.
+	// initialPopulation is the the population in which every execution will start with.
+	var initialPopulation models.Population
+	GeneratePopulation(&initialPopulation)
+
+	// Runs algorithm for Executions amount of times.
+	for i := 0; i < m.constants.Executions; i++ {
+		population := initialPopulation.Copy()
+		wg.Add(1)
+
+		// Initialize worker responsible for DE execution.
+		go func() {
+			// cleaning concurrent queue
+			defer func() {
+				wg.Done()
+			}()
+			// running one execution of the GDE3
+			m.algorithm.Execute(
+				ctx,
+				population,
+				m.problem,
+				m.variant,
+				m.store,
+				rankedChan,
+			)
+		}()
+	}
+
+	// closer
+	go func() {
+		wg.Wait()
+		close(rankedChan)
+	}()
+
+	// gets data from the pareto created by rank[0] of each gen
+	var rankedPareto []models.Vector
+	for v := range rankedChan {
+		rankedPareto = append(
+			rankedPareto,
+			v...,
+		)
+
+		// gets non dominated and filters by crowdingDistance
+		_, rankedPareto = ReduceByCrowdDistance(
+			rankedPareto,
+			len(rankedPareto),
+		)
+
+		// TODO: Make it configurable.
+		// Limits the amounts of dots to 1k.
+		if len(rankedPareto) > 1000 {
+			rankedPareto = rankedPareto[:1000]
+		}
+	}
+
+	//	// result of the ranked pareto
+	//	f, err := os.Create(
+	//		homePath + multiExecutionsPath + "/rankedPareto.csv",
+	//	)
+	//	// creates writer and writes the elements objs
+	//	w := writer.NewWriter(f)
+	//	w.Comma = ';'
+	//	if err := w.WriteHeader(m.constants.ObjFuncAmount); err != nil {
+	//		panic(err)
+	//	}
+	//	if err := w.ElementsObjs(rankedPareto); err != nil {
+	//		panic(err)
+	//	}
+	//
+	//	// getting biggest objs values
+	//	mo := make([]float64, m.constants.Dimensions)
+	//	for arr := range maximumObjs {
+	//		for i, obj := range arr {
+	//			if obj > mo[i] {
+	//				mo[i] = obj
+	//			}
+	//		}
+	//	}
+	//	fmt.Println(
+	//		"maximum objective values found",
+	//	)
+	//	fmt.Println(maxObjs)
+	//
+	//	// sends the values to the channel
+	//	maxObjs <- mo
+	//
+	return nil
+}

@@ -15,31 +15,30 @@ var (
 	INF = math.MaxFloat64 - 1e5
 )
 
-// GeneratePopulation - creates a population without objs calculates
-func GeneratePopulation(p AlgorithmParams) models.Population {
-	ret := make(models.Population, p.NP)
-	for i := 0; i < p.NP; i++ {
-		ret[i].X = make([]float64, p.DIM)
+// GeneratePopulation fills the vectors of a given population, does not
+// generate the values for its objective functions.
+func GeneratePopulation(p *models.Population) {
+	for i := 0; i < len(p.Vectors); i++ {
+		p.Vectors[i].X = make([]float64, p.DimSize())
 
-		for j := 0; j < p.DIM; j++ {
+		for j := 0; j < p.DimSize(); j++ {
 			// range between floor and ceiling
-			constant := p.CEIL[j] - p.FLOOR[j]
+			constant := p.Ceils()[j] - p.Floors()[j]
 			// value varies within [ceil,upper]
-			ret[i].X[j] = rand.Float64()*constant + p.FLOOR[j]
+			p.Vectors[i].X[j] = rand.Float64()*constant + p.Floors()[j]
 		}
 	}
-	return ret
 }
 
 // ReduceByCrowdDistance - returns NP models.elements filtered by rank and
-// crowd distance
+// crowd distance.
 func ReduceByCrowdDistance(
-	elems models.Population,
+	elems []models.Vector,
 	NP int,
-) (models.Population, models.Population) {
+) ([]models.Vector, []models.Vector) {
 
 	ranks := FastNonDominatedRanking(elems)
-	elems = make(models.Population, 0)
+	elems = make([]models.Vector, 0)
 
 	// TODO remove the qtdElems sections
 	qtdElems := 0
@@ -66,7 +65,7 @@ func ReduceByCrowdDistance(
 		}
 	}
 
-	zero := make(models.Population, len(ranks[0]))
+	zero := make([]models.Vector, len(ranks[0]))
 	copy(zero, ranks[0])
 	return elems, zero
 }
@@ -74,8 +73,8 @@ func ReduceByCrowdDistance(
 // FastNonDominatedRanking - ranks the models.elements and returns a map with
 // models.elements per rank
 func FastNonDominatedRanking(
-	elems models.Population,
-) map[int]models.Population {
+	elems []models.Vector,
+) map[int][]models.Vector {
 
 	// this func is inspired by the DEB_NSGA-II paper
 	// a fast and elitist multiobjective genetic algorithm
@@ -157,7 +156,7 @@ func FastNonDominatedRanking(
 	//	}
 
 	// getting ranked models.elements from their index
-	rankedSubList := make(map[int]models.Population)
+	rankedSubList := make(map[int][]models.Vector)
 	for i := 0; i < len(fronts); i++ {
 		for m := range fronts[i] {
 			rankedSubList[i] = append(
@@ -196,10 +195,10 @@ func DominanceTest(x, y []float64) int {
 
 // FilterDominated -> returns models.elements that are not dominated in the set
 func FilterDominated(
-	elems models.Population,
-) (models.Population, models.Population) {
-	nonDominated := make(models.Population, 0)
-	dominated := make(models.Population, 0)
+	elems []models.Vector,
+) ([]models.Vector, []models.Vector) {
+	nonDominated := make([]models.Vector, 0)
+	dominated := make([]models.Vector, 0)
 
 	for p := 0; p < len(elems); p++ {
 		counter := 0
@@ -224,7 +223,7 @@ func FilterDominated(
 
 // CalculateCrwdDist - assumes that the slice is composed of non dominated
 // models.elements
-func CalculateCrwdDist(elems models.Population) {
+func CalculateCrwdDist(elems []models.Vector) {
 	if len(elems) <= 2 {
 		for i := range elems {
 			elems[i].Crwdst = math.MaxFloat64

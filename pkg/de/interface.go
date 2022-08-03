@@ -1,22 +1,32 @@
 package de
 
 import (
-	"os"
+	"context"
 
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
 )
 
+// InjectConstants allows for each implementation of a differential evolution
+// to inject its own necessary contants into the context.
+type InjectConstants func(context.Context) context.Context
 
-type Mode interface {
+// Mode defines the methods that a Differential Evolution algorihtm should
+// implement, this method will be executed in each generation.
+type Algorithm interface {
 	Execute(
-		chan<- models.Population,
-		chan<- []float64,
-		AlgorithmParams,
+		context.Context,
+		models.Population,
 		problems.Interface,
 		variants.Interface,
-		models.Population,
-		*os.File,
-	)
+		Store,
+		chan<- []models.Vector,
+	) error
+}
+
+// Store TODO: move this to its own packer
+type Store interface {
+	Header(...string) error
+	Population(models.Population) error
 }

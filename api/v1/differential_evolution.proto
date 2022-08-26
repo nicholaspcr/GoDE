@@ -1,0 +1,31 @@
+syntax = "proto3";
+option go_package = "pkg/api";
+
+package api.v1;
+
+message Vector {
+    repeated double elements = 1;
+    repeated double objectives = 2;
+    double crowding_distance = 3;
+}
+
+message Population {
+    repeated Vector vectors = 1;
+}
+
+message PopulationParameters {
+    int64 dimensions_size = 1;
+    int64 objetives_size = 2;
+    repeated double floor_slice = 3;
+    repeated double ceil_slice = 4;
+}
+
+message ExecutionRequest {}
+message ExecutionReponse {}
+message MultipleExecutionsRequest {}
+message MultipleExecutionsResponse {}
+
+service DifferentialEvolution {
+    rpc Execute(ExecutionRequest) returns (ExecutionReponse);
+    rpc MultipleExecutions(MultipleExecutionsRequest) returns (stream MultipleExecutionsResponse);
+}

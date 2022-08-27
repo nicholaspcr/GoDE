@@ -10,17 +10,17 @@ import (
 	"github.com/nicholaspcr/GoDE/pkg/variants"
 )
 
-// type that contains the definition of the GDE3 algorithm
+// gde3 type that contains the definition of the GDE3 algorithm.
 type gde3 struct{}
 
-// GDE3 Returns an instance of an object that implements the GDE3 algorithm. It
-// is compliant with the Mode
+// GDE3 Returns an instance of an object that implements the GDE3
+// algorithm. It is compliant with the Mode
 func New() de.Algorithm {
 	return &gde3{}
 }
 
-// Execute is responsible for receiving the standard parameters defined in the
-// Mode and executing the gde3 algorithm
+// Execute is responsible for receiving the standard parameters defined
+// in the Mode and executing the gde3 algorithm
 func (g *gde3) Execute(
 	ctx context.Context,
 	population models.Population,
@@ -28,7 +28,6 @@ func (g *gde3) Execute(
 	variant variants.Interface,
 	store de.Store,
 	pareto chan<- []models.Vector,
-
 ) error {
 	GEN := de.FetchGenerations(ctx)
 	dimSize := population.ObjSize()
@@ -36,7 +35,8 @@ func (g *gde3) Execute(
 	maxObjs := make([]float64, dimSize)
 	// calculates the objs of the inital population
 	for i := range population.Vectors {
-		if err := problem.Evaluate(&population.Vectors[i], dimSize); err != nil {
+		err := problem.Evaluate(&population.Vectors[i], dimSize)
+		if err != nil {
 			return err
 		}
 		for j, obj := range population.Vectors[i].Objs {
@@ -71,7 +71,7 @@ func (g *gde3) Execute(
 			// generates the mutatated vector
 			vr, err := variant.Mutate(
 				population.Vectors,
-					genRankZero,
+				genRankZero,
 				variants.Parameters{
 					DIM:     population.DimSize(),
 					F:       de.FetchFConst(ctx),
@@ -117,7 +117,10 @@ func (g *gde3) Execute(
 			}
 		}
 
-		population.Vectors, bestInGen = de.ReduceByCrowdDistance(population.Vectors, population.Size())
+		population.Vectors, bestInGen = de.ReduceByCrowdDistance(
+			population.Vectors,
+			population.Size(),
+		)
 		bestElems = append(bestElems, bestInGen...)
 
 		// writes the objectives of the population

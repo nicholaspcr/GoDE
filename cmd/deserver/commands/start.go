@@ -5,9 +5,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
 var startCmd = &cobra.Command{
-	Use: "start",
+	Use:   "start",
 	Short: "Start the server responsible for handling requests to start DE instances.",
 	RunE: func(_ *cobra.Command, _ []string) error {
 		r := gin.Default()

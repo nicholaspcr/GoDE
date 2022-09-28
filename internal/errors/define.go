@@ -15,4 +15,3 @@ func DefineProblem(format string, args ...string) error {
 func DefineAlgorithm(format string, args ...string) error {
 	return define(algorithm, format, args...)
 }
-

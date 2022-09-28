@@ -22,7 +22,7 @@ func (v *Vector) Copy() Vector {
 
 // Population is a slice of the type Vector.
 type Population struct {
-	Vectors        []Vector `json:"vectors" yaml:"vectors"`
+	Vectors        []Vector `json:"vectors"  yaml:"vectors"`
 	DimensionsSize int      `json:"dim_size" yaml:"dim_size"`
 	ObjectivesSize int      `json:"obj_size" yaml:"obj_size"`
 	FloorSlice     []float64

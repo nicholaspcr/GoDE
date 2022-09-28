@@ -44,7 +44,7 @@ func (m *de) Execute(
 	wg := &sync.WaitGroup{}
 
 	// TODO: generate first population.
-	// initialPopulation is the the population in which every execution will start with.
+	// initialPopulation of all the executions
 	var initialPopulation models.Population
 	GeneratePopulation(&initialPopulation)
 

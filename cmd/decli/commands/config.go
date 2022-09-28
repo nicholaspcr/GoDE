@@ -13,8 +13,8 @@ type (
 		Constants      Constants  `name:"constants"       json:"constants"       yaml:"constants"`
 	}
 
-	// Dimensions is a set of values to define the behaviour that happens in each
-	// Dimension of the DE.
+	// Dimensions is a set of values to define the behaviour that happens in
+	// each dimension of the DE.
 	Dimensions struct {
 		Size        int       `name:"size"          json:"size"          yaml:"size"`
 		Floors      []float64 `name:"floors"        json:"floors"        yaml:"floors"`
@@ -32,8 +32,8 @@ type (
 )
 
 var (
-	// DefaultConfig is a predefined set of values to run `decli` without having to
-	// config anything.
+	// DefaultConfig is a predefined set of values to run `decli` without having
+	// to config anything.
 	DefaultConfig = Config{
 		PopulationSize: 100,
 		Generations:    100,
@@ -50,7 +50,7 @@ var (
 		Ceils:  []float64{1, 1, 1, 1, 1, 1, 1},
 	}
 
-	// DefaultConstants constaints values to determine a set way to execute the DE.
+	// DefaultConstants are the standard way to execute the DE.
 	DefaultConstants = Constants{
 		M:  3,
 		CR: 0.9,
@@ -65,7 +65,7 @@ var (
 	mConst                  int
 	functionName            string
 	disablePlot             bool
-  filename string
+	filename                string
 )
 
 func setDefaults(conf *config.Config) {

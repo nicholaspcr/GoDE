@@ -7,6 +7,7 @@ import (
 	"github.com/nicholaspcr/GoDE/pkg/de"
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
+	"github.com/nicholaspcr/GoDE/pkg/store"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
 )
 
@@ -26,7 +27,7 @@ func (g *gde3) Execute(
 	population models.Population,
 	problem problems.Interface,
 	variant variants.Interface,
-	store de.Store,
+	store store.Store,
 	pareto chan<- []models.Vector,
 ) error {
 	GEN := de.FetchGenerations(ctx)

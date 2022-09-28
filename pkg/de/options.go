@@ -3,10 +3,12 @@ package de
 import (
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
+	"github.com/nicholaspcr/GoDE/pkg/store"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
 )
 
-// Constants are the set of values that determine the behaviour of the Mode execution.
+// Constants are the set of values that determine the behaviour of the Mode
+// execution.
 type Constants struct {
 	// Executions is the amount of times the algorithm will run.
 	// All executions start with the same initial population.
@@ -23,8 +25,8 @@ type Constants struct {
 
 	// constants used for the gde3 algorithm.
 	CR float64 `json:"cr" yaml:"cr" name:"cr"`
-	F  float64 `json:"f" yaml:"f" name:"f"`
-	P  float64 `json:"p" yaml:"p" name:"p"`
+	F  float64 `json:"f"  yaml:"f"  name:"f"`
+	P  float64 `json:"p"  yaml:"p"  name:"p"`
 }
 
 // ModeOption defines a configuration method for the de struct
@@ -48,7 +50,7 @@ func WithVariant(v variants.Interface) ModeOptions {
 	}
 }
 
-// WithAlgorithm specifies which algorithm is to be runned on top of the problem.
+// WithAlgorithm specifies which algorithm is to be runned on the problem.
 func WithAlgorithm(alg Algorithm) ModeOptions {
 	return func(m *de) *de {
 		m.algorithm = alg
@@ -58,7 +60,7 @@ func WithAlgorithm(alg Algorithm) ModeOptions {
 }
 
 // WithStore determines the store to be used for storing the algorithm results.
-func WithStore(s Store) ModeOptions {
+func WithStore(s store.Store) ModeOptions {
 	return func(m *de) *de {
 		m.store = s
 		return m
@@ -98,7 +100,8 @@ func WithGenerations(gen int) ModeOptions {
 	}
 }
 
-// WithObjFuncAmount determines the amount of objective functions to be executed.
+// WithObjFuncAmount determines the amount of objective functions to be
+// executed.
 func WithObjFuncAmount(n int) ModeOptions {
 	return func(m *de) *de {
 		m.constants.ObjFuncAmount = n

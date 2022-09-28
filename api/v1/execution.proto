@@ -1,0 +1,45 @@
+syntax = "proto3";
+option go_package = "pkg/api";
+
+import "api/v1/population.proto";
+import "api/v1/generation.proto";
+import "google/protobuf/empty.proto";
+
+package api.v1;
+
+message ExecutionSet {
+    uint64 id = 1;
+    string user_id = 2;
+    uint32 size = 3;
+}
+
+message ExecutionSetID {
+    uint64 id = 1;
+}
+message ExecutionSetUser {
+    string user_id = 1;
+}
+
+message Execution {
+    uint64 id = 1;
+    uint64 set_id = 2;
+    repeated Generation generations = 3;
+    Population pareto = 4;
+}
+
+message ExecutionID {
+    uint64 id = 1;
+}
+
+service ExecutionServices {
+    rpc Create (Execution) returns (google.protobuf.Empty) {}
+    rpc Read (ExecutionID) returns (Execution) {}
+    rpc Update (Execution) returns (google.protobuf.Empty) {}
+    rpc Delete (ExecutionID) returns (google.protobuf.Empty) {}
+
+    rpc CreateSet(ExecutionSet) returns (google.protobuf.Empty) {}
+    rpc FindSet(ExecutionSetID) returns (google.protobuf.Empty) {}
+    rpc DeleteSet(ExecutionSetID) returns (google.protobuf.Empty) {}
+    rpc ListSet(ExecutionSetID) returns (stream Execution) {}
+    rpc FetchUserSets(ExecutionSetUser) returns (stream ExecutionSet) {}
+}

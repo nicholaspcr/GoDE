@@ -19,13 +19,3 @@ message PopulationParameters {
     repeated double floor_slice = 3;
     repeated double ceil_slice = 4;
 }
-
-message ExecutionRequest {}
-message ExecutionReponse {}
-message MultipleExecutionsRequest {}
-message MultipleExecutionsResponse {}
-
-service DifferentialEvolution {
-    rpc Execute(ExecutionRequest) returns (ExecutionReponse);
-    rpc MultipleExecutions(MultipleExecutionsRequest) returns (stream MultipleExecutionsResponse);
-}

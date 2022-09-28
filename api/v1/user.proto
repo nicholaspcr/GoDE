@@ -1,0 +1,23 @@
+syntax = "proto3";
+option go_package = "pkg/api";
+
+import "google/protobuf/empty.proto";
+
+package api.v1;
+
+message User {
+    string username = 1;
+    string email = 2;
+    string password = 3;
+}
+
+message UserID {
+    string username = 1;
+}
+
+service UserServices {
+    rpc Create (User) returns (google.protobuf.Empty) {}
+    rpc Read (UserID) returns (User) {}
+    rpc Update (User) returns (google.protobuf.Empty) {}
+    rpc Delete (UserID) returns (google.protobuf.Empty) {}
+}

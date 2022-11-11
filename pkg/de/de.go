@@ -6,6 +6,7 @@ import (
 
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
+	"github.com/nicholaspcr/GoDE/pkg/store"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
 )
 
@@ -16,7 +17,7 @@ type de struct {
 	problem    problems.Interface
 	variant    variants.Interface
 	population models.Population
-	store      Store
+	store      store.Store
 	algorithm  Algorithm
 }
 
@@ -43,8 +44,7 @@ func (m *de) Execute(
 	// goroutine in the background that would write the last values.
 	wg := &sync.WaitGroup{}
 
-	// TODO: generate first population.
-	// initialPopulation of all the executions
+	// initialPopulation is the base population for all executions. 
 	var initialPopulation models.Population
 	GeneratePopulation(&initialPopulation)
 
@@ -98,6 +98,9 @@ func (m *de) Execute(
 		}
 	}
 
+	// TODO: Write the ranked pareto into its own separate section, make it a
+	// separate table on the database.
+
 	//	// result of the ranked pareto
 	//	f, err := os.Create(
 	//		homePath + multiExecutionsPath + "/rankedPareto.csv",
@@ -111,7 +114,9 @@ func (m *de) Execute(
 	//	if err := w.ElementsObjs(rankedPareto); err != nil {
 	//		panic(err)
 	//	}
-	//
+
+	// TODO: The biggest objectives values are to be a part of the pareto table.
+
 	//	// getting biggest objs values
 	//	mo := make([]float64, m.constants.Dimensions)
 	//	for arr := range maximumObjs {
@@ -121,13 +126,5 @@ func (m *de) Execute(
 	//			}
 	//		}
 	//	}
-	//	fmt.Println(
-	//		"maximum objective values found",
-	//	)
-	//	fmt.Println(maxObjs)
-	//
-	//	// sends the values to the channel
-	//	maxObjs <- mo
-	//
 	return nil
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
+	"github.com/nicholaspcr/GoDE/pkg/store"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
 )
 
@@ -20,8 +21,7 @@ type Algorithm interface {
 		models.Population,
 		problems.Interface,
 		variants.Interface,
-		Store,
+		store.Store,
 		chan<- []models.Vector,
 	) error
 }
-

@@ -47,11 +47,11 @@ func (g *gde3) Execute(
 		}
 	}
 
-	// writes the header in this execution's file
-	if err := store.Header(); err != nil {
-		// TODO: Add header contents to methods
-		return err
-	}
+	//// writes the header in this execution's file
+	//if err := store.Header(); err != nil {
+	//	// TODO: Add header contents to methods
+	//	return err
+	//}
 	// writes the inital generation
 	if err := store.Population(population); err != nil {
 		panic(err)

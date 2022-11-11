@@ -1,9 +1,6 @@
 package commands
 
 import (
-	"math/rand"
-	"time"
-
 	"github.com/nicholaspcr/GoDE/internal/errors"
 	"github.com/nicholaspcr/GoDE/pkg/de"
 	"github.com/nicholaspcr/GoDE/pkg/de/gde3"
@@ -22,9 +19,6 @@ var modeCmd = &cobra.Command{
 An implementation that allows the processing of multiple objective functions,
 these are a bit more complex and time consuming overall.`,
 
-	PreRun: func(*cobra.Command, []string) {
-		rand.Seed(time.Now().UnixNano())
-	},
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		problem := getProblemByName(functionName)
 		variant := getVariantByName(variantName)

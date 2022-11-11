@@ -2,7 +2,9 @@ package commands
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
+	"time"
 
 	"github.com/nicholaspcr/GoDE/internal/config"
 	"github.com/nicholaspcr/GoDE/internal/log"
@@ -12,7 +14,7 @@ import (
 
 var (
 	// loggers for the CLI
-	logger log.Logger
+	logger *log.Logger
 	conf   *config.Config
 
 	// pprofs
@@ -24,7 +26,7 @@ var (
 // appropriately.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		if logger.IsNil() {
+		if logger == nil {
 			fmt.Printf("decli ended unexpectedly, error: %s", err)
 		} else {
 			logger.Error("decli ended unexpectedly", "error", err)
@@ -38,8 +40,12 @@ var rootCmd = &cobra.Command{
 	Use:   "decli",
 	Short: "Differential evolution tool build in go",
 	Long:  `A CLI for using the implementation of the differential evolution algorithm`,
-	PreRunE: func(*cobra.Command, []string) error {
+	PreRunE: func(cmd *cobra.Command, _ []string) error {
+		rand.Seed(time.Now().UnixNano())
 		logger = log.New()
+		cmd.SetContext(
+			logger.SetContext(cmd.Context()),
+		)
 		if err := viper.ReadInConfig(); err != nil {
 			return err
 		}
@@ -51,9 +57,7 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(
-		modeCmd,
-	)
+	rootCmd.AddCommand(modeCmd)
 	conf = config.New()
 	setDefaults(conf)
 	conf.SetConfigFile(".config")

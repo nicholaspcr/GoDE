@@ -25,8 +25,3 @@ type Algorithm interface {
 	) error
 }
 
-// Store TODO: move this to its own packer
-type Store interface {
-	Header(...string) error
-	Population(models.Population) error
-}

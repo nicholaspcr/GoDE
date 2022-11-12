@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var logger log.Logger
+var logger *log.Logger
 
 // Execute adds all child commands to the root command and sets flags
 // appropriately.

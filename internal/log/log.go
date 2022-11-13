@@ -3,7 +3,11 @@
 package log
 
 import (
+	"os"
+	"strings"
+
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // Logger provides a zap logger with extra wrap methods to facilitate operations
@@ -12,13 +16,52 @@ type Logger struct {
 	*zap.SugaredLogger
 }
 
+type LogCloser func() error
+
 // New returns a default logger.
 func New() *Logger {
-	logger, err := zap.NewProduction()
-	if err != nil {
-		panic(err)
+	logger := zap.New(
+		// TODO: Make it configurable
+		zapcore.NewCore(
+			getEncoder(),
+			zapcore.Lock(os.Stdout),
+			getLogLevel(),
+		),
+	)
+	return &Logger{SugaredLogger: logger.Sugar()}
+}
+
+func getEncoder() zapcore.Encoder {
+	enconder := strings.ToLower(os.Getenv("GODE_LOG_ENCODER"))
+	switch enconder {
+	case "console":
+		return zapcore.NewConsoleEncoder(getEncoderConfig())
+	default:
+		return zapcore.NewJSONEncoder(getEncoderConfig())
 	}
-	return &Logger{
-		SugaredLogger: logger.Sugar(),
+}
+func getEncoderConfig() zapcore.EncoderConfig {
+	config := strings.ToLower(os.Getenv("GODE_LOG_ENCODER_CONFIG"))
+	switch config {
+	case "development":
+		return zap.NewDevelopmentEncoderConfig()
+	default:
+		return zap.NewProductionEncoderConfig()
+	}
+}
+
+func getLogLevel() zapcore.Level {
+	logLevel := strings.ToLower(os.Getenv("GODE_LOG_LEVEL"))
+	switch logLevel {
+	case "debug":
+		return zapcore.DebugLevel
+	case "info":
+		return zapcore.InfoLevel
+	case "warn":
+		return zapcore.WarnLevel
+	case "error":
+		return zapcore.ErrorLevel
+	default:
+		return zapcore.InfoLevel
 	}
 }

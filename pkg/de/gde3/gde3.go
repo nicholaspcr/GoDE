@@ -53,9 +53,11 @@ func (g *gde3) Execute(
 	//	return err
 	//}
 	// writes the inital generation
-	if err := store.Population(population); err != nil {
-		panic(err)
-	}
+
+	// TODO: Update how the population is written
+	//if err := store.Population(population); err != nil {
+	//	panic(err)
+	//}
 
 	// stores the rank[0] of each generation
 	bestElems := make([]models.Vector, population.DimSize())
@@ -124,11 +126,12 @@ func (g *gde3) Execute(
 		)
 		bestElems = append(bestElems, bestInGen...)
 
-		// writes the objectives of the population
-		if err := store.Population(population); err != nil {
-			return err
-		}
+		//// writes the objectives of the population
+		//if err := store.Population(population); err != nil {
+		//	return err
+		//}
 
+		// TODO: Update how the population is written
 		//// checks for the biggest objective
 		//for _, vector := range population.Vectors {
 		//	for j, obj := range vector.Objs {

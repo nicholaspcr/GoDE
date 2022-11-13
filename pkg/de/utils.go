@@ -171,9 +171,9 @@ func FastNonDominatedRanking(
 
 // DominanceTest - results meanings:
 //
-//  - '-1': x is best
-//  - '1': y is best
-//  - '0': nobody dominates
+//   - '-1': x is best
+//   - '1': y is best
+//   - '0': nobody dominates
 func DominanceTest(x, y []float64) int {
 	result := 0
 	for i := range x {

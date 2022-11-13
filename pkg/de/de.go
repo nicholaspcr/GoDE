@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/nicholaspcr/GoDE/internal/log"
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 	"github.com/nicholaspcr/GoDE/pkg/store"
@@ -30,6 +31,9 @@ func New(opts ...ModeOptions) *de {
 	return m
 }
 
+// TODO: Add validator of the parameters in before the execution starts, maybe
+// as a middleware.
+
 // TODO: Make a separate semaphore, responsible for handling how many parallel
 // executions the server can take.
 
@@ -38,13 +42,16 @@ func (m *de) Execute(
 	pareto chan<- models.Population,
 	maxObjs chan<- []float64,
 ) error {
+	logger := log.FromContext(ctx)
+	logger.Debug("Starting execution")
+
 	rankedChan := make(chan []models.Vector, m.constants.Executions)
 
 	// TODO: Change this to be just a pipeline pattern, that way there can be a
 	// goroutine in the background that would write the last values.
 	wg := &sync.WaitGroup{}
 
-	// initialPopulation is the base population for all executions. 
+	// initialPopulation is the base population for all executions.
 	var initialPopulation models.Population
 	GeneratePopulation(&initialPopulation)
 
@@ -126,5 +133,7 @@ func (m *de) Execute(
 	//			}
 	//		}
 	//	}
+
+	logger.Debug("Finished execution")
 	return nil
 }

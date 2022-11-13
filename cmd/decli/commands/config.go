@@ -63,7 +63,7 @@ var (
 	floor, ceil             []float64
 	crConst, fConst, pConst float64
 	mConst                  int
-	functionName            string
+	problemName             string
 	disablePlot             bool
 	filename                string
 )

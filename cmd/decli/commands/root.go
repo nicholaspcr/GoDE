@@ -6,49 +6,36 @@ import (
 	"os"
 	"time"
 
-	"github.com/nicholaspcr/GoDE/internal/config"
 	"github.com/nicholaspcr/GoDE/internal/log"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var (
-	// loggers for the CLI
-	logger *log.Logger
-	conf   *config.Config
-
 	// pprofs
 	cpuprofile string
 	memprofile string
 )
 
-// Execute adds all child commands to the root command and sets flags
-// appropriately.
+// Execute adds all child commands to root and sets flags appropriately.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		if logger == nil {
-			fmt.Printf("decli ended unexpectedly, error: %s", err)
-		} else {
-			logger.Error("decli ended unexpectedly", "error", err)
-		}
+		fmt.Printf("decli ended unexpectedly, error: %s", err)
 		os.Exit(1)
 	}
 }
 
-// rootCmd represents the base command when called without any subcommands
+// rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
 	Use:   "decli",
 	Short: "Differential evolution tool build in go",
 	Long:  `A CLI for using the implementation of the differential evolution algorithm`,
-	PreRunE: func(cmd *cobra.Command, _ []string) error {
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		rand.Seed(time.Now().UnixNano())
-		logger = log.New()
-		cmd.SetContext(
-			logger.SetContext(cmd.Context()),
-		)
-		if err := viper.ReadInConfig(); err != nil {
-			return err
-		}
+		cmd.SetContext(log.New().SetContext(cmd.Context()))
+		// TODO NICK: Add logger
+		//if err := viper.ReadInConfig(); err != nil {
+		//	return err
+		//}
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, _ []string) error {
@@ -58,11 +45,13 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(modeCmd)
-	conf = config.New()
-	setDefaults(conf)
-	conf.SetConfigFile(".config")
-	conf.SetConfigType("yaml")
-	_ = conf.ReadInConfig() // ignore if config file doesn't exist
+	addGlobalFlags(rootCmd)
+	// TODO NICK: Add viper config to flagset
+	// conf = config.New()
+	// setDefaults(conf)
+	// conf.SetConfigFile(".config")
+	// conf.SetConfigType("yaml")
+	// _ = conf.ReadInConfig() // ignore if config file doesn't exist
 }
 
 func addGlobalFlags(cmd *cobra.Command) {
@@ -115,7 +104,7 @@ func addGlobalFlags(cmd *cobra.Command) {
 		"M",
 		3,
 		"M -> DE constant")
-	cmd.PersistentFlags().StringVar(&functionName,
+	cmd.PersistentFlags().StringVar(&problemName,
 		"fn",
 		"DTLZ1",
 		"name of the problem to be used.")

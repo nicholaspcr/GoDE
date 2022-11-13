@@ -2,6 +2,7 @@ package commands
 
 import (
 	"github.com/nicholaspcr/GoDE/internal/errors"
+	"github.com/nicholaspcr/GoDE/internal/log"
 	"github.com/nicholaspcr/GoDE/pkg/de"
 	"github.com/nicholaspcr/GoDE/pkg/de/gde3"
 	"github.com/nicholaspcr/GoDE/pkg/models"
@@ -20,32 +21,21 @@ An implementation that allows the processing of multiple objective functions,
 these are a bit more complex and time consuming overall.`,
 
 	RunE: func(cmd *cobra.Command, _ []string) error {
-		problem := getProblemByName(functionName)
-		variant := getVariantByName(variantName)
-
-		if problem.Name() == "" {
-			return errors.DefineConfig("Invalid problem")
-		}
-
-		if variant.Name() == "" {
-			return errors.DefineConfig("Invalid variant.")
-		}
-
-		// TODO: Validate values passed, or leave it to the server?
-
-		//// checking for the ceil and floor slices
-		//if len(params.CEIL) != params.DIM ||
-		//	len(params.FLOOR) != params.DIM {
-		//	fmt.Println(
-		//		"floor and ceil vector should have the same size as DIM",
-		//	)
-		//	fmt.Println("ceil = ", params.CEIL)
-		//	fmt.Println("floor  = ", params.FLOOR)
-		//	fmt.Println("dim = ", params.DIM)
-		//	return
-		//}
-
 		ctx := cmd.Context()
+		logger := log.FromContext(ctx)
+
+		logger.Debug("Fetching problem")
+		problem := getProblemByName(problemName)
+		if problem == nil || problem.Name() == "" {
+			return errors.DefineProblem("Problem %v not supported", problemName)
+		}
+
+		logger.Debug("Fetching variant")
+		variant := getVariantByName(variantName)
+		if variant == nil || variant.Name() == "" {
+			return errors.DefineProblem("Variant %v not supported", variantName)
+		}
+
 		differentialEvolution := de.New(
 			de.WithProblem(problem),
 			de.WithVariant(variant),

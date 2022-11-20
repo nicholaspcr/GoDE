@@ -1,6 +1,9 @@
 # General
 .vscode
 
+# git
+.git
+
 # Env files
 .envrc
 

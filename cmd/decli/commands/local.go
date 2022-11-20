@@ -10,17 +10,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// modeCmd represents the de command
-var modeCmd = &cobra.Command{
-	Use:   "multi",
+// localCmd represents the de command
+var localCmd = &cobra.Command{
+	Use:   "local",
 	Short: "Multi-objective implementation of DE",
 	Long: `
 An implementation that allows the processing of multiple objective functions,
 these are a bit more complex and time consuming overall.`,
-	PreRun: func(cmd *cobra.Command, args []string) {
-		config.ModeLocalFlags()
-	},
-
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
 		logger := log.FromContext(ctx)
@@ -78,4 +74,8 @@ these are a bit more complex and time consuming overall.`,
 
 		return nil
 	},
+}
+
+func init() {
+	config.ModeFlags(localCmd.Flags())
 }

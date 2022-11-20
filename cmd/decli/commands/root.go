@@ -10,12 +10,6 @@ import (
 	_ "github.com/nicholaspcr/GoDE/cmd/decli/internal/config"
 )
 
-var (
-	// pprofs
-	cpuprofile string
-	memprofile string
-)
-
 // RootCmd represents the base command when called without any subcommands.
 var RootCmd = &cobra.Command{
 	Use:   "decli",

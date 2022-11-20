@@ -21,7 +21,6 @@ type LogCloser func() error
 // New returns a default logger.
 func New() *Logger {
 	logger := zap.New(
-		// TODO: Make it configurable
 		zapcore.NewCore(
 			getEncoder(),
 			zapcore.Lock(os.Stdout),

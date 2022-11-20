@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/nicholaspcr/GoDE/cmd/decli/internal/config"
 	"github.com/nicholaspcr/GoDE/internal/errors"
 	"github.com/nicholaspcr/GoDE/internal/log"
 	"github.com/nicholaspcr/GoDE/pkg/de"
@@ -9,9 +10,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// local flags
-var variantName string
-
 // modeCmd represents the de command
 var modeCmd = &cobra.Command{
 	Use:   "multi",
@@ -19,21 +17,30 @@ var modeCmd = &cobra.Command{
 	Long: `
 An implementation that allows the processing of multiple objective functions,
 these are a bit more complex and time consuming overall.`,
+	PreRun: func(cmd *cobra.Command, args []string) {
+		config.ModeLocalFlags()
+	},
 
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
 		logger := log.FromContext(ctx)
 
 		logger.Debug("Fetching problem")
-		problem := getProblemByName(problemName)
+		problem := getProblemByName(*config.ProblemName)
 		if problem == nil || problem.Name() == "" {
-			return errors.DefineProblem("Problem %v not supported", problemName)
+			return errors.DefineProblem(
+				"Problem %v not supported",
+				*config.ProblemName,
+			)
 		}
 
 		logger.Debug("Fetching variant")
-		variant := getVariantByName(variantName)
+		variant := getVariantByName(*config.VariantName)
 		if variant == nil || variant.Name() == "" {
-			return errors.DefineProblem("Variant %v not supported", variantName)
+			return errors.DefineProblem(
+				"Variant %v not supported",
+				*config.VariantName,
+			)
 		}
 
 		differentialEvolution := de.New(
@@ -43,21 +50,24 @@ these are a bit more complex and time consuming overall.`,
 			de.WithAlgorithm(gde3.New()),
 
 			de.WithPopulation(models.Population{
-				Vectors:        make([]models.Vector, np),
-				DimensionsSize: dim,
-				ObjectivesSize: mConst,
-				FloorSlice:     floor,
-				CeilSlice:      ceil,
+				Vectors: make(
+					[]models.Vector,
+					*config.CLI.PopulationSize,
+				),
+				DimensionsSize: *config.CLI.Dimensions.Size,
+				ObjectivesSize: *config.CLI.Constants.M,
+				FloorSlice:     *config.CLI.Dimensions.Floors,
+				CeilSlice:      *config.CLI.Dimensions.Ceils,
 			}),
 
-			de.WithExecs(execs),
-			de.WithDimensions(dim),
-			de.WithGenerations(gen),
-			de.WithObjFuncAmount(mConst),
+			de.WithExecs(*config.CLI.Executions),
+			de.WithDimensions(*config.CLI.Dimensions.Size),
+			de.WithGenerations(*config.CLI.Generations),
+			de.WithObjFuncAmount(*config.CLI.Constants.M),
 
-			de.WithFConstant(fConst),
-			de.WithPConstant(pConst),
-			de.WithCRConstant(crConst),
+			de.WithFConstant(*config.CLI.Constants.F),
+			de.WithPConstant(*config.CLI.Constants.P),
+			de.WithCRConstant(*config.CLI.Constants.CR),
 		)
 
 		pareto := make(chan models.Population)
@@ -68,13 +78,4 @@ these are a bit more complex and time consuming overall.`,
 
 		return nil
 	},
-}
-
-func init() {
-	modeCmd.Flags().StringVar(
-		&variantName,
-		"vr",
-		"rand1",
-		"name fo the variant to be used",
-	)
 }

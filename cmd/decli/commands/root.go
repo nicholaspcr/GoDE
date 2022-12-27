@@ -7,14 +7,19 @@ import (
 	"github.com/nicholaspcr/GoDE/internal/log"
 	"github.com/spf13/cobra"
 
+	"github.com/nicholaspcr/GoDE/cmd/decli/commands/local"
 	_ "github.com/nicholaspcr/GoDE/cmd/decli/internal/config"
 )
 
 // RootCmd represents the base command when called without any subcommands.
 var RootCmd = &cobra.Command{
 	Use:   "decli",
-	Short: "Differential evolution tool build in go",
-	Long:  `A CLI for using the implementation of the differential evolution algorithm`,
+	Short: "Differential evolution tool built in go",
+	Long: `
+A CLI for using the implementation of the differential evolution algorithm, this
+allows the usage of the algorithm locally and the ability to connect to a
+server.
+`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		rand.Seed(time.Now().UnixNano())
 		cmd.SetContext(log.New().SetContext(cmd.Context()))
@@ -26,5 +31,5 @@ var RootCmd = &cobra.Command{
 }
 
 func init() {
-	RootCmd.AddCommand(localCmd)
+	RootCmd.AddCommand(local.LocalCmd)
 }

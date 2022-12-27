@@ -1,4 +1,4 @@
-package commands
+package cli_utils
 
 import (
 	"strings"
@@ -52,8 +52,8 @@ var (
 	}
 )
 
-// getProblemByProblemName -> returns the problem function
-func getProblemByName(name string) problems.Interface {
+// GetProblemByProblemName -> returns the problem function
+func GetProblemByName(name string) problems.Interface {
 	name = strings.ToLower(name)
 	for k, v := range problemSet {
 		if name == k {
@@ -63,7 +63,7 @@ func getProblemByName(name string) problems.Interface {
 	return nil
 }
 
-func getVariantByName(name string) variants.Interface {
+func GetVariantByName(name string) variants.Interface {
 	name = strings.ToLower(name)
 	for k, v := range variantSet {
 		if name == k {
@@ -73,7 +73,7 @@ func getVariantByName(name string) variants.Interface {
 	return nil
 }
 
-func getAllVariants() []variants.Interface {
+func GetAllVariants() []variants.Interface {
 	out := make([]variants.Interface, len(variantSet))
 	index := 0
 	for _, v := range variantSet {

@@ -28,14 +28,14 @@ func globalFlags(set *pflag.FlagSet) {
 		CLI.PopulationSize,
 		"population",
 		"p",
-		100,
+		50,
 		"Determines size of population",
 	)
 	set.IntVarP(
 		CLI.Generations,
 		"generations",
 		"g",
-		300,
+		100,
 		"Determines amount of generations",
 	)
 	set.IntVarP(

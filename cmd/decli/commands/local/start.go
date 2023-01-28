@@ -89,6 +89,20 @@ Specify the algorithm via argument, for example: 'decli local run gde3'
 			return err
 		}
 
+		logger.Info("Maximum Objectives:")
+		idx := 0
+		for maxi := range maxObjs {
+			logger.Info("Maximum Objectives :: ", idx, " :: ", maxi)
+			idx++
+		}
+
+		logger.Info("Pareto:")
+		idx = 0
+		for p := range pareto {
+			logger.Info("Pareto :: ", p.Vectors)
+			idx++
+		}
+
 		return nil
 	},
 }

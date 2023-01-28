@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/rand"
 
+	"github.com/nicholaspcr/GoDE/internal/log"
 	"github.com/nicholaspcr/GoDE/pkg/de"
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
@@ -30,6 +31,8 @@ func (g *gde3) Execute(
 	store store.Store,
 	pareto chan<- []models.Vector,
 ) error {
+	logger := log.FromContext(ctx)
+	logger.Debug("Starting GDE3 Execution")
 	GEN := de.FetchGenerations(ctx)
 	dimSize := population.ObjSize()
 	// maximum objs found
@@ -67,6 +70,7 @@ func (g *gde3) Execute(
 	var trial models.Vector
 
 	for g := 0; g < GEN; g++ {
+		logger.Debug("Running Gen: ", g)
 		// gets non dominated of the current population
 		genRankZero, _ = de.FilterDominated(population.Vectors)
 

@@ -18,12 +18,15 @@ var RunCmd = &cobra.Command{
 	Short:   "Runs local multi-objective implementation of DE",
 	Long: `
 An implementation that allows the processing of multiple objective functions,
-these are a bit more complex and time consuming overall.`,
+these are a bit more complex and time consuming overall.
+
+Specify the algorithm via argument, for example: 'decli local run gde3'
+`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return cmd.Help()
 		}
-		algo := args[0]
+
 		ctx := cmd.Context()
 		logger := log.FromContext(ctx)
 
@@ -70,6 +73,7 @@ these are a bit more complex and time consuming overall.`,
 			de.WithCRConstant(*config.CLI.Constants.CR),
 		}
 
+		algo := args[0]
 		switch algo {
 		case "gde3":
 			deOpts = append(deOpts, de.WithAlgorithm(gde3.New()))

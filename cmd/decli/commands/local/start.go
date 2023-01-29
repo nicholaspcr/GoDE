@@ -85,7 +85,7 @@ Specify the algorithm via argument, for example: 'decli local run gde3'
 
 		pareto := make(chan models.Population)
 		maxObjs := make(chan []float64)
-		if err := de.New().Execute(ctx, pareto, maxObjs); err != nil {
+		if err := de.New(deOpts...).Execute(ctx, pareto, maxObjs); err != nil {
 			return err
 		}
 

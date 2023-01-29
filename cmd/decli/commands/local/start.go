@@ -11,6 +11,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	problemUnsupported   = errors.DefineConfig("problem_unsupported")
+	variantUnsupported   = errors.DefineConfig("variant_unsupported")
+	algorithmUnsupported = errors.DefineConfig("algorithm_unsupported")
+)
+
 // RunCmd represents the de command
 var RunCmd = &cobra.Command{
 	Use:     "run",
@@ -33,19 +39,13 @@ Specify the algorithm via argument, for example: 'decli local run gde3'
 		logger.Debug("Fetching problem")
 		problem := GetProblemByName(*config.ProblemName)
 		if problem == nil || problem.Name() == "" {
-			return errors.DefineProblem(
-				"Problem %v not supported",
-				*config.ProblemName,
-			)
+			return problemUnsupported.WithField("problem", *config.ProblemName)
 		}
 
 		logger.Debug("Fetching variant")
 		variant := GetVariantByName(*config.VariantName)
 		if variant == nil || variant.Name() == "" {
-			return errors.DefineProblem(
-				"Variant %v not supported",
-				*config.VariantName,
-			)
+			return variantUnsupported.WithField("variant", *config.VariantName)
 		}
 
 		deOpts := []de.ModeOptions{
@@ -78,9 +78,7 @@ Specify the algorithm via argument, for example: 'decli local run gde3'
 		case "gde3":
 			deOpts = append(deOpts, de.WithAlgorithm(gde3.New()))
 		default:
-			return errors.DefineAlgorithm(
-				"Invalid algorithm specified: %s", algo,
-			)
+			return algorithmUnsupported.WithField("algorithm", algo)
 		}
 
 		pareto := make(chan models.Population)

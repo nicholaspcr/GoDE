@@ -28,7 +28,7 @@ service ExecutionServices {
 
 message ExecutionSetIDs {
   uint64 id = 1;
-  UserIDs user = 2;
+  UserID user_id = 2;
 }
 message ExecutionSet {
   ExecutionSetIDs ids = 1;
@@ -40,5 +40,5 @@ service ExecutionSetServices {
   rpc Find(ExecutionSetIDs) returns (google.protobuf.Empty) {}
   rpc Delete(ExecutionSetIDs) returns (google.protobuf.Empty) {}
   rpc List(ExecutionSetIDs) returns (stream Execution) {}
-  rpc FetchByUser(UserIDs) returns (stream Execution) {}
+  rpc FetchByUser(UserID) returns (stream Execution) {}
 }

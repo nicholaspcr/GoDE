@@ -6,15 +6,16 @@ import "google/protobuf/empty.proto";
 
 package api;
 
+message GenerationID {
+  uint64 id = 1;
+}
+
 message Generation {
   GenerationID id = 1;
   uint64 execution_id = 2;
   repeated Population populations = 3;
 }
 
-message GenerationID {
-  uint64 id = 1;
-}
 
 service GenerationServices {
   rpc Create (Generation) returns (google.protobuf.Empty) {}

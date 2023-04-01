@@ -14,7 +14,7 @@ message Vector {
 
 message PopulationIDs {
   uint64 id = 1;
-  UserIDs user = 2;
+  UserID user_id = 2;
 }
 
 message Population {
@@ -34,13 +34,13 @@ service PopulationServices {
     rpc Read (PopulationIDs) returns (Population) {}
     rpc Update (Population) returns (google.protobuf.Empty) {}
     rpc Delete (PopulationIDs) returns (google.protobuf.Empty) {}
-    rpc ListByUser (UserIDs) returns (stream Population) {}
+    rpc ListByUser (UserID) returns (stream Population) {}
 }
 
 
 message ParetoIDs {
   uint64 id = 1;
-  UserIDs user = 2;
+  UserID user_id = 2;
 }
 
 message Pareto {
@@ -54,5 +54,5 @@ service ParetoServices {
     rpc Read (ParetoIDs) returns (Pareto) {}
     rpc Update (Pareto) returns (google.protobuf.Empty) {}
     rpc Delete (ParetoIDs) returns (google.protobuf.Empty) {}
-    rpc ListByUser (UserIDs) returns (stream Pareto) {}
+    rpc ListByUser (UserID) returns (stream Pareto) {}
 }

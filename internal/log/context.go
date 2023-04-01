@@ -8,11 +8,6 @@ type logKey struct{}
 var loggerKey = &logKey{}
 
 // SetContext creates a new context with the logger.
-func (l *Logger) SetContext(ctx context.Context) context.Context {
-	return context.WithValue(ctx, loggerKey, l)
-}
-
-// SetContext creates a new context with the logger.
 func SetContext(ctx context.Context, l *Logger) context.Context {
 	return context.WithValue(ctx, loggerKey, l)
 }

@@ -22,7 +22,7 @@ server.
 `,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		rand.Seed(time.Now().UnixNano())
-		cmd.SetContext(log.New().SetContext(cmd.Context()))
+		cmd.SetContext(log.SetContext(cmd.Context(), log.New()))
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, _ []string) error {

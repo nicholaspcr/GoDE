@@ -16,8 +16,6 @@ type Logger struct {
 	*zap.SugaredLogger
 }
 
-type LogCloser func() error
-
 // New returns a default logger.
 func New() *Logger {
 	logger := zap.New(

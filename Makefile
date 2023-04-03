@@ -37,8 +37,9 @@ fmt: ## formats the files/pkgs of the repository.
 .PHONY: proto
 proto: ## Generates the proto files according to the `/api` definitions.
 	@[ -d ./pkg/api ] && rm -r ./pkg/api || true
+	@mkdir -p ./pkg/api
 	@echo 'Generating proto files...'
-	@protoc api/*.proto --go_out=pkg --go_opt=paths=source_relative --proto_path=.
+	@protoc --go_out=pkg --go_opt=paths=source_relative --go-grpc_out=pkg --go-grpc_opt=paths=source_relative api/*.proto 
 
 .PHONY: python
 python: ## TODO.

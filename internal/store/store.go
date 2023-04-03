@@ -1,16 +1,17 @@
 package store
 
-import "github.com/nicholaspcr/GoDE/pkg/models"
-
-// Store TODO
+// Store contains the methods to interact with the database
 type Store interface {
-	PopulationStore
+	User
 }
 
-// PopulationStore TODO
-type PopulationStore interface {
-	Create(models.Population) error
-	Update(models.Population) error
-	Read(models.Population) error
-	Delete(models.Population) error
+type store struct {
+	*user
+}
+
+// New returns a new Store instance
+func New() Store {
+	return &store{
+		user: &user{},
+	}
 }

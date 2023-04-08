@@ -28,7 +28,7 @@ service ExecutionServices {
 
 message ExecutionSetIDs {
   uint64 id = 1;
-  UserID user_id = 2;
+  string user_id = 2;
 }
 message ExecutionSet {
   ExecutionSetIDs ids = 1;

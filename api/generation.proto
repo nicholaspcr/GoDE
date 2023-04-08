@@ -11,7 +11,7 @@ message GenerationID {
 }
 
 message Generation {
-  GenerationID id = 1;
+  uint64 id = 1;
   uint64 execution_id = 2;
   repeated Population populations = 3;
 }

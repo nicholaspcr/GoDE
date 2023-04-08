@@ -14,7 +14,7 @@ message Vector {
 
 message PopulationIDs {
   uint64 id = 1;
-  UserID user_id = 2;
+  string user_id = 2;
 }
 
 message Population {
@@ -40,7 +40,7 @@ service PopulationServices {
 
 message ParetoIDs {
   uint64 id = 1;
-  UserID user_id = 2;
+  string user_id = 2;
 }
 
 message Pareto {

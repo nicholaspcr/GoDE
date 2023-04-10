@@ -30,7 +30,7 @@ var rootCmd = &cobra.Command{
 	Long: `Server capable of serving multiple requests of Differential Evolution
 requests, storing the values of each step and the end result in a database and
 making it possible to retrieve those at any point.`,
-	PreRun: func(*cobra.Command, []string) {
+	PersistentPreRun: func(*cobra.Command, []string) {
 		logger = log.New()
 	},
 	RunE: func(cmd *cobra.Command, _ []string) error {

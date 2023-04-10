@@ -7,6 +7,9 @@
 # Env files
 .envrc
 
+# Dev folder
+.dev
+
 # custom notes
 note.md
 

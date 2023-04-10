@@ -39,7 +39,9 @@ making it possible to retrieve those at any point.`,
 }
 
 func init() {
+	testCmd.AddCommand(dbServerCmd)
 	rootCmd.AddCommand(
 		startCmd,
+		testCmd,
 	)
 }

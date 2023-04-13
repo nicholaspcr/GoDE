@@ -1,6 +1,8 @@
 package variants
 
-import "github.com/nicholaspcr/GoDE/pkg/models"
+import (
+	"github.com/nicholaspcr/GoDE/pkg/api"
+)
 
 // Parameters are the necessary values that a variant uses
 type Parameters struct {
@@ -13,7 +15,7 @@ type Parameters struct {
 type Interface interface {
 	Name() string
 	Mutate(
-		elems, rankZero []models.Vector,
+		elems, rankZero []api.Vector,
 		params Parameters,
-	) (models.Vector, error)
+	) (*api.Vector, error)
 }

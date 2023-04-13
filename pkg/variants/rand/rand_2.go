@@ -3,7 +3,7 @@ package rand
 import (
 	"errors"
 
-	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/api"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
 )
 
@@ -19,30 +19,28 @@ func (r *rand2) Name() string {
 }
 
 func (r *rand2) Mutate(
-	elems, rankZero []models.Vector,
+	elems, rankZero []api.Vector,
 	p variants.Parameters,
-) (models.Vector, error) {
-
+) (*api.Vector, error) {
 	// generating random indices different from current pos
 	ind := make([]int, 6)
 	ind[0] = p.CurrPos
 	err := variants.GenerateIndices(1, len(elems), ind)
 	if err != nil {
-		return models.Vector{}, errors.New(
+		return nil, errors.New(
 			"insufficient size for the population, must me equal or greater than 4",
 		)
 	}
 
 	arr := make([]float64, p.DIM)
-
 	i1, i2, i3, i4, i5 := ind[1], ind[2], ind[3], ind[4], ind[5]
-	r1, r2, r3, r4, r5 := elems[i1], elems[i2], elems[i3], elems[i4], elems[i5]
-
 	for i := 0; i < p.DIM; i++ {
-		arr[i] = r1.X[i] + p.F*(r2.X[i]-r3.X[i]) + p.F*(r4.X[i]-r5.X[i])
+		arr[i] = elems[i1].Elements[i] +
+			p.F*(elems[i2].Elements[i]-elems[i3].Elements[i]) +
+			p.F*(elems[i4].Elements[i]-elems[i5].Elements[i])
 	}
-	ret := models.Vector{
-		X: arr,
+	ret := &api.Vector{
+		Elements: arr,
 	}
 	return ret, nil
 }

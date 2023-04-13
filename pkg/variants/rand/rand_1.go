@@ -3,7 +3,7 @@ package rand
 import (
 	"fmt"
 
-	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/api"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
 )
 
@@ -20,12 +20,12 @@ func (r *rand1) Name() string {
 }
 
 func (r *rand1) Mutate(
-	elems, rankZero []models.Vector,
+	elems, rankZero []api.Vector,
 	p variants.Parameters,
-) (models.Vector, error) {
+) (*api.Vector, error) {
 
 	if len(elems) < 3 {
-		return models.Vector{}, fmt.Errorf(
+		return nil, fmt.Errorf(
 			"no sufficient amount of elements in the population, should be bigger than three",
 		)
 	}
@@ -35,15 +35,15 @@ func (r *rand1) Mutate(
 	inds[0] = p.CurrPos
 	err := variants.GenerateIndices(1, len(elems), inds)
 	if err != nil {
-		return models.Vector{}, err
+		return nil, err
 	}
 
-	result := models.Vector{}
-	result.X = make([]float64, p.DIM)
-
-	r1, r2, r3 := elems[inds[1]], elems[inds[2]], elems[inds[3]]
+	result := &api.Vector{
+		Elements: make([]float64, p.DIM),
+	}
 	for i := 0; i < p.DIM; i++ {
-		result.X[i] = r1.X[i] + p.F*(r2.X[i]-r3.X[i])
+		result.Elements[i] = elems[inds[1]].Elements[i] +
+			p.F*(elems[inds[2]].Elements[i]-elems[inds[3]].Elements[i])
 	}
 	return result, nil
 }

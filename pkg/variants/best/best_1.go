@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math/rand"
 
-	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/api"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
 )
 
@@ -20,29 +20,30 @@ func (b *best1) Name() string {
 }
 
 func (b *best1) Mutate(
-	elems, rankZero []models.Vector,
+	elems, rankZero []api.Vector,
 	p variants.Parameters,
-) (models.Vector, error) {
+) (*api.Vector, error) {
+	// random element from rankZero
+	bestIdx := rand.Int() % len(rankZero)
+	// indices of the elements to be used in the mutation
 	index := make([]int, 3)
 	index[0] = p.CurrPos
 	err := variants.GenerateIndices(1, len(elems), index)
 
 	if err != nil {
-		return models.Vector{}, errors.New(
+		return nil, errors.New(
 			"insufficient size for the population, must me equal or greater than 4",
 		)
 	}
 
 	arr := make([]float64, p.DIM)
-
-	best := rankZero[rand.Int()%len(rankZero)]
-	r1, r2 := elems[index[1]], elems[index[2]]
 	for i := 0; i < p.DIM; i++ {
-		arr[i] = best.X[i] + p.F*(r1.X[i]-r2.X[i])
+		arr[i] = rankZero[bestIdx].Elements[i] +
+			p.F*(elems[index[i]].Elements[i]-elems[index[2]].Elements[i])
 	}
 
-	ret := models.Vector{
-		X: arr,
+	ret := &api.Vector{
+		Elements: arr,
 	}
 	return ret, nil
 

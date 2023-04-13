@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/api"
 )
 
 func TestWFG2FN(t *testing.T) {
@@ -56,8 +56,8 @@ func TestWFG2FN(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.ProblemName, func(t *testing.T) {
-			e := models.Vector{
-				X: tt.x,
+			e := api.Vector{
+				Elements: tt.x,
 			}
 			err := Wfg2().Evaluate(&e, len(tt.expected))
 
@@ -69,7 +69,7 @@ func TestWFG2FN(t *testing.T) {
 			received, want := "", ""
 
 			// rounds up to the 8th decimal case
-			for _, obj := range e.Objs {
+			for _, obj := range e.Objectives {
 				received += fmt.Sprintf("%.8f ", obj)
 			}
 

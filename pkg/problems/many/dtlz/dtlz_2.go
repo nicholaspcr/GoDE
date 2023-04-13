@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math"
 
-	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/api"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 )
 
@@ -18,15 +18,14 @@ func (v *dtlz2) Name() string {
 	return "dtlz2"
 }
 
-func (v *dtlz2) Evaluate(e *models.Vector, M int) error {
-
-	if len(e.X) <= M {
+func (v *dtlz2) Evaluate(e *api.Vector, M int) error {
+	if len(e.Elements) <= M {
 		return errors.New(
 			"need to have an M lesser than the amount of variables",
 		)
 	}
 
-	varSz := len(e.X)
+	varSz := len(e.Elements)
 	k := varSz - M + 1
 	evalG := func(x []float64) float64 {
 		g := 0.0
@@ -35,23 +34,23 @@ func (v *dtlz2) Evaluate(e *models.Vector, M int) error {
 		}
 		return g
 	}
-	g := evalG(e.X[varSz-k:])
+	g := evalG(e.Elements[varSz-k:])
 
 	newObjs := make([]float64, M)
 	for i := 0; i < M; i++ {
 		prod := (1 + g)
 		for j := 0; j < M-(i+1); j++ {
-			prod *= math.Cos(e.X[j] * 0.5 * math.Pi)
+			prod *= math.Cos(e.Elements[j] * 0.5 * math.Pi)
 		}
 		if i != 0 {
-			prod *= math.Sin(0.5 * math.Pi * e.X[M-(i+1)])
+			prod *= math.Sin(0.5 * math.Pi * e.Elements[M-(i+1)])
 		}
 		newObjs[i] = prod
 	}
 
 	// puts new objectives into the elem
-	e.Objs = make([]float64, len(newObjs))
-	copy(e.Objs, newObjs)
+	e.Objectives = make([]float64, len(newObjs))
+	copy(e.Objectives, newObjs)
 
 	return nil
 }

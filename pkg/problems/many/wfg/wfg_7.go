@@ -1,7 +1,7 @@
 package wfg
 
 import (
-	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/api"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 )
 
@@ -15,9 +15,9 @@ func (w *wfg7) Name() string {
 	return "wfg7"
 }
 
-func (w *wfg7) Evaluate(e *models.Vector, M int) error {
+func (w *wfg7) Evaluate(e *api.Vector, M int) error {
 
-	n_var := len(e.X)
+	n_var := len(e.Elements)
 	n_obj := M
 	k := 2 * (n_obj - 1)
 
@@ -25,7 +25,7 @@ func (w *wfg7) Evaluate(e *models.Vector, M int) error {
 	xu := arange(2, 2*n_var+1, 2)
 
 	for i := 0; i < n_var; i++ {
-		y = append(y, e.X[i]/xu[i])
+		y = append(y, e.Elements[i]/xu[i])
 	}
 
 	y = wfg7_t1(y, k)
@@ -41,8 +41,8 @@ func (w *wfg7) Evaluate(e *models.Vector, M int) error {
 	S := arange(2, 2*n_obj+1, 2)
 	newObjs := _calculate(y, S, h)
 
-	e.Objs = make([]float64, len(newObjs))
-	copy(e.Objs, newObjs)
+	e.Objectives = make([]float64, len(newObjs))
+	copy(e.Objectives, newObjs)
 	return nil
 }
 

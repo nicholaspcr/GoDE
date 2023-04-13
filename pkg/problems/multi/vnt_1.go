@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math"
 
-	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/api"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 )
 
@@ -19,13 +19,13 @@ func (v *vnt1) Name() string {
 	return "vnt1"
 }
 
-func (v *vnt1) Evaluate(e *models.Vector, M int) error {
+func (v *vnt1) Evaluate(e *api.Vector, M int) error {
 
-	if len(e.X) != 2 {
+	if len(e.Elements) != 2 {
 		return errors.New("need at have only two variables/dimensions")
 	}
 
-	a, b := e.X[0], e.X[1]
+	a, b := e.Elements[0], e.Elements[1]
 
 	powSum := math.Pow(a, 2) + math.Pow(b, 2)
 	f1 := 0.5*(powSum) + math.Sin(powSum)
@@ -38,8 +38,8 @@ func (v *vnt1) Evaluate(e *models.Vector, M int) error {
 	newObjs = append(newObjs, f3)
 
 	// puts new objectives into the elem
-	e.Objs = make([]float64, len(newObjs))
-	copy(e.Objs, newObjs)
+	e.Objectives = make([]float64, len(newObjs))
+	copy(e.Objectives, newObjs)
 
 	return nil
 }

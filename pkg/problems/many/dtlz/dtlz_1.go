@@ -10,7 +10,7 @@ import (
 	"errors"
 	"math"
 
-	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/api"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 )
 
@@ -24,9 +24,8 @@ func (v *dtlz1) Name() string {
 	return "dtlz1"
 }
 
-func (v *dtlz1) Evaluate(e *models.Vector, M int) error {
-
-	if len(e.X) <= M {
+func (v *dtlz1) Evaluate(e *api.Vector, M int) error {
+	if len(e.Elements) <= M {
 		return errors.New(
 			"need to have an M lesser than the amount of variables",
 		)
@@ -40,23 +39,23 @@ func (v *dtlz1) Evaluate(e *models.Vector, M int) error {
 		k := float64(len(v))
 		return 100.0 * (k + g)
 	}
-	g := evalG(e.X[M-1:])
+	g := evalG(e.Elements[M-1:])
 
 	newObjs := make([]float64, M)
 	for i := 0; i < M; i++ {
 		prod := (1.0 + g) * 0.5
 		for j := 0; j < M-(i+1); j++ {
-			prod *= e.X[j]
+			prod *= e.Elements[j]
 		}
 		if i != 0 {
-			prod *= (1 - e.X[M-(i+1)])
+			prod *= (1 - e.Elements[M-(i+1)])
 		}
 		newObjs[i] = prod
 	}
 
 	// puts new objectives into the elem
-	e.Objs = make([]float64, len(newObjs))
-	copy(e.Objs, newObjs)
+	e.Objectives = make([]float64, len(newObjs))
+	copy(e.Objectives, newObjs)
 
 	return nil
 }

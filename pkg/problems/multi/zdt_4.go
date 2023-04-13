@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math"
 
-	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/api"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 )
 
@@ -18,9 +18,9 @@ func (v *zdt4) Name() string {
 	return "zdt4"
 }
 
-func (v *zdt4) Evaluate(e *models.Vector, M int) error {
+func (v *zdt4) Evaluate(e *api.Vector, M int) error {
 
-	if len(e.X) < 2 {
+	if len(e.Elements) < 2 {
 		return errors.New("need at least two variables/dimensions")
 	}
 	evalG := func(x []float64) float64 {
@@ -35,16 +35,16 @@ func (v *zdt4) Evaluate(e *models.Vector, M int) error {
 		return 1.0 - math.Sqrt(f/g)
 	}
 
-	g := evalG(e.X)
-	h := evalH(e.X[0], g)
+	g := evalG(e.Elements)
+	h := evalH(e.Elements[0], g)
 
 	var newObjs []float64
-	newObjs = append(newObjs, e.X[0])
+	newObjs = append(newObjs, e.Elements[0])
 	newObjs = append(newObjs, g*h)
 
 	// puts new objectives into the elem
-	e.Objs = make([]float64, len(newObjs))
-	copy(e.Objs, newObjs)
+	e.Objectives = make([]float64, len(newObjs))
+	copy(e.Objectives, newObjs)
 
 	return nil
 }

@@ -7,7 +7,7 @@ import (
 	"math"
 	"sort"
 
-	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/api"
 )
 
 var (
@@ -17,9 +17,9 @@ var (
 
 // GeneratePopulation fills the vectors of a given population, does not
 // generate the values for its objective functions.
-func GeneratePopulation(p *models.Population) {
+func GeneratePopulation(p *api.Population, params api.PopulationParameters) {
 	for i := 0; i < len(p.Vectors); i++ {
-		p.Vectors[i].X = make([]float64, p.DimSize())
+		p.Vectors[i].Elements = make([]float64, params.DimensionsSize)
 
 		for j := 0; j < p.DimSize(); j++ {
 			// range between floor and ceiling
@@ -30,15 +30,15 @@ func GeneratePopulation(p *models.Population) {
 	}
 }
 
-// ReduceByCrowdDistance - returns NP models.elements filtered by rank and
+// ReduceByCrowdDistance - returns NP api.elements filtered by rank and
 // crowd distance.
 func ReduceByCrowdDistance(
-	elems []models.Vector,
+	elems []api.Vector,
 	NP int,
-) ([]models.Vector, []models.Vector) {
+) ([]api.Vector, []api.Vector) {
 
 	ranks := FastNonDominatedRanking(elems)
-	elems = make([]models.Vector, 0)
+	elems = make([]api.Vector, 0)
 
 	// TODO remove the qtdElems sections
 	qtdElems := 0
@@ -49,7 +49,7 @@ func ReduceByCrowdDistance(
 
 	if qtdElems < NP {
 		log.Println("elems -> ", qtdElems)
-		log.Fatal("less models.elements than NP")
+		log.Fatal("less api.elements than NP")
 	}
 
 	for i := 0; i < len(ranks); i++ {
@@ -65,16 +65,16 @@ func ReduceByCrowdDistance(
 		}
 	}
 
-	zero := make([]models.Vector, len(ranks[0]))
+	zero := make([]api.Vector, len(ranks[0]))
 	copy(zero, ranks[0])
 	return elems, zero
 }
 
-// FastNonDominatedRanking - ranks the models.elements and returns a map with
-// models.elements per rank
+// FastNonDominatedRanking - ranks the api.elements and returns a map with
+// api.elements per rank
 func FastNonDominatedRanking(
-	elems []models.Vector,
-) map[int][]models.Vector {
+	elems []api.Vector,
+) map[int][]api.Vector {
 
 	// this func is inspired by the DEB_NSGA-II paper
 	// a fast and elitist multiobjective genetic algorithm
@@ -155,8 +155,8 @@ func FastNonDominatedRanking(
 	//		}
 	//	}
 
-	// getting ranked models.elements from their index
-	rankedSubList := make(map[int][]models.Vector)
+	// getting ranked api.elements from their index
+	rankedSubList := make(map[int][]api.Vector)
 	for i := 0; i < len(fronts); i++ {
 		for m := range fronts[i] {
 			rankedSubList[i] = append(
@@ -193,12 +193,12 @@ func DominanceTest(x, y []float64) int {
 	return result
 }
 
-// FilterDominated -> returns models.elements that are not dominated in the set
+// FilterDominated -> returns api.elements that are not dominated in the set
 func FilterDominated(
-	elems []models.Vector,
-) ([]models.Vector, []models.Vector) {
-	nonDominated := make([]models.Vector, 0)
-	dominated := make([]models.Vector, 0)
+	elems []api.Vector,
+) ([]api.Vector, []api.Vector) {
+	nonDominated := make([]api.Vector, 0)
+	dominated := make([]api.Vector, 0)
 
 	for p := 0; p < len(elems); p++ {
 		counter := 0
@@ -222,8 +222,8 @@ func FilterDominated(
 }
 
 // CalculateCrwdDist - assumes that the slice is composed of non dominated
-// models.elements
-func CalculateCrwdDist(elems []models.Vector) {
+// api.elements
+func CalculateCrwdDist(elems []api.Vector) {
 	if len(elems) <= 2 {
 		for i := range elems {
 			elems[i].Crwdst = math.MaxFloat64

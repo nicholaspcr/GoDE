@@ -5,9 +5,9 @@ import (
 	. "github.com/nicholaspcr/GoDE/cmd/decli/internal/utils"
 	"github.com/nicholaspcr/GoDE/internal/errors"
 	"github.com/nicholaspcr/GoDE/internal/log"
+	"github.com/nicholaspcr/GoDE/pkg/api"
 	"github.com/nicholaspcr/GoDE/pkg/de"
 	"github.com/nicholaspcr/GoDE/pkg/de/gde3"
-	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/spf13/cobra"
 )
 
@@ -52,9 +52,9 @@ Specify the algorithm via argument, for example: 'decli local run gde3'
 			// de.WithStore() // TODO: Add store
 			de.WithProblem(problem),
 			de.WithVariant(variant),
-			de.WithPopulation(models.Population{
+			de.WithPopulation(api.Population{
 				Vectors: make(
-					[]models.Vector,
+					[]*api.Vector,
 					*config.CLI.PopulationSize,
 				),
 				DimensionsSize: *config.CLI.Dimensions.Size,
@@ -81,7 +81,7 @@ Specify the algorithm via argument, for example: 'decli local run gde3'
 			return algorithmUnsupported.WithField("algorithm", algo)
 		}
 
-		pareto := make(chan models.Population)
+		pareto := make(chan api.Population)
 		maxObjs := make(chan []float64)
 		if err := de.New(deOpts...).Execute(ctx, pareto, maxObjs); err != nil {
 			return err

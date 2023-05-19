@@ -4,12 +4,12 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/nicholaspcr/GoDE/cmd/decli/internal/config"
 	"github.com/nicholaspcr/GoDE/internal/log"
 	"github.com/spf13/cobra"
-
-	"github.com/nicholaspcr/GoDE/cmd/decli/commands/local"
-	_ "github.com/nicholaspcr/GoDE/cmd/decli/internal/config"
 )
+
+var cfg config.Config
 
 // RootCmd represents the base command when called without any subcommands.
 var RootCmd = &cobra.Command{
@@ -23,7 +23,7 @@ server.
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		rand.Seed(time.Now().UnixNano())
 		cmd.SetContext(log.SetContext(cmd.Context(), log.New()))
-		return nil
+		return config.Unmarshal(&cfg)
 	},
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		return cmd.Help()
@@ -31,5 +31,6 @@ server.
 }
 
 func init() {
-	RootCmd.AddCommand(local.LocalCmd)
+	RootCmd.AddCommand(localCmd)
+	RootCmd.AddCommand(remoteCmd)
 }

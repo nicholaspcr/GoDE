@@ -52,7 +52,7 @@ var (
 	}
 )
 
-// GetProblemByProblemName -> returns the problem function
+// GetProblemByProblemName -> returns the problem function of the given name
 func GetProblemByName(name string) problems.Interface {
 	name = strings.ToLower(name)
 	for k, v := range problemSet {
@@ -63,6 +63,7 @@ func GetProblemByName(name string) problems.Interface {
 	return nil
 }
 
+// GetVariantByVariantName -> returns the variant function of the given name
 func GetVariantByName(name string) variants.Interface {
 	name = strings.ToLower(name)
 	for k, v := range variantSet {
@@ -73,6 +74,7 @@ func GetVariantByName(name string) variants.Interface {
 	return nil
 }
 
+// GetAllProblems -> returns all variants
 func GetAllVariants() []variants.Interface {
 	out := make([]variants.Interface, len(variantSet))
 	index := 0

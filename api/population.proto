@@ -25,8 +25,8 @@ message Population {
 message PopulationParameters {
   int64 dimensions_size = 1;
   int64 objetives_size = 2;
-  repeated double floor_slice = 3;
-  repeated double ceil_slice = 4;
+  repeated double floors = 3;
+  repeated double ceils = 4;
 }
 
 service PopulationServices {

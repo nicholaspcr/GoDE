@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -23,14 +24,24 @@ server.
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		rand.Seed(time.Now().UnixNano())
 		cmd.SetContext(log.SetContext(cmd.Context(), log.New()))
-		return config.Unmarshal(&cfg)
+		if err := config.InitializeRoot(cmd); err != nil {
+			return err
+		}
+		//if err := config.Unmarshal(&cfg); err != nil {
+		//	return err
+		//}
+		return nil
 	},
 	RunE: func(cmd *cobra.Command, _ []string) error {
+		fmt.Println("FLAGS:", cmd.Flags())
+		fmt.Println("Config:", cfg)
 		return cmd.Help()
 	},
 }
 
 func init() {
+	// Definition of commands
 	RootCmd.AddCommand(localCmd)
 	RootCmd.AddCommand(remoteCmd)
+
 }

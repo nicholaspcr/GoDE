@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/nicholaspcr/GoDE/pkg/api"
+	"github.com/nicholaspcr/GoDE/pkg/models"
 )
 
 func TestWFG9FN(t *testing.T) {
@@ -30,10 +30,10 @@ func TestWFG9FN(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.ProblemName, func(t *testing.T) {
-			e := api.Vector{
+			e := *models.Vector{
 				Elements: tt.x,
 			}
-			err := Wfg9().Evaluate(&e, len(tt.expected))
+			err := Wfg9().Evaluate(e, len(tt.expected))
 
 			if err != nil {
 				t.Errorf("failed to run the WFG9 func")

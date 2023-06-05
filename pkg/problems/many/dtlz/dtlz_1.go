@@ -10,7 +10,7 @@ import (
 	"errors"
 	"math"
 
-	"github.com/nicholaspcr/GoDE/pkg/api"
+	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 )
 
@@ -24,7 +24,7 @@ func (v *dtlz1) Name() string {
 	return "dtlz1"
 }
 
-func (v *dtlz1) Evaluate(e *api.Vector, M int) error {
+func (v *dtlz1) Evaluate(e *models.Vector, M int) error {
 	if len(e.Elements) <= M {
 		return errors.New(
 			"need to have an M lesser than the amount of variables",

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math"
 
-	"github.com/nicholaspcr/GoDE/pkg/api"
+	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 )
 
@@ -18,7 +18,7 @@ func (v *zdt6) Name() string {
 	return "zdt6"
 }
 
-func (v *zdt6) Evaluate(e *api.Vector, M int) error {
+func (v *zdt6) Evaluate(e *models.Vector, M int) error {
 
 	if len(e.Elements) < 2 {
 		return errors.New("need at least two variables/dimensions")

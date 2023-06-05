@@ -1,7 +1,7 @@
 package wfg
 
 import (
-	"github.com/nicholaspcr/GoDE/pkg/api"
+	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 )
 
@@ -15,7 +15,7 @@ func (w *wfg3) Name() string {
 	return "wfg3"
 }
 
-func (w *wfg3) Evaluate(e *api.Vector, M int) error {
+func (w *wfg3) Evaluate(e *models.Vector, M int) error {
 
 	n_var := len(e.Elements)
 	n_obj := M

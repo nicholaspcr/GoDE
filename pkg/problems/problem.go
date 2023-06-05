@@ -1,6 +1,6 @@
 package problems
 
-import "github.com/nicholaspcr/GoDE/pkg/api"
+import "github.com/nicholaspcr/GoDE/pkg/models"
 
 // Problem contains the definition of what a problem should have
 type Interface interface {
@@ -8,5 +8,5 @@ type Interface interface {
 	// Evaluate is the function responsible for altering the objective
 	// slice of a vector, therefore is assumed that the Vector passed will
 	// be modified by this func
-	Evaluate(*api.Vector, int) error
+	Evaluate(*models.Vector, int) error
 }

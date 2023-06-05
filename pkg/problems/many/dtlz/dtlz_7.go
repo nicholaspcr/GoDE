@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math"
 
-	"github.com/nicholaspcr/GoDE/pkg/api"
+	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 )
 
@@ -18,7 +18,7 @@ func (v *dtlz7) Name() string {
 	return "dtlz7"
 }
 
-func (v *dtlz7) Evaluate(e *api.Vector, M int) error {
+func (v *dtlz7) Evaluate(e *models.Vector, M int) error {
 
 	if len(e.Elements) <= M {
 		return errors.New(

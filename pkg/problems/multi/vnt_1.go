@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math"
 
-	"github.com/nicholaspcr/GoDE/pkg/api"
+	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 )
 
@@ -19,7 +19,7 @@ func (v *vnt1) Name() string {
 	return "vnt1"
 }
 
-func (v *vnt1) Evaluate(e *api.Vector, M int) error {
+func (v *vnt1) Evaluate(e *models.Vector, M int) error {
 
 	if len(e.Elements) != 2 {
 		return errors.New("need at have only two variables/dimensions")

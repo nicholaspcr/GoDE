@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/nicholaspcr/GoDE/pkg/api"
+	"github.com/nicholaspcr/GoDE/pkg/models"
 )
 
 func TestDTLZ4FN(t *testing.T) {
@@ -30,10 +30,8 @@ func TestDTLZ4FN(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.ProblemName, func(t *testing.T) {
-			e := api.Vector{
-				Elements: tt.x,
-			}
-			err := Dtlz4().Evaluate(&e, len(tt.expected))
+			e := &models.Vector{Elements: tt.x}
+			err := Dtlz4().Evaluate(e, len(tt.expected))
 
 			if err != nil {
 				t.Errorf("failed to run the DTLZ4 func")

@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
@@ -30,11 +32,13 @@ type (
 	// Evolutionary algorithm.
 	Config struct {
 		PopulationSize int        `name:"population_size" json:"population_size" yaml:"population_size"`
-		Generations    int        `name:"generations"     json:"generations"     yaml:"generations"`
-		SaveEachGen    bool       `name:"save_each_gen"   json:"save_each_gen"   yaml:"save_each_gen"`
-		Executions     int        `name:"executions"      json:"executions"      yaml:"executions"`
-		Dimensions     Dimensions `name:"dimensions"      json:"dimensions"      yaml:"dimensions"`
-		Constants      Constants  `name:"constants"       json:"constants"       yaml:"constants"`
+		Generations    int        `name:"generations" json:"generations" yaml:"generations"`
+		SaveEachGen    bool       `name:"save_each_gen" json:"save_each_gen" yaml:"save_each_gen"`
+		Executions     int        `name:"executions" json:"executions" yaml:"executions"`
+		Dimensions     Dimensions `name:"dimensions" json:"dimensions" yaml:"dimensions"`
+		Constants      Constants  `name:"constants" json:"constants" yaml:"constants"`
+		Problem        string     `name:"problem" json:"problem" yaml:"problem"`
+		Variant        string     `name:"variant" json:"variant" yaml:"variant"`
 	}
 
 	// Dimensions is a set of values to define the behaviour that happens in
@@ -71,6 +75,8 @@ var (
 			F:  float64(0.5),
 			P:  float64(0.2),
 		},
+		Problem: "dtlz1",
+		Variant: "rand-1",
 	}
 )
 
@@ -78,4 +84,39 @@ var (
 // the given pointer.
 func Unmarshal(ptr any, opts ...viper.DecoderConfigOption) error {
 	return viper.Unmarshal(ptr, opts...)
+}
+
+// bindFlags binds the flags to the configuration.
+func bindFlags(cmd *cobra.Command, v *viper.Viper) {
+	cmd.Flags().VisitAll(func(f *pflag.Flag) {
+		configName := f.Name
+		if !f.Changed && v.IsSet(configName) {
+			val := v.Get(configName)
+			cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val))
+		}
+	})
+}
+
+// InitializeRoot initializes the configuration for the root command.
+func InitializeRoot(cmd *cobra.Command) error {
+	v := viper.New()
+
+	// config filename and type
+	v.SetConfigName("config")
+	v.SetConfigType("yaml")
+
+	// config search path
+	v.AddConfigPath("/etc/decli/")
+	v.AddConfigPath("$HOME/.decli")
+	v.AddConfigPath(".")
+
+	// fetch config file contents
+	if err := v.ReadInConfig(); err != nil {
+		return err
+	}
+
+	v.AutomaticEnv()
+	bindFlags(cmd, v)
+
+	return nil
 }

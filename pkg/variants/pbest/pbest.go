@@ -5,7 +5,7 @@ import (
 	"math"
 	"math/rand"
 
-	"github.com/nicholaspcr/GoDE/pkg/api"
+	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
 )
 
@@ -21,16 +21,16 @@ func (p *pbest) Name() string {
 }
 
 func (p *pbest) Mutate(
-	elems, rankZero []api.Vector,
+	elems, rankZero []models.Vector,
 	params variants.Parameters,
-) (*api.Vector, error) {
+) (models.Vector, error) {
 
 	ind := make([]int, 3)
 	ind[0] = params.CurrPos
 
 	err := variants.GenerateIndices(1, len(elems), ind)
 	if err != nil {
-		return nil, errors.New(
+		return models.Vector{}, errors.New(
 			"insufficient size for the population, must me equal or greater than 5",
 		)
 	}
@@ -45,7 +45,7 @@ func (p *pbest) Mutate(
 			params.F*(elems[ind[1]].Elements[i]-elems[ind[2]].Elements[i])
 	}
 
-	ret := &api.Vector{
+	ret := models.Vector{
 		Elements: arr,
 	}
 	return ret, nil

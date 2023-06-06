@@ -3,7 +3,7 @@ package rand
 import (
 	"errors"
 
-	"github.com/nicholaspcr/GoDE/pkg/api"
+	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
 )
 
@@ -19,15 +19,15 @@ func (r *rand2) Name() string {
 }
 
 func (r *rand2) Mutate(
-	elems, rankZero []api.Vector,
+	elems, rankZero []models.Vector,
 	p variants.Parameters,
-) (*api.Vector, error) {
+) (models.Vector, error) {
 	// generating random indices different from current pos
 	ind := make([]int, 6)
 	ind[0] = p.CurrPos
 	err := variants.GenerateIndices(1, len(elems), ind)
 	if err != nil {
-		return nil, errors.New(
+		return models.Vector{}, errors.New(
 			"insufficient size for the population, must me equal or greater than 4",
 		)
 	}
@@ -39,7 +39,7 @@ func (r *rand2) Mutate(
 			p.F*(elems[i2].Elements[i]-elems[i3].Elements[i]) +
 			p.F*(elems[i4].Elements[i]-elems[i5].Elements[i])
 	}
-	ret := &api.Vector{
+	ret := models.Vector{
 		Elements: arr,
 	}
 	return ret, nil

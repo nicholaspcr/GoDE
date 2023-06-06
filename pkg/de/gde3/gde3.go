@@ -5,45 +5,57 @@ import (
 	"math/rand"
 
 	"github.com/nicholaspcr/GoDE/internal/log"
+	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/de"
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
-	"github.com/nicholaspcr/GoDE/pkg/store"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
 )
 
 // gde3 type that contains the definition of the GDE3 algorithm.
-type gde3 struct{}
+type gde3 struct {
+	initialPopulation models.Population
+	populationParams  models.PopulationParams
+	problem           problems.Interface
+	variant           variants.Interface
+	contants          de.Constants
+	store             store.Store
+}
+
+type Option func(*gde3) *gde3
 
 // GDE3 Returns an instance of an object that implements the GDE3
 // algorithm. It is compliant with the Mode
-func New() de.Algorithm {
-	return &gde3{}
+func New(opts ...Option) de.Algorithm {
+	d := &gde3{}
+	for _, opt := range opts {
+		opt(d)
+	}
+	return d
 }
 
 // Execute is responsible for receiving the standard parameters defined
 // in the Mode and executing the gde3 algorithm
 func (g *gde3) Execute(
 	ctx context.Context,
-	population models.Population,
-	problem problems.Interface,
-	variant variants.Interface,
-	store store.Store,
 	pareto chan<- []models.Vector,
+	maxObjectives chan<- []float64,
 ) error {
 	logger := log.FromContext(ctx)
 	logger.Debug("Starting GDE3 Execution")
-	GEN := de.FetchGenerations(ctx)
-	dimSize := population.ObjSize()
-	// maximum objs found
+
+	popuParams := g.populationParams
+	dimSize := popuParams.DimensionSize
+	population := g.initialPopulation.Copy()
 	maxObjs := make([]float64, dimSize)
+
 	// calculates the objs of the inital population
 	for i := range population.Vectors {
-		err := problem.Evaluate(&population.Vectors[i], dimSize)
+		err := g.problem.Evaluate(&population.Vectors[i], dimSize)
 		if err != nil {
 			return err
 		}
-		for j, obj := range population.Vectors[i].Objs {
+		for j, obj := range population.Vectors[i].Objectives {
 			if obj > maxObjs[j] {
 				maxObjs[j] = obj
 			}
@@ -63,27 +75,27 @@ func (g *gde3) Execute(
 	//}
 
 	// stores the rank[0] of each generation
-	bestElems := make([]models.Vector, population.DimSize())
+	bestElems := make([]models.Vector, popuParams.DimensionSize)
 
 	var genRankZero []models.Vector
 	var bestInGen []models.Vector
 	var trial models.Vector
 
-	for g := 0; g < GEN; g++ {
-		logger.Debug("Running Gen: ", g)
+	for gen := 0; gen < g.contants.Generations; gen++ {
+		logger.Debug("Running Gen: ", gen)
 		// gets non dominated of the current population
 		genRankZero, _ = de.FilterDominated(population.Vectors)
 
 		for i := 0; i < len(population.Vectors); i++ {
 			// generates the mutatated vector
-			vr, err := variant.Mutate(
+			vr, err := g.variant.Mutate(
 				population.Vectors,
 				genRankZero,
 				variants.Parameters{
-					DIM:     population.DimSize(),
-					F:       de.FetchFConst(ctx),
+					DIM:     popuParams.DimensionSize,
+					F:       g.contants.F,
 					CurrPos: i,
-					P:       de.FetchPConst(ctx),
+					P:       g.contants.P,
 				})
 			if err != nil {
 				return err
@@ -93,40 +105,41 @@ func (g *gde3) Execute(
 			trial = population.Vectors[i].Copy()
 
 			// CROSS OVER
-			currInd := rand.Int() % population.DimSize()
-			luckyIndex := rand.Int() % population.DimSize()
+			currInd := rand.Int() % popuParams.DimensionSize
+			luckyIndex := rand.Int() % popuParams.DimensionSize
 
-			for j := 0; j < population.DimSize(); j++ {
+			for j := 0; j < popuParams.DimensionSize; j++ {
 				changeProb := rand.Float64()
-				if changeProb < de.FetchCRConst(ctx) || currInd == luckyIndex {
-					trial.X[currInd] = vr.X[currInd]
+				if changeProb < g.contants.CR || currInd == luckyIndex {
+					trial.Elements[currInd] = vr.Elements[currInd]
 				}
 
-				if trial.X[currInd] < population.Floors()[currInd] {
-					trial.X[currInd] = population.Floors()[currInd]
+				if trial.Elements[currInd] < popuParams.FloorRange[currInd] {
+					trial.Elements[currInd] = popuParams.FloorRange[currInd]
 				}
-				if trial.X[currInd] > population.Ceils()[currInd] {
-					trial.X[currInd] = population.Ceils()[currInd]
+				if trial.Elements[currInd] > popuParams.CeilRange[currInd] {
+					trial.Elements[currInd] = popuParams.CeilRange[currInd]
 				}
-				currInd = (currInd + 1) % population.DimSize()
+				currInd = (currInd + 1) % popuParams.DimensionSize
 			}
 
-			if err := problem.Evaluate(&trial, dimSize); err != nil {
+			if err := g.problem.Evaluate(&trial, dimSize); err != nil {
 				return err
 			}
 
 			// SELECTION
-			comp := de.DominanceTest(population.Vectors[i].Objs, trial.Objs)
+			comp := de.DominanceTest(
+				population.Vectors[i].Objectives, trial.Objectives,
+			)
 			if comp == 1 {
 				population.Vectors[i] = trial.Copy()
-			} else if comp == 0 && len(population.Vectors) <= 2*population.Size() {
+			} else if comp == 0 && len(population.Vectors) <= 2*popuParams.DimensionSize {
 				population.Vectors = append(population.Vectors, trial.Copy())
 			}
 		}
 
 		population.Vectors, bestInGen = de.ReduceByCrowdDistance(
-			population.Vectors,
-			population.Size(),
+			population.Vectors, popuParams.DimensionSize,
 		)
 		bestElems = append(bestElems, bestInGen...)
 

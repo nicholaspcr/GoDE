@@ -6,20 +6,23 @@ import (
 
 	"github.com/nicholaspcr/GoDE/internal/log"
 	"github.com/nicholaspcr/GoDE/pkg/models"
-	"github.com/nicholaspcr/GoDE/pkg/problems"
-	"github.com/nicholaspcr/GoDE/pkg/store"
-	"github.com/nicholaspcr/GoDE/pkg/variants"
 )
+
+// Algorithm defines the methods that a Differential Evolution algorithm should
+// implement, this method will be executed in each generation.
+type Algorithm interface {
+	Execute(
+		ctx context.Context,
+		pareto chan<- []models.Vector,
+		maxObjectives chan<- []float64,
+	) error
+}
 
 // DE contains the necessary methods to setup and execute a Differential
 // Evolutionary algorithm.
 type de struct {
-	constants  Constants
-	problem    problems.Interface
-	variant    variants.Interface
-	population models.Population
-	store      store.Store
-	algorithm  Algorithm
+	algorithm Algorithm
+	constants Constants
 }
 
 // New Mode iterface based on the configuration options given.
@@ -31,33 +34,21 @@ func New(opts ...ModeOptions) *de {
 	return m
 }
 
-// TODO: Add validator of the parameters in before the execution starts, maybe
-// as a middleware.
-
-// TODO: Make a separate semaphore, responsible for handling how many parallel
-// executions the server can take.
-
-func (m *de) Execute(
-	ctx context.Context,
-	pareto chan<- models.Population,
-	maxObjs chan<- []float64,
-) error {
+func (mode *de) Execute(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	logger.Debug("Starting execution")
 
-	rankedChan := make(chan []models.Vector, m.constants.Executions)
+	rankedChan := make(chan []models.Vector, mode.constants.Executions)
+
+	pareto := make(chan<- []models.Vector, 10)
+	maxObjs := make(chan<- []float64, 10)
 
 	// TODO: Change this to be just a pipeline pattern, that way there can be a
 	// goroutine in the background that would write the last values.
 	wg := &sync.WaitGroup{}
 
-	// initialPopulation is the base population for all executions.
-	var initialPopulation models.Population
-	GeneratePopulation(&initialPopulation)
-
 	// Runs algorithm for Executions amount of times.
-	for i := 0; i < m.constants.Executions; i++ {
-		population := initialPopulation.Copy()
+	for i := 0; i < mode.constants.Executions; i++ {
 		wg.Add(1)
 
 		// Initialize worker responsible for DE execution.
@@ -66,14 +57,11 @@ func (m *de) Execute(
 			defer func() {
 				wg.Done()
 			}()
-			// running one execution of the GDE3
-			m.algorithm.Execute(
+			// running the algorithm execution.
+			mode.algorithm.Execute(
 				ctx,
-				population,
-				m.problem,
-				m.variant,
-				m.store,
-				rankedChan,
+				pareto,
+				maxObjs,
 			)
 		}()
 	}

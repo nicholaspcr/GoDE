@@ -1,13 +1,13 @@
 package de
 
 import (
-	"math/rand"
-
 	"log"
 	"math"
+	"math/rand"
 	"sort"
 
 	"github.com/nicholaspcr/GoDE/pkg/api"
+	"github.com/nicholaspcr/GoDE/pkg/models"
 )
 
 var (
@@ -17,15 +17,15 @@ var (
 
 // GeneratePopulation fills the vectors of a given population, does not
 // generate the values for its objective functions.
-func GeneratePopulation(p *api.Population, params api.PopulationParameters) {
-	for i := 0; i < len(p.Vectors); i++ {
-		p.Vectors[i].Elements = make([]float64, params.DimensionsSize)
+func GeneratePopulation(popu *api.Population, params api.PopulationParameters) {
+	for i := 0; i < len(popu.Vectors); i++ {
+		popu.Vectors[i].Elements = make([]float64, params.DimensionsSize)
 
-		for j := 0; j < p.DimSize(); j++ {
+		for j := 0; j < int(params.DimensionsSize); j++ {
 			// range between floor and ceiling
-			constant := p.Ceils()[j] - p.Floors()[j]
+			constant := params.Ceils[j] - params.Floors[j]
 			// value varies within [ceil,upper]
-			p.Vectors[i].X[j] = rand.Float64()*constant + p.Floors()[j]
+			popu.Vectors[i].Elements[j] = rand.Float64()*constant + params.Floors[j]
 		}
 	}
 }
@@ -33,12 +33,12 @@ func GeneratePopulation(p *api.Population, params api.PopulationParameters) {
 // ReduceByCrowdDistance - returns NP api.elements filtered by rank and
 // crowd distance.
 func ReduceByCrowdDistance(
-	elems []api.Vector,
+	elems []models.Vector,
 	NP int,
-) ([]api.Vector, []api.Vector) {
+) ([]models.Vector, []models.Vector) {
 
 	ranks := FastNonDominatedRanking(elems)
-	elems = make([]api.Vector, 0)
+	elems = make([]models.Vector, 0)
 
 	// TODO remove the qtdElems sections
 	qtdElems := 0
@@ -55,7 +55,7 @@ func ReduceByCrowdDistance(
 	for i := 0; i < len(ranks); i++ {
 		CalculateCrwdDist(ranks[i])
 		sort.SliceStable(ranks[i], func(l, r int) bool {
-			return ranks[i][l].Crwdst > ranks[i][r].Crwdst
+			return ranks[i][l].CrowdingDistance > ranks[i][r].CrowdingDistance
 		})
 
 		elems = append(elems, ranks[i]...)
@@ -65,7 +65,7 @@ func ReduceByCrowdDistance(
 		}
 	}
 
-	zero := make([]api.Vector, len(ranks[0]))
+	zero := make([]models.Vector, len(ranks[0]))
 	copy(zero, ranks[0])
 	return elems, zero
 }
@@ -73,8 +73,8 @@ func ReduceByCrowdDistance(
 // FastNonDominatedRanking - ranks the api.elements and returns a map with
 // api.elements per rank
 func FastNonDominatedRanking(
-	elems []api.Vector,
-) map[int][]api.Vector {
+	elems []models.Vector,
+) map[int][]models.Vector {
 
 	// this func is inspired by the DEB_NSGA-II paper
 	// a fast and elitist multiobjective genetic algorithm
@@ -94,7 +94,7 @@ func FastNonDominatedRanking(
 		dominatingIth[p] = 0             // N_p = 0
 
 		for q := 0; q < len(elems); q++ {
-			dominanceTestResult := DominanceTest(elems[p].Objs, elems[q].Objs)
+			dominanceTestResult := DominanceTest(elems[p].Objectives, elems[q].Objectives)
 
 			if dominanceTestResult == -1 {
 				// p dominates q
@@ -156,7 +156,7 @@ func FastNonDominatedRanking(
 	//	}
 
 	// getting ranked api.elements from their index
-	rankedSubList := make(map[int][]api.Vector)
+	rankedSubList := make(map[int][]models.Vector)
 	for i := 0; i < len(fronts); i++ {
 		for m := range fronts[i] {
 			rankedSubList[i] = append(
@@ -195,10 +195,10 @@ func DominanceTest(x, y []float64) int {
 
 // FilterDominated -> returns api.elements that are not dominated in the set
 func FilterDominated(
-	elems []api.Vector,
-) ([]api.Vector, []api.Vector) {
-	nonDominated := make([]api.Vector, 0)
-	dominated := make([]api.Vector, 0)
+	elems []models.Vector,
+) ([]models.Vector, []models.Vector) {
+	nonDominated := make([]models.Vector, 0)
+	dominated := make([]models.Vector, 0)
 
 	for p := 0; p < len(elems); p++ {
 		counter := 0
@@ -207,7 +207,7 @@ func FilterDominated(
 				continue
 			}
 			// q dominates the p element
-			if DominanceTest(elems[p].Objs, elems[q].Objs) == 1 {
+			if DominanceTest(elems[p].Objectives, elems[q].Objectives) == 1 {
 				counter++
 			}
 		}
@@ -223,38 +223,38 @@ func FilterDominated(
 
 // CalculateCrwdDist - assumes that the slice is composed of non dominated
 // api.elements
-func CalculateCrwdDist(elems []api.Vector) {
+func CalculateCrwdDist(elems []models.Vector) {
 	if len(elems) <= 2 {
 		for i := range elems {
-			elems[i].Crwdst = math.MaxFloat64
+			elems[i].CrowdingDistance = math.MaxFloat64
 		}
 		return
 	}
 
 	// resets the crwdst
 	for i := range elems {
-		elems[i].Crwdst = 0
+		elems[i].CrowdingDistance = 0
 	}
 
-	szObjs := len(elems[0].Objs)
+	szObjectives := len(elems[0].Objectives)
 
-	for m := 0; m < szObjs; m++ {
+	for m := 0; m < szObjectives; m++ {
 		// sort by current objective
 		sort.SliceStable(elems, func(i, j int) bool {
-			return elems[i].Objs[m] < elems[j].Objs[m]
+			return elems[i].Objectives[m] < elems[j].Objectives[m]
 		})
 
 		// obtain the extremes of the objective analysed
-		objMin := elems[0].Objs[m]
-		objMax := elems[len(elems)-1].Objs[m]
+		objMin := elems[0].Objectives[m]
+		objMax := elems[len(elems)-1].Objectives[m]
 
-		// first and last receive max Crwdst value
-		elems[0].Crwdst = INF
-		elems[len(elems)-1].Crwdst = INF
+		// first and last receive max CrowdingDistance value
+		elems[0].CrowdingDistance = INF
+		elems[len(elems)-1].CrowdingDistance = INF
 
 		for i := 1; i < len(elems)-1; i++ {
 
-			distance := elems[i+1].Objs[m] - elems[i-1].Objs[m]
+			distance := elems[i+1].Objectives[m] - elems[i-1].Objectives[m]
 
 			// if difference between extremes is less than 1e-8
 			if objMax-objMin > 0 {
@@ -262,8 +262,8 @@ func CalculateCrwdDist(elems []api.Vector) {
 			}
 
 			// only adds to the crowdDistance if smalled than max value
-			if elems[i].Crwdst+distance < INF {
-				elems[i].Crwdst += distance
+			if elems[i].CrowdingDistance+distance < INF {
+				elems[i].CrowdingDistance += distance
 			}
 		}
 	}

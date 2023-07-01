@@ -39,12 +39,15 @@ func getEncoder() zapcore.Encoder {
 }
 func getEncoderConfig() zapcore.EncoderConfig {
 	config := strings.ToLower(os.Getenv("GODE_LOG_ENCODER_CONFIG"))
+	var cfg zapcore.EncoderConfig
 	switch config {
 	case "development":
-		return zap.NewDevelopmentEncoderConfig()
+		cfg = zap.NewDevelopmentEncoderConfig()
 	default:
-		return zap.NewProductionEncoderConfig()
+		cfg = zap.NewProductionEncoderConfig()
 	}
+	cfg.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	return cfg
 }
 
 func getLogLevel() zapcore.Level {

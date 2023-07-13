@@ -44,14 +44,15 @@ func (g *gde3) Execute(
 	logger := log.FromContext(ctx)
 	logger.Debug("Starting GDE3 Execution")
 
+	population := g.initialPopulation.Copy()
 	popuParams := g.populationParams
 	dimSize := popuParams.DimensionSize
-	population := g.initialPopulation.Copy()
+	objFuncAmount := g.populationParams.ObjectivesSize
 	maxObjs := make([]float64, dimSize)
 
 	// calculates the objs of the inital population
 	for i := range population.Vectors {
-		err := g.problem.Evaluate(&population.Vectors[i], dimSize)
+		err := g.problem.Evaluate(&population.Vectors[i], objFuncAmount)
 		if err != nil {
 			return err
 		}
@@ -123,10 +124,16 @@ func (g *gde3) Execute(
 				currInd = (currInd + 1) % popuParams.DimensionSize
 			}
 
-			if err := g.problem.Evaluate(&trial, dimSize); err != nil {
+			if err := g.problem.Evaluate(&trial, objFuncAmount); err != nil {
 				return err
 			}
 
+			if len(trial.Objectives) == 0 {
+				panic("trial vector is empty")
+			}
+
+			//logger.Debug("trial objs: ", trial.Objectives)
+			//logger.Debug("vector objs: ", population.Vectors[i].Objectives)
 			// SELECTION
 			comp := de.DominanceTest(
 				population.Vectors[i].Objectives, trial.Objectives,
@@ -139,7 +146,7 @@ func (g *gde3) Execute(
 		}
 
 		population.Vectors, bestInGen = de.ReduceByCrowdDistance(
-			population.Vectors, popuParams.DimensionSize,
+			ctx, population.Vectors, popuParams.DimensionSize,
 		)
 		bestElems = append(bestElems, bestInGen...)
 
@@ -159,6 +166,7 @@ func (g *gde3) Execute(
 		//}
 	}
 
+	//logger.Debug("bestElems: ", bestElems)
 	// sending via channel the data
 	// maximumObjs <- maxObjs
 	pareto <- bestElems

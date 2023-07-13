@@ -57,3 +57,11 @@ func WithGenerations(gen int) ModeOptions {
 		return m
 	}
 }
+
+// WithObjFuncAmount determines the amount of objective functions.
+func WithObjFuncAmount(n int) ModeOptions {
+	return func(m *de) *de {
+		m.constants.ObjFuncAmount = n
+		return m
+	}
+}

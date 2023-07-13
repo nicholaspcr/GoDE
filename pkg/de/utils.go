@@ -1,43 +1,24 @@
 package de
 
 import (
-	"log"
+	"context"
 	"math"
-	"math/rand"
 	"sort"
 
-	"github.com/nicholaspcr/GoDE/pkg/api"
+	"github.com/nicholaspcr/GoDE/internal/log"
 	"github.com/nicholaspcr/GoDE/pkg/models"
 )
 
-var (
-	// INF is the maximum value used in the crowding distance
-	INF = math.MaxFloat64 - 1e5
-)
+// INF is the maximum value used in the crowding distance
+var INF = math.MaxFloat64 - 1e5
 
-// GeneratePopulation fills the vectors of a given population, does not
-// generate the values for its objective functions.
-func GeneratePopulation(popu *api.Population, params api.PopulationParameters) {
-	for i := 0; i < len(popu.Vectors); i++ {
-		popu.Vectors[i].Elements = make([]float64, params.DimensionsSize)
-
-		for j := 0; j < int(params.DimensionsSize); j++ {
-			// range between floor and ceiling
-			constant := params.Ceils[j] - params.Floors[j]
-			// value varies within [ceil,upper]
-			popu.Vectors[i].Elements[j] = rand.Float64()*constant + params.Floors[j]
-		}
-	}
-}
-
-// ReduceByCrowdDistance - returns NP api.elements filtered by rank and
-// crowd distance.
+// ReduceByCrowdDistance - returns NP api.elements filtered by rank and crowd
+// distance.
 func ReduceByCrowdDistance(
-	elems []models.Vector,
-	NP int,
+	ctx context.Context, elems []models.Vector, NP int,
 ) ([]models.Vector, []models.Vector) {
-
-	ranks := FastNonDominatedRanking(elems)
+	logger := log.FromContext(ctx)
+	ranks := FastNonDominatedRanking(ctx, elems)
 	elems = make([]models.Vector, 0)
 
 	// TODO remove the qtdElems sections
@@ -48,8 +29,8 @@ func ReduceByCrowdDistance(
 	}
 
 	if qtdElems < NP {
-		log.Println("elems -> ", qtdElems)
-		log.Fatal("less api.elements than NP")
+		logger.Debug("elems -> ", qtdElems)
+		logger.Fatal("less elements than NP constants") // TODO: Remove error
 	}
 
 	for i := 0; i < len(ranks); i++ {
@@ -73,9 +54,9 @@ func ReduceByCrowdDistance(
 // FastNonDominatedRanking - ranks the api.elements and returns a map with
 // api.elements per rank
 func FastNonDominatedRanking(
-	elems []models.Vector,
+	ctx context.Context, elems []models.Vector,
 ) map[int][]models.Vector {
-
+	//logger := log.FromContext(ctx)
 	// this func is inspired by the DEB_NSGA-II paper
 	// a fast and elitist multiobjective genetic algorithm
 
@@ -94,6 +75,9 @@ func FastNonDominatedRanking(
 		dominatingIth[p] = 0             // N_p = 0
 
 		for q := 0; q < len(elems); q++ {
+			//logger.Debug("element p: ", p, " element q: ", q)
+			//logger.Debug("element p objectives: ", elems[p].Objectives)
+			//logger.Debug("element q objectives: ", elems[q].Objectives)
 			dominanceTestResult := DominanceTest(elems[p].Objectives, elems[q].Objectives)
 
 			if dominanceTestResult == -1 {
@@ -123,9 +107,7 @@ func FastNonDominatedRanking(
 
 			// for each q in S_p
 			for _, q := range ithDominated[p] {
-
 				dominatingIth[q]--
-
 				if dominatingIth[q] == 0 {
 					nextFront = append(nextFront, q)
 				}

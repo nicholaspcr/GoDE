@@ -76,7 +76,7 @@ var (
 			P:  float64(0.2),
 		},
 		Problem: "dtlz1",
-		Variant: "rand-1",
+		Variant: "rand1",
 	}
 )
 

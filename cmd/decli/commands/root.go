@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"fmt"
 	"math/rand"
 	"time"
 
@@ -27,14 +26,16 @@ server.
 		if err := config.InitializeRoot(cmd); err != nil {
 			return err
 		}
-		//if err := config.Unmarshal(&cfg); err != nil {
-		//	return err
-		//}
+		cfg = config.DefaultConfig
+		if err := config.Unmarshal(&cfg); err != nil {
+			return err
+		}
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, _ []string) error {
-		fmt.Println("FLAGS:", cmd.Flags())
-		fmt.Println("Config:", cfg)
+		logger := log.FromContext(cmd.Context())
+		logger.Debug("FLAGS:", cmd.Flags())
+		logger.Debug("Config:", cfg)
 		return cmd.Help()
 	},
 }
@@ -43,5 +44,4 @@ func init() {
 	// Definition of commands
 	RootCmd.AddCommand(localCmd)
 	RootCmd.AddCommand(remoteCmd)
-
 }

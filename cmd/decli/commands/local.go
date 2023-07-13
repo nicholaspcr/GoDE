@@ -23,19 +23,47 @@ var localRunCmd = &cobra.Command{
 	Short: "Run a local Differential Evolutionary algorithm",
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
+
+		// Initialize the population shared between the executions.
+		populationParams := models.PopulationParams{
+			DimensionSize:  cfg.Dimensions.Size,
+			PopulationSize: cfg.PopulationSize,
+			ObjectivesSize: cfg.Constants.M,
+			FloorRange:     cfg.Dimensions.Floors,
+			CeilRange:      cfg.Dimensions.Ceils,
+		}
+		initialPopulation, err := models.GeneratePopulation(populationParams)
+		if err != nil {
+			return err
+		}
+
+		problem, err := utils.GetProblemByName(cfg.Problem)
+		if err != nil {
+			return err
+		}
+		variant, err := utils.GetVariantByName(cfg.Variant)
+		if err != nil {
+			return err
+		}
+
 		f := de.New(
 			de.WithExecutions(cfg.Executions),
+			de.WithObjFuncAmount(cfg.Constants.M),
 			de.WithAlgorithm(
 				gde3.New(
-					gde3.WithPopulationParams(models.PopulationParams{
-						DimensionSize:  cfg.Dimensions.Size,
-						PopulationSize: cfg.PopulationSize,
-						ObjectivesSize: cfg.Constants.M,
-						FloorRange:     cfg.Dimensions.Floors,
-						CeilRange:      cfg.Dimensions.Ceils,
+					gde3.WithInitialPopulation(initialPopulation.Copy()),
+					gde3.WithPopulationParams(populationParams),
+					gde3.WithConstants(de.Constants{
+						F:             cfg.Constants.F,
+						P:             cfg.Constants.P,
+						CR:            cfg.Constants.CR,
+						ObjFuncAmount: populationParams.ObjectivesSize,
+						Executions:    cfg.Executions,
+						Generations:   cfg.Generations,
+						Dimensions:    cfg.Dimensions.Size,
 					}),
-					gde3.WithProblem(utils.GetProblemByName(cfg.Problem)),
-					gde3.WithVariant(utils.GetVariantByName(cfg.Variant)),
+					gde3.WithProblem(problem),
+					gde3.WithVariant(variant),
 				),
 			),
 		)

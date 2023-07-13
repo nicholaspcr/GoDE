@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"math/rand"
 
 	"github.com/nicholaspcr/GoDE/pkg/api"
 )
@@ -67,6 +68,12 @@ func GeneratePopulation(params PopulationParams) (Population, error) {
 			Objectives:       make([]float64, params.ObjectivesSize),
 			CrowdingDistance: 0.0,
 		}
+
+		for j := 0; j < params.DimensionSize; j++ {
+			vectors[i].Elements[j] = params.FloorRange[j] +
+				(params.CeilRange[j]-params.FloorRange[j])*rand.Float64()
+		}
+
 	}
 	return Population{
 		Vectors: vectors,

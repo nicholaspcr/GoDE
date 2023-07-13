@@ -2,6 +2,7 @@ package gde3
 
 import (
 	"github.com/nicholaspcr/GoDE/internal/store"
+	"github.com/nicholaspcr/GoDE/pkg/de"
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
@@ -37,7 +38,23 @@ func WithStore(s store.Store) Option {
 // population of an execution.
 func WithPopulationParams(params models.PopulationParams) Option {
 	return func(m *gde3) *gde3 {
-		m.population_params = params
+		m.populationParams = params
+		return m
+	}
+}
+
+// WithConstants sets the constants used on DE execution.
+func WithConstants(c de.Constants) Option {
+	return func(m *gde3) *gde3 {
+		m.contants = c
+		return m
+	}
+}
+
+// WithInitialPopulation determines the initial population of an execution.
+func WithInitialPopulation(p models.Population) Option {
+	return func(m *gde3) *gde3 {
+		m.initialPopulation = p
 		return m
 	}
 }

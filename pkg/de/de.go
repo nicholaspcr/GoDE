@@ -38,9 +38,7 @@ func (mode *de) Execute(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	logger.Debug("Starting execution")
 
-	rankedChan := make(chan []models.Vector, mode.constants.Executions)
-
-	pareto := make(chan<- []models.Vector, 10)
+	pareto := make(chan []models.Vector, 10)
 	maxObjs := make(chan<- []float64, 10)
 
 	// TODO: Change this to be just a pipeline pattern, that way there can be a
@@ -48,42 +46,46 @@ func (mode *de) Execute(ctx context.Context) error {
 	wg := &sync.WaitGroup{}
 
 	// Runs algorithm for Executions amount of times.
-	for i := 0; i < mode.constants.Executions; i++ {
+	for i := 1; i <= mode.constants.Executions; i++ {
 		wg.Add(1)
+		logger.Debug("Starting execution: ", i)
 
 		// Initialize worker responsible for DE execution.
-		go func() {
-			// cleaning concurrent queue
-			defer func() {
-				wg.Done()
-			}()
+		go func(idx int) {
+			defer wg.Done()
 			// running the algorithm execution.
-			mode.algorithm.Execute(
+			if err := mode.algorithm.Execute(
 				ctx,
 				pareto,
 				maxObjs,
-			)
-		}()
+			); err != nil {
+				logger.Error("Execution ", idx, ": ", err)
+			}
+		}(i)
 	}
 
-	// closer
-	go func() {
-		wg.Wait()
-		close(rankedChan)
-	}()
+	wg.Wait()
+	close(pareto)
 
 	// gets data from the pareto created by rank[0] of each gen
 	var rankedPareto []models.Vector
-	for v := range rankedChan {
+	for v := range pareto {
 		rankedPareto = append(
 			rankedPareto,
 			v...,
 		)
 
+		logger.Debug("Ranked Pareto length: ", len(rankedPareto))
+		for _, v := range rankedPareto {
+			if len(v.Objectives) != mode.constants.ObjFuncAmount {
+				logger.Debug("obj lenght: ", len(v.Objectives))
+				logger.Debug("ObjFuncAmount: ", mode.constants.ObjFuncAmount)
+				logger.Fatal("WTF IS GOING ON")
+			}
+		}
 		// gets non dominated and filters by crowdingDistance
 		_, rankedPareto = ReduceByCrowdDistance(
-			rankedPareto,
-			len(rankedPareto),
+			ctx, rankedPareto, len(rankedPareto),
 		)
 
 		// TODO: Make it configurable.
@@ -122,6 +124,7 @@ func (mode *de) Execute(ctx context.Context) error {
 	//		}
 	//	}
 
+	logger.Debug("RankedPareto: ", rankedPareto)
 	logger.Debug("Finished execution")
 	return nil
 }

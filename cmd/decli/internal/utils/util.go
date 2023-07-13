@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/nicholaspcr/GoDE/pkg/problems"
@@ -53,25 +54,25 @@ var (
 )
 
 // GetProblemByProblemName -> returns the problem function of the given name
-func GetProblemByName(name string) problems.Interface {
+func GetProblemByName(name string) (problems.Interface, error) {
 	name = strings.ToLower(name)
 	for k, v := range problemSet {
 		if name == k {
-			return v
+			return v, nil
 		}
 	}
-	return nil
+	return nil, errors.New("problem not found")
 }
 
 // GetVariantByVariantName -> returns the variant function of the given name
-func GetVariantByName(name string) variants.Interface {
+func GetVariantByName(name string) (variants.Interface, error) {
 	name = strings.ToLower(name)
 	for k, v := range variantSet {
 		if name == k {
-			return v
+			return v, nil
 		}
 	}
-	return nil
+	return nil, errors.New("variant not found")
 }
 
 // GetAllProblems -> returns all variants

@@ -23,7 +23,6 @@ func (r *rand1) Mutate(
 	elems, rankZero []models.Vector,
 	p variants.Parameters,
 ) (models.Vector, error) {
-
 	if len(elems) < 3 {
 		return models.Vector{}, fmt.Errorf(
 			"no sufficient amount of elements in the population, should be bigger than three",

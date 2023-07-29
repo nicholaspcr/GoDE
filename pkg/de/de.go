@@ -48,14 +48,12 @@ func (mode *de) Execute(ctx context.Context) error {
 	// Runs algorithm for Executions amount of times.
 	for i := 1; i <= mode.constants.Executions; i++ {
 		wg.Add(1)
-		logger.Debug("Starting execution: ", i)
-
 		// Initialize worker responsible for DE execution.
 		go func(idx int) {
 			defer wg.Done()
 			// running the algorithm execution.
 			if err := mode.algorithm.Execute(
-				ctx,
+				WithContextExecutionNumber(ctx, idx),
 				pareto,
 				maxObjs,
 			); err != nil {
@@ -68,7 +66,8 @@ func (mode *de) Execute(ctx context.Context) error {
 	close(pareto)
 
 	// gets data from the pareto created by rank[0] of each gen
-	var rankedPareto []models.Vector
+	rankedPareto := make([]models.Vector, 0, 2000)
+
 	for v := range pareto {
 		rankedPareto = append(
 			rankedPareto,
@@ -123,8 +122,5 @@ func (mode *de) Execute(ctx context.Context) error {
 	//			}
 	//		}
 	//	}
-
-	logger.Debug("RankedPareto: ", rankedPareto)
-	logger.Debug("Finished execution")
 	return nil
 }

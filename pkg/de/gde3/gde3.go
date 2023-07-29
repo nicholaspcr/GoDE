@@ -34,15 +34,16 @@ func New(opts ...Option) de.Algorithm {
 	return d
 }
 
-// Execute is responsible for receiving the standard parameters defined
-// in the Mode and executing the gde3 algorithm
+// Execute is responsible for receiving the standard parameters defined in the
+// Mode and executing the gde3 algorithm
 func (g *gde3) Execute(
 	ctx context.Context,
 	pareto chan<- []models.Vector,
 	maxObjectives chan<- []float64,
 ) error {
 	logger := log.FromContext(ctx)
-	logger.Debug("Starting GDE3 Execution")
+	execNum := de.FromContextExecutionNumber(ctx)
+	logger.Debugf("Starting GDE3 execution: %d", execNum)
 
 	population := g.initialPopulation.Copy()
 	popuParams := g.populationParams
@@ -76,14 +77,14 @@ func (g *gde3) Execute(
 	//}
 
 	// stores the rank[0] of each generation
-	bestElems := make([]models.Vector, popuParams.DimensionSize)
+	bestElems := make([]models.Vector, 0, popuParams.DimensionSize)
 
 	var genRankZero []models.Vector
 	var bestInGen []models.Vector
 	var trial models.Vector
 
 	for gen := 0; gen < g.contants.Generations; gen++ {
-		logger.Debug("Running Gen: ", gen)
+		logger.Debugf("Execution %d generation: %d", execNum, gen)
 		// gets non dominated of the current population
 		genRankZero, _ = de.FilterDominated(population.Vectors)
 
@@ -132,8 +133,6 @@ func (g *gde3) Execute(
 				panic("trial vector is empty")
 			}
 
-			//logger.Debug("trial objs: ", trial.Objectives)
-			//logger.Debug("vector objs: ", population.Vectors[i].Objectives)
 			// SELECTION
 			comp := de.DominanceTest(
 				population.Vectors[i].Objectives, trial.Objectives,

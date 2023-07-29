@@ -13,6 +13,10 @@
 # custom notes
 note.md
 
+# profiles
+memprofile
+cpuprofile
+
 # vim
 *.swp
 *.swo

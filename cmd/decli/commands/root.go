@@ -2,6 +2,9 @@ package commands
 
 import (
 	"math/rand"
+	_ "net/http/pprof"
+	"os"
+	"runtime/pprof"
 	"time"
 
 	"github.com/nicholaspcr/GoDE/cmd/decli/internal/config"
@@ -10,6 +13,8 @@ import (
 )
 
 var cfg config.Config
+
+var memProfile, cpuProfile *os.File
 
 // RootCmd represents the base command when called without any subcommands.
 var RootCmd = &cobra.Command{
@@ -30,13 +35,26 @@ server.
 		if err := config.Unmarshal(&cfg); err != nil {
 			return err
 		}
-		return nil
+		var err error
+		cpuProfile, err = os.Create("cpuprofile")
+		if err != nil {
+			return err
+		}
+		memProfile, err = os.Create("memprofile")
+		if err != nil {
+			return err
+		}
+		return pprof.StartCPUProfile(cpuProfile)
 	},
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		logger := log.FromContext(cmd.Context())
 		logger.Debug("FLAGS:", cmd.Flags())
 		logger.Debug("Config:", cfg)
 		return cmd.Help()
+	},
+	PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
+		pprof.StopCPUProfile()
+		return pprof.WriteHeapProfile(memProfile)
 	},
 }
 

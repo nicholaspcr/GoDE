@@ -74,14 +74,6 @@ func (mode *de) Execute(ctx context.Context) error {
 			v...,
 		)
 
-		logger.Debug("Ranked Pareto length: ", len(rankedPareto))
-		for _, v := range rankedPareto {
-			if len(v.Objectives) != mode.constants.ObjFuncAmount {
-				logger.Debug("obj lenght: ", len(v.Objectives))
-				logger.Debug("ObjFuncAmount: ", mode.constants.ObjFuncAmount)
-				logger.Fatal("WTF IS GOING ON")
-			}
-		}
 		// gets non dominated and filters by crowdingDistance
 		_, rankedPareto = ReduceByCrowdDistance(
 			ctx, rankedPareto, len(rankedPareto),

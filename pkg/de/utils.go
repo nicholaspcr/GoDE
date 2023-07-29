@@ -5,7 +5,6 @@ import (
 	"math"
 	"sort"
 
-	"github.com/nicholaspcr/GoDE/internal/log"
 	"github.com/nicholaspcr/GoDE/pkg/models"
 )
 
@@ -17,7 +16,6 @@ var INF = math.MaxFloat64 - 1e5
 func ReduceByCrowdDistance(
 	ctx context.Context, elems []models.Vector, NP int,
 ) ([]models.Vector, []models.Vector) {
-	logger := log.FromContext(ctx)
 	ranks := FastNonDominatedRanking(ctx, elems)
 	elems = make([]models.Vector, 0)
 
@@ -26,11 +24,6 @@ func ReduceByCrowdDistance(
 
 	for _, r := range ranks {
 		qtdElems += len(r)
-	}
-
-	if qtdElems < NP {
-		logger.Debug("elems -> ", qtdElems)
-		logger.Fatal("less elements than NP constants") // TODO: Remove error
 	}
 
 	for i := 0; i < len(ranks); i++ {
@@ -47,7 +40,13 @@ func ReduceByCrowdDistance(
 	}
 
 	zero := make([]models.Vector, len(ranks[0]))
-	copy(zero, ranks[0])
+
+	// TODO NICK: is this the best method for copying the vectors?
+	for idx, v := range ranks[0] {
+		zero[idx] = v.Copy()
+	}
+	//copy(zero, ranks[0])
+
 	return elems, zero
 }
 
@@ -56,29 +55,22 @@ func ReduceByCrowdDistance(
 func FastNonDominatedRanking(
 	ctx context.Context, elems []models.Vector,
 ) map[int][]models.Vector {
-	//logger := log.FromContext(ctx)
-	// this func is inspired by the DEB_NSGA-II paper
-	// a fast and elitist multiobjective genetic algorithm
+	// This func is inspired by the DEB_NSGA-II paper a fast and elitist
+	// multiobjective genetic algorithm
 
 	dominatingIth := make([]int, len(elems))  // N_p equivalent
 	ithDominated := make([][]int, len(elems)) // S_p equivalent
 	fronts := make([][]int, 1)                // F equivalent
 	fronts[0] = []int{}                       // initializes first front
 
-	// TODO remove section
-	//rand.Shuffle(len(elems), func(l, r int) {
-	//	elems[l], elems[r] = elems[r], elems[l]
-	//})
-
 	for p := 0; p < len(elems); p++ {
 		ithDominated[p] = make([]int, 0) // S_p size 0
 		dominatingIth[p] = 0             // N_p = 0
 
 		for q := 0; q < len(elems); q++ {
-			//logger.Debug("element p: ", p, " element q: ", q)
-			//logger.Debug("element p objectives: ", elems[p].Objectives)
-			//logger.Debug("element q objectives: ", elems[q].Objectives)
-			dominanceTestResult := DominanceTest(elems[p].Objectives, elems[q].Objectives)
+			dominanceTestResult := DominanceTest(
+				elems[p].Objectives, elems[q].Objectives,
+			)
 
 			if dominanceTestResult == -1 {
 				// p dominates q
@@ -117,25 +109,6 @@ func FastNonDominatedRanking(
 		// adds the next front to the matrix
 		fronts = append(fronts, nextFront)
 	}
-
-	// TODO remove section
-	// previous method with matrix of fronts already instantiated
-	//	for i := 1; i < len(fronts); i++ {
-	//
-	//		// for each p in F_i
-	//		for _, p := range fronts[i-1] {
-	//
-	//			// for each q in S_p
-	//			for _, q := range ithDominated[p] {
-	//
-	//				dominatingIth[q]--
-	//
-	//				if dominatingIth[q] == 0 {
-	//					fronts[i] = append(fronts[i], q)
-	//				}
-	//			}
-	//		}
-	//	}
 
 	// getting ranked api.elements from their index
 	rankedSubList := make(map[int][]models.Vector)

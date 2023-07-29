@@ -36,8 +36,6 @@ func New(opts ...ModeOptions) *de {
 
 func (mode *de) Execute(ctx context.Context) error {
 	logger := log.FromContext(ctx)
-	logger.Debug("Starting execution")
-
 	pareto := make(chan []models.Vector, 10)
 	maxObjs := make(chan<- []float64, 10)
 
@@ -57,7 +55,7 @@ func (mode *de) Execute(ctx context.Context) error {
 				pareto,
 				maxObjs,
 			); err != nil {
-				logger.Error("Execution ", idx, ": ", err)
+				logger.Errorf("Execution %d, err: ", idx, err)
 			}
 		}(i)
 	}

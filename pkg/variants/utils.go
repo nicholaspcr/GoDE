@@ -2,11 +2,13 @@ package variants
 
 import (
 	"errors"
-	"math/rand"
+
+	"github.com/nicholaspcr/GoDE/internal/fastrand"
 )
 
 // GenerateIndices returns random indices into the r slice.
 func GenerateIndices(startInd, NP int, r []int) error {
+	random := fastrand.NewRand()
 	if len(r) > NP {
 		return errors.New(
 			"insufficient elements in population to generate random indices",
@@ -14,7 +16,7 @@ func GenerateIndices(startInd, NP int, r []int) error {
 	}
 	for i := startInd; i < len(r); i++ {
 		for done := false; !done; {
-			r[i] = rand.Int() % NP
+			r[i] = random.Int() % NP
 			done = true
 			for j := 0; j < i; j++ {
 				done = done && r[j] != r[i]

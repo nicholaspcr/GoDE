@@ -2,8 +2,8 @@ package gde3
 
 import (
 	"context"
-	"math/rand"
 
+	"github.com/nicholaspcr/GoDE/internal/fastrand"
 	"github.com/nicholaspcr/GoDE/internal/log"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/de"
@@ -42,6 +42,8 @@ func (g *gde3) Execute(
 	maxObjectives chan<- []float64,
 ) error {
 	logger := log.FromContext(ctx)
+	random := fastrand.NewRand()
+
 	execNum := de.FromContextExecutionNumber(ctx)
 	logger.Debugf("Starting GDE3 execution: %d", execNum)
 
@@ -107,11 +109,11 @@ func (g *gde3) Execute(
 			trial = population.Vectors[i].Copy()
 
 			// CROSS OVER
-			currInd := rand.Int() % popuParams.DimensionSize
-			luckyIndex := rand.Int() % popuParams.DimensionSize
+			currInd := random.Int() % popuParams.DimensionSize
+			luckyIndex := random.Int() % popuParams.DimensionSize
 
 			for j := 0; j < popuParams.DimensionSize; j++ {
-				changeProb := rand.Float64()
+				changeProb := random.Float64()
 				if changeProb < g.contants.CR || currInd == luckyIndex {
 					trial.Elements[currInd] = vr.Elements[currInd]
 				}

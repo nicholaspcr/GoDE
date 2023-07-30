@@ -1,11 +1,9 @@
 package commands
 
 import (
-	"math/rand"
 	_ "net/http/pprof"
 	"os"
 	"runtime/pprof"
-	"time"
 
 	"github.com/nicholaspcr/GoDE/cmd/decli/internal/config"
 	"github.com/nicholaspcr/GoDE/internal/log"
@@ -26,7 +24,6 @@ allows the usage of the algorithm locally and the ability to connect to a
 server.
 `,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		rand.Seed(time.Now().UnixNano())
 		cmd.SetContext(log.SetContext(cmd.Context(), log.New()))
 		if err := config.InitializeRoot(cmd); err != nil {
 			return err

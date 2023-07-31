@@ -45,8 +45,10 @@ server.
 	},
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		logger := log.FromContext(cmd.Context())
-		logger.Debug("FLAGS:", cmd.Flags())
-		logger.Debug("Config:", cfg)
+		logger.Debug("Initialization of CLI:",
+			log.Any("flags", cmd.Flags()),
+			log.Any("Configuration", cfg),
+		)
 		return cmd.Help()
 	},
 	PersistentPostRunE: func(cmd *cobra.Command, args []string) error {

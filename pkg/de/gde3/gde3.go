@@ -45,7 +45,7 @@ func (g *gde3) Execute(
 	random := fastrand.NewRand()
 
 	execNum := de.FromContextExecutionNumber(ctx)
-	logger.Debugf("Starting GDE3 execution: %d", execNum)
+	logger.Debug("Starting GDE3", log.Int("execution", execNum))
 
 	population := g.initialPopulation.Copy()
 	popuParams := g.populationParams
@@ -86,7 +86,10 @@ func (g *gde3) Execute(
 	var trial models.Vector
 
 	for gen := 0; gen < g.contants.Generations; gen++ {
-		logger.Debugf("Execution %d generation: %d", execNum, gen)
+		logger.Debug("Running generation",
+			log.Int("execution_n", execNum),
+			log.Int("generation_n", gen),
+		)
 		// gets non dominated of the current population
 		genRankZero, _ = de.FilterDominated(population.Vectors)
 

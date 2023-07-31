@@ -55,7 +55,10 @@ func (mode *de) Execute(ctx context.Context) error {
 				pareto,
 				maxObjs,
 			); err != nil {
-				logger.Errorf("Execution %d, err: ", idx, err)
+				logger.Error("Unexpected error while executing the algorith",
+					log.Int("Execution", idx),
+					log.Error("error", err),
+				)
 			}
 		}(i)
 	}

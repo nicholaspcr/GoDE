@@ -13,19 +13,20 @@ import (
 // Logger provides a zap logger with extra wrap methods to facilitate operations
 // involving the binaries related to Differential Evolution.
 type Logger struct {
-	*zap.SugaredLogger
+	*zap.Logger
 }
 
 // New returns a default logger.
 func New() *Logger {
-	logger := zap.New(
-		zapcore.NewCore(
-			getEncoder(),
-			zapcore.Lock(os.Stdout),
-			getLogLevel(),
+	return &Logger{
+		Logger: zap.New(
+			zapcore.NewCore(
+				getEncoder(),
+				zapcore.Lock(os.Stdout),
+				getLogLevel(),
+			),
 		),
-	)
-	return &Logger{SugaredLogger: logger.Sugar()}
+	}
 }
 
 func getEncoder() zapcore.Encoder {

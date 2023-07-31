@@ -14,10 +14,10 @@ var logger *log.Logger
 // appropriately.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		if logger.SugaredLogger == nil {
+		if logger.Logger == nil {
 			fmt.Printf("decli ended unexpectedly, error: %s", err)
 		} else {
-			logger.Error("decli ended unexpectedly", "error", err)
+			logger.Error("decli ended unexpectedly", zap"error", err)
 		}
 		os.Exit(1)
 	}

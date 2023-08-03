@@ -103,6 +103,8 @@ func (g *gde3) Execute(
 					F:       g.contants.F,
 					CurrPos: i,
 					P:       g.contants.P,
+
+					Random: random,
 				})
 			if err != nil {
 				return err

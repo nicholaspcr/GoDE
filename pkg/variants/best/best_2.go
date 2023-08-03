@@ -28,7 +28,7 @@ func (b *best2) Mutate(
 	// indices of the elements to be used in the mutation
 	ind := make([]int, 5)
 	ind[0] = p.CurrPos
-	err := variants.GenerateIndices(1, len(elems), ind)
+	err := variants.GenerateIndices(1, len(elems), ind, p.Random)
 
 	if err != nil {
 		return models.Vector{}, errors.New(

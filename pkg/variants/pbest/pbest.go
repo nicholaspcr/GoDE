@@ -28,7 +28,7 @@ func (p *pbest) Mutate(
 	ind := make([]int, 3)
 	ind[0] = params.CurrPos
 
-	err := variants.GenerateIndices(1, len(elems), ind)
+	err := variants.GenerateIndices(1, len(elems), ind, params.Random)
 	if err != nil {
 		return models.Vector{}, errors.New(
 			"insufficient size for the population, must me equal or greater than 5",

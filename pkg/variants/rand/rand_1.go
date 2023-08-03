@@ -32,7 +32,7 @@ func (r *rand1) Mutate(
 	// generating random indices different from current pos
 	inds := make([]int, 4)
 	inds[0] = p.CurrPos
-	err := variants.GenerateIndices(1, len(elems), inds)
+	err := variants.GenerateIndices(1, len(elems), inds, p.Random)
 	if err != nil {
 		return models.Vector{}, err
 	}

@@ -25,7 +25,7 @@ func (r *rand2) Mutate(
 	// generating random indices different from current pos
 	ind := make([]int, 6)
 	ind[0] = p.CurrPos
-	err := variants.GenerateIndices(1, len(elems), ind)
+	err := variants.GenerateIndices(1, len(elems), ind, p.Random)
 	if err != nil {
 		return models.Vector{}, errors.New(
 			"insufficient size for the population, must me equal or greater than 4",

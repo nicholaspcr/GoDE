@@ -13,7 +13,7 @@ func Rand64() uint64 {
 }
 
 // NewRand returns a properly seeded *rand.Rand. It has *slightly* higher
-// overhead than Rand64 (as it has to allocate), but the resulting PRNG can be
+// overhead than Rand64 (as it has to allocate), but the resulting RNG can be
 // re-used to offset that cost. Use this if you can't just mask off bits from a
 // uint64 (e.g. if you need to use Intn() with something that is not a power of
 // 2).

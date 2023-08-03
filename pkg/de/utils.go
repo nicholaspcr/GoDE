@@ -50,13 +50,13 @@ func ReduceByCrowdDistance(
 	return elems, zero
 }
 
-// FastNonDominatedRanking - ranks the api.elements and returns a map with
+// FastNonDominatedRanking - ranks the API.elements and returns a map with
 // api.elements per rank
 func FastNonDominatedRanking(
 	ctx context.Context, elems []models.Vector,
 ) map[int][]models.Vector {
-	// This func is inspired by the DEB_NSGA-II paper a fast and elitist
-	// multiobjective genetic algorithm
+	// This function is inspired by the DEB_NSGA-II paper a fast and elitist
+	// multi-objective genetic algorithm
 
 	dominatingIth := make([]int, len(elems))  // N_p equivalent
 	ithDominated := make([][]int, len(elems)) // S_p equivalent
@@ -89,7 +89,7 @@ func FastNonDominatedRanking(
 		}
 	}
 
-	// used to go through the existant fronts
+	// used to go through the existent fronts
 	for i := 0; len(fronts[i]) > 0; i++ {
 		// slice to be added to the next front
 		nextFront := []int{}
@@ -216,7 +216,7 @@ func CalculateCrwdDist(elems []models.Vector) {
 				distance = distance / (objMax - objMin)
 			}
 
-			// only adds to the crowdDistance if smalled than max value
+			// only adds to the crowdDistance if its smaller than max value
 			if elems[i].CrowdingDistance+distance < INF {
 				elems[i].CrowdingDistance += distance
 			}

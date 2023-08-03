@@ -53,7 +53,7 @@ func (g *gde3) Execute(
 	objFuncAmount := g.populationParams.ObjectivesSize
 	maxObjs := make([]float64, dimSize)
 
-	// calculates the objs of the inital population
+	// calculates the objectives of the initial population
 	for i := range population.Vectors {
 		err := g.problem.Evaluate(&population.Vectors[i], objFuncAmount)
 		if err != nil {
@@ -71,7 +71,7 @@ func (g *gde3) Execute(
 	//	// TODO: Add header contents to methods
 	//	return err
 	//}
-	// writes the inital generation
+	// writes the initial generation
 
 	// TODO: Update how the population is written
 	//if err := store.Population(population); err != nil {

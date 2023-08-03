@@ -17,14 +17,7 @@ func ReduceByCrowdDistance(
 	ctx context.Context, elems []models.Vector, NP int,
 ) ([]models.Vector, []models.Vector) {
 	ranks := FastNonDominatedRanking(ctx, elems)
-	elems = make([]models.Vector, 0)
-
-	// TODO remove the qtdElems sections
-	qtdElems := 0
-
-	for _, r := range ranks {
-		qtdElems += len(r)
-	}
+	elems = make([]models.Vector, 0, NP)
 
 	for i := 0; i < len(ranks); i++ {
 		CalculateCrwdDist(ranks[i])

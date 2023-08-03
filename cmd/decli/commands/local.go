@@ -51,7 +51,7 @@ var localRunCmd = &cobra.Command{
 			de.WithObjFuncAmount(cfg.Constants.M),
 			de.WithAlgorithm(
 				gde3.New(
-					gde3.WithInitialPopulation(initialPopulation.Copy()),
+					gde3.WithInitialPopulation(initialPopulation),
 					gde3.WithPopulationParams(populationParams),
 					gde3.WithConstants(de.Constants{
 						F:             cfg.Constants.F,

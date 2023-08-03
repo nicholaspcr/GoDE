@@ -83,7 +83,6 @@ func (g *gde3) Execute(
 
 	var genRankZero []models.Vector
 	var bestInGen []models.Vector
-	var trial models.Vector
 
 	for gen := 0; gen < g.contants.Generations; gen++ {
 		logger.Debug("Running generation",
@@ -111,7 +110,7 @@ func (g *gde3) Execute(
 			}
 
 			// trial element
-			trial = population.Vectors[i].Copy()
+			trial := population.Vectors[i].Copy()
 
 			// CROSS OVER
 			currInd := random.Int() % popuParams.DimensionSize
@@ -136,18 +135,14 @@ func (g *gde3) Execute(
 				return err
 			}
 
-			if len(trial.Objectives) == 0 {
-				panic("trial vector is empty")
-			}
-
 			// SELECTION
 			comp := de.DominanceTest(
 				population.Vectors[i].Objectives, trial.Objectives,
 			)
 			if comp == 1 {
-				population.Vectors[i] = trial.Copy()
+				population.Vectors[i] = trial
 			} else if comp == 0 && len(population.Vectors) <= 2*popuParams.DimensionSize {
-				population.Vectors = append(population.Vectors, trial.Copy())
+				population.Vectors = append(population.Vectors, trial)
 			}
 		}
 

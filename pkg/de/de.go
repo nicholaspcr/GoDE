@@ -36,8 +36,8 @@ func New(opts ...ModeOptions) *de {
 
 func (mode *de) Execute(ctx context.Context) error {
 	logger := log.FromContext(ctx)
-	pareto := make(chan []models.Vector, 10)
-	maxObjs := make(chan<- []float64, 10)
+	pareto := make(chan []models.Vector, 100)
+	maxObjs := make(chan<- []float64, 100)
 
 	// TODO: Change this to be just a pipeline pattern, that way there can be a
 	// goroutine in the background that would write the last values.

@@ -1,24 +1,17 @@
 package commands
 
 import (
-	"fmt"
+	"log/slog"
 	"os"
 
-	"github.com/nicholaspcr/GoDE/internal/log"
 	"github.com/spf13/cobra"
 )
-
-var logger *log.Logger
 
 // Execute adds all child commands to the root command and sets flags
 // appropriately.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		if logger.Logger == nil {
-			fmt.Printf("decli ended unexpectedly, error: %s", err)
-		} else {
-			logger.Error("decli ended unexpectedly", zap"error", err)
-		}
+		slog.Default().Error("decli ended unexpectedly", "error", err)
 		os.Exit(1)
 	}
 }
@@ -30,9 +23,7 @@ var rootCmd = &cobra.Command{
 	Long: `Server capable of serving multiple requests of Differential Evolution
 requests, storing the values of each step and the end result in a database and
 making it possible to retrieve those at any point.`,
-	PersistentPreRun: func(*cobra.Command, []string) {
-		logger = log.New()
-	},
+	PersistentPreRun: func(*cobra.Command, []string) {},
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		return cmd.Help()
 	},

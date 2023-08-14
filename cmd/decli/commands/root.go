@@ -1,12 +1,14 @@
 package commands
 
 import (
+	"log/slog"
 	_ "net/http/pprof"
 	"os"
 	"runtime/pprof"
 
-	"github.com/nicholaspcr/GoDE/cmd/decli/internal/config"
 	"github.com/nicholaspcr/GoDE/internal/log"
+
+	"github.com/nicholaspcr/GoDE/cmd/decli/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -24,7 +26,13 @@ allows the usage of the algorithm locally and the ability to connect to a
 server.
 `,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		cmd.SetContext(log.SetContext(cmd.Context(), log.New()))
+		// TODO: Add configuration to the logger
+		// Configuration has to be parsed and checked if any of the logger
+		// fields are set, if so, then the logger has to be configured using
+		// log.WithX field.
+		logger := log.New()
+		slog.SetDefault(logger)
+
 		if err := config.InitializeRoot(cmd); err != nil {
 			return err
 		}
@@ -44,10 +52,10 @@ server.
 		return pprof.StartCPUProfile(cpuProfile)
 	},
 	RunE: func(cmd *cobra.Command, _ []string) error {
-		logger := log.FromContext(cmd.Context())
+		logger := slog.Default()
 		logger.Debug("Initialization of CLI:",
-			log.Any("flags", cmd.Flags()),
-			log.Any("Configuration", cfg),
+			slog.Any("flags", cmd.Flags()),
+			slog.Any("Configuration", cfg),
 		)
 		return cmd.Help()
 	},

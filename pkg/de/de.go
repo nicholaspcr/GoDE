@@ -2,9 +2,9 @@ package de
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 
-	"github.com/nicholaspcr/GoDE/internal/log"
 	"github.com/nicholaspcr/GoDE/pkg/models"
 )
 
@@ -35,7 +35,7 @@ func New(opts ...ModeOptions) *de {
 }
 
 func (mode *de) Execute(ctx context.Context) error {
-	logger := log.FromContext(ctx)
+	logger := slog.Default()
 	pareto := make(chan []models.Vector, 100)
 	maxObjs := make(chan<- []float64, 100)
 
@@ -56,8 +56,8 @@ func (mode *de) Execute(ctx context.Context) error {
 				maxObjs,
 			); err != nil {
 				logger.Error("Unexpected error while executing the algorith",
-					log.Int("Execution", idx),
-					log.Error("error", err),
+					slog.Int("Execution", idx),
+					slog.String("error", err.Error()),
 				)
 			}
 		}(i)

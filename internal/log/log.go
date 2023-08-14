@@ -1,68 +1,90 @@
-// Package log contains the methods to configure the logger and to set and
-// get the log mechanism from a context.
 package log
 
 import (
-	"os"
-	"strings"
+	"context"
+	"encoding/json"
+	"log"
+	"log/slog"
 
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+	"github.com/fatih/color"
 )
 
-// Logger provides a zap logger with extra wrap methods to facilitate operations
-// involving the binaries related to Differential Evolution.
-type Logger struct {
-	*zap.Logger
+// New creates a new logger with the given options. If no option is given then
+// it will use the default configuration.
+func New(opts ...Option) *slog.Logger {
+	cfg := new(loggerConfig)
+	*cfg = *defaultConfig
+
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
+	var h slog.Handler
+	switch cfg.Type {
+	case "text":
+		h = slog.NewTextHandler(cfg.Writer, cfg.HandlerOptions)
+	default:
+		h = slog.NewJSONHandler(cfg.Writer, cfg.HandlerOptions)
+	}
+
+	if cfg.Pretty.Enable {
+		h = &prettyHandler{
+			Handler: h,
+			Logger:  log.New(cfg.Writer, "", 0),
+			cfg:     &cfg.Pretty,
+		}
+	}
+
+	return slog.New(h)
 }
 
-// New returns a default logger.
-func New() *Logger {
-	return &Logger{
-		Logger: zap.New(
-			zapcore.NewCore(
-				getEncoder(),
-				zapcore.Lock(os.Stdout),
-				getLogLevel(),
-			),
-		),
-	}
+type prettyHandler struct {
+	slog.Handler
+	*log.Logger
+	cfg *PrettyConfig
 }
 
-func getEncoder() zapcore.Encoder {
-	enconder := strings.ToLower(os.Getenv("GODE_LOG_ENCODER"))
-	switch enconder {
-	case "console":
-		return zapcore.NewConsoleEncoder(getEncoderConfig())
-	default:
-		return zapcore.NewJSONEncoder(getEncoderConfig())
-	}
-}
-func getEncoderConfig() zapcore.EncoderConfig {
-	config := strings.ToLower(os.Getenv("GODE_LOG_ENCODER_CONFIG"))
-	var cfg zapcore.EncoderConfig
-	switch config {
-	case "development":
-		cfg = zap.NewDevelopmentEncoderConfig()
-	default:
-		cfg = zap.NewProductionEncoderConfig()
-	}
-	cfg.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	return cfg
-}
+func (h *prettyHandler) Handle(ctx context.Context, r slog.Record) error {
+	level := r.Level.String()
 
-func getLogLevel() zapcore.Level {
-	logLevel := strings.ToLower(os.Getenv("GODE_LOG_LEVEL"))
-	switch logLevel {
-	case "debug":
-		return zapcore.DebugLevel
-	case "info":
-		return zapcore.InfoLevel
-	case "warn":
-		return zapcore.WarnLevel
-	case "error":
-		return zapcore.ErrorLevel
-	default:
-		return zapcore.InfoLevel
+	if h.cfg.Color {
+		switch r.Level {
+		case slog.LevelDebug:
+			level = color.MagentaString(level) + ":"
+		case slog.LevelInfo:
+			level = color.BlueString(level) + ":"
+		case slog.LevelWarn:
+			level = color.YellowString(level) + ":"
+		case slog.LevelError:
+			level = color.RedString(level) + ":"
+		}
 	}
+
+	fields := make(map[string]any, r.NumAttrs())
+
+	// Local fields of the logger
+	r.Attrs(func(a slog.Attr) bool {
+		fields[a.Key] = a.Value.Any()
+		return true
+	})
+
+	var b []byte
+	var err error
+	if h.cfg.Indent != "" {
+		b, err = json.MarshalIndent(fields, "", h.cfg.Indent)
+		if err != nil {
+			return err
+		}
+	} else {
+		b, err = json.Marshal(fields)
+		if err != nil {
+			return err
+		}
+	}
+
+	timeStr := r.Time.Format(h.cfg.TimeFormat)
+	msg := color.CyanString(r.Message)
+
+	h.Println(timeStr, level, msg, color.WhiteString(string(b)))
+	return nil
 }

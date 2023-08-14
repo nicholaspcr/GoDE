@@ -2,9 +2,9 @@ package gde3
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/nicholaspcr/GoDE/internal/fastrand"
-	"github.com/nicholaspcr/GoDE/internal/log"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/de"
 	"github.com/nicholaspcr/GoDE/pkg/models"
@@ -41,11 +41,11 @@ func (g *gde3) Execute(
 	pareto chan<- []models.Vector,
 	maxObjectives chan<- []float64,
 ) error {
-	logger := log.FromContext(ctx)
+	logger := slog.Default()
 	random := fastrand.NewRand()
 
 	execNum := de.FromContextExecutionNumber(ctx)
-	logger.Debug("Starting GDE3", log.Int("execution", execNum))
+	logger.Debug("Starting GDE3", slog.Int("execution", execNum))
 
 	population := g.initialPopulation.Copy()
 	popuParams := g.populationParams
@@ -86,8 +86,8 @@ func (g *gde3) Execute(
 
 	for gen := 0; gen < g.contants.Generations; gen++ {
 		logger.Debug("Running generation",
-			log.Int("execution_n", execNum),
-			log.Int("generation_n", gen),
+			slog.Int("execution_n", execNum),
+			slog.Int("generation_n", gen),
 		)
 		// gets non dominated of the current population
 		genRankZero, _ = de.FilterDominated(population.Vectors)

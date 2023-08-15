@@ -12,12 +12,14 @@ import (
 // New creates a new logger with the given options. If no option is given then
 // it will use the default configuration.
 func New(opts ...Option) *slog.Logger {
-	cfg := new(loggerConfig)
+	cfg := new(Config)
 	*cfg = *defaultConfig
 
 	for _, opt := range opts {
 		opt(cfg)
 	}
+	// Manually pass the level to the handler options
+	cfg.HandlerOptions.Level = cfg.Level
 
 	var h slog.Handler
 	switch cfg.Type {
@@ -31,7 +33,7 @@ func New(opts ...Option) *slog.Logger {
 		h = &prettyHandler{
 			Handler: h,
 			Logger:  log.New(cfg.Writer, "", 0),
-			cfg:     &cfg.Pretty,
+			cfg:     cfg.Pretty,
 		}
 	}
 
@@ -46,7 +48,6 @@ type prettyHandler struct {
 
 func (h *prettyHandler) Handle(ctx context.Context, r slog.Record) error {
 	level := r.Level.String()
-
 	if h.cfg.Color {
 		switch r.Level {
 		case slog.LevelDebug:

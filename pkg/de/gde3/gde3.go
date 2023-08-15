@@ -3,8 +3,9 @@ package gde3
 import (
 	"context"
 	"log/slog"
+	"math/rand"
+	"time"
 
-	"github.com/nicholaspcr/GoDE/internal/fastrand"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/de"
 	"github.com/nicholaspcr/GoDE/pkg/models"
@@ -42,7 +43,7 @@ func (g *gde3) Execute(
 	maxObjectives chan<- []float64,
 ) error {
 	logger := slog.Default()
-	random := fastrand.NewRand()
+	random := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	execNum := de.FromContextExecutionNumber(ctx)
 	logger.Debug("Starting GDE3", slog.Int("execution", execNum))

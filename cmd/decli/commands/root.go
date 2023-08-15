@@ -9,6 +9,7 @@ import (
 	"github.com/nicholaspcr/GoDE/internal/log"
 
 	"github.com/nicholaspcr/GoDE/cmd/decli/internal/config"
+	"github.com/nicholaspcr/GoDE/cmd/decli/internal/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -26,20 +27,27 @@ allows the usage of the algorithm locally and the ability to connect to a
 server.
 `,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		// TODO: Add configuration to the logger
-		// Configuration has to be parsed and checked if any of the logger
-		// fields are set, if so, then the logger has to be configured using
-		// log.WithX field.
-		logger := log.New()
+		if err := config.InitializeRoot(cmd, &cfg); err != nil {
+			return err
+		}
+
+		logCfg := cfg.Logger.Config
+		if logCfg != nil && cfg.Logger.Filename != "" {
+			f, err := os.Create(cfg.Logger.Filename)
+			if err != nil {
+				return err
+			}
+			logCfg.Writer = f
+		}
+		logger := log.New(utils.LogOptionsFromConfig(logCfg)...)
 		slog.SetDefault(logger)
 
-		if err := config.InitializeRoot(cmd); err != nil {
-			return err
-		}
-		cfg = config.DefaultConfig
-		if err := config.Unmarshal(&cfg); err != nil {
-			return err
-		}
+		slog.Info("NICK")
+		slog.Info("Initialization of CLI:",
+			// slog.Any("flags", cmd.Flags()), // TODO: <nil> values don't show up
+			slog.Any("Configuration", cfg),
+		)
+
 		var err error
 		cpuProfile, err = os.Create("cpuprofile")
 		if err != nil {
@@ -52,8 +60,7 @@ server.
 		return pprof.StartCPUProfile(cpuProfile)
 	},
 	RunE: func(cmd *cobra.Command, _ []string) error {
-		logger := slog.Default()
-		logger.Debug("Initialization of CLI:",
+		slog.Debug("Initialization of CLI:",
 			slog.Any("flags", cmd.Flags()),
 			slog.Any("Configuration", cfg),
 		)

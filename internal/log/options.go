@@ -21,11 +21,11 @@ type Config struct {
 
 // PrettyConfig contain configurations regarding formatting for JSON logs.
 type PrettyConfig struct {
-	Enable bool `json:"enable"`
-	Color  bool `json:"color"`
+	Enable bool `json:"enable" yaml:"enable"`
+	Color  bool `json:"color" yaml:"color"`
 	// TimeFormat is the format for timestamps. Defaults to time.RFC3339.
-	TimeFormat string `json:"time-format"`
-	Indent     string `json:"indent"`
+	TimeFormat string `json:"time-format" yaml:"time-format"`
+	Indent     string `json:"indent" yaml:"indent"`
 }
 
 var defaultConfig = &Config{

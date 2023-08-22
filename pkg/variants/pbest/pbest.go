@@ -24,7 +24,6 @@ func (p *pbest) Mutate(
 	elems, rankZero []models.Vector,
 	params variants.Parameters,
 ) (models.Vector, error) {
-
 	ind := make([]int, 3)
 	ind[0] = params.CurrPos
 

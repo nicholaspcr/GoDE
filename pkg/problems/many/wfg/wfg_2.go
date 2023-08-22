@@ -16,7 +16,6 @@ func (w *wfg2) Name() string {
 }
 
 func (w *wfg2) Evaluate(e *models.Vector, M int) error {
-
 	n_var := len(e.Elements)
 	n_obj := M
 	k := 2 * (n_obj - 1)

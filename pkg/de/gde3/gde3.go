@@ -168,7 +168,7 @@ func (g *gde3) Execute(
 		//}
 	}
 
-	//logger.Debug("bestElems: ", bestElems)
+	// logger.Debug("bestElems: ", bestElems)
 	// sending via channel the data
 	// maximumObjs <- maxObjs
 	pareto <- bestElems

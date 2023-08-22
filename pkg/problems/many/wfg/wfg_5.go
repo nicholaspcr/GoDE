@@ -16,7 +16,6 @@ func (w *wfg5) Name() string {
 }
 
 func (w *wfg5) Evaluate(e *models.Vector, M int) error {
-
 	n_var := len(e.Elements)
 	n_obj := M
 	k := 2 * (n_obj - 1)
@@ -51,7 +50,6 @@ func (w *wfg5) Evaluate(e *models.Vector, M int) error {
 
 // wfg5_t1 implementation
 func wfg5_t1(X []float64) []float64 {
-
 	var ret []float64
 	for _, x := range X {
 		ret = append(ret, _transformation_param_deceptive(x, 0.35, 0.001, 0.05))

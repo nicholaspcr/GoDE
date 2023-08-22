@@ -42,9 +42,7 @@ server.
 		logger := log.New(utils.LogOptionsFromConfig(logCfg)...)
 		slog.SetDefault(logger)
 
-		slog.Info("NICK")
 		slog.Info("Initialization of CLI:",
-			// slog.Any("flags", cmd.Flags()), // TODO: <nil> values don't show up
 			slog.Any("Configuration", cfg),
 		)
 

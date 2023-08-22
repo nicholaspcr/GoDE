@@ -7,11 +7,12 @@
 package api
 
 import (
+	reflect "reflect"
+	sync "sync"
+
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
-	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -476,17 +477,19 @@ func file_api_population_proto_rawDescGZIP() []byte {
 	return file_api_population_proto_rawDescData
 }
 
-var file_api_population_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
-var file_api_population_proto_goTypes = []interface{}{
-	(*Vector)(nil),               // 0: api.Vector
-	(*PopulationIDs)(nil),        // 1: api.PopulationIDs
-	(*Population)(nil),           // 2: api.Population
-	(*PopulationParameters)(nil), // 3: api.PopulationParameters
-	(*ParetoIDs)(nil),            // 4: api.ParetoIDs
-	(*Pareto)(nil),               // 5: api.Pareto
-	(*UserID)(nil),               // 6: api.UserID
-	(*emptypb.Empty)(nil),        // 7: google.protobuf.Empty
-}
+var (
+	file_api_population_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+	file_api_population_proto_goTypes  = []interface{}{
+		(*Vector)(nil),               // 0: api.Vector
+		(*PopulationIDs)(nil),        // 1: api.PopulationIDs
+		(*Population)(nil),           // 2: api.Population
+		(*PopulationParameters)(nil), // 3: api.PopulationParameters
+		(*ParetoIDs)(nil),            // 4: api.ParetoIDs
+		(*Pareto)(nil),               // 5: api.Pareto
+		(*UserID)(nil),               // 6: api.UserID
+		(*emptypb.Empty)(nil),        // 7: google.protobuf.Empty
+	}
+)
 var file_api_population_proto_depIdxs = []int32{
 	1,  // 0: api.Population.ids:type_name -> api.PopulationIDs
 	0,  // 1: api.Population.vectors:type_name -> api.Vector

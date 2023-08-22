@@ -8,6 +8,7 @@ package api
 
 import (
 	context "context"
+
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -92,18 +93,20 @@ type ExecutionServicesServer interface {
 }
 
 // UnimplementedExecutionServicesServer must be embedded to have forward compatible implementations.
-type UnimplementedExecutionServicesServer struct {
-}
+type UnimplementedExecutionServicesServer struct{}
 
 func (UnimplementedExecutionServicesServer) Create(context.Context, *Execution) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
 }
+
 func (UnimplementedExecutionServicesServer) Read(context.Context, *ExecutionIDs) (*Execution, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Read not implemented")
 }
+
 func (UnimplementedExecutionServicesServer) Update(context.Context, *Execution) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
 }
+
 func (UnimplementedExecutionServicesServer) Delete(context.Context, *ExecutionIDs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }
@@ -351,21 +354,24 @@ type ExecutionSetServicesServer interface {
 }
 
 // UnimplementedExecutionSetServicesServer must be embedded to have forward compatible implementations.
-type UnimplementedExecutionSetServicesServer struct {
-}
+type UnimplementedExecutionSetServicesServer struct{}
 
 func (UnimplementedExecutionSetServicesServer) Create(context.Context, *ExecutionSet) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
 }
+
 func (UnimplementedExecutionSetServicesServer) Find(context.Context, *ExecutionSetIDs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Find not implemented")
 }
+
 func (UnimplementedExecutionSetServicesServer) Delete(context.Context, *ExecutionSetIDs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }
+
 func (UnimplementedExecutionSetServicesServer) List(*ExecutionSetIDs, ExecutionSetServices_ListServer) error {
 	return status.Errorf(codes.Unimplemented, "method List not implemented")
 }
+
 func (UnimplementedExecutionSetServicesServer) FetchByUser(*UserID, ExecutionSetServices_FetchByUserServer) error {
 	return status.Errorf(codes.Unimplemented, "method FetchByUser not implemented")
 }

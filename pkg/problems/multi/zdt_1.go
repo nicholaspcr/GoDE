@@ -19,7 +19,6 @@ func (v *zdt1) Name() string {
 }
 
 func (v *zdt1) Evaluate(e *models.Vector, M int) error {
-
 	if len(e.Elements) < 2 {
 		return errors.New("need at least two variables/dimensions")
 	}

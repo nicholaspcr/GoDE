@@ -8,6 +8,7 @@ package api
 
 import (
 	context "context"
+
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -92,18 +93,20 @@ type GenerationServicesServer interface {
 }
 
 // UnimplementedGenerationServicesServer must be embedded to have forward compatible implementations.
-type UnimplementedGenerationServicesServer struct {
-}
+type UnimplementedGenerationServicesServer struct{}
 
 func (UnimplementedGenerationServicesServer) Create(context.Context, *Generation) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
 }
+
 func (UnimplementedGenerationServicesServer) Read(context.Context, *GenerationID) (*Generation, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Read not implemented")
 }
+
 func (UnimplementedGenerationServicesServer) Update(context.Context, *Generation) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
 }
+
 func (UnimplementedGenerationServicesServer) Delete(context.Context, *GenerationID) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }

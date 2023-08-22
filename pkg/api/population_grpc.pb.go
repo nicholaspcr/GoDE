@@ -8,6 +8,7 @@ package api
 
 import (
 	context "context"
+
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -127,21 +128,24 @@ type PopulationServicesServer interface {
 }
 
 // UnimplementedPopulationServicesServer must be embedded to have forward compatible implementations.
-type UnimplementedPopulationServicesServer struct {
-}
+type UnimplementedPopulationServicesServer struct{}
 
 func (UnimplementedPopulationServicesServer) Create(context.Context, *Population) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
 }
+
 func (UnimplementedPopulationServicesServer) Read(context.Context, *PopulationIDs) (*Population, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Read not implemented")
 }
+
 func (UnimplementedPopulationServicesServer) Update(context.Context, *Population) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
 }
+
 func (UnimplementedPopulationServicesServer) Delete(context.Context, *PopulationIDs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }
+
 func (UnimplementedPopulationServicesServer) ListByUser(*UserID, PopulationServices_ListByUserServer) error {
 	return status.Errorf(codes.Unimplemented, "method ListByUser not implemented")
 }
@@ -393,21 +397,24 @@ type ParetoServicesServer interface {
 }
 
 // UnimplementedParetoServicesServer must be embedded to have forward compatible implementations.
-type UnimplementedParetoServicesServer struct {
-}
+type UnimplementedParetoServicesServer struct{}
 
 func (UnimplementedParetoServicesServer) Create(context.Context, *Pareto) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
 }
+
 func (UnimplementedParetoServicesServer) Read(context.Context, *ParetoIDs) (*Pareto, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Read not implemented")
 }
+
 func (UnimplementedParetoServicesServer) Update(context.Context, *Pareto) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
 }
+
 func (UnimplementedParetoServicesServer) Delete(context.Context, *ParetoIDs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }
+
 func (UnimplementedParetoServicesServer) ListByUser(*UserID, ParetoServices_ListByUserServer) error {
 	return status.Errorf(codes.Unimplemented, "method ListByUser not implemented")
 }

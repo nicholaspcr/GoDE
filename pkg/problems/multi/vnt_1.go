@@ -20,7 +20,6 @@ func (v *vnt1) Name() string {
 }
 
 func (v *vnt1) Evaluate(e *models.Vector, M int) error {
-
 	if len(e.Elements) != 2 {
 		return errors.New("need at have only two variables/dimensions")
 	}

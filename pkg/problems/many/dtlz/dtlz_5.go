@@ -19,7 +19,6 @@ func (v *dtlz5) Name() string {
 }
 
 func (v *dtlz5) Evaluate(e *models.Vector, M int) error {
-
 	if len(e.Elements) <= M {
 		return errors.New(
 			"need to have an M lesser than the amount of variables",

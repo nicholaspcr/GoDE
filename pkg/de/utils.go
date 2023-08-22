@@ -34,11 +34,11 @@ func ReduceByCrowdDistance(
 
 	zero := make([]models.Vector, len(ranks[0]))
 
-	// TODO NICK: is this the best method for copying the vectors?
+	// TODO: is this the best method for copying the vectors?
 	for idx, v := range ranks[0] {
 		zero[idx] = v.Copy()
 	}
-	//copy(zero, ranks[0])
+	// copy(zero, ranks[0])
 
 	return elems, zero
 }
@@ -69,7 +69,6 @@ func FastNonDominatedRanking(
 				// p dominates q
 				// add q to the set of solutions dominated by p
 				ithDominated[p] = append(ithDominated[p], q)
-
 			} else if dominanceTestResult == 1 {
 				// q dominates p
 				// increment the domination counter of p
@@ -89,7 +88,6 @@ func FastNonDominatedRanking(
 
 		// for each p in F_i
 		for _, p := range fronts[i] {
-
 			// for each q in S_p
 			for _, q := range ithDominated[p] {
 				dominatingIth[q]--

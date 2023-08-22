@@ -7,11 +7,12 @@
 package api
 
 import (
+	reflect "reflect"
+	sync "sync"
+
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
-	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -178,13 +179,15 @@ func file_api_generation_proto_rawDescGZIP() []byte {
 	return file_api_generation_proto_rawDescData
 }
 
-var file_api_generation_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_api_generation_proto_goTypes = []interface{}{
-	(*GenerationID)(nil),  // 0: api.GenerationID
-	(*Generation)(nil),    // 1: api.Generation
-	(*Population)(nil),    // 2: api.Population
-	(*emptypb.Empty)(nil), // 3: google.protobuf.Empty
-}
+var (
+	file_api_generation_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+	file_api_generation_proto_goTypes  = []interface{}{
+		(*GenerationID)(nil),  // 0: api.GenerationID
+		(*Generation)(nil),    // 1: api.Generation
+		(*Population)(nil),    // 2: api.Population
+		(*emptypb.Empty)(nil), // 3: google.protobuf.Empty
+	}
+)
 var file_api_generation_proto_depIdxs = []int32{
 	2, // 0: api.Generation.populations:type_name -> api.Population
 	1, // 1: api.GenerationServices.Create:input_type -> api.Generation

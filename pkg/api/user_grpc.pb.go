@@ -8,6 +8,7 @@ package api
 
 import (
 	context "context"
+
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -92,18 +93,20 @@ type UserBaseServicesServer interface {
 }
 
 // UnimplementedUserBaseServicesServer must be embedded to have forward compatible implementations.
-type UnimplementedUserBaseServicesServer struct {
-}
+type UnimplementedUserBaseServicesServer struct{}
 
 func (UnimplementedUserBaseServicesServer) Create(context.Context, *User) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
 }
+
 func (UnimplementedUserBaseServicesServer) Read(context.Context, *UserID) (*User, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Read not implemented")
 }
+
 func (UnimplementedUserBaseServicesServer) Update(context.Context, *User) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
 }
+
 func (UnimplementedUserBaseServicesServer) Delete(context.Context, *UserID) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }

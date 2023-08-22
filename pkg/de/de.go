@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"sync"
+	"time"
 
 	"github.com/nicholaspcr/GoDE/pkg/models"
 )
@@ -36,24 +37,21 @@ func New(opts ...ModeOptions) *de {
 
 func (mode *de) Execute(ctx context.Context) error {
 	logger := slog.Default()
-	pareto := make(chan []models.Vector, 100)
-	maxObjs := make(chan<- []float64, 100)
-
-	// TODO: Change this to be just a pipeline pattern, that way there can be a
-	// goroutine in the background that would write the last values.
-	wg := &sync.WaitGroup{}
+	paretoCh := make(chan []models.Vector, 100)
+	maxObjsCh := make(chan<- []float64, 100)
+	wgExecs := &sync.WaitGroup{}
 
 	// Runs algorithm for Executions amount of times.
 	for i := 1; i <= mode.constants.Executions; i++ {
-		wg.Add(1)
+		wgExecs.Add(1)
 		// Initialize worker responsible for DE execution.
 		go func(idx int) {
-			defer wg.Done()
+			defer wgExecs.Done()
 			// running the algorithm execution.
 			if err := mode.algorithm.Execute(
 				WithContextExecutionNumber(ctx, idx),
-				pareto,
-				maxObjs,
+				paretoCh,
+				maxObjsCh,
 			); err != nil {
 				logger.Error("Unexpected error while executing the algorith",
 					slog.Int("Execution", idx),
@@ -63,29 +61,30 @@ func (mode *de) Execute(ctx context.Context) error {
 		}(i)
 	}
 
-	wg.Wait()
-	close(pareto)
+	wgExecs.Wait()
+	close(paretoCh)
 
-	// gets data from the pareto created by rank[0] of each gen
-	rankedPareto := make([]models.Vector, 0, 2000)
+	// TODO: Filter the rank zero of each algorithm in parallel.
+	// This affects the behavior of the algorithm, since the ranking between
+	// different rank zeros in succession can lead to getting better vectors
+	// than the process of filtering the rank zeros in parallel.
+	//
+	// Before doing this I should do a benchmark to see if it is a permissable.
 
-	for v := range pareto {
-		rankedPareto = append(
-			rankedPareto,
-			v...,
-		)
+	// TODO: Taking into consideration the benchmark mentioned in the TODO
+	// above, what should be tested is the degree of deviation from the results
+	// known from the test functions. Write both results to different files and
+	// define the difference between them.
+	now := time.Now()
+	finalPareto := filterPareto(ctx, paretoCh)
+	logger.Info("Filtering Pareto", slog.Duration("time", time.Since(now)))
 
-		// gets non dominated and filters by crowdingDistance
-		_, rankedPareto = ReduceByCrowdDistance(
-			ctx, rankedPareto, len(rankedPareto),
-		)
-
-		// TODO: Make it configurable.
-		// Limits the amounts of dots to 1k.
-		if len(rankedPareto) > 1000 {
-			rankedPareto = rankedPareto[:1000]
-		}
-	}
+	now = time.Now()
+	finalParetoParallel := filterParetoParallel(ctx, paretoCh)
+	logger.Info("Filtering Pareto Parallel",
+		slog.Duration("time", time.Since(now)),
+	)
+	_, _ = finalPareto, finalParetoParallel
 
 	// TODO: Write the ranked pareto into its own separate section, make it a
 	// separate table on the database.
@@ -116,4 +115,58 @@ func (mode *de) Execute(ctx context.Context) error {
 	//		}
 	//	}
 	return nil
+}
+
+func filterPareto(
+	ctx context.Context, pareto chan []models.Vector,
+) []models.Vector {
+	finalPareto := make([]models.Vector, 0, 2000)
+	for v := range pareto {
+		finalPareto = append(
+			finalPareto,
+			v...,
+		)
+		// gets non dominated and filters by crowdingDistance
+		_, finalPareto = ReduceByCrowdDistance(
+			ctx, finalPareto, len(finalPareto),
+		)
+
+		// TODO: Make it configurable.
+		// Limits the amounts of dots to 1k.
+		if len(finalPareto) > 1000 {
+			finalPareto = finalPareto[:1000]
+		}
+	}
+	return finalPareto
+}
+
+func filterParetoParallel(
+	ctx context.Context, pareto chan []models.Vector,
+) []models.Vector {
+	wgRank := &sync.WaitGroup{}
+	filterCh := make(chan []models.Vector, 100)
+	finalPareto := make([]models.Vector, 0, 2000)
+	for v := range pareto {
+		v := v
+		wgRank.Add(1)
+		go func(v []models.Vector) {
+			defer wgRank.Done()
+			_, v = ReduceByCrowdDistance(ctx, v, len(v))
+			filterCh <- v
+		}(v)
+	}
+
+	wgRank.Wait()
+	close(filterCh)
+
+	for v := range filterCh {
+		finalPareto = append(
+			finalPareto,
+			v...,
+		)
+	}
+
+	// Final filtering of the ranked pareto.
+	_, finalPareto = ReduceByCrowdDistance(ctx, finalPareto, len(finalPareto))
+	return finalPareto
 }

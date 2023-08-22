@@ -7,42 +7,33 @@ import (
 	"github.com/nicholaspcr/GoDE/pkg/api"
 )
 
-// Population is the set of elements in a DE generation.
-type Population struct {
-	Vectors []Vector
-}
+type Population []Vector
 
 // ToPB converts the population to a protobuf message.
-func (p *Population) ToPB() *api.Population {
+func (p Population) ToPB() *api.Population {
 	popu := &api.Population{
-		Vectors: make([]*api.Vector, len(p.Vectors)),
+		Vectors: make([]*api.Vector, len(p)),
 	}
-	for i, v := range p.Vectors {
+	for i, v := range p {
 		popu.Vectors[i] = v.ToPB()
 	}
 	return popu
 }
 
 // PopulationFromPB converts the population from a protobuf message.
-func PopulationFromPB(popu *api.Population) Population {
-	vectors := make([]Vector, len(popu.Vectors))
-	for i, v := range popu.Vectors {
-		vectors[i] = VectorFromPB(v)
+func PopulationFromPB(pop *api.Population) Population {
+	p := make([]Vector, len(pop.Vectors))
+	for i, v := range pop.Vectors {
+		p[i] = VectorFromPB(v)
 	}
-	return Population{
-		Vectors: vectors,
-	}
+	return p
 }
 
 // Copy returns a copy of the population.
-func (p *Population) Copy() Population {
-	vectors := make([]Vector, len(p.Vectors))
-	for i, v := range p.Vectors {
-		vectors[i] = v.Copy()
-	}
-	return Population{
-		Vectors: vectors,
-	}
+func (p Population) Copy() Population {
+	newP := make([]Vector, len(p))
+	copy(newP, p)
+	return newP
 }
 
 // PopulationParams is the set of parameters to generate a population.
@@ -75,7 +66,5 @@ func GeneratePopulation(params PopulationParams) (Population, error) {
 		}
 
 	}
-	return Population{
-		Vectors: vectors,
-	}, nil
+	return vectors, nil
 }

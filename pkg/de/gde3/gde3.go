@@ -55,12 +55,12 @@ func (g *gde3) Execute(
 	maxObjs := make([]float64, dimSize)
 
 	// calculates the objectives of the initial population
-	for i := range population.Vectors {
-		err := g.problem.Evaluate(&population.Vectors[i], objFuncAmount)
+	for i := range population {
+		err := g.problem.Evaluate(&population[i], objFuncAmount)
 		if err != nil {
 			return err
 		}
-		for j, obj := range population.Vectors[i].Objectives {
+		for j, obj := range population[i].Objectives {
 			if obj > maxObjs[j] {
 				maxObjs[j] = obj
 			}
@@ -91,12 +91,12 @@ func (g *gde3) Execute(
 			slog.Int("generation_n", gen),
 		)
 		// gets non dominated of the current population
-		genRankZero, _ = de.FilterDominated(population.Vectors)
+		genRankZero, _ = de.FilterDominated(population)
 
-		for i := 0; i < len(population.Vectors); i++ {
+		for i := 0; i < len(population); i++ {
 			// generates the mutatated vector
 			vr, err := g.variant.Mutate(
-				population.Vectors,
+				population,
 				genRankZero,
 				variants.Parameters{
 					DIM:     popuParams.DimensionSize,
@@ -111,7 +111,7 @@ func (g *gde3) Execute(
 			}
 
 			// trial element
-			trial := population.Vectors[i].Copy()
+			trial := population[i].Copy()
 
 			// CROSS OVER
 			currInd := random.Int() % popuParams.DimensionSize
@@ -138,17 +138,17 @@ func (g *gde3) Execute(
 
 			// SELECTION
 			comp := de.DominanceTest(
-				population.Vectors[i].Objectives, trial.Objectives,
+				population[i].Objectives, trial.Objectives,
 			)
 			if comp == 1 {
-				population.Vectors[i] = trial
-			} else if comp == 0 && len(population.Vectors) <= 2*popuParams.DimensionSize {
-				population.Vectors = append(population.Vectors, trial)
+				population[i] = trial
+			} else if comp == 0 && len(population) <= 2*popuParams.DimensionSize {
+				population = append(population, trial)
 			}
 		}
 
-		population.Vectors, bestInGen = de.ReduceByCrowdDistance(
-			ctx, population.Vectors, popuParams.DimensionSize,
+		population, bestInGen = de.ReduceByCrowdDistance(
+			ctx, population, popuParams.DimensionSize,
 		)
 		bestElems = append(bestElems, bestInGen...)
 
@@ -159,7 +159,7 @@ func (g *gde3) Execute(
 
 		// TODO: Update how the population is written
 		//// checks for the biggest objective
-		//for _, vector := range population.Vectors {
+		//for _, vector := range population {
 		//	for j, obj := range vector.Objs {
 		//		if obj > maxObjs[j] {
 		//			maxObjs[j] = obj

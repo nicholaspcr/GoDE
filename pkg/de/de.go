@@ -78,13 +78,14 @@ func (mode *de) Execute(ctx context.Context) error {
 	now := time.Now()
 	finalPareto := filterPareto(ctx, paretoCh)
 	logger.Info("Filtering Pareto", slog.Duration("time", time.Since(now)))
+	_ = finalPareto
 
-	now = time.Now()
-	finalParetoParallel := filterParetoParallel(ctx, paretoCh)
-	logger.Info("Filtering Pareto Parallel",
-		slog.Duration("time", time.Since(now)),
-	)
-	_, _ = finalPareto, finalParetoParallel
+	//now := time.Now()
+	//finalParetoParallel := filterParetoParallel(ctx, paretoCh)
+	//logger.Info("Filtering Pareto Parallel",
+	//	slog.Duration("time", time.Since(now)),
+	//)
+	//_ = finalParetoParallel
 
 	// TODO: Write the ranked pareto into its own separate section, make it a
 	// separate table on the database.

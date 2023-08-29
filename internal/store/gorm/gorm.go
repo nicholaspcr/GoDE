@@ -7,10 +7,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// TODO: Make this an option and disabled by default.
-
 // MemoryEnabled defines if the database should be in memory or not, useful for
 // testing and debugging. Can be enabled by in configuration.
+//
+// TODO: Make this an option and disabled by default.
 var MemoryEnabled = false
 
 // GormStore is the main store for the application. It contains implementations
@@ -21,8 +21,8 @@ type GormStore struct {
 }
 
 // New returns a new GormStore.
-func New(ctx context.Context) (*GormStore, error) {
-	var sqlitePath string = ".dev/sqlite.db"
+func New(_ context.Context) (*GormStore, error) {
+	sqlitePath := ".dev/sqlite.db"
 	if MemoryEnabled {
 		sqlitePath = ":memory:"
 	}

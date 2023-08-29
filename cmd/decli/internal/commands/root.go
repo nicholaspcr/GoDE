@@ -26,7 +26,7 @@ A CLI for using the implementation of the differential evolution algorithm, this
 allows the usage of the algorithm locally and the ability to connect to a
 server.
 `,
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+	PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 		if err := config.InitializeRoot(cmd, &cfg); err != nil {
 			return err
 		}
@@ -64,7 +64,7 @@ server.
 		)
 		return cmd.Help()
 	},
-	PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
+	PersistentPostRunE: func(_ *cobra.Command, _ []string) error {
 		pprof.StopCPUProfile()
 		return pprof.WriteHeapProfile(memProfile)
 	},

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/nicholaspcr/GoDE/cmd/decli/commands"
+	"github.com/nicholaspcr/GoDE/cmd/decli/internal/commands"
 )
 
 func main() {

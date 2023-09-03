@@ -5,11 +5,11 @@ import (
 	_ "net/http/pprof"
 	"os"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/nicholaspcr/GoDE/internal/log"
-
 	"github.com/nicholaspcr/GoDE/cmd/web/internal/config"
 	"github.com/nicholaspcr/GoDE/cmd/web/internal/routes"
+	"github.com/nicholaspcr/GoDE/internal/log"
 	"github.com/spf13/cobra"
 )
 
@@ -55,7 +55,16 @@ var RootCmd = &cobra.Command{
 		basePath := r.Group("")
 
 		// Set default middlewares.
-		basePath.Use()
+		basePath.Use(
+			cors.New(cors.Config{
+				AllowMethods:     cfg.Server.Cors.AllowHeaders,
+				AllowOrigins:     cfg.Server.Cors.AllowOrigins,
+				AllowHeaders:     cfg.Server.Cors.AllowHeaders,
+				ExposeHeaders:    cfg.Server.Cors.ExposeHeaders,
+				AllowCredentials: cfg.Server.Cors.AllowCredentials,
+				MaxAge:           cfg.Server.Cors.MaxAge,
+			}),
+		)
 
 		// Invoke route definitions from routes package.
 		for _, route := range routes.Routes {

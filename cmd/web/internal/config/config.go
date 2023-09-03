@@ -3,6 +3,7 @@ package config
 import (
 	"log/slog"
 	"os"
+	"time"
 
 	"github.com/nicholaspcr/GoDE/internal/log"
 	"github.com/spf13/cobra"
@@ -21,6 +22,17 @@ type (
 	// Server is a set of values that are necessary to configure the server.
 	Server struct {
 		Address string `json:"address" yaml:"address"`
+		Cors    Cors
+	}
+
+	// Cors is a set of values that are necessary to configure the CORS.
+	Cors struct {
+		AllowOrigins     []string      `json:"allow_origins" yaml:"allow_origins"`
+		AllowMethods     []string      `json:"allow_methods" yaml:"allow_methods"`
+		AllowHeaders     []string      `json:"allow_headers" yaml:"allow_headers"`
+		ExposeHeaders    []string      `json:"expose_headers" yaml:"expose_headers"`
+		AllowCredentials bool          `json:"allow_credentials" yaml:"allow_credentials"`
+		MaxAge           time.Duration `json:"max_age" yaml:"max_age"`
 	}
 
 	// Log is a set of values that are necessary to configure the logger.
@@ -34,6 +46,16 @@ type (
 var DefaultConfig = Config{
 	Server: Server{
 		Address: ":8080",
+		// NOTE: This is a very permissive CORS configuration. You should change
+		// these values to match your needs.
+		Cors: Cors{
+			AllowOrigins:     []string{"*"},
+			AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+			AllowHeaders:     []string{"*"},
+			ExposeHeaders:    []string{"*"},
+			AllowCredentials: true,
+			MaxAge:           300,
+		},
 	},
 	Logger: Log{
 		Config: &log.Config{Writer: os.Stdout},

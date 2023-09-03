@@ -15,15 +15,16 @@ type Route func(*gin.RouterGroup)
 
 // Routes is a list of predefined routes for the API.
 var Routes = []Route{
-	BaseRoutes,
+	baseRoutes,
 }
 
-// BaseRoutes defines the base routes for the API.
-func BaseRoutes(r *gin.RouterGroup) {
+// baseRoutes defines the base routes for the API.
+func baseRoutes(r *gin.RouterGroup) {
 	r.GET("/", func(c *gin.Context) {
 		t := template.Must(template.ParseFS(templateFS, "templates/index.html"))
 		t.Execute(c.Writer, nil)
 	})
+
 	r.GET("/name", func(c *gin.Context) {
 		t := template.Must(template.ParseFS(templateFS, "templates/name.html"))
 		t.Execute(c.Writer, gin.H{"name": "Gopher"})

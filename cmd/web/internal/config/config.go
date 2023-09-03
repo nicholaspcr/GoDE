@@ -2,6 +2,7 @@ package config
 
 import (
 	"log/slog"
+	"os"
 
 	"github.com/nicholaspcr/GoDE/internal/log"
 	"github.com/spf13/cobra"
@@ -33,6 +34,9 @@ type (
 var DefaultConfig = Config{
 	Server: Server{
 		Address: ":8080",
+	},
+	Logger: Log{
+		Config: &log.Config{Writer: os.Stdout},
 	},
 }
 

@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://unpkg.com/htmx.org@1.7.0"></script>
+  </head>
+  <body>
+    <div hx-get="/name" hx-trigger="load" hx-swap="innerHTML"> 
+      <p>Hello {{ .name }}!</p>
+    </div>
+  </body>
+</html>

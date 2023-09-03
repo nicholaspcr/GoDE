@@ -8,13 +8,13 @@ import (
 
 type Config struct {
 	// Writer is the location where logs are written to. Defaults to os.Stdout.
-	Writer io.Writer
+	Writer io.Writer `json:",omitempty"`
 	// Type can be either "json" or "text"
 	Type string `json:"type" yaml:"type"`
 	// Level is the minimum log level to output. Defaults to slog.LevelInfo.
 	Level slog.Level `json:"level" yaml:"level"`
 	// HandlerOptions are the options to pass to the handler.
-	HandlerOptions *slog.HandlerOptions
+	HandlerOptions *slog.HandlerOptions `json:",omitempty"`
 	// Pretty contain configurations regarding formatting for JSON logs.
 	Pretty *PrettyConfig `json:"pretty" yaml:"pretty"`
 }

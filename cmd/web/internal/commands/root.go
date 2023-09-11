@@ -4,9 +4,11 @@ import (
 	"log/slog"
 	_ "net/http/pprof"
 	"os"
+	"path"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/nicholaspcr/GoDE/cmd/web/internal"
 	"github.com/nicholaspcr/GoDE/cmd/web/internal/config"
 	"github.com/nicholaspcr/GoDE/cmd/web/internal/routes"
 	"github.com/nicholaspcr/GoDE/internal/log"
@@ -52,6 +54,10 @@ var RootCmd = &cobra.Command{
 	RunE: func(*cobra.Command, []string) error {
 		r := gin.Default()
 
+		// Add static files
+		r.Static("/static", path.Join(internal.ProjectPath(), "static"))
+
+		// Create base path group.
 		basePath := r.Group("")
 
 		// Set default middlewares.

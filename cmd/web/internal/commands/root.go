@@ -6,12 +6,13 @@ import (
 	"os"
 	"path"
 
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/nicholaspcr/GoDE/cmd/web/internal"
 	"github.com/nicholaspcr/GoDE/cmd/web/internal/config"
 	"github.com/nicholaspcr/GoDE/cmd/web/internal/routes"
 	"github.com/nicholaspcr/GoDE/internal/log"
+	slogecho "github.com/samber/slog-echo"
 	"github.com/spf13/cobra"
 )
 
@@ -52,36 +53,27 @@ var RootCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(*cobra.Command, []string) error {
-		r := gin.Default()
+		r := echo.New()
 
 		// Add static files
 		r.Static("/static", path.Join(internal.ProjectPath(), "static"))
 
-		// Create base path group.
-		basePath := r.Group("")
-
-		// Set default middlewares.
-		basePath.Use(
-			cors.New(cors.Config{
-				AllowMethods:     cfg.Server.Cors.AllowHeaders,
-				AllowOrigins:     cfg.Server.Cors.AllowOrigins,
-				AllowHeaders:     cfg.Server.Cors.AllowHeaders,
-				ExposeHeaders:    cfg.Server.Cors.ExposeHeaders,
-				AllowCredentials: cfg.Server.Cors.AllowCredentials,
-				MaxAge:           cfg.Server.Cors.MaxAge,
-			}),
+		r.Use(
+			slogecho.New(slog.Default()),
+			middleware.Recover(),
 		)
 
-		// Invoke route definitions from routes package.
-		for _, route := range routes.Routes {
-			route(basePath)
+		// Create routes for each group.
+		for groupName, groupRoutes := range routes.RouteGroups {
+			group := r.Group(groupName)
+			groupRoutes(group)
 		}
 
 		slog.Info(
 			"Starting server on",
 			slog.String("Address", cfg.Server.Address),
 		)
-		return r.Run(cfg.Server.Address)
+		return r.Start(cfg.Server.Address)
 	},
 }
 

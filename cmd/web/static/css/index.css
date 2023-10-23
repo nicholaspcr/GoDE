@@ -25,15 +25,18 @@ body {
 #app > header {
   grid-area: header;
 }
+
 .header {
   background-color: var(--bs-gray-dark);
+  min-height: 3rem;
   padding: 0.5rem 10%;
 }
 
 .header button {
-  min-width: 8rem;
+  min-width: 6rem;
   min-height: 2rem;
 }
+
 .header button:hover {
   background-color: var(--bs-gray-700);
   border-radius: 0.3rem;
@@ -41,49 +44,60 @@ body {
 
 #app > main {
   grid-area: main;
-  margin: 0rem 20%;
-  border: 1px solid #ccc;
-  border-radius: 0.3rem;
+}
+.main {
+  margin: 3rem 20%;
 }
  
 #app > footer {
   grid-area: footer;
 }
 
-
-/* about.html related */
-
-/* login.html related */
-.login-section {
-  width: 100%;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: auto 1fr auto;
-  grid-row-gap: 1rem;
-  grid-template-areas:
-  "header"
-  "main"
-  "footer";
-}
-.login-section >  label,input {
-  width: 100%;
+@media screen and (max-width:720px){
+  .main {
+    margin: 0rem 1rem;
+  }
 }
 
-/* register.html related */
+/* Home */
+.home-section {
+}
+
+/* login.html nd regiter.html related */
+.form-section {
+  width: 100%;
+  padding: 0 30% !important;
+}
+.form-section label {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+.form-section input {
+  width: 100%;
+}
+.form-section button {
+  width: 100%;
+  margin: 0.8rem 1rem;
+}
 
 /* Utils */
-
 .row-between {
+  width: auto;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
 }
+.row-around {
+  width: auto;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+}
 
 .column-center {
+  padding: 1rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 1rem;
 }

@@ -1,3 +1,4 @@
+@charset "UTF-8";
 * {
   box-sizing: border-box;
   font-family: Arial, Helvetica, sans-serif;
@@ -11,56 +12,38 @@ body {
 #app {
   min-height: 100vh;
   height: 100%;
-
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: auto 1fr auto;
   grid-row-gap: 1rem;
-  grid-template-areas:
-  "header"
-  "main"
-  "footer";
+  grid-template-areas: "header" "main" "footer";
 }
- 
-#app > header {
+#app header {
   grid-area: header;
 }
+#app main {
+  grid-area: main;
+}
+#app footer {
+  grid-area: footer;
+}
 
-.header {
+  .header {
   background-color: var(--bs-gray-dark);
   min-height: 3rem;
   padding: 0.5rem 10%;
 }
-
-.header button {
+  .header button {
   min-width: 6rem;
   min-height: 2rem;
 }
-
-.header button:hover {
+  .header button:hover {
   background-color: var(--bs-gray-700);
   border-radius: 0.3rem;
 }
 
-#app > main {
-  grid-area: main;
-}
 .main {
   margin: 3rem 20%;
-}
- 
-#app > footer {
-  grid-area: footer;
-}
-
-@media screen and (max-width:720px){
-  .main {
-    margin: 0rem 1rem;
-  }
-}
-
-/* Home */
-.home-section {
 }
 
 /* login.html nd regiter.html related */
@@ -87,6 +70,7 @@ body {
   flex-direction: row;
   justify-content: space-between;
 }
+
 .row-around {
   width: auto;
   display: flex;
@@ -101,3 +85,5 @@ body {
   justify-content: center;
   align-items: center;
 }
+
+/*# sourceMappingURL=index.css.map */

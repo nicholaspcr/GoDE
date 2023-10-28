@@ -40,3 +40,8 @@ cpuprofile
 # Dependency directories (remove the comment below to include it)
 vendor/
 
+# SASS
+.sass-cache/
+*.css.map
+*.sass.map
+*.scss.map

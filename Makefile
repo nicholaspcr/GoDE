@@ -36,10 +36,14 @@ proto: ## Generates the proto files according to the `/api` definitions.
 	@echo 'Generating proto files...'
 	@protoc --go_out=pkg --go_opt=paths=source_relative --go-grpc_out=pkg --go-grpc_opt=paths=source_relative api/*.proto 
 
-.PHONY: python
-python: ## TODO.
+.PHONY: sass
+sass: ## Runs the SASS watcher
+	@sass --watch cmd/web/static/styles/index.scss cmd/web/static/styles/index.css 
 
 .PHONY: air-web
 air-web: ## Runs the web server with air.
 	@echo 'Running web server on dev mode...'
 	@air -c .air.web.toml
+
+.PHONY: python
+python: ## TODO.

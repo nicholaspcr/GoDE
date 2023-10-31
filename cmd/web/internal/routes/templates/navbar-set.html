@@ -1,0 +1,14 @@
+{{range .}}
+<button hx-get={{.URL}}
+  {{if .ShouldPushURL }}
+    hx-push-url={{.PushURL}}
+  {{else}}
+    hx-push-url="true"
+  {{end}}
+  hx-trigger="click"
+  hx-target="#main"
+  class="nav-link px-2 text-white"
+>
+  {{.Name}}
+</button>
+{{end}}

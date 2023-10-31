@@ -12,28 +12,15 @@
   </head>
   <body id="app" class="app">
     <header id="header" class="header row-between">
-      <button hx-get="/home" hx-push-url="/"
-        hx-trigger="click"
-        hx-target="#main"
-        class="nav-link px-2 text-white"
-      >
-        Home
-      </button>
       <div class="row-between">
-        <button hx-get="/login" hx-push-url="true"
-          hx-trigger="click"
-          hx-target="#main"
-          class="nav-link px-2 text-white"
-        >
-          Login
-        </button>
-        <button hx-get="/register" hx-push-url="true"
-          hx-trigger="click"
-          hx-target="#main"
-          class="nav-link px-2 text-white"
-        >
-          Register
-        </button>
+        {{range .LeftNav}}
+          {{.}}
+        {{end}}
+      </div>
+      <div class="row-between">
+        {{range .RightNav}}
+          {{.}}
+        {{end}}
       </div>
     </header>
     <main id="main" class="main" hx-get="/home" hx-trigger="load">

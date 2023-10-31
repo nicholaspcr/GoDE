@@ -6,3 +6,12 @@ services:
     volumes:
       - ./static/styles/index.scss:/data/static/styles/index.scss
       - ./static/styles/index.css:/data/static/styles/index.css
+
+  air:
+    image: gode/web-air
+    build:
+      dockerfile: ./docker/air.Dockerfile
+    volumes:
+      - ../../.:/app/
+    ports:
+      - "127.0.0.1:8080:8080"

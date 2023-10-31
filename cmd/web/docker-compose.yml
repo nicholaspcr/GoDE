@@ -1,0 +1,8 @@
+services:
+  sass:
+    image: gode/web-sass
+    build:
+      dockerfile: ./docker/sass.Dockerfile
+    volumes:
+      - ./static/styles/index.scss:/data/static/styles/index.scss
+      - ./static/styles/index.css:/data/static/styles/index.css

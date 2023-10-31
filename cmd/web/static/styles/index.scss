@@ -1,0 +1,97 @@
+$font-stack: Helvetica, sans-serif;
+$background-color: var(--bs-secondary-bg-subtle);
+$header-color: var(--bs-secondary-color);
+
+$spacing-xxs:   .15rem;
+$spacing-xs:    .3rem;
+$spacing-s:     .5rem;
+$spacing-m:     1rem;
+$spacing-l:     1.5rem;
+$spacing-xl:    3rem;
+$spacing-xxl:   5rem;
+
+body {
+  margin: 0;
+  font: 100% $font-stack;
+  background-color: $background-color;
+}
+
+#app {
+  min-height: 100vh;
+  height: 100%;
+
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-row-gap: $spacing-m;
+  grid-template-areas:
+  "header"
+  "main"
+  "footer";
+
+  header {
+    grid-area: header;
+
+    background-color: $header-color;
+    min-height: $spacing-xl;
+    padding: $spacing-s 10%;
+    button {
+      min-width: $spacing-xxl;
+      min-height: $spacing-l;
+
+      &:hover {
+        background-color: var(--bs-gray-600);
+        border-radius: var(--bs-border-radius-sm);
+      }
+    }
+  }
+  main {
+    grid-area: main;
+    margin: $spacing-xl 20%;
+  }
+  footer {
+    grid-area: footer;
+    padding: $spacing-l;
+  }
+}
+ 
+/* Home */
+.home-section {}
+
+/* login.html nd regiter.html related */
+.form-section {
+  width: 100%;
+  padding: 0 30% !important;
+
+  label {
+    width: 100%;
+    margin-top: $spacing-s;
+  }
+  input {
+    width: 100%;
+  }
+  button {
+    width: 100%;
+    margin: $spacing-l 0rem;
+  }
+}
+
+/* Utils */
+.row-between {
+  width: auto;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+.row-around {
+  width: auto;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+}
+.column-center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}

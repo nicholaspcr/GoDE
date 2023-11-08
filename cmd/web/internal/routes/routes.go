@@ -22,7 +22,8 @@ type Route func(*echo.Group)
 
 // RouteGroups is a list of predefined routes for the API.
 var RouteGroups = map[string]Route{
-	"": baseRoutes,
+	"":     baseRoutes,
+	"auth": accountRoutes,
 }
 
 func init() {

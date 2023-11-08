@@ -39,7 +39,7 @@ body {
 /* login.html nd regiter.html related */
 .form-section {
   width: 100%;
-  padding: 0 30% !important;
+  margin: 2.5% 10%;
 }
 .form-section label {
   width: 100%;

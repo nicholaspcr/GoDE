@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/nicholaspcr/GoDE/internal/store/gorm"
-	"github.com/nicholaspcr/GoDE/pkg/api"
 )
 
 // Store contains the methods to interact with the database
@@ -23,12 +22,4 @@ func New(ctx context.Context) (Store, error) {
 		return nil, err
 	}
 	return st, nil
-}
-
-// UserStore is the interface for the user store.
-type UserStore interface {
-	Create(context.Context, *api.User) error
-	Read(context.Context, *api.UserID) (*api.User, error)
-	Update(context.Context, *api.User) error
-	Delete(context.Context, *api.UserID) error
 }

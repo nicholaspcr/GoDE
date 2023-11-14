@@ -38,10 +38,3 @@ proto: ## Generates the proto files according to the `/api` definitions.
 .PHONY: web-dev
 web-dev: ## Runs the dev environment for the `web` application.
 	@docker compose -f cmd/web/docker-compose.yml up
-
-.PHONY: fmt
-fmt: ## formats the files/pkgs of the repository.
-	go fmt ./...
-	golines -m 80 --ignore-generated --shorten-comments --reformat-tags -w ./cmd
-	golines -m 80 --ignore-generated --shorten-comments --reformat-tags -w ./internal
-	golines -m 80 --ignore-generated --shorten-comments --reformat-tags -w ./pkg

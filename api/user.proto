@@ -5,19 +5,21 @@ import "google/protobuf/empty.proto";
 
 package api;
 
-message UserID {
-  string id = 1;
+// UserIDs is the standard user id message.
+message UserIDs {
+  string email = 1;
 }
 
+// User is the standard user message.
 message User {
-  string id = 1;
-  string email = 2;
-  string password = 3;
+  UserIDs ids = 1;
+  string password = 2;
 }
 
-service UserBaseServices {
+// UserServices are all the services that can be performed on a user.
+service UserServices {
   rpc Create (User) returns (google.protobuf.Empty) {}
-  rpc Read (UserID) returns (User) {}
+  rpc Get (UserIDs) returns (User) {}
   rpc Update (User) returns (google.protobuf.Empty) {}
-  rpc Delete (UserID) returns (google.protobuf.Empty) {}
+  rpc Delete (UserIDs) returns (google.protobuf.Empty) {}
 }

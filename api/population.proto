@@ -34,7 +34,7 @@ service PopulationServices {
     rpc Read (PopulationIDs) returns (Population) {}
     rpc Update (Population) returns (google.protobuf.Empty) {}
     rpc Delete (PopulationIDs) returns (google.protobuf.Empty) {}
-    rpc ListByUser (UserID) returns (stream Population) {}
+    rpc ListByUser (UserIDs) returns (stream Population) {}
 }
 
 
@@ -54,5 +54,5 @@ service ParetoServices {
     rpc Read (ParetoIDs) returns (Pareto) {}
     rpc Update (Pareto) returns (google.protobuf.Empty) {}
     rpc Delete (ParetoIDs) returns (google.protobuf.Empty) {}
-    rpc ListByUser (UserID) returns (stream Pareto) {}
+    rpc ListByUser (UserIDs) returns (stream Pareto) {}
 }

@@ -40,5 +40,5 @@ service ExecutionSetServices {
   rpc Find(ExecutionSetIDs) returns (google.protobuf.Empty) {}
   rpc Delete(ExecutionSetIDs) returns (google.protobuf.Empty) {}
   rpc List(ExecutionSetIDs) returns (stream Execution) {}
-  rpc FetchByUser(UserID) returns (stream Execution) {}
+  rpc FetchByUser(UserIDs) returns (stream Execution) {}
 }

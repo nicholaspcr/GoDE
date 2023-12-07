@@ -6,10 +6,15 @@ import (
 	"github.com/nicholaspcr/GoDE/pkg/api"
 )
 
-// UserStore is the interface for the user store.
-type UserStore interface {
+// Store contains the methods to interact with the database
+type Store interface {
+	UserOperations
+}
+
+// UserOperations is the interface for the user store.
+type UserOperations interface {
 	Create(context.Context, *api.User) error
-	Read(context.Context, *api.UserID) (*api.User, error)
+	Get(context.Context, *api.UserIDs) (*api.User, error)
 	Update(context.Context, *api.User) error
-	Delete(context.Context, *api.UserID) error
+	Delete(context.Context, *api.UserIDs) error
 }

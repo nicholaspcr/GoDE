@@ -11,7 +11,7 @@ import (
 // testing and debugging. Can be enabled by in configuration.
 //
 // TODO: Make this an option and disabled by default.
-var MemoryEnabled = false
+var MemoryEnabled = true
 
 // GormStore is the main store for the application. It contains implementations
 // of all the interfaces defined in the store package.
@@ -22,7 +22,7 @@ type GormStore struct {
 
 // New returns a new GormStore.
 func New(_ context.Context) (*GormStore, error) {
-	sqlitePath := ".dev/sqlite.db"
+	sqlitePath := ".env/sqlite.db"
 	if MemoryEnabled {
 		sqlitePath = ":memory:"
 	}

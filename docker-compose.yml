@@ -1,0 +1,11 @@
+services:
+  web-sass:
+    extends:
+      file: ./cmd/web/docker-compose.yml
+      service: sass
+  web-air:
+    extends:
+      file: ./cmd/web/docker-compose.yml
+      service: air
+  db:
+    image: postgres

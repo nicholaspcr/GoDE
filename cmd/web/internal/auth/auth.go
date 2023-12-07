@@ -3,12 +3,16 @@
 package auth
 
 import (
+	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
-	"golang.org/x/exp/slog"
+	"github.com/nicholaspcr/GoDE/pkg/api"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 const (
@@ -17,6 +21,9 @@ const (
 	jwtExpireDuration = 72 * time.Hour
 	jwtSecret         = "secret"
 )
+
+// DB_URL is the database url.
+var DB_URL = os.Getenv("DB_URL")
 
 // JWTClaims are custom claims extending default ones.
 // See https://github.com/golang-jwt/jwt for more examples
@@ -46,18 +53,32 @@ func Login(c echo.Context) (*http.Cookie, error) {
 	email := c.FormValue("email")
 	password := c.FormValue("password")
 
-	// Throws unauthorized error
-	if email != "john@gmail.com" || password != "12345" {
+	conn, err := grpc.Dial(
+		DB_URL,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		return nil, err
+	}
+	usrClient := api.NewUserServicesClient(conn)
+	usr, err := usrClient.Get(c.Request().Context(), &api.UserIDs{Email: email})
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Remove this.
+	slog.Debug("User found: %v", usr)
+	if usr.Password != password {
 		slog.With(
-			slog.String("username", email),
-			slog.String("password", password),
-		).Error("Invalid username or password")
+			"usr_password", usr.Password,
+			"password", password,
+		).Debug("User password does not match.")
 		return nil, echo.ErrUnauthorized
 	}
 
 	// Set custom claims
 	claims := &JWTClaims{
-		"Jon Snow",
+		usr.Ids.Email,
 		true,
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(jwtExpireDuration)),

@@ -1,11 +1,11 @@
 root = "."
 testdata_dir = "testdata"
-tmp_dir = ".env/tmp/web"
+tmp_dir = ".env/tmp/deserver"
 
 [build]
   args_bin = []
-  bin = ".env/tmp/web/main"
-  cmd = "go build -o .env/tmp/web/main ./cmd/web"
+  bin = ".env/tmp/deserver/main"
+  cmd = "go build -o .env/tmp/deserver/main ./cmd/deserver"
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata"]
   exclude_file = []
@@ -44,3 +44,4 @@ tmp_dir = ".env/tmp/web"
 [screen]
   clear_on_rebuild = false
   keep_scroll = true
+

@@ -1,11 +1,11 @@
-package routes
+package router
 
 import (
 	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/nicholaspcr/GoDE/cmd/web/internal/auth"
+	"github.com/nicholaspcr/GoDE/cmd/web/internal/router/auth"
 )
 
 // authRoutes - auth routes for the API.

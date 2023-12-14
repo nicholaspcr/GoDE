@@ -10,7 +10,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/nicholaspcr/GoDE/cmd/web/internal"
 	"github.com/nicholaspcr/GoDE/cmd/web/internal/config"
-	"github.com/nicholaspcr/GoDE/cmd/web/internal/routes"
+	"github.com/nicholaspcr/GoDE/cmd/web/internal/router"
 	"github.com/nicholaspcr/GoDE/internal/log"
 	slogecho "github.com/samber/slog-echo"
 	"github.com/spf13/cobra"
@@ -64,7 +64,7 @@ var RootCmd = &cobra.Command{
 		)
 
 		// Create routes for each group.
-		for groupName, groupRoutes := range routes.RouteGroups {
+		for groupName, groupRoutes := range router.RouteGroups {
 			group := r.Group(groupName)
 			groupRoutes(group)
 		}

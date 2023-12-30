@@ -1,0 +1,26 @@
+version: v1
+name: "github.com/nicholaspcr/gode"
+
+breaking:
+  use:
+    - FILE
+
+deps:
+  - buf.build/grpc-ecosystem/grpc-gateway
+  - buf.build/googleapis/googleapis
+  - buf.build/envoyproxy/protoc-gen-validate
+  - buf.build/thethingsindustries/protoc-gen-go-flags
+  - buf.build/thethingsindustries/protoc-gen-go-json
+
+lint:
+  use:
+    - DEFAULT
+  rpc_allow_same_request_response: false
+  rpc_allow_google_protobuf_empty_requests: true
+  rpc_allow_google_protobuf_empty_responses: true
+  service_suffix: Service
+  allow_comment_ignores: true
+
+build:
+  excludes:
+    - third_party

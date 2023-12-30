@@ -1,0 +1,115 @@
+syntax = "proto3";
+option go_package = "pkg/api";
+
+import "api/v1/user.proto";
+import "google/protobuf/empty.proto";
+
+package api.v1;
+
+message Vector {
+  repeated double elements = 1;
+  repeated double objectives = 2;
+  double crowding_distance = 3;
+}
+
+message PopulationIDs {
+  uint64 id = 1;
+  string user_id = 2;
+}
+
+message Population {
+  PopulationIDs ids = 1;
+  repeated Vector vectors = 2;
+}
+
+message PopulationParameters {
+  int64 dimensions_size = 1;
+  int64 objetives_size = 2;
+  repeated double floors = 3;
+  repeated double ceils = 4;
+}
+
+service PopulationService {
+    rpc Create (PopulationServiceCreateRequest) returns (google.protobuf.Empty) {}
+    rpc Get (PopulationServiceGetRequest) returns (PopulationServiceGetResponse) {}
+    rpc Update (PopulationServiceUpdateRequest) returns (google.protobuf.Empty) {}
+    rpc Delete (PopulationServiceDeleteRequest) returns (google.protobuf.Empty) {}
+    rpc ListByUser (PopulationServiceListByUserRequest) returns (stream PopulationServiceListByUserResponse) {}
+}
+
+message PopulationServiceCreateRequest {
+  Population population = 1;
+}
+
+message PopulationServiceGetRequest {
+  PopulationIDs population_ids = 1;
+}
+
+message PopulationServiceGetResponse {
+  Population population = 1;
+}
+
+message PopulationServiceUpdateRequest {
+  Population population = 1;
+}
+
+message PopulationServiceDeleteRequest {
+  PopulationIDs population_ids = 1;
+}
+
+message PopulationServiceListByUserRequest {
+  UserIDs user_ids = 1;
+}
+
+message PopulationServiceListByUserResponse {
+  Population population = 1;
+}
+
+
+message ParetoIDs {
+  uint64 id = 1;
+  string user_id = 2;
+}
+
+message Pareto {
+  ParetoIDs ids = 1;
+  Population population = 2;
+  repeated double max_objs = 3;
+}
+
+service ParetoService {
+    rpc Create (ParetoServiceCreateRequest) returns (google.protobuf.Empty) {}
+    rpc Get (ParetoServiceGetRequest) returns (ParetoServiceGetResponse) {}
+    rpc Update (ParetoServiceUpdateRequest) returns (google.protobuf.Empty) {}
+    rpc Delete (ParetoServiceDeleteRequest) returns (google.protobuf.Empty) {}
+    rpc ListByUser (ParetoServiceListByUserRequest) returns (stream ParetoServiceListByUserResponse) {}
+}
+
+message ParetoServiceCreateRequest {
+  Pareto pareto = 1;
+}
+
+message ParetoServiceGetRequest {
+  ParetoIDs pareto_ids = 1;
+}
+
+message ParetoServiceGetResponse {
+  Pareto pareto = 1;
+}
+
+message ParetoServiceUpdateRequest {
+  Pareto pareto = 1;
+}
+
+message ParetoServiceDeleteRequest {
+  ParetoIDs pareto_ids = 1;
+}
+
+message ParetoServiceListByUserRequest {
+  UserIDs user_ids = 1;
+}
+
+message ParetoServiceListByUserResponse {
+  Pareto pareto = 1;
+}
+

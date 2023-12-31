@@ -8,3 +8,8 @@ plugins:
     out: pkg
     opt:
       - paths=source_relative
+  - plugin: grpc-gateway
+    out: pkg
+    opt:
+      - paths=source_relative
+      - generate_unbound_methods=true

@@ -12,14 +12,8 @@ message Vector {
   double crowding_distance = 3;
 }
 
-message PopulationIDs {
-  uint64 id = 1;
-  string user_id = 2;
-}
-
 message Population {
-  PopulationIDs ids = 1;
-  repeated Vector vectors = 2;
+  repeated Vector vectors = 1;
 }
 
 message PopulationParameters {

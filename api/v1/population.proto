@@ -2,15 +2,10 @@ syntax = "proto3";
 option go_package = "pkg/api";
 
 import "api/v1/user.proto";
+import "api/v1/vector.proto";
 import "google/protobuf/empty.proto";
 
 package api.v1;
-
-message Vector {
-  repeated double elements = 1;
-  repeated double objectives = 2;
-  double crowding_distance = 3;
-}
 
 message Population {
   repeated Vector vectors = 1;

@@ -23,43 +23,6 @@ message PopulationParameters {
   repeated double ceils = 4;
 }
 
-service PopulationService {
-    rpc Create (PopulationServiceCreateRequest) returns (google.protobuf.Empty) {}
-    rpc Get (PopulationServiceGetRequest) returns (PopulationServiceGetResponse) {}
-    rpc Update (PopulationServiceUpdateRequest) returns (google.protobuf.Empty) {}
-    rpc Delete (PopulationServiceDeleteRequest) returns (google.protobuf.Empty) {}
-    rpc ListByUser (PopulationServiceListByUserRequest) returns (stream PopulationServiceListByUserResponse) {}
-}
-
-message PopulationServiceCreateRequest {
-  Population population = 1;
-}
-
-message PopulationServiceGetRequest {
-  PopulationIDs population_ids = 1;
-}
-
-message PopulationServiceGetResponse {
-  Population population = 1;
-}
-
-message PopulationServiceUpdateRequest {
-  Population population = 1;
-}
-
-message PopulationServiceDeleteRequest {
-  PopulationIDs population_ids = 1;
-}
-
-message PopulationServiceListByUserRequest {
-  UserIDs user_ids = 1;
-}
-
-message PopulationServiceListByUserResponse {
-  Population population = 1;
-}
-
-
 message ParetoIDs {
   uint64 id = 1;
   string user_id = 2;
@@ -72,11 +35,15 @@ message Pareto {
 }
 
 service ParetoService {
-    rpc Create (ParetoServiceCreateRequest) returns (google.protobuf.Empty) {}
-    rpc Get (ParetoServiceGetRequest) returns (ParetoServiceGetResponse) {}
-    rpc Update (ParetoServiceUpdateRequest) returns (google.protobuf.Empty) {}
-    rpc Delete (ParetoServiceDeleteRequest) returns (google.protobuf.Empty) {}
-    rpc ListByUser (ParetoServiceListByUserRequest) returns (stream ParetoServiceListByUserResponse) {}
+    rpc Get (ParetoServiceGetRequest) returns (ParetoServiceGetResponse) {
+      option (google.api.http) = {get: "/v1/pareto/{ids.id}"};
+    }
+    rpc Delete (ParetoServiceDeleteRequest) returns (google.protobuf.Empty) {
+      option (google.api.http) = {delete: "/v1/pareto/{user_ids.user_id}"};
+    }
+    rpc ListByUser (ParetoServiceListByUserRequest) returns (stream ParetoServiceListByUserResponse) {
+      option (google.api.http) = {get: "/v1/paretos/{user_ids.user_id}"};
+    }
 }
 
 message ParetoServiceCreateRequest {

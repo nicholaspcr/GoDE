@@ -1,0 +1,61 @@
+syntax = "proto3";
+option go_package = "pkg/api";
+
+import "api/v1/user.proto";
+import "api/v1/population.proto";
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
+
+package api.v1;
+
+message ParetoIDs {
+  uint64 id = 1;
+  string user_id = 2;
+}
+
+message Pareto {
+  ParetoIDs ids = 1;
+  Population population = 2;
+  repeated double max_objs = 3;
+}
+
+service ParetoService {
+    rpc Get (ParetoServiceGetRequest) returns (ParetoServiceGetResponse) {
+      option (google.api.http) = {get: "/v1/pareto/{pareto_ids.id}"};
+    }
+    rpc Delete (ParetoServiceDeleteRequest) returns (google.protobuf.Empty) {
+      option (google.api.http) = {delete: "/v1/pareto/{pareto_ids.user_id}"};
+    }
+    rpc ListByUser (ParetoServiceListByUserRequest) returns (stream ParetoServiceListByUserResponse) {
+      option (google.api.http) = {get: "/v1/paretos/{user_ids.user_id}"};
+    }
+}
+
+message ParetoServiceCreateRequest {
+  Pareto pareto = 1;
+}
+
+message ParetoServiceGetRequest {
+  ParetoIDs pareto_ids = 1;
+}
+
+message ParetoServiceGetResponse {
+  Pareto pareto = 1;
+}
+
+message ParetoServiceUpdateRequest {
+  Pareto pareto = 1;
+}
+
+message ParetoServiceDeleteRequest {
+  ParetoIDs pareto_ids = 1;
+}
+
+message ParetoServiceListByUserRequest {
+  UserIDs user_ids = 1;
+}
+
+message ParetoServiceListByUserResponse {
+  Pareto pareto = 1;
+}
+

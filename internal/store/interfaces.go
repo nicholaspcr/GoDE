@@ -3,7 +3,7 @@ package store
 import (
 	"context"
 
-	"github.com/nicholaspcr/GoDE/pkg/api"
+	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 )
 
 // Store contains the methods to interact with the database

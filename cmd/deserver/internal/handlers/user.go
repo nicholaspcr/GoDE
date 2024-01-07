@@ -1,10 +1,10 @@
-package server
+package handlers
 
 import (
 	"context"
 
 	"github.com/nicholaspcr/GoDE/internal/store"
-	"github.com/nicholaspcr/GoDE/pkg/api"
+	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -12,7 +12,7 @@ import (
 
 type userServer struct {
 	store.Store
-	api.UnimplementedUserServicesServer
+	api.UnimplementedUserServiceServer
 }
 
 func (*userServer) Create(
@@ -27,7 +27,7 @@ func (*userServer) Get(
 ) (*api.User, error) {
 	// err := status.Errorf(codes.Unimplemented, "method Read not implemented")
 	return &api.User{
-		Ids:      &api.UserIDs{Email: "nicholaspcr@gmail.com"},
+		Ids:      &api.UserIDs{UserId: "nicholaspcr@gmail.com"},
 		Password: "123456",
 	}, nil
 }

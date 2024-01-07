@@ -3,12 +3,17 @@ package gorm
 import (
 	"context"
 
-	"github.com/nicholaspcr/GoDE/pkg/api"
+	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"gorm.io/gorm"
 )
 
-type userModel struct {
-	gorm.Model
+type UserModel struct {
+	BaseModel
+
+	ID       string      `gorm:"primary_key"`
+	TenantID string      `gorm:"primary_key,index:user_email_index,default:default"`
+	Tenant   TenantModel `gorm:"foreignKey:TenantID"`
+
 	Email    string `gorm:"index:user_email_index,unique,not null,size:255"`
 	Password string `gorm:"not null,size:255"`
 }
@@ -22,9 +27,10 @@ func newUserStore(db *gorm.DB) *userStore {
 }
 
 func (st *userStore) Create(ctx context.Context, usr *api.User) error {
-	user := userModel{
-		Email:    usr.GetIds().Email,
-		Password: usr.GetPassword(),
+	user := UserModel{
+		ID:       usr.GetIds().UserId,
+		Email:    usr.Email,
+		Password: usr.Password,
 	}
 	st.DB.Create(&user)
 	return nil
@@ -33,13 +39,14 @@ func (st *userStore) Create(ctx context.Context, usr *api.User) error {
 func (st *userStore) Get(
 	ctx context.Context, usrIDs *api.UserIDs,
 ) (*api.User, error) {
-	var usr userModel
-	tx := st.DB.First(&usr, "email = ?", usrIDs.Email)
+	var usr UserModel
+	tx := st.DB.First(&usr, "id = ?", usrIDs.UserId)
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
 	return &api.User{
-		Ids:      &api.UserIDs{Email: usr.Email},
+		Ids:      &api.UserIDs{UserId: usr.ID},
+		Email:    usr.Email,
 		Password: usr.Password,
 	}, nil
 }
@@ -53,9 +60,10 @@ func (st *userStore) Update(ctx context.Context, usr *api.User) error {
 	//			"age": 18,
 	//			"active": false,
 	//		})
-	tx := st.DB.Updates(userModel{
-		Email:    usr.GetIds().Email,
-		Password: usr.GetPassword(),
+	tx := st.DB.Updates(UserModel{
+		ID:       usr.GetIds().UserId,
+		Email:    usr.Email,
+		Password: usr.Password,
 	})
 	if tx.Error != nil {
 		return tx.Error
@@ -64,8 +72,8 @@ func (st *userStore) Update(ctx context.Context, usr *api.User) error {
 }
 
 func (st *userStore) Delete(ctx context.Context, usrIDs *api.UserIDs) error {
-	var user userModel
-	tx := st.DB.First(&user, "email = ?", usrIDs.Email)
+	var user UserModel
+	tx := st.DB.First(&user, "id = ?", usrIDs.UserId)
 	if tx.Error != nil {
 		return tx.Error
 	}

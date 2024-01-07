@@ -40,5 +40,8 @@ func New(_ context.Context) (*GormStore, error) {
 }
 
 func (s *GormStore) AutoMigrate() error {
-	return s.db.AutoMigrate(&userModel{})
+	return s.db.AutoMigrate(
+		&UserModel{},
+		&TenantModel{},
+	)
 }

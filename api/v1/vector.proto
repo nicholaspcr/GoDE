@@ -1,7 +1,8 @@
 syntax = "proto3";
-option go_package = "pkg/api";
 
 package api.v1;
+
+option go_package = "pkg/api";
 
 message Vector {
   repeated double elements = 1;

@@ -1,9 +1,10 @@
 syntax = "proto3";
-option go_package = "pkg/api";
+
+package api.v1;
 
 import "api/v1/vector.proto";
 
-package api.v1;
+option go_package = "pkg/api";
 
 message Population {
   repeated Vector vectors = 1;

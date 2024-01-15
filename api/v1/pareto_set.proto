@@ -1,12 +1,13 @@
 syntax = "proto3";
-option go_package = "pkg/api";
-
-import "api/v1/user.proto";
-import "api/v1/population.proto";
-import "google/protobuf/empty.proto";
-import "google/api/annotations.proto";
 
 package api.v1;
+
+import "api/v1/population.proto";
+import "api/v1/user.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "pkg/api";
 
 message ParetoIDs {
   uint64 id = 1;
@@ -20,15 +21,15 @@ message Pareto {
 }
 
 service ParetoService {
-    rpc Get (ParetoServiceGetRequest) returns (ParetoServiceGetResponse) {
-      option (google.api.http) = {get: "/v1/pareto/{pareto_ids.id}"};
-    }
-    rpc Delete (ParetoServiceDeleteRequest) returns (google.protobuf.Empty) {
-      option (google.api.http) = {delete: "/v1/pareto/{pareto_ids.user_id}"};
-    }
-    rpc ListByUser (ParetoServiceListByUserRequest) returns (stream ParetoServiceListByUserResponse) {
-      option (google.api.http) = {get: "/v1/paretos/{user_ids.user_id}"};
-    }
+  rpc Get(ParetoServiceGetRequest) returns (ParetoServiceGetResponse) {
+    option (google.api.http) = {get: "/v1/pareto/{pareto_ids.id}"};
+  }
+  rpc Delete(ParetoServiceDeleteRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/v1/pareto/{pareto_ids.user_id}"};
+  }
+  rpc ListByUser(ParetoServiceListByUserRequest) returns (stream ParetoServiceListByUserResponse) {
+    option (google.api.http) = {get: "/v1/paretos/{user_ids.user_id}"};
+  }
 }
 
 message ParetoServiceCreateRequest {
@@ -58,4 +59,3 @@ message ParetoServiceListByUserRequest {
 message ParetoServiceListByUserResponse {
   Pareto pareto = 1;
 }
-

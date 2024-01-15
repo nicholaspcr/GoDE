@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package api.v1;
+
+option go_package = "pkg/api";
+
+// TenantIDs is the standard tenant id message.
+message TenantIDs {
+  string tenant_id = 1;
+}
+
+// Contains the fields that belong to a tenant.
+message Tenant {
+   TenantIDs ids = 1;
+}

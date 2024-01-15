@@ -6,6 +6,7 @@ import (
 	"github.com/nicholaspcr/GoDE/cmd/deserver/internal/server"
 	"github.com/nicholaspcr/GoDE/internal/log"
 	"github.com/nicholaspcr/GoDE/internal/store"
+	"github.com/nicholaspcr/GoDE/internal/tenant"
 	"github.com/spf13/cobra"
 )
 
@@ -20,6 +21,7 @@ proto files. Requests can be made via gRPC or HTTP.`,
 		// Set default logger.
 		logger := log.New()
 		slog.SetDefault(logger)
+		ctx = tenant.NewContext(ctx, tenant.DefaultTenant)
 
 		st, err := store.New(ctx)
 		if err != nil {

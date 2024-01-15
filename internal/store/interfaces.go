@@ -15,6 +15,6 @@ type Store interface {
 type UserOperations interface {
 	Create(context.Context, *api.User) error
 	Get(context.Context, *api.UserIDs) (*api.User, error)
-	Update(context.Context, *api.User) error
+	Update(context.Context, *api.User, ...string) error
 	Delete(context.Context, *api.UserIDs) error
 }

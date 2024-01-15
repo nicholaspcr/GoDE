@@ -10,7 +10,7 @@ import (
 // MemoryEnabled defines if the database should be in memory or not, useful for
 // testing and debugging. Can be enabled by in configuration.
 //
-// TODO: Make this an option and disabled by default.
+// TODO: Make this an environment option and disabled by default.
 var MemoryEnabled = true
 
 // GormStore is the main store for the application. It contains implementations
@@ -41,7 +41,7 @@ func New(_ context.Context) (*GormStore, error) {
 
 func (s *GormStore) AutoMigrate() error {
 	return s.db.AutoMigrate(
-		&UserModel{},
 		&TenantModel{},
+		&UserModel{},
 	)
 }

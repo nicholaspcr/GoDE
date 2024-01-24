@@ -24,10 +24,7 @@ type userStore struct{ *gorm.DB }
 func newUserStore(db *gorm.DB) *userStore { return &userStore{db} }
 
 func (st *userStore) Create(ctx context.Context, usr *api.User) error {
-	tnt, err := tenant.FromContext(ctx)
-	if err != nil {
-		return err
-	}
+	tnt := tenant.FromContext(ctx)
 	user := UserModel{
 		ID:       usr.GetIds().UserId,
 		Tenant:   TenantModel{ID: tnt.GetIds().TenantId},
@@ -54,10 +51,7 @@ func (st *userStore) Get(
 }
 
 func (st *userStore) Update(ctx context.Context, usr *api.User, fields ...string) error {
-	tnt, err := tenant.FromContext(ctx)
-	if err != nil {
-		return err
-	}
+	tnt := tenant.FromContext(ctx)
 	model := UserModel{
 		ID:     usr.GetIds().UserId,
 		Tenant: TenantModel{ID: tnt.GetIds().TenantId},
@@ -82,10 +76,7 @@ func (st *userStore) Update(ctx context.Context, usr *api.User, fields ...string
 }
 
 func (st *userStore) Delete(ctx context.Context, usrIDs *api.UserIDs) error {
-	tnt, err := tenant.FromContext(ctx)
-	if err != nil {
-		return err
-	}
+	tnt := tenant.FromContext(ctx)
 	model := UserModel{
 		ID:     usrIDs.UserId,
 		Tenant: TenantModel{ID: tnt.GetIds().TenantId},

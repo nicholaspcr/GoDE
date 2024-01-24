@@ -83,9 +83,7 @@ func (s *server) Start(ctx context.Context) error {
 	}()
 
 	// Wait for shutdown signal
-	select {
-	case <-ctx.Done():
-		slog.Info("Shutting down server")
-	}
+	<-ctx.Done()
+	slog.Info("Shutting down server")
 	return nil
 }

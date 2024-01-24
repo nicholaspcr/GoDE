@@ -10,7 +10,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
-	"github.com/nicholaspcr/GoDE/pkg/api"
+	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -50,27 +50,30 @@ func Login(c echo.Context) (*http.Cookie, error) {
 		return nil, err
 	}
 
-	email := c.FormValue("email")
+	username := c.FormValue("username")
 	password := c.FormValue("password")
 
-	conn, err := grpc.Dial(
-		DB_URL,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	conn, err := grpc.Dial(DB_URL, grpc.WithTransportCredentials(
+		insecure.NewCredentials()),
 	)
 	if err != nil {
 		return nil, err
 	}
-	usrClient := api.NewUserServicesClient(conn)
-	usr, err := usrClient.Get(c.Request().Context(), &api.UserIDs{Email: email})
+	usrClient := api.NewUserServiceClient(conn)
+	res, err := usrClient.Get(
+		c.Request().Context(),
+		&api.UserServiceGetRequest{UserIds: &api.UserIDs{UserId: username}},
+	)
 	if err != nil {
 		return nil, err
 	}
 
 	// TODO: Remove this.
-	slog.Debug("User found: %v", usr)
-	if usr.Password != password {
+	slog.With(slog.String("usr", res.User.String())).Debug("User found")
+
+	if res.User.Password != password {
 		slog.With(
-			"usr_password", usr.Password,
+			"usr_password", res.User.Password,
 			"password", password,
 		).Debug("User password does not match.")
 		return nil, echo.ErrUnauthorized
@@ -78,7 +81,7 @@ func Login(c echo.Context) (*http.Cookie, error) {
 
 	// Set custom claims
 	claims := &JWTClaims{
-		usr.Ids.Email,
+		res.User.Email,
 		true,
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(jwtExpireDuration)),
@@ -99,4 +102,38 @@ func Login(c echo.Context) (*http.Cookie, error) {
 		Value:   value,
 		Expires: time.Now().Add(jwtExpireDuration),
 	}, nil
+}
+
+func Register(c echo.Context) error {
+	if err := c.Request().ParseForm(); err != nil {
+		return err
+	}
+
+	username := c.FormValue("username")
+	email := c.FormValue("email")
+	password := c.FormValue("password")
+
+	newUser := &api.User{
+		Ids:      &api.UserIDs{UserId: username},
+		Email:    email,
+		Password: password,
+	}
+
+	conn, err := grpc.Dial(DB_URL, grpc.WithTransportCredentials(
+		insecure.NewCredentials()),
+	)
+	if err != nil {
+		return err
+	}
+
+	usrClient := api.NewUserServiceClient(conn)
+	_, err = usrClient.Create(
+		c.Request().Context(),
+		&api.UserServiceCreateRequest{User: newUser},
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

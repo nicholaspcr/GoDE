@@ -56,4 +56,12 @@ func authRoutes(r *echo.Group) {
 		c.Response().Status = http.StatusOK
 		return nil
 	})
+
+	r.POST("/register", func(c echo.Context) error {
+		if err := auth.Register(c); err != nil {
+			return err
+		}
+		c.Response().Status = http.StatusOK
+		return nil
+	})
 }

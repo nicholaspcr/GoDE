@@ -1,15 +1,20 @@
 <div class="column-center">
   <h2> Create your account </h2>
   <form hx-post="/auth/register" class="column-center form-section">
-    <label for="email-input" class="form-label">Email address</label>
-    <input type="email" 
+    <label for="username" class="form-label">Username</label>
+    <input type="text" 
       class="form-control" 
-      id="email-input" 
+      id="username" 
       placeholder="name@example.com">
-    <label for="password-input" class="form-label">Password</label>
+    <label for="email" class="form-label">Email address</label>
+    <input type="text" 
+      class="form-control" 
+      id="email" 
+      placeholder="name@example.com">
+    <label for="password" class="form-label">Password</label>
     <input type="password" 
       class="form-control" 
-      id="password-input" 
+      id="password" 
       placeholder="password">
     <button type="submit" class="btn btn-secondary">Register</button>
   </form>

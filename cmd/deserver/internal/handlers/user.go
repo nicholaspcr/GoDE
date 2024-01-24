@@ -5,8 +5,6 @@ import (
 
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -16,33 +14,40 @@ type UserHandler struct {
 	api.UnimplementedUserServiceServer
 }
 
-func (*UserHandler) Create(
+func (uh *UserHandler) Create(
 	ctx context.Context, req *api.UserServiceCreateRequest,
 ) (*emptypb.Empty, error) {
-	err := status.Errorf(codes.Unimplemented, "method Create not implemented")
-	return api.Empty, err
+	if err := uh.Store.Create(ctx, req.User); err != nil {
+		return nil, err
+	}
+	return api.Empty, nil
 }
 
-func (*UserHandler) Get(
+func (uh *UserHandler) Get(
 	ctx context.Context, req *api.UserServiceGetRequest,
 ) (*api.UserServiceGetResponse, error) {
-	// err := status.Errorf(codes.Unimplemented, "method Read not implemented")
-	return &api.UserServiceGetResponse{User: &api.User{
-		Ids:      &api.UserIDs{UserId: "nicholaspcr@gmail.com"},
-		Password: "123456",
-	}}, nil
+	usr, err := uh.Store.Get(ctx, req.UserIds)
+	if err != nil {
+		return nil, err
+	}
+	return &api.UserServiceGetResponse{User: usr}, nil
 }
 
-func (*UserHandler) Update(
-	ctx context.Context, usr *api.UserServiceUpdateRequest,
+func (uh *UserHandler) Update(
+	ctx context.Context, req *api.UserServiceUpdateRequest,
 ) (*emptypb.Empty, error) {
-	err := status.Errorf(codes.Unimplemented, "method Update not implemented")
+	err := uh.Store.Update(ctx, req.User, "email", "password") // TODO: Add fieldmask to request.
+	if err != nil {
+		return nil, err
+	}
 	return api.Empty, err
 }
 
-func (*UserHandler) Delete(
-	ctx context.Context, usrIDs *api.UserServiceDeleteRequest,
+func (uh *UserHandler) Delete(
+	ctx context.Context, req *api.UserServiceDeleteRequest,
 ) (*emptypb.Empty, error) {
-	err := status.Errorf(codes.Unimplemented, "method Delete not implemented")
-	return api.Empty, err
+	if err := uh.Store.Delete(ctx, req.UserIds); err != nil {
+		return nil, err
+	}
+	return api.Empty, nil
 }

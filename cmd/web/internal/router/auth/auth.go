@@ -53,10 +53,12 @@ func Login(c echo.Context) (*http.Cookie, error) {
 	username := c.FormValue("username")
 	password := c.FormValue("password")
 
-	conn, err := grpc.Dial(DB_URL, grpc.WithTransportCredentials(
-		insecure.NewCredentials()),
-	)
+	conn, err := grpc.Dial(DB_URL, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
+		slog.Error("failed to connect to deserver",
+			slog.String("err_msg", err.Error()),
+			slog.String("db_url", DB_URL),
+		)
 		return nil, err
 	}
 	usrClient := api.NewUserServiceClient(conn)
@@ -72,10 +74,7 @@ func Login(c echo.Context) (*http.Cookie, error) {
 	slog.With(slog.String("usr", res.User.String())).Debug("User found")
 
 	if res.User.Password != password {
-		slog.With(
-			"usr_password", res.User.Password,
-			"password", password,
-		).Debug("User password does not match.")
+		slog.With("usr_password", res.User.Password, "password", password).Debug("User password does not match.")
 		return nil, echo.ErrUnauthorized
 	}
 
@@ -119,10 +118,12 @@ func Register(c echo.Context) error {
 		Password: password,
 	}
 
-	conn, err := grpc.Dial(DB_URL, grpc.WithTransportCredentials(
-		insecure.NewCredentials()),
-	)
+	conn, err := grpc.Dial(DB_URL, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
+		slog.With(
+			slog.String("err_msg", err.Error()),
+			slog.String("db_url", DB_URL),
+		).Error("failed to connect to deserver")
 		return err
 	}
 

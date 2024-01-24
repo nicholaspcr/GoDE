@@ -12,9 +12,11 @@ help: ## Shows help message.
 
 .PHONY: init
 init: ## Set up all the necessary requirements to run the repository locally.
-	@mkdir -p .env
+	@mkdir -p .env/tmp/web
+	@mkdir -p .env/tmp/deserver
 	@buf generate
 	@docker compose -f cmd/web/docker-compose.yml build
+	@docker compose -f cmd/deserver/docker-compose.yml build
 
 .PHONY: deps
 deps: ## Downloads dependencies.
@@ -44,3 +46,7 @@ proto-generate: ## Generates golang code from proto definitions.
 .PHONY: web-dev
 web-dev: ## Runs the dev environment for the `web` application.
 	@docker compose -f cmd/web/docker-compose.yml up
+
+.PHONY: dev
+dev: ## Runs the dev environment for all applications.
+	@docker compose -f docker-compose.yml up

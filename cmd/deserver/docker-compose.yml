@@ -1,0 +1,10 @@
+services:
+  air:
+    image: gode/deserver-air
+    build:
+      dockerfile: ./docker/air.Dockerfile
+    volumes:
+      - ../../.:/app/
+    ports:
+      - "127.0.0.1:3030:3030"
+      - "127.0.0.1:8081:8081"

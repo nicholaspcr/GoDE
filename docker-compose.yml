@@ -7,5 +7,7 @@ services:
     extends:
       file: ./cmd/web/docker-compose.yml
       service: air
-  db:
-    image: postgres
+  deserver-air:
+    extends:
+      file: ./cmd/deserver/docker-compose.yml
+      service: air

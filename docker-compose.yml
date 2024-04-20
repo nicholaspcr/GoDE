@@ -1,15 +1,2 @@
 services:
-  web-sass:
-    extends:
-      file: ./cmd/web/docker-compose.yml
-      service: sass
-  web-air:
-    environment:
-      - DB_URL="deserver-air:3030"
-    extends:
-      file: ./cmd/web/docker-compose.yml
-      service: air
-  deserver-air:
-    extends:
-      file: ./cmd/deserver/docker-compose.yml
-      service: air
+# TODO: Add servers

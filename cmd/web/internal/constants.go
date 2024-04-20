@@ -7,6 +7,9 @@ import (
 	"strings"
 )
 
+// TODO: Make this a configuration based on environmental values, this way I have the local project and the docker build
+// point to the files differently.
+
 const (
 	// projectSuffix is the default path for the project.
 	projectSuffix = "cmd/web"

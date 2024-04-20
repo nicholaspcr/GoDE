@@ -40,7 +40,6 @@ proto-lint: ## Runs the linter for the proto files.
 proto-generate: ## Generates golang code from proto definitions.
 	@echo 'Removing previous proto files...'
 	find . -type f -name \*.pb.gw.go | xargs rm
-	find . -type f -name \*.pb.gw.go | xargs rm
 	@buf generate
 
 .PHONY: web-dev

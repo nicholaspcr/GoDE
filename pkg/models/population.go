@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math/rand"
 
-	"github.com/nicholaspcr/GoDE/pkg/api"
+	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 )
 
 type Population []Vector

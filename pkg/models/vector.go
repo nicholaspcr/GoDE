@@ -1,6 +1,6 @@
 package models
 
-import "github.com/nicholaspcr/GoDE/pkg/api"
+import "github.com/nicholaspcr/GoDE/pkg/api/v1"
 
 // Vector is the element of a population in a DE.
 type Vector struct {

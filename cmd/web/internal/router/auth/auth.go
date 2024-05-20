@@ -28,6 +28,7 @@ var DB_URL = os.Getenv("DB_URL")
 // JWTClaims are custom claims extending default ones.
 // See https://github.com/golang-jwt/jwt for more examples
 type JWTClaims struct {
+	Email string `json:"email"`
 	Name  string `json:"name"`
 	Admin bool   `json:"admin"`
 	jwt.RegisteredClaims
@@ -50,7 +51,7 @@ func Login(c echo.Context) (*http.Cookie, error) {
 		return nil, err
 	}
 
-	username := c.FormValue("username")
+	email := c.FormValue("email")
 	password := c.FormValue("password")
 
 	conn, err := grpc.Dial(DB_URL, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -64,7 +65,7 @@ func Login(c echo.Context) (*http.Cookie, error) {
 	usrClient := api.NewUserServiceClient(conn)
 	res, err := usrClient.Get(
 		c.Request().Context(),
-		&api.UserServiceGetRequest{UserIds: &api.UserIDs{UserId: username}},
+		&api.UserServiceGetRequest{UserIds: &api.UserIDs{Email: email}},
 	)
 	if err != nil {
 		return nil, err
@@ -80,7 +81,8 @@ func Login(c echo.Context) (*http.Cookie, error) {
 
 	// Set custom claims
 	claims := &JWTClaims{
-		res.User.Email,
+		res.User.Ids.Email,
+		res.User.Name,
 		true,
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(jwtExpireDuration)),
@@ -108,13 +110,13 @@ func Register(c echo.Context) error {
 		return err
 	}
 
-	username := c.FormValue("username")
 	email := c.FormValue("email")
 	password := c.FormValue("password")
+	name := c.FormValue("name")
 
 	newUser := &api.User{
-		Ids:      &api.UserIDs{UserId: username},
-		Email:    email,
+		Ids:      &api.UserIDs{Email: email},
+		Name:     name,
 		Password: password,
 	}
 

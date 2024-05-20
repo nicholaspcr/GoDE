@@ -28,7 +28,7 @@ service ParetoService {
     option (google.api.http) = {delete: "/v1/pareto/{pareto_ids.user_id}"};
   }
   rpc ListByUser(ParetoServiceListByUserRequest) returns (stream ParetoServiceListByUserResponse) {
-    option (google.api.http) = {get: "/v1/paretos/{user_ids.user_id}"};
+    option (google.api.http) = {get: "/v1/paretos/{user_ids.email}"};
   }
 }
 

@@ -9,13 +9,13 @@ option go_package = "pkg/api";
 
 // UserIDs is the standard user id message.
 message UserIDs {
-  string user_id = 1;
+  string email = 1;
 }
 
 // User is the standard user message.
 message User {
   UserIDs ids = 1;
-  string email = 2;
+  string name = 2;
   string password = 3;
 }
 
@@ -28,7 +28,7 @@ service UserService {
     };
   }
   rpc Get(UserServiceGetRequest) returns (UserServiceGetResponse) {
-    option (google.api.http) = {get: "/v1/user/{user_ids.user_id}"};
+    option (google.api.http) = {get: "/v1/user/{user_ids.email}"};
   }
   rpc Update(UserServiceUpdateRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
@@ -37,7 +37,7 @@ service UserService {
     };
   }
   rpc Delete(UserServiceDeleteRequest) returns (google.protobuf.Empty) {
-    option (google.api.http) = {delete: "/v1/user/{user_ids.user_id}"};
+    option (google.api.http) = {delete: "/v1/user/{user_ids.email}"};
   }
 }
 

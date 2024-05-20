@@ -172,7 +172,7 @@ func local_request_ParetoService_Delete_0(ctx context.Context, marshaler runtime
 }
 
 var (
-	filter_ParetoService_ListByUser_0 = &utilities.DoubleArray{Encoding: map[string]int{"user_ids": 0, "user_id": 1, "userId": 2}, Base: []int{1, 1, 1, 2, 0, 0}, Check: []int{0, 1, 2, 1, 3, 4}}
+	filter_ParetoService_ListByUser_0 = &utilities.DoubleArray{Encoding: map[string]int{"user_ids": 0, "email": 1}, Base: []int{1, 2, 3, 2, 0, 0}, Check: []int{0, 1, 1, 2, 4, 3}}
 )
 
 func request_ParetoService_ListByUser_0(ctx context.Context, marshaler runtime.Marshaler, client ParetoServiceClient, req *http.Request, pathParams map[string]string) (ParetoService_ListByUserClient, runtime.ServerMetadata, error) {
@@ -186,14 +186,14 @@ func request_ParetoService_ListByUser_0(ctx context.Context, marshaler runtime.M
 		_   = err
 	)
 
-	val, ok = pathParams["user_ids.user_id"]
+	val, ok = pathParams["user_ids.email"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "user_ids.user_id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "user_ids.email")
 	}
 
-	err = runtime.PopulateFieldFromPath(&protoReq, "user_ids.user_id", val)
+	err = runtime.PopulateFieldFromPath(&protoReq, "user_ids.email", val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "user_ids.user_id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "user_ids.email", err)
 	}
 
 	if err := req.ParseForm(); err != nil {
@@ -370,7 +370,7 @@ func RegisterParetoServiceHandlerClient(ctx context.Context, mux *runtime.ServeM
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/api.v1.ParetoService/ListByUser", runtime.WithHTTPPathPattern("/v1/paretos/{user_ids.user_id}"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/api.v1.ParetoService/ListByUser", runtime.WithHTTPPathPattern("/v1/paretos/{user_ids.email}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -394,7 +394,7 @@ var (
 
 	pattern_ParetoService_Delete_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "pareto", "pareto_ids.user_id"}, ""))
 
-	pattern_ParetoService_ListByUser_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "paretos", "user_ids.user_id"}, ""))
+	pattern_ParetoService_ListByUser_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "paretos", "user_ids.email"}, ""))
 )
 
 var (

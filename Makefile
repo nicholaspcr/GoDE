@@ -15,8 +15,6 @@ init: ## Set up all the necessary requirements to run the repository locally.
 	@mkdir -p .env/tmp/web
 	@mkdir -p .env/tmp/deserver
 	@buf generate
-	@docker compose -f cmd/web/docker-compose.yml build
-	@docker compose -f cmd/deserver/docker-compose.yml build
 
 .PHONY: deps
 deps: ## Downloads dependencies.
@@ -39,12 +37,9 @@ proto-lint: ## Runs the linter for the proto files.
 .PHONY: proto-generate
 proto-generate: ## Generates golang code from proto definitions.
 	@echo 'Removing previous proto files...'
-	find . -type f -name \*.pb.gw.go | xargs rm
+	find . -type f -name \*.pb.gw.go | xargs --no-run-if-empty rm
 	@buf generate
-
-.PHONY: web-dev
-web-dev: ## Runs the dev environment for the `web` application.
-	@docker compose -f cmd/web/docker-compose.yml up
+	@echo 'Done generating protos'
 
 .PHONY: dev
 dev: ## Runs the dev environment for all applications.

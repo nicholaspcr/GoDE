@@ -140,3 +140,34 @@ func Register(c echo.Context) error {
 
 	return nil
 }
+
+func ForgotPassword(c echo.Context) error {
+	if err := c.Request().ParseForm(); err != nil {
+		return err
+	}
+
+	email := c.FormValue("email")
+
+	usrIDs := &api.UserIDs{Email: email}
+	_ = usrIDs
+
+	//conn, err := grpc.Dial(DB_URL, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	//if err != nil {
+	//	slog.With(
+	//		slog.String("err_msg", err.Error()),
+	//		slog.String("db_url", DB_URL),
+	//	).Error("failed to connect to deserver")
+	//	return err
+	//}
+
+	//usrClient := api.NewUserServiceClient(conn)
+	//_, err = usrClient.Create(
+	//	c.Request().Context(),
+	//	&api.UserServiceCreateRequest{User: newUser},
+	//)
+	//if err != nil {
+	//	return err
+	//}
+
+	return nil
+}

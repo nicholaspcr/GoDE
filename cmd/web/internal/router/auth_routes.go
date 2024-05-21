@@ -64,4 +64,26 @@ func authRoutes(r *echo.Group) {
 		c.Response().Status = http.StatusOK
 		return nil
 	})
+
+	r.GET("/forgot-password", func(c echo.Context) error {
+		t, ok := templates["forgot-password.html"]
+		if !ok {
+			return c.String(http.StatusNoContent, "Template not found")
+		}
+		if err := t.Execute(c.Response().Writer, nil); err != nil {
+			c.Response().Status = http.StatusInternalServerError
+		}
+
+		c.Response().Status = http.StatusOK
+		return nil
+	})
+
+	r.POST("/forgot-password", func(c echo.Context) error {
+		if err := auth.ForgotPassword(c); err != nil {
+			return err
+		}
+		c.Response().Header().Add("HX-Redirect", "/")
+		c.Response().Status = http.StatusPermanentRedirect
+		return nil
+	})
 }

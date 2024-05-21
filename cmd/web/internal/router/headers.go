@@ -40,10 +40,6 @@ func rightNavbar() string {
 			"URL":  "/auth/login",
 			"Name": "Login",
 		},
-		dataMap{
-			"URL":  "/auth/register",
-			"Name": "Register",
-		},
 	})
 	if err != nil {
 		slog.Error("Error parsing template: ", err)

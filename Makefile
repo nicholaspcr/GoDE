@@ -12,9 +12,8 @@ help: ## Shows help message.
 
 .PHONY: init
 init: ## Set up all the necessary requirements to run the repository locally.
-	@mkdir -p .env/tmp/web
-	@mkdir -p .env/tmp/deserver
-	@buf generate
+	@mkdir -p .dev
+	@mkdir -p .env
 
 .PHONY: deps
 deps: ## Downloads dependencies.

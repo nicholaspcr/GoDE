@@ -8,6 +8,7 @@
 .envrc
 
 # Dev folder
+.dev
 .env
 
 # custom notes

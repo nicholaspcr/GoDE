@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -22,18 +21,30 @@ type Server interface {
 }
 
 // New returns a new server instance
-func New(_ context.Context, st store.Store) Server {
-	return &server{
-		store:       st,
-		userHandler: handlers.UserHandler{Store: st},
+func New(_ context.Context, opts ...serverOpts) (Server, error) {
+	srv := &server{
+		cfg: defaultConfig,
+		handlers: []handlers.Handler{
+			handlers.NewUserHandler(),
+		},
 	}
+
+	for _, opt := range opts {
+		opt(srv)
+	}
+
+	// Setup handlers' store
+	for _, handler := range srv.handlers {
+		handler.SetStore(srv.st)
+	}
+
+	return srv, nil
 }
 
 type server struct {
-	store store.Store
-
-	// handlers
-	userHandler handlers.UserHandler
+	st       store.Store
+	cfg      Config
+	handlers []handlers.Handler
 }
 
 // Start starts the server.
@@ -46,38 +57,48 @@ func (s *server) Start(ctx context.Context) error {
 	grpcSrv := grpc.NewServer(srvOpts...)
 
 	slog.Info("Registering services")
-	api.RegisterUserServiceServer(grpcSrv, &s.userHandler)
+	for _, handler := range s.handlers {
+		handler.RegisterService(grpcSrv)
+	}
 
 	slog.Info("Creating listener")
-	port := 3030
-	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", port))
+	lis, err := net.Listen("tcp", s.cfg.LisAddr)
 	if err != nil {
 		return err
 	}
+	lisAddr := lis.Addr().String()
 
-	slog.Info("Server listening on: ", slog.Int("port", port))
+	slog.Info("RPC server listening on: ", slog.String("addr", lisAddr))
 	go func() {
 		if err := grpcSrv.Serve(lis); err != nil {
-			slog.Error("Unexpected panic on the server", slog.String("error", err.Error()))
+			slog.Error(
+				"Unexpected panic on the server",
+				slog.String("error", err.Error()),
+			)
 			cancel()
 		}
 	}()
 
-	// Register gRPC server endpoint
+	// NOTE: Make sure the gRPC server is running properly and accessible.
 	slog.Info("Registering grpc-gateway handlers")
-	// api.RegisterUserServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption)
-
-	// NOTE: Make sure the gRPC server is running properly and accessible
 	mux := runtime.NewServeMux()
-	dialOpts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	err = api.RegisterUserServiceHandlerFromEndpoint(ctx, mux, lis.Addr().String(), dialOpts)
+	dialOpts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	}
+	err = api.RegisterUserServiceHandlerFromEndpoint(
+		ctx, mux, lisAddr, dialOpts,
+	)
 	if err != nil {
 		return err
 	}
 	// Start HTTP server (and proxy calls to gRPC server endpoint)
+	slog.Info("HTTP server listening on: ", slog.String("port", s.cfg.HTTPPort))
 	go func() {
-		if err := http.ListenAndServe(":8081", mux); err != nil {
-			slog.Error("Unexpected panic on the web server", slog.String("error", err.Error()))
+		if err := http.ListenAndServe(s.cfg.HTTPPort, mux); err != nil {
+			slog.Error(
+				"Unexpected panic on the web server",
+				slog.String("error", err.Error()),
+			)
 			cancel()
 		}
 	}()

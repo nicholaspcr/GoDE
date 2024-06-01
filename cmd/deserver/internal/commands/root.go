@@ -17,7 +17,7 @@ var RootCmd = &cobra.Command{
 proto files. Requests can be made via gRPC or HTTP.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		// Set default logger.
+
 		logger := log.New()
 		slog.SetDefault(logger)
 
@@ -25,7 +25,10 @@ proto files. Requests can be made via gRPC or HTTP.`,
 		if err != nil {
 			return err
 		}
-		srv := server.New(ctx, st)
+		srv, err := server.New(ctx, server.WithStore(st))
+		if err != nil {
+			return err
+		}
 
 		return srv.Start(ctx)
 	},

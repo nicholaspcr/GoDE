@@ -9,66 +9,90 @@ import (
 	"gorm.io/gorm"
 )
 
-type UserModel struct {
-	BaseModel
-
-	ID     string      `gorm:"primary_key"`
-	Tenant TenantModel `gorm:"foreignKey:ID"`
-
+type userModel struct {
+	gorm.Model
+	TenantID string `gorm:"index:user_tenant_index,unique,not null,size:50"`
 	Email    string `gorm:"index:user_email_index,unique,not null,size:255"`
 	Password string `gorm:"not null,size:255"`
+	Name     string `gorm:"size:64"`
+}
+
+func (u *userModel) fillTenantID(tx *gorm.DB) error {
+	ctx := tx.Statement.Context
+
+	tnt := tenant.FromContext(ctx)
+	u.TenantID = tnt.GetIds().TenantId
+
+	return nil
+}
+
+func (u *userModel) BeforeCreate(tx *gorm.DB) error {
+	return u.fillTenantID(tx)
+}
+
+func (u *userModel) BeforeUpdate(tx *gorm.DB) error {
+	return u.fillTenantID(tx)
+}
+
+func (u *userModel) BeforeDelete(tx *gorm.DB) error {
+	return u.fillTenantID(tx)
 }
 
 type userStore struct{ *gorm.DB }
 
-func newUserStore(db *gorm.DB) *userStore { return &userStore{db} }
+func newUserStore(db *gorm.DB) userStore { return userStore{db} }
 
 func (st *userStore) Create(ctx context.Context, usr *api.User) error {
-	tnt := tenant.FromContext(ctx)
-	user := UserModel{
-		ID:       usr.GetIds().UserId,
-		Tenant:   TenantModel{ID: tnt.GetIds().TenantId},
-		Email:    usr.Email,
+	user := userModel{
+		Email:    usr.GetIds().Email,
 		Password: usr.Password,
+		Name:     usr.Name,
 	}
-	st.DB.Create(&user)
+	st.DB.WithContext(ctx).Create(&user)
 	return nil
 }
 
 func (st *userStore) Get(
 	ctx context.Context, usrIDs *api.UserIDs,
 ) (*api.User, error) {
-	var usr UserModel
-	tx := st.First(&usr, "id = ?", usrIDs.UserId)
+	var usr userModel
+
+	tx := st.First(&usr, "email = ?", usrIDs.Email)
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
 	return &api.User{
-		Ids:      &api.UserIDs{UserId: usr.ID},
-		Email:    usr.Email,
+		Ids:      &api.UserIDs{Email: usr.Email},
 		Password: usr.Password,
+		Name:     usr.Name,
 	}, nil
 }
 
-func (st *userStore) Update(ctx context.Context, usr *api.User, fields ...string) error {
-	tnt := tenant.FromContext(ctx)
-	model := UserModel{
-		ID:     usr.GetIds().UserId,
-		Tenant: TenantModel{ID: tnt.GetIds().TenantId},
+func (st *userStore) Update(
+	ctx context.Context, usr *api.User, fields ...string,
+) error {
+	var model userModel
+
+	tx := st.First(&model, "email = ?", usr.GetIds().Email)
+	if tx.Error != nil {
+		return tx.Error
 	}
 
+	columns := make(map[string]any)
 	for _, field := range fields {
 		switch field {
 		default:
 			return errors.ErrUnsupportedFieldMask
 		case "email":
-			model.Email = usr.Email
+			columns[field] = usr.GetIds().Email
 		case "password":
-			model.Password = usr.Password
+			columns[field] = usr.Password
+		case "name":
+			columns[field] = usr.Name
 		}
 	}
 
-	tx := st.DB.Model(&model).Updates(model)
+	tx = st.DB.Model(&model).Updates(columns)
 	if tx.Error != nil {
 		return tx.Error
 	}
@@ -76,14 +100,7 @@ func (st *userStore) Update(ctx context.Context, usr *api.User, fields ...string
 }
 
 func (st *userStore) Delete(ctx context.Context, usrIDs *api.UserIDs) error {
-	tnt := tenant.FromContext(ctx)
-	model := UserModel{
-		ID:     usrIDs.UserId,
-		Tenant: TenantModel{ID: tnt.GetIds().TenantId},
-	}
+	model := userModel{Email: usrIDs.Email}
 	tx := st.DB.Delete(&model)
-	if tx.Error != nil {
-		return tx.Error
-	}
-	return nil
+	return tx.Error
 }

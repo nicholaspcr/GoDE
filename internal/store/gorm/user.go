@@ -40,9 +40,11 @@ func (u *userModel) BeforeDelete(tx *gorm.DB) error {
 
 type userStore struct{ *gorm.DB }
 
-func newUserStore(db *gorm.DB) userStore { return userStore{db} }
+func newUserStore(db *gorm.DB) *userStore { return &userStore{db} }
 
-func (st *userStore) Create(ctx context.Context, usr *api.User) error {
+func (st *userStore) CreateUser(
+	ctx context.Context, usr *api.User,
+) error {
 	user := userModel{
 		Email:    usr.GetIds().Email,
 		Password: usr.Password,
@@ -52,7 +54,7 @@ func (st *userStore) Create(ctx context.Context, usr *api.User) error {
 	return nil
 }
 
-func (st *userStore) Get(
+func (st *userStore) GetUser(
 	ctx context.Context, usrIDs *api.UserIDs,
 ) (*api.User, error) {
 	var usr userModel
@@ -68,7 +70,7 @@ func (st *userStore) Get(
 	}, nil
 }
 
-func (st *userStore) Update(
+func (st *userStore) UpdateUser(
 	ctx context.Context, usr *api.User, fields ...string,
 ) error {
 	var model userModel
@@ -99,7 +101,9 @@ func (st *userStore) Update(
 	return nil
 }
 
-func (st *userStore) Delete(ctx context.Context, usrIDs *api.UserIDs) error {
+func (st *userStore) DeleteUser(
+	ctx context.Context, usrIDs *api.UserIDs,
+) error {
 	model := userModel{Email: usrIDs.Email}
 	tx := st.DB.Delete(&model)
 	return tx.Error

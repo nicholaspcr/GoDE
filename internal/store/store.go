@@ -16,5 +16,6 @@ func New(ctx context.Context) (Store, error) {
 	if err := st.AutoMigrate(); err != nil {
 		return nil, err
 	}
+
 	return st, nil
 }

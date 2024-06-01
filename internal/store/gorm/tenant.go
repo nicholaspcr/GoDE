@@ -20,13 +20,15 @@ type tenantStore struct{ *gorm.DB }
 
 func newTenantStore(db *gorm.DB) *tenantStore { return &tenantStore{db} }
 
-func (st *tenantStore) Create(ctx context.Context, tnt *api.Tenant) error {
+func (st *tenantStore) CreateTenant(
+	ctx context.Context, tnt *api.Tenant,
+) error {
 	t := tenantModel{ID: tnt.GetIds().TenantId}
 	st.DB.Create(&t)
 	return nil
 }
 
-func (st *tenantStore) Get(
+func (st *tenantStore) GetTenant(
 	ctx context.Context, tntIDs *api.TenantIDs,
 ) (*api.Tenant, error) {
 	var tnt tenantModel
@@ -37,7 +39,9 @@ func (st *tenantStore) Get(
 	return &api.Tenant{Ids: &api.TenantIDs{TenantId: tnt.ID}}, nil
 }
 
-func (st *tenantStore) Delete(ctx context.Context, tntIDs *api.TenantIDs) error {
+func (st *tenantStore) DeleteTenant(
+	ctx context.Context, tntIDs *api.TenantIDs,
+) error {
 	var tnt tenantModel
 	tx := st.First(&tnt, "id = ?", tntIDs.TenantId)
 	if tx.Error != nil {

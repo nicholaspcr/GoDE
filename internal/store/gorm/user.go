@@ -4,38 +4,15 @@ import (
 	"context"
 
 	"github.com/nicholaspcr/GoDE/internal/store/errors"
-	"github.com/nicholaspcr/GoDE/internal/tenant"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"gorm.io/gorm"
 )
 
 type userModel struct {
 	gorm.Model
-	TenantID string `gorm:"index:user_tenant_index,unique,not null,size:50"`
 	Email    string `gorm:"index:user_email_index,unique,not null,size:255"`
 	Password string `gorm:"not null,size:255"`
 	Name     string `gorm:"size:64"`
-}
-
-func (u *userModel) fillTenantID(tx *gorm.DB) error {
-	ctx := tx.Statement.Context
-
-	tnt := tenant.FromContext(ctx)
-	u.TenantID = tnt.GetIds().TenantId
-
-	return nil
-}
-
-func (u *userModel) BeforeCreate(tx *gorm.DB) error {
-	return u.fillTenantID(tx)
-}
-
-func (u *userModel) BeforeUpdate(tx *gorm.DB) error {
-	return u.fillTenantID(tx)
-}
-
-func (u *userModel) BeforeDelete(tx *gorm.DB) error {
-	return u.fillTenantID(tx)
 }
 
 type userStore struct{ *gorm.DB }

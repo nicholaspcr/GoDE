@@ -18,7 +18,6 @@ var memoryEnabled = true
 type gormStore struct {
 	db *gorm.DB
 	*userStore
-	*tenantStore
 }
 
 // New returns a new GormStore.
@@ -33,9 +32,8 @@ func New(_ context.Context) (*gormStore, error) {
 	}
 
 	store := &gormStore{
-		db:          db,
-		userStore:   newUserStore(db),
-		tenantStore: newTenantStore(db),
+		db:        db,
+		userStore: newUserStore(db),
 	}
 
 	return store, nil
@@ -43,7 +41,6 @@ func New(_ context.Context) (*gormStore, error) {
 
 func (s *gormStore) AutoMigrate() error {
 	return s.db.AutoMigrate(
-		&tenantModel{},
 		&userModel{},
 	)
 }

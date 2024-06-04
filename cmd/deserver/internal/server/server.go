@@ -29,6 +29,7 @@ func New(_ context.Context, opts ...serverOpts) (Server, error) {
 		handlers: []handlers.Handler{
 			handlers.NewUserHandler(),
 		},
+		sessionStore: auth.NewInMemorySessionStore(),
 	}
 
 	for _, opt := range opts {
@@ -44,9 +45,10 @@ func New(_ context.Context, opts ...serverOpts) (Server, error) {
 }
 
 type server struct {
-	st       store.Store
-	cfg      Config
-	handlers []handlers.Handler
+	st           store.Store
+	cfg          Config
+	handlers     []handlers.Handler
+	sessionStore auth.SessionStore
 }
 
 // Start starts the server.
@@ -59,7 +61,7 @@ func (s *server) Start(ctx context.Context) error {
 
 	grpcSrv := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
-			auth.UnaryMiddleware(s.st),
+			auth.UnaryMiddleware(s.sessionStore),
 			logging.UnaryServerInterceptor(InterceptorLogger(logger)),
 		),
 		grpc.ChainStreamInterceptor(
@@ -106,7 +108,10 @@ func (s *server) Start(ctx context.Context) error {
 	if err := auth.RegisterHandler(mux, s.st); err != nil {
 		return err
 	}
-	if err := auth.LoginHandler(mux, s.st); err != nil {
+	if err := auth.LoginHandler(mux, s.st, s.sessionStore); err != nil {
+		return err
+	}
+	if err := auth.LogoutHandler(mux, s.sessionStore); err != nil {
 		return err
 	}
 

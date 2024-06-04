@@ -2,16 +2,18 @@
 package auth
 
 import (
+	"crypto/rand"
 	"encoding/base64"
 	"net/http"
 	"net/mail"
+	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 )
 
-// Adds the /register route to the HTTP server
+// RegisterHandler adds the /register route to the HTTP server.
 func RegisterHandler(mux *runtime.ServeMux, st store.UserOperations) error {
 	return mux.HandlePath(
 		"POST",
@@ -49,8 +51,12 @@ func RegisterHandler(mux *runtime.ServeMux, st store.UserOperations) error {
 		})
 }
 
-// Adds the /login route to the HTTP server
-func LoginHandler(mux *runtime.ServeMux, st store.UserOperations) error {
+// LoginHandler adds the /login route to the HTTP server.
+func LoginHandler(
+	mux *runtime.ServeMux,
+	st store.UserOperations,
+	sessionStore SessionStore,
+) error {
 	return mux.HandlePath(
 		"POST",
 		"/login",
@@ -84,11 +90,41 @@ func LoginHandler(mux *runtime.ServeMux, st store.UserOperations) error {
 				return
 			}
 
+			extraBytes := make([]byte, 8)
+			if _, err := rand.Read(extraBytes); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
 			// Add authorization token in the response header.
 			authValue := username + ":" + password
-			authToken := base64.StdEncoding.EncodeToString([]byte(authValue))
+			authToken := base64.StdEncoding.EncodeToString(
+				append([]byte(authValue), extraBytes...),
+			)
 			w.Header().Add("Authorization", "Basic "+authToken)
 
+			sessionStore.Add(authToken)
+
+			w.WriteHeader(http.StatusOK)
+		})
+}
+
+// LogoutHandler adds the /logout route to the HTTP server.
+func LogoutHandler(
+	mux *runtime.ServeMux,
+	sessionStore SessionStore,
+) error {
+	return mux.HandlePath(
+		"POST",
+		"/logout",
+		func(
+			w http.ResponseWriter,
+			r *http.Request,
+			pathParams map[string]string,
+		) {
+			token := r.Header.Get("Authorization")
+			token = strings.TrimPrefix(token, "Basic ")
+			sessionStore.Remove(token)
 			w.WriteHeader(http.StatusOK)
 		})
 }

@@ -73,5 +73,5 @@ server.
 func init() {
 	// Definition of commands
 	RootCmd.AddCommand(localCmd)
-	RootCmd.AddCommand(remoteCmd)
+	RootCmd.AddCommand(loginCmd)
 }

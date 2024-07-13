@@ -40,6 +40,9 @@ var defaultConfig = &Config{
 	},
 }
 
+// DefaultConfig returns the default configuration for the logger.
+func DefaultConfig() *Config { return defaultConfig }
+
 type Option func(*Config)
 
 func WithWriter(w io.Writer) Option {

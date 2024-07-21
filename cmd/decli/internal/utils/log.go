@@ -23,10 +23,6 @@ func LogOptionsFromConfig(cfg *log.Config) []log.Option {
 		opts = append(opts, log.WithLevel(cfg.Level))
 	}
 
-	if cfg.HandlerOptions != nil {
-		opts = append(opts, log.WithHandlerOptions(cfg.HandlerOptions))
-	}
-
 	if cfg.Pretty != nil {
 		opts = append(opts, log.WithPrettyConfig(cfg.Pretty))
 	}

@@ -8,15 +8,16 @@ import (
 
 type Config struct {
 	// Writer is the location where logs are written to. Defaults to os.Stdout.
-	Writer io.Writer `json:",omitempty"`
+	Writer io.Writer `json:",omitempty" yaml:",omitempty"`
 	// Type can be either "json" or "text"
 	Type string `json:"type" yaml:"type"`
 	// Level is the minimum log level to output. Defaults to slog.LevelInfo.
 	Level slog.Level `json:"level" yaml:"level"`
-	// HandlerOptions are the options to pass to the handler.
-	HandlerOptions *slog.HandlerOptions `json:",omitempty"`
 	// Pretty contain configurations regarding formatting for JSON logs.
 	Pretty *PrettyConfig `json:"pretty" yaml:"pretty"`
+
+	// handlerOptions are the options to pass to the handler.
+	handlerOptions *slog.HandlerOptions `json:",omitempty" yaml:",omitempty"`
 }
 
 // PrettyConfig contain configurations regarding formatting for JSON logs.
@@ -32,7 +33,7 @@ var defaultConfig = &Config{
 	Writer:         os.Stdout,
 	Type:           "json",
 	Level:          slog.LevelInfo,
-	HandlerOptions: &slog.HandlerOptions{},
+	handlerOptions: &slog.HandlerOptions{},
 	Pretty: &PrettyConfig{
 		Enable:     true,
 		Color:      true,
@@ -62,5 +63,5 @@ func WithPrettyConfig(prettyCfg *PrettyConfig) Option {
 }
 
 func WithHandlerOptions(opts *slog.HandlerOptions) Option {
-	return func(c *Config) { c.HandlerOptions = opts }
+	return func(c *Config) { c.handlerOptions = opts }
 }

@@ -19,14 +19,14 @@ func New(opts ...Option) *slog.Logger {
 		opt(cfg)
 	}
 	// Manually pass the level to the handler options
-	cfg.HandlerOptions.Level = cfg.Level
+	cfg.handlerOptions.Level = cfg.Level
 
 	var h slog.Handler
 	switch cfg.Type {
 	case "text":
-		h = slog.NewTextHandler(cfg.Writer, cfg.HandlerOptions)
+		h = slog.NewTextHandler(cfg.Writer, cfg.handlerOptions)
 	default:
-		h = slog.NewJSONHandler(cfg.Writer, cfg.HandlerOptions)
+		h = slog.NewJSONHandler(cfg.Writer, cfg.handlerOptions)
 	}
 
 	if cfg.Pretty.Enable {

@@ -18,9 +18,18 @@ var RootCmd = &cobra.Command{
 	Short: "deserver is a server for the de client",
 	Long: `deserver is a server that implements the services described in the 
 proto files. Requests can be made via gRPC or HTTP.`,
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		logger := log.New()
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		// Checks for files, its contents overwrites the default config fields.
+		cfg = config.Default()
+
+		logger := log.New(
+			log.WithWriter(cfg.Log.Writer),
+			log.WithType(cfg.Log.Type),
+			log.WithLevel(cfg.Log.Level),
+			log.WithPrettyConfig(cfg.Log.Pretty),
+		)
 		slog.SetDefault(logger)
+
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -30,6 +39,7 @@ proto files. Requests can be made via gRPC or HTTP.`,
 		if err != nil {
 			return err
 		}
+
 		srv, err := server.New(ctx, server.WithStore(st))
 		if err != nil {
 			return err

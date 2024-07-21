@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/spf13/cobra"
 )
@@ -15,7 +16,7 @@ var ConfigCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Println("Printing the deserver configuration in JSON format")
+		slog.Info("Printing the deserver configuration")
 		fmt.Println(cfgString)
 		return nil
 	},

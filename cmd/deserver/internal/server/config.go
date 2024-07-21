@@ -6,7 +6,7 @@ type Config struct {
 	HTTPPort string
 }
 
-var defaultConfig = Config{
+var DefaultConfig = Config{
 	LisAddr:  "localhost:3030",
 	HTTPPort: ":8081",
 }

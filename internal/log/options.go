@@ -29,20 +29,21 @@ type PrettyConfig struct {
 	Indent     string `json:"indent" yaml:"indent"`
 }
 
-var defaultConfig = &Config{
-	Writer:         os.Stdout,
-	Type:           "json",
-	Level:          slog.LevelInfo,
-	handlerOptions: &slog.HandlerOptions{},
+var defaultConfig = Config{
+	Writer: os.Stdout,
+	Type:   "json",
+	Level:  slog.LevelInfo,
 	Pretty: &PrettyConfig{
 		Enable:     true,
 		Color:      true,
 		TimeFormat: "[15:05:05.000]",
 	},
+
+	handlerOptions: &slog.HandlerOptions{},
 }
 
 // DefaultConfig returns the default configuration for the logger.
-func DefaultConfig() *Config { return defaultConfig }
+func DefaultConfig() Config { return defaultConfig }
 
 type Option func(*Config)
 

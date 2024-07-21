@@ -13,7 +13,7 @@ import (
 // it will use the default configuration.
 func New(opts ...Option) *slog.Logger {
 	cfg := new(Config)
-	*cfg = *defaultConfig
+	*cfg = defaultConfig
 
 	for _, opt := range opts {
 		opt(cfg)

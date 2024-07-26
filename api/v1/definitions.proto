@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package api.v1;
+
+option go_package = "pkg/api";
+
+// Vector is an element used in the Differential Evoluition algorithm.
+message Vector {
+  repeated double elements = 1;
+  repeated double objectives = 2;
+  double crowding_distance = 3;
+}
+
+// Population is a vector set, which describes the population of a generation in
+// the evolutionary algorithm.
+message Population {
+  repeated Vector vectors = 1;
+}
+
+// PopulationParameters are the values used by a Population in a generation.
+message PopulationParameters {
+  int64 dimensions_size = 1;
+  int64 objetives_size = 2;
+  repeated double floors = 3;
+  repeated double ceils = 4;
+}
+
+// GenerationIDs contain identifiers for a Generation.
+message GenerationIDs {
+  uint64 id = 1;
+}
+
+// Generation is a steps on the Differential Evolution algorithm, each
+// generation a new population is generated via mutation and filtered according
+// to their performance in the problem.
+message Generation {
+  uint64 id = 1;
+  uint64 execution_id = 2;
+  repeated Population populations = 3;
+}
+
+message ParetoIDs {
+  uint64 id = 1;
+  string user_id = 2;
+}
+
+message Pareto {
+  ParetoIDs ids = 1;
+  Population population = 2;
+  repeated double max_objs = 3;
+}
+
+

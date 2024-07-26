@@ -2,23 +2,12 @@ syntax = "proto3";
 
 package api.v1;
 
-import "api/v1/population.proto";
+import "api/v1/definitions.proto";
 import "api/v1/user.proto";
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
 option go_package = "pkg/api";
-
-message ParetoIDs {
-  uint64 id = 1;
-  string user_id = 2;
-}
-
-message Pareto {
-  ParetoIDs ids = 1;
-  Population population = 2;
-  repeated double max_objs = 3;
-}
 
 service ParetoService {
   rpc Get(ParetoServiceGetRequest) returns (ParetoServiceGetResponse) {
@@ -27,7 +16,9 @@ service ParetoService {
   rpc Delete(ParetoServiceDeleteRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {delete: "/v1/pareto/{pareto_ids.user_id}"};
   }
-  rpc ListByUser(ParetoServiceListByUserRequest) returns (stream ParetoServiceListByUserResponse) {
+  rpc ListByUser(ParetoServiceListByUserRequest) returns (
+      stream ParetoServiceListByUserResponse
+  ) {
     option (google.api.http) = {get: "/v1/paretos/{user_ids.email}"};
   }
 }

@@ -33,6 +33,7 @@ proto files. Requests can be made via gRPC or HTTP.`,
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
+		return cmd.Help()
 		ctx := cmd.Context()
 
 		st, err := store.New(ctx)

@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package api.v1;
+
+import "api/v1/definitions.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "pkg/api";
+
+service DifferentialEvolutionService {
+  rpc ListSupportedAlgorithms(google.protobuf.Empty) returns (ListSupportedAlgorithmsResponse) {
+    option (google.api.http) = {get: "/v1/de/supported/algorithms"};
+  }
+  rpc ListSupportedVariants(google.protobuf.Empty) returns (ListSupportedVariantsResponse) {
+    option (google.api.http) = {get: "/v1/de/supported/variants"};
+  }
+  rpc ListSupportedProblems(google.protobuf.Empty) returns (ListSupportedProblemsResponse) {
+    option (google.api.http) = {get: "/v1/de/supported/problems"};
+  }
+
+  rpc Run(RunRequest) returns (RunResponse){
+    option (google.api.http) = {get: "/v1/de/run"};
+  }
+}
+
+message ListSupportedAlgorithmsResponse {
+  repeated string algorithms = 1;
+}
+
+message ListSupportedVariantsResponse {
+  repeated string variants = 1;
+}
+
+message ListSupportedProblemsResponse {
+  repeated string problems = 1;
+}
+
+message RunRequest {
+  string algorithm = 1;
+  string variant = 2;
+  string problem = 3;
+}
+
+message RunResponse {
+  Pareto pareto = 1;
+}

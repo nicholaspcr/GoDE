@@ -10,7 +10,7 @@ import (
 func Default() *DeServer {
 	return &DeServer{
 		Log:    log.DefaultConfig(),
+		Server: server.DefaultConfig(),
 		Store:  store.Config{},
-		Server: server.Config{},
 	}
 }

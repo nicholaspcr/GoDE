@@ -25,7 +25,7 @@ type Server interface {
 // New returns a new server instance
 func New(_ context.Context, opts ...serverOpts) (Server, error) {
 	srv := &server{
-		cfg: DefaultConfig,
+		cfg: DefaultConfig(),
 		handlers: []handlers.Handler{
 			handlers.NewUserHandler(),
 		},

@@ -6,7 +6,10 @@ type Config struct {
 	HTTPPort string
 }
 
-var DefaultConfig = Config{
-	LisAddr:  "localhost:3030",
-	HTTPPort: ":8081",
+// DefaultConfig returns the default configuration of the server.
+func DefaultConfig() Config {
+	return Config{
+		LisAddr:  "localhost:3030",
+		HTTPPort: ":8081",
+	}
 }

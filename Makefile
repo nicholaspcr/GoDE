@@ -40,6 +40,9 @@ proto-generate: ## Generates golang code from proto definitions.
 	@buf generate
 	@echo 'Done generating protos'
 
+.PHONY: proto
+proto: proto-lint proto-generate ## Lints and generates proto code
+
 .PHONY: dev
 dev: ## Runs the dev environment for all applications.
 	@docker compose -f docker-compose.yml up

@@ -3,6 +3,7 @@ syntax = "proto3";
 package api.v1;
 
 import "google/api/annotations.proto";
+import "google/protobuf/field_mask.proto";
 import "google/protobuf/empty.proto";
 
 option go_package = "pkg/api";
@@ -30,7 +31,6 @@ service UserService {
   rpc Get(UserServiceGetRequest) returns (UserServiceGetResponse) {
     option (google.api.http) = {get: "/v1/user/{user_ids.email}"};
   }
-	// TODO: Add fieldmask to request.
   rpc Update(UserServiceUpdateRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       put: "/v1/user"
@@ -56,6 +56,7 @@ message UserServiceGetResponse {
 
 message UserServiceUpdateRequest {
   User user = 1;
+  google.protobuf.FieldMask field_mask = 2;
 }
 
 message UserServiceDeleteRequest {

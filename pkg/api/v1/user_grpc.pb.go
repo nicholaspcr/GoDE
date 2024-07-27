@@ -32,7 +32,6 @@ const (
 type UserServiceClient interface {
 	Create(ctx context.Context, in *UserServiceCreateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Get(ctx context.Context, in *UserServiceGetRequest, opts ...grpc.CallOption) (*UserServiceGetResponse, error)
-	// TODO: Add fieldmask to request.
 	Update(ctx context.Context, in *UserServiceUpdateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Delete(ctx context.Context, in *UserServiceDeleteRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -87,7 +86,6 @@ func (c *userServiceClient) Delete(ctx context.Context, in *UserServiceDeleteReq
 type UserServiceServer interface {
 	Create(context.Context, *UserServiceCreateRequest) (*emptypb.Empty, error)
 	Get(context.Context, *UserServiceGetRequest) (*UserServiceGetResponse, error)
-	// TODO: Add fieldmask to request.
 	Update(context.Context, *UserServiceUpdateRequest) (*emptypb.Empty, error)
 	Delete(context.Context, *UserServiceDeleteRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedUserServiceServer()

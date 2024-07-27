@@ -48,8 +48,7 @@ func (uh *userHandler) Get(
 func (uh *userHandler) Update(
 	ctx context.Context, req *api.UserServiceUpdateRequest,
 ) (*emptypb.Empty, error) {
-	// TODO: Add fieldmask to request.
-	err := uh.UpdateUser(ctx, req.User, "email", "password")
+	err := uh.UpdateUser(ctx, req.User, req.FieldMask.GetPaths()...)
 	if err != nil {
 		return nil, err
 	}

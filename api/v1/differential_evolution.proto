@@ -20,7 +20,7 @@ service DifferentialEvolutionService {
   }
 
   rpc Run(RunRequest) returns (RunResponse){
-    option (google.api.http) = {get: "/v1/de/run"};
+    option (google.api.http) = {post: "/v1/de/run"};
   }
 }
 

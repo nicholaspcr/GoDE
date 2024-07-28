@@ -33,15 +33,19 @@ proto-lint: ## Runs the linter for the proto files.
 	@echo 'Running linter...'
 	@buf lint
 
-.PHONY: proto-generate
-proto-generate: ## Generates golang code from proto definitions.
+.PHONY: proto-remove
+proto-remove: ## Removes files generated based on the proto definitions.
 	@echo 'Removing previous proto files...'
 	find . -type f -name \*.pb.gw.go | xargs --no-run-if-empty rm
+	find . -type f -name \*.pb.go | xargs --no-run-if-empty rm
+
+.PHONY: proto-generate
+proto-generate: ## Generates golang code from proto definitions.
 	@buf generate
 	@echo 'Done generating protos'
 
 .PHONY: proto
-proto: proto-lint proto-generate ## Lints and generates proto code
+proto: proto-lint proto-remove proto-generate ## Lints and generates proto code
 
 .PHONY: dev
 dev: ## Runs the dev environment for all applications.

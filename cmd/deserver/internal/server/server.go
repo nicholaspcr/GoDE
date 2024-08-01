@@ -11,7 +11,6 @@ import (
 	"github.com/nicholaspcr/GoDE/cmd/deserver/internal/server/auth"
 	"github.com/nicholaspcr/GoDE/cmd/deserver/internal/server/handlers"
 	"github.com/nicholaspcr/GoDE/internal/store"
-	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -28,6 +27,7 @@ func New(_ context.Context, opts ...serverOpts) (Server, error) {
 		cfg: DefaultConfig(),
 		handlers: []handlers.Handler{
 			handlers.NewUserHandler(),
+			handlers.NewDEHandler(),
 		},
 		sessionStore: auth.NewInMemorySessionStore(),
 	}

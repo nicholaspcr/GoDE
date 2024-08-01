@@ -16,8 +16,9 @@ type (
 	// Config is a set of values that are necessary to execute an Differential
 	// Evolutionary algorithm.
 	Config struct {
-		Local  LocalConfig `json:"local" yaml:"local"`
-		Logger LogConfig   `json:"logger" yaml:"logger"`
+		Local  LocalConfig  `json:"local" yaml:"local"`
+		Logger LogConfig    `json:"logger" yaml:"logger"`
+		Server ServerConfig `json:"server" yaml:"server"`
 	}
 
 	LocalConfig struct {
@@ -35,6 +36,14 @@ type (
 		log.Config `json:"config" yaml:"config"`
 		Filename   string `json:"filename" yaml:"filename"`
 	}
+
+	// ServerConfig is a set of values that are necessary for making requests to
+	// the DE server.
+	ServerConfig struct {
+		HTTPAddr string `json:"http-addr" yaml:"http-addr"`
+		GRPCAddr string `json:"grpc-addr" yaml:"grpc-addr"`
+	}
+
 	// Dimensions is a set of values to define the behaviour that happens in
 	// each dimension of the DE.
 	Dimensions struct {
@@ -73,6 +82,10 @@ var defaultConfig = &Config{
 	},
 	Logger: LogConfig{
 		Config: log.DefaultConfig(),
+	},
+	Server: ServerConfig{
+		GRPCAddr: "localhost:3030",
+		HTTPAddr: "localhost:8081",
 	},
 }
 

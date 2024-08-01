@@ -69,7 +69,7 @@ func (s *server) Start(ctx context.Context) error {
 		),
 	)
 
-	slog.Info("Registering services")
+	slog.Info("Registering RPC services")
 	for _, handler := range s.handlers {
 		handler.RegisterService(grpcSrv)
 	}
@@ -93,15 +93,14 @@ func (s *server) Start(ctx context.Context) error {
 	}()
 
 	// NOTE: Make sure the gRPC server is running properly and accessible.
-	slog.Info("Registering grpc-gateway handlers")
 	mux := runtime.NewServeMux()
 	dialOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}
-	if err = api.RegisterUserServiceHandlerFromEndpoint(
-		ctx, mux, lisAddr, dialOpts,
-	); err != nil {
-		return err
+
+	slog.Info("Registering grpc-gateway handlers")
+	for _, handler := range s.handlers {
+		handler.RegisterHTTPHandler(ctx, mux, lisAddr, dialOpts)
 	}
 
 	// Authentication routes

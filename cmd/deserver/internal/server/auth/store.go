@@ -31,6 +31,6 @@ func (st *inMemorySessionStore) Remove(k string) bool {
 
 func NewInMemorySessionStore() SessionStore {
 	return &inMemorySessionStore{
-		LRU: expirable.NewLRU[string, struct{}](0, nil, time.Minute),
+		LRU: expirable.NewLRU[string, struct{}](0, nil, 12*time.Hour),
 	}
 }

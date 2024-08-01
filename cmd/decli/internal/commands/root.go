@@ -32,7 +32,7 @@ server.
 		}
 
 		logCfg := cfg.Logger.Config
-		if logCfg != nil && cfg.Logger.Filename != "" {
+		if cfg.Logger.Filename != "" {
 			f, err := os.Create(cfg.Logger.Filename)
 			if err != nil {
 				return err
@@ -41,10 +41,6 @@ server.
 		}
 		logger := log.New(utils.LogOptionsFromConfig(logCfg)...)
 		slog.SetDefault(logger)
-
-		slog.Info("Initialization of CLI:",
-			slog.Any("Configuration", cfg),
-		)
 
 		var err error
 		cpuProfile, err = os.Create("cpuprofile")

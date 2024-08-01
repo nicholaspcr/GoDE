@@ -6,11 +6,8 @@ import (
 
 // LogOptionsFromConfig returns a slice of log Options after processing the log
 // values in the CLI configuration.
-func LogOptionsFromConfig(cfg *log.Config) []log.Option {
+func LogOptionsFromConfig(cfg log.Config) []log.Option {
 	opts := make([]log.Option, 0, 10)
-	if cfg == nil {
-		return nil
-	}
 	if cfg.Writer != nil {
 		opts = append(opts, log.WithWriter(cfg.Writer))
 	}

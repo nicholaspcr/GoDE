@@ -16,6 +16,11 @@ type (
 	// Config is a set of values that are necessary to execute an Differential
 	// Evolutionary algorithm.
 	Config struct {
+		Local  LocalConfig `json:"local" yaml:"local"`
+		Logger LogConfig   `json:"logger" yaml:"logger"`
+	}
+
+	LocalConfig struct {
 		PopulationSize int        `json:"populationSize" yaml:"populationSize"`
 		Generations    int        `json:"generations" yaml:"generations"`
 		Executions     int        `json:"executions" yaml:"executions"`
@@ -23,14 +28,12 @@ type (
 		Constants      Constants  `json:"constants" yaml:"constants"`
 		Problem        string     `json:"problem" yaml:"problem"`
 		Variant        string     `json:"variant" yaml:"variant"`
-
-		Logger LogConfig `json:"logger" yaml:"logger"`
 	}
 
 	// LogConfig is a set of values that are necessary to configure the logger.
 	LogConfig struct {
-		*log.Config `json:"config" yaml:"config"`
-		Filename    string `json:"filename" yaml:"filename"`
+		log.Config `json:"config" yaml:"config"`
+		Filename   string `json:"filename" yaml:"filename"`
 	}
 	// Dimensions is a set of values to define the behaviour that happens in
 	// each dimension of the DE.
@@ -49,23 +52,28 @@ type (
 	}
 )
 
-var defaultConfig = Config{
-	PopulationSize: 50,
-	Generations:    100,
-	Executions:     1,
-	Dimensions: Dimensions{
-		Size:   7,
-		Floors: []float64{0, 0, 0, 0, 0, 0, 0},
-		Ceils:  []float64{1, 1, 1, 1, 1, 1, 1},
+var defaultConfig = &Config{
+	Local: LocalConfig{
+		PopulationSize: 50,
+		Generations:    100,
+		Executions:     1,
+		Dimensions: Dimensions{
+			Size:   7,
+			Floors: []float64{0, 0, 0, 0, 0, 0, 0},
+			Ceils:  []float64{1, 1, 1, 1, 1, 1, 1},
+		},
+		Constants: Constants{
+			M:  int(3),
+			CR: float64(0.9),
+			F:  float64(0.5),
+			P:  float64(0.2),
+		},
+		Problem: "dtlz1",
+		Variant: "rand1",
 	},
-	Constants: Constants{
-		M:  int(3),
-		CR: float64(0.9),
-		F:  float64(0.5),
-		P:  float64(0.2),
+	Logger: LogConfig{
+		Config: log.DefaultConfig(),
 	},
-	Problem: "dtlz1",
-	Variant: "rand1",
 }
 
 // bindFlags binds the flags to the configuration.
@@ -86,7 +94,7 @@ func InitializeRoot(cmd *cobra.Command, cfg *Config) error {
 	v := viper.New()
 
 	// Configuration filename and type.
-	v.SetConfigName("config")
+	v.SetConfigName("decli_config")
 	v.SetConfigType("yaml")
 
 	// Configuration search path.
@@ -97,7 +105,13 @@ func InitializeRoot(cmd *cobra.Command, cfg *Config) error {
 
 	// Fetch configuration file contents.
 	if err := v.ReadInConfig(); err != nil {
-		return err
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			// Returns the default config.
+			cfg = defaultConfig
+			return nil
+		} else {
+			return err
+		}
 	}
 
 	if err := v.Unmarshal(&cfg); err != nil {

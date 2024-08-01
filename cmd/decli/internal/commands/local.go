@@ -26,41 +26,41 @@ var localRunCmd = &cobra.Command{
 
 		// Initialize the population shared between the executions.
 		populationParams := models.PopulationParams{
-			DimensionSize:  cfg.Dimensions.Size,
-			PopulationSize: cfg.PopulationSize,
-			ObjectivesSize: cfg.Constants.M,
-			FloorRange:     cfg.Dimensions.Floors,
-			CeilRange:      cfg.Dimensions.Ceils,
+			DimensionSize:  cfg.Local.Dimensions.Size,
+			PopulationSize: cfg.Local.PopulationSize,
+			ObjectivesSize: cfg.Local.Constants.M,
+			FloorRange:     cfg.Local.Dimensions.Floors,
+			CeilRange:      cfg.Local.Dimensions.Ceils,
 		}
 		initialPopulation, err := models.GeneratePopulation(populationParams)
 		if err != nil {
 			return err
 		}
 
-		problem, err := utils.GetProblemByName(cfg.Problem)
+		problem, err := utils.GetProblemByName(cfg.Local.Problem)
 		if err != nil {
 			return err
 		}
-		variant, err := utils.GetVariantByName(cfg.Variant)
+		variant, err := utils.GetVariantByName(cfg.Local.Variant)
 		if err != nil {
 			return err
 		}
 
 		f := de.New(
-			de.WithExecutions(cfg.Executions),
-			de.WithObjFuncAmount(cfg.Constants.M),
+			de.WithExecutions(cfg.Local.Executions),
+			de.WithObjFuncAmount(cfg.Local.Constants.M),
 			de.WithAlgorithm(
 				gde3.New(
 					gde3.WithInitialPopulation(initialPopulation),
 					gde3.WithPopulationParams(populationParams),
 					gde3.WithConstants(de.Constants{
-						F:             cfg.Constants.F,
-						P:             cfg.Constants.P,
-						CR:            cfg.Constants.CR,
+						F:             cfg.Local.Constants.F,
+						P:             cfg.Local.Constants.P,
+						CR:            cfg.Local.Constants.CR,
 						ObjFuncAmount: populationParams.ObjectivesSize,
-						Executions:    cfg.Executions,
-						Generations:   cfg.Generations,
-						Dimensions:    cfg.Dimensions.Size,
+						Executions:    cfg.Local.Executions,
+						Generations:   cfg.Local.Generations,
+						Dimensions:    cfg.Local.Dimensions.Size,
 					}),
 					gde3.WithProblem(problem),
 					gde3.WithVariant(variant),

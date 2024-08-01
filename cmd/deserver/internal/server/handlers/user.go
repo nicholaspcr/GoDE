@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"google.golang.org/grpc"
@@ -22,8 +23,21 @@ func (uh *userHandler) SetStore(st store.Store) {
 	uh.Store = st
 }
 
+// RegisterService adds UserService to the RPC server.
 func (uh *userHandler) RegisterService(srv *grpc.Server) {
 	api.RegisterUserServiceServer(srv, uh)
+}
+
+// RegisterHTTPHandler adds UserService to the grpc-gateway.
+func (uh *userHandler) RegisterHTTPHandler(
+	ctx context.Context,
+	mux *runtime.ServeMux,
+	lisAddr string,
+	dialOpts []grpc.DialOption,
+) error {
+	return api.RegisterUserServiceHandlerFromEndpoint(
+		ctx, mux, lisAddr, dialOpts,
+	)
 }
 
 func (uh *userHandler) Create(

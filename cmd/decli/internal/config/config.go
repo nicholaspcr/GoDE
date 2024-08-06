@@ -84,8 +84,8 @@ var defaultConfig = &Config{
 		Config: log.DefaultConfig(),
 	},
 	Server: ServerConfig{
-		GRPCAddr: "localhost:3030",
-		HTTPAddr: "localhost:8081",
+		GRPCAddr: "http://localhost:3030",
+		HTTPAddr: "http://localhost:8081",
 	},
 }
 

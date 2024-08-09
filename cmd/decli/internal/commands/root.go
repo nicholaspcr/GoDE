@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var cfg config.Config
+var cfg *config.Config
 
 var memProfile, cpuProfile *os.File
 
@@ -26,8 +26,9 @@ A CLI for using the implementation of the differential evolution algorithm, this
 allows the usage of the algorithm locally and the ability to connect to a
 server.
 `,
-	PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
-		if err := config.InitializeRoot(cmd, &cfg); err != nil {
+	PersistentPreRunE: func(cmd *cobra.Command, _ []string) (err error) {
+		cfg, err = config.InitializeRoot(cmd)
+		if err != nil {
 			return err
 		}
 
@@ -42,7 +43,6 @@ server.
 		logger := log.New(utils.LogOptionsFromConfig(logCfg)...)
 		slog.SetDefault(logger)
 
-		var err error
 		cpuProfile, err = os.Create("cpuprofile")
 		if err != nil {
 			return err

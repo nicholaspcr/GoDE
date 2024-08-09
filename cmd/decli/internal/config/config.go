@@ -103,7 +103,9 @@ func bindFlags(v *viper.Viper, cmd *cobra.Command) {
 }
 
 // InitializeRoot initializes the configuration for the root command.
-func InitializeRoot(cmd *cobra.Command, cfg *Config) error {
+func InitializeRoot(cmd *cobra.Command) (*Config, error) {
+	cfg := new(Config)
+	*cfg = *defaultConfig
 	v := viper.New()
 
 	// Configuration filename and type.
@@ -119,19 +121,17 @@ func InitializeRoot(cmd *cobra.Command, cfg *Config) error {
 	// Fetch configuration file contents.
 	if err := v.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			// Returns the default config.
-			cfg = defaultConfig
-			return nil
+			return defaultConfig, nil
 		} else {
-			return err
+			return nil, err
 		}
 	}
 
 	if err := v.Unmarshal(&cfg); err != nil {
-		return err
+		return nil, err
 	}
 
 	v.AutomaticEnv()
 	bindFlags(v, cmd)
-	return nil
+	return cfg, nil
 }

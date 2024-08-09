@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package api.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "api/v1/user.proto";
+
+option go_package = "pkg/api";
+
+// UserService are all the services that can be performed on a user.
+service AuthService {
+  rpc Register(AuthServiceRegisterRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/auth/register"
+      body: "*"
+    };
+  }
+  rpc Login(AuthServiceLoginRequest) returns (AuthServiceLoginResponse) {
+    option (google.api.http) = {
+      post: "/v1/auth/login"
+      body: "*"
+    };
+  }
+}
+
+message AuthServiceRegisterRequest {
+  User user = 1;
+}
+
+message AuthServiceLoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message AuthServiceLoginResponse {
+  string token = 1;
+}

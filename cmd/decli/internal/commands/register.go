@@ -1,8 +1,9 @@
 package commands
 
 import (
+	"bytes"
+	"encoding/json"
 	"net/http"
-	"net/url"
 
 	"github.com/spf13/cobra"
 )
@@ -14,12 +15,27 @@ var registerCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		registerAddr := cfg.Server.HTTPAddr + "/register"
 
-		_, err := http.PostForm(registerAddr, url.Values{
-			"name":     []string{"nicholaspcr"},
-			"password": []string{"password"},
-			"email":    []string{"nicholaspcr@gmail.com"},
-		})
-		return err
+		data := struct {
+			Name     string `json:"name"`
+			Password string `json:"password"`
+			Email    string `json:"email"`
+		}{"nicholaspcr", "password", "nicholaspcr@gmail.com"}
+		b, err := json.Marshal(data)
+		if err != nil {
+			return err
+		}
+
+		res, err := http.DefaultClient.Post(
+			registerAddr,
+			"application/json",
+			bytes.NewBuffer(b),
+		)
+		if err != nil {
+			return err
+		}
+		defer func() { res.Body.Close() }()
+
+		return nil
 	},
 }
 

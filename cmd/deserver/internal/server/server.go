@@ -23,13 +23,16 @@ type Server interface {
 
 // New returns a new server instance
 func New(_ context.Context, opts ...serverOpts) (Server, error) {
+	sessionStore := auth.NewInMemorySessionStore()
+
 	srv := &server{
 		cfg: DefaultConfig(),
 		handlers: []handlers.Handler{
 			handlers.NewUserHandler(),
 			handlers.NewDEHandler(),
+			handlers.NewAuthHandler(sessionStore),
 		},
-		sessionStore: auth.NewInMemorySessionStore(),
+		sessionStore: sessionStore,
 	}
 
 	for _, opt := range opts {
@@ -101,17 +104,6 @@ func (s *server) Start(ctx context.Context) error {
 	slog.Info("Registering grpc-gateway handlers")
 	for _, handler := range s.handlers {
 		handler.RegisterHTTPHandler(ctx, mux, lisAddr, dialOpts)
-	}
-
-	// Authentication routes
-	if err := auth.RegisterHandler(mux, s.st); err != nil {
-		return err
-	}
-	if err := auth.LoginHandler(mux, s.st, s.sessionStore); err != nil {
-		return err
-	}
-	if err := auth.LogoutHandler(mux, s.sessionStore); err != nil {
-		return err
 	}
 
 	// Start HTTP server (and proxy calls to gRPC server endpoint)

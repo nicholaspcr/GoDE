@@ -13,5 +13,7 @@ import (
 type Handler interface {
 	SetStore(store.Store)
 	RegisterService(*grpc.Server)
-	RegisterHTTPHandler(context.Context, *runtime.ServeMux, string, []grpc.DialOption) error
+	RegisterHTTPHandler(
+		context.Context, *runtime.ServeMux, string, []grpc.DialOption,
+	) error
 }

@@ -8,8 +8,9 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/nicholaspcr/GoDE/cmd/deserver/internal/server/auth"
 	"github.com/nicholaspcr/GoDE/cmd/deserver/internal/server/handlers"
+	"github.com/nicholaspcr/GoDE/cmd/deserver/internal/server/middleware"
+	"github.com/nicholaspcr/GoDE/cmd/deserver/internal/server/session"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -23,7 +24,7 @@ type Server interface {
 
 // New returns a new server instance
 func New(_ context.Context, opts ...serverOpts) (Server, error) {
-	sessionStore := auth.NewInMemorySessionStore()
+	sessionStore := session.NewInMemoryStore()
 
 	srv := &server{
 		cfg: DefaultConfig(),
@@ -51,12 +52,7 @@ type server struct {
 	st           store.Store
 	cfg          Config
 	handlers     []handlers.Handler
-	sessionStore auth.SessionStore
-}
-
-var ignoreMethods = []string{
-	"/api.v1.AuthService/Login",
-	"/api.v1.AuthService/Register",
+	sessionStore session.Store
 }
 
 // Start starts the server.
@@ -69,7 +65,7 @@ func (s *server) Start(ctx context.Context) error {
 
 	grpcSrv := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
-			auth.UnaryMiddleware(s.sessionStore, ignoreMethods...),
+			middleware.UnaryAuthMiddleware(s.sessionStore),
 			logging.UnaryServerInterceptor(InterceptorLogger(logger)),
 		),
 		grpc.ChainStreamInterceptor(

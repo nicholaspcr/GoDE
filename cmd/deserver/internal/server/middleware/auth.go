@@ -1,9 +1,10 @@
-package auth
+package middleware
 
 import (
 	"context"
 	"strings"
 
+	"github.com/nicholaspcr/GoDE/cmd/deserver/internal/server/session"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -24,10 +25,10 @@ var (
 	)
 )
 
-// UnaryMiddleware checks for the Basic authentication and validates if the
+// UnaryAuthMiddleware checks for the Basic authentication and validates if the
 // provided token matches with the server's store.
-func UnaryMiddleware(
-	sessionStore SessionStore, ignoreMethods ...string,
+func UnaryAuthMiddleware(
+	sessionStore session.Store, ignoreMethods ...string,
 ) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
@@ -38,7 +39,10 @@ func UnaryMiddleware(
 		ignoreAuth := false
 
 		method, _ := grpc.Method(ctx)
-		for _, imethod := range ignoreMethods {
+		for _, imethod := range []string{
+			"/api.v1.AuthService/Login",
+			"/api.v1.AuthService/Register",
+		} {
 			if imethod == method {
 				ignoreAuth = true
 			}

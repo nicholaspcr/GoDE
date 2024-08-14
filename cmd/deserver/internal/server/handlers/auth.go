@@ -6,7 +6,7 @@ import (
 	"errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/nicholaspcr/GoDE/cmd/deserver/internal/server/auth"
+	"github.com/nicholaspcr/GoDE/cmd/deserver/internal/server/session"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"google.golang.org/grpc"
@@ -15,25 +15,19 @@ import (
 
 // authHandler is responsible for the auth service operations.
 type authHandler struct {
-	store.Store
-	auth.SessionStore
+	db      store.Store
+	session session.Store
 	api.UnimplementedAuthServiceServer
 }
 
 // NewAuthHandler returns a handle that implements api's authServiceServer.
-func NewAuthHandler(sessionStore auth.SessionStore) Handler {
-	return &authHandler{SessionStore: sessionStore}
+func NewAuthHandler(sessionStore session.Store) Handler {
+	return &authHandler{session: sessionStore}
 }
 
 // setStore assings the implementation of the store to the auth handler.
 func (uh *authHandler) SetStore(st store.Store) {
-	uh.Store = st
-}
-
-// SetSessionStore assings the implementation of the session store to the auth
-// handler.
-func (uh *authHandler) SetSessionStore(st auth.SessionStore) {
-	uh.SessionStore = st
+	uh.db = st
 }
 
 // RegisterService adds authService to the RPC server.
@@ -57,7 +51,7 @@ func (uh *authHandler) RegisterHTTPHandler(
 func (ah authHandler) Register(
 	ctx context.Context, req *api.AuthServiceRegisterRequest,
 ) (*emptypb.Empty, error) {
-	if err := ah.Store.CreateUser(ctx, req.User); err != nil {
+	if err := ah.db.CreateUser(ctx, req.User); err != nil {
 		return nil, err
 	}
 	return api.Empty, nil
@@ -66,7 +60,7 @@ func (ah authHandler) Register(
 func (ah authHandler) Login(
 	ctx context.Context, req *api.AuthServiceLoginRequest,
 ) (*api.AuthServiceLoginResponse, error) {
-	usr, err := ah.Store.GetUser(ctx, &api.UserIDs{Email: req.Email})
+	usr, err := ah.db.GetUser(ctx, &api.UserIDs{Email: req.Email})
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +70,7 @@ func (ah authHandler) Login(
 	}
 
 	authToken := base64.StdEncoding.EncodeToString([]byte(usr.Ids.Email))
-	ah.SessionStore.Add(authToken)
+	ah.session.Add(authToken)
 
 	return &api.AuthServiceLoginResponse{Token: authToken}, nil
 }
@@ -85,7 +79,7 @@ func (ah authHandler) Logout(
 	ctx context.Context, req *api.AuthServiceLogoutRequest,
 ) (*emptypb.Empty, error) {
 	authToken := base64.StdEncoding.EncodeToString([]byte(req.Email))
-	ah.SessionStore.Remove(authToken)
+	ah.session.Remove(authToken)
 
 	return api.Empty, nil
 }

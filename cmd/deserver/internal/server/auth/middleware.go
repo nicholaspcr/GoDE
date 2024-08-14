@@ -26,28 +26,41 @@ var (
 
 // UnaryMiddleware checks for the Basic authentication and validates if the
 // provided token matches with the server's store.
-func UnaryMiddleware(sessionStore SessionStore) grpc.UnaryServerInterceptor {
+func UnaryMiddleware(
+	sessionStore SessionStore, ignoreMethods ...string,
+) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
 		req any,
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (resp any, err error) {
-		md, ok := metadata.FromIncomingContext(ctx)
-		if !ok {
-			return nil, errMetadataNotFound
+		ignoreAuth := false
+
+		method, _ := grpc.Method(ctx)
+		for _, imethod := range ignoreMethods {
+			if imethod == method {
+				ignoreAuth = true
+			}
 		}
 
-		values := md["authorization"]
-		if len(values) == 0 {
-			return nil, errTokenNotFound
-		}
+		if !ignoreAuth {
+			md, ok := metadata.FromIncomingContext(ctx)
+			if !ok {
+				return nil, errMetadataNotFound
+			}
 
-		token := values[0]
-		token = strings.TrimPrefix(token, "Basic ")
+			values := md["authorization"]
+			if len(values) == 0 {
+				return nil, errTokenNotFound
+			}
 
-		if !sessionStore.Get(string(token)) {
-			return nil, errTokenInvalid
+			token := values[0]
+			token = strings.TrimPrefix(token, "Basic ")
+
+			if !sessionStore.Get(string(token)) {
+				return nil, errTokenInvalid
+			}
 		}
 
 		return handler(ctx, req)

@@ -54,6 +54,11 @@ type server struct {
 	sessionStore auth.SessionStore
 }
 
+var ignoreMethods = []string{
+	"/api.v1.AuthService/Login",
+	"/api.v1.AuthService/Register",
+}
+
 // Start starts the server.
 func (s *server) Start(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
@@ -64,7 +69,7 @@ func (s *server) Start(ctx context.Context) error {
 
 	grpcSrv := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
-			auth.UnaryMiddleware(s.sessionStore),
+			auth.UnaryMiddleware(s.sessionStore, ignoreMethods...),
 			logging.UnaryServerInterceptor(InterceptorLogger(logger)),
 		),
 		grpc.ChainStreamInterceptor(

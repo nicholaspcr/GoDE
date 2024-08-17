@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"log/slog"
 	_ "net/http/pprof"
 	"os"
@@ -11,14 +12,26 @@ import (
 	"github.com/nicholaspcr/GoDE/cmd/decli/internal/config"
 	"github.com/nicholaspcr/GoDE/cmd/decli/internal/utils"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
-var cfg *config.Config
+var (
+	cfgFile        string
+	memProfileFile string
+	cpuProfileFile string
+	cfg            *config.Config
+)
 
-var memProfile, cpuProfile *os.File
+// Executes the CLI.
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
 
-// RootCmd represents the base command when called without any subcommands.
-var RootCmd = &cobra.Command{
+// rootCmd represents the base command when called without any subcommands.
+var rootCmd = &cobra.Command{
 	Use:   "decli",
 	Short: "Differential evolution tool built in go",
 	Long: `
@@ -27,11 +40,6 @@ allows the usage of the algorithm locally and the ability to connect to a
 server.
 `,
 	PersistentPreRunE: func(cmd *cobra.Command, _ []string) (err error) {
-		cfg, err = config.InitializeRoot(cmd)
-		if err != nil {
-			return err
-		}
-
 		logCfg := cfg.Logger.Config
 		if cfg.Logger.Filename != "" {
 			f, err := os.Create(cfg.Logger.Filename)
@@ -43,11 +51,7 @@ server.
 		logger := log.New(utils.LogOptionsFromConfig(logCfg)...)
 		slog.SetDefault(logger)
 
-		cpuProfile, err = os.Create("cpuprofile")
-		if err != nil {
-			return err
-		}
-		memProfile, err = os.Create("memprofile")
+		cpuProfile, err := os.Create(cpuProfileFile)
 		if err != nil {
 			return err
 		}
@@ -62,12 +66,73 @@ server.
 	},
 	PersistentPostRunE: func(_ *cobra.Command, _ []string) error {
 		pprof.StopCPUProfile()
+
+		memProfile, err := os.Create(memProfileFile)
+		if err != nil {
+			return err
+		}
 		return pprof.WriteHeapProfile(memProfile)
 	},
 }
 
 func init() {
-	// Definition of commands
-	RootCmd.AddCommand(localCmd)
-	RootCmd.AddCommand(loginCmd)
+	cobra.OnInitialize(initConfig)
+
+	// Flags
+	rootCmd.PersistentFlags().StringVar(
+		&cfgFile, "config", "", "config file (default is $HOME/.decli.yaml)",
+	)
+	rootCmd.PersistentFlags().Bool("viper", true, "use Viper for configuration")
+	rootCmd.PersistentFlags().StringVar(
+		&cpuProfileFile, "cpu-profile-file", "cpuprofile", "cpu profile filename",
+	)
+	rootCmd.PersistentFlags().StringVar(
+		&memProfileFile, "mem-profile-file", "memprofile", "mem profile filename",
+	)
+
+	// Viper binds
+	viper.BindPFlag("useViper", rootCmd.PersistentFlags().Lookup("viper"))
+	viper.BindPFlag(
+		"cpuProfileFile", rootCmd.PersistentFlags().Lookup("cpu-profile-file"),
+	)
+	viper.BindPFlag(
+		"memProfileFile", rootCmd.PersistentFlags().Lookup("mem-profile-file"),
+	)
+
+	// Commands
+	rootCmd.AddCommand(localCmd)
+	rootCmd.AddCommand(loginCmd)
+}
+
+func initConfig() {
+	if cfgFile != "" {
+		viper.SetConfigFile(cfgFile)
+	} else {
+		home, err := os.UserHomeDir()
+		cobra.CheckErr(err)
+
+		// Search config in home directory with name ".decli" (no extention)
+		viper.AddConfigPath(home)
+		viper.AddConfigPath(".env")
+		viper.AddConfigPath(".")
+
+		viper.SetConfigType("yaml")
+		viper.SetConfigName(".decli")
+	}
+
+	viper.AutomaticEnv()
+	cfg = config.Default
+
+	err := viper.ReadInConfig()
+
+	// No error, using the config config from viper. Unmarshal and return.
+	if err == nil {
+		fmt.Println("Using config file:", viper.ConfigFileUsed())
+		cobra.CheckErr(viper.Unmarshal(&cfg))
+		return
+	}
+	// If the error isn't config not found then CheckErr.
+	if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+		cobra.CheckErr(err)
+	}
 }

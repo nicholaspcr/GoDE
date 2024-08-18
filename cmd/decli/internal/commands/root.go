@@ -11,7 +11,6 @@ import (
 
 	authcmd "github.com/nicholaspcr/GoDE/cmd/decli/internal/commands/auth"
 	"github.com/nicholaspcr/GoDE/cmd/decli/internal/config"
-	"github.com/nicholaspcr/GoDE/cmd/decli/internal/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -41,15 +40,20 @@ allows the usage of the algorithm locally and the ability to connect to a
 server.
 `,
 	PersistentPreRunE: func(cmd *cobra.Command, _ []string) (err error) {
-		logCfg := cfg.Logger.Config
-		if cfg.Logger.Filename != "" {
-			f, err := os.Create(cfg.Logger.Filename)
+		logOpts := []log.Option{
+			log.WithWriter(cfg.Log.Writer),
+			log.WithType(cfg.Log.Type),
+			log.WithLevel(cfg.Log.Level),
+			log.WithPrettyConfig(cfg.Log.Pretty),
+		}
+		if cfg.Log.Filename != "" {
+			f, err := os.Create(cfg.Log.Filename)
 			if err != nil {
 				return err
 			}
-			logCfg.Writer = f
+			logOpts = append(logOpts, log.WithWriter(f))
 		}
-		logger := log.New(utils.LogOptionsFromConfig(logCfg)...)
+		logger := log.New(logOpts...)
 		slog.SetDefault(logger)
 
 		cpuProfile, err := os.Create(cpuProfileFile)

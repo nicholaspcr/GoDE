@@ -129,7 +129,7 @@ func initConfig() {
 	}
 
 	viper.AutomaticEnv()
-	cfg = config.Default
+	cfg = config.Default()
 
 	err := viper.ReadInConfig()
 

@@ -1,7 +1,10 @@
 package config
 
 import (
+	"encoding/json"
+
 	"github.com/nicholaspcr/GoDE/internal/log"
+	"gopkg.in/yaml.v3"
 )
 
 type (
@@ -9,7 +12,7 @@ type (
 	// Evolutionary algorithm.
 	Config struct {
 		Local  LocalConfig  `json:"local" yaml:"local"`
-		Logger LogConfig    `json:"logger" yaml:"logger"`
+		Log    LogConfig    `json:"log" yaml:"log"`
 		Server ServerConfig `json:"server" yaml:"server"`
 	}
 
@@ -25,7 +28,7 @@ type (
 
 	// LogConfig is a set of values that are necessary to configure the logger.
 	LogConfig struct {
-		log.Config `json:"config" yaml:"config"`
+		log.Config `json:"config" yaml:"config" mapstructure:",squash"`
 		Filename   string `json:"filename" yaml:"filename"`
 	}
 
@@ -53,30 +56,51 @@ type (
 	}
 )
 
-var Default = &Config{
-	Local: LocalConfig{
-		PopulationSize: 50,
-		Generations:    100,
-		Executions:     1,
-		Dimensions: Dimensions{
-			Size:   7,
-			Floors: []float64{0, 0, 0, 0, 0, 0, 0},
-			Ceils:  []float64{1, 1, 1, 1, 1, 1, 1},
+// Default configuration of the decli binary.
+func Default() *Config {
+	return &Config{
+		Local: LocalConfig{
+			PopulationSize: 50,
+			Generations:    100,
+			Executions:     1,
+			Dimensions: Dimensions{
+				Size:   7,
+				Floors: []float64{0, 0, 0, 0, 0, 0, 0},
+				Ceils:  []float64{1, 1, 1, 1, 1, 1, 1},
+			},
+			Constants: Constants{
+				M:  int(3),
+				CR: float64(0.9),
+				F:  float64(0.5),
+				P:  float64(0.2),
+			},
+			Problem: "dtlz1",
+			Variant: "rand1",
 		},
-		Constants: Constants{
-			M:  int(3),
-			CR: float64(0.9),
-			F:  float64(0.5),
-			P:  float64(0.2),
+		Log: LogConfig{
+			Config: log.DefaultConfig(),
 		},
-		Problem: "dtlz1",
-		Variant: "rand1",
-	},
-	Logger: LogConfig{
-		Config: log.DefaultConfig(),
-	},
-	Server: ServerConfig{
-		GRPCAddr: "localhost:3030",
-		HTTPAddr: "http://localhost:8081",
-	},
+		Server: ServerConfig{
+			GRPCAddr: "localhost:3030",
+			HTTPAddr: "http://localhost:8081",
+		},
+	}
+}
+
+// StringifyJSON returns a string with the JSON object of the configuration.
+func (cfg *Config) StringifyJSON() (string, error) {
+	b, err := json.MarshalIndent(cfg, "", "    ")
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
+// StringifyYAML returns a string block with the yaml configuration contents.
+func (cfg *Config) StringifyYAML() (string, error) {
+	b, err := yaml.Marshal(cfg)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }

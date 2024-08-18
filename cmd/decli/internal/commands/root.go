@@ -9,6 +9,7 @@ import (
 
 	"github.com/nicholaspcr/GoDE/internal/log"
 
+	authcmd "github.com/nicholaspcr/GoDE/cmd/decli/internal/commands/auth"
 	"github.com/nicholaspcr/GoDE/cmd/decli/internal/config"
 	"github.com/nicholaspcr/GoDE/cmd/decli/internal/utils"
 	"github.com/spf13/cobra"
@@ -100,8 +101,9 @@ func init() {
 	)
 
 	// Commands
+	authcmd.RegisterCommands(rootCmd)
+
 	rootCmd.AddCommand(localCmd)
-	rootCmd.AddCommand(loginCmd)
 }
 
 func initConfig() {
@@ -135,4 +137,7 @@ func initConfig() {
 	if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 		cobra.CheckErr(err)
 	}
+
+	// Setup config for isolated configurations.
+	authcmd.SetupConfig(cfg)
 }

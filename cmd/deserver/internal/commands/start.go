@@ -31,5 +31,5 @@ proto files. Requests can be made via gRPC or HTTP.`,
 }
 
 func init() {
-	RootCmd.AddCommand(StartCmd)
+	rootCmd.AddCommand(StartCmd)
 }

@@ -7,8 +7,8 @@ import (
 )
 
 // Default configuration of the deserver binary.
-func Default() *DeServer {
-	return &DeServer{
+func Default() *Config {
+	return &Config{
 		Log:    log.DefaultConfig(),
 		Server: server.DefaultConfig(),
 		Store:  store.Config{},

@@ -10,15 +10,15 @@ import (
 	"github.com/nicholaspcr/GoDE/internal/store"
 )
 
-// DeServer configuration.
-type DeServer struct {
+// Config configuration.
+type Config struct {
 	Log    log.Config    `json:"log" yaml:"log"`
 	Store  store.Config  `json:"store" yaml:"store"`
 	Server server.Config `json:"server" yaml:"server"`
 }
 
 // StringifyJSON returns a string with the JSON object of the configuration.
-func (cfg *DeServer) StringifyJSON() (string, error) {
+func (cfg *Config) StringifyJSON() (string, error) {
 	b, err := json.MarshalIndent(cfg, "", "    ")
 	if err != nil {
 		return "", err
@@ -27,7 +27,7 @@ func (cfg *DeServer) StringifyJSON() (string, error) {
 }
 
 // StringifyYAML returns a string block with the yaml configuration contents.
-func (cfg *DeServer) StringifyYAML() (string, error) {
+func (cfg *Config) StringifyYAML() (string, error) {
 	b, err := yaml.Marshal(cfg)
 	if err != nil {
 		return "", err

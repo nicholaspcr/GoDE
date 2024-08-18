@@ -89,10 +89,12 @@ func init() {
 	)
 	rootCmd.PersistentFlags().Bool("viper", true, "use Viper for configuration")
 	rootCmd.PersistentFlags().StringVar(
-		&cpuProfileFile, "cpu-profile-file", "cpuprofile", "cpu profile filename",
+		&cpuProfileFile, "cpu-profile-file",
+		".dev/cli/cpuprofile", "cpu profile filename",
 	)
 	rootCmd.PersistentFlags().StringVar(
-		&memProfileFile, "mem-profile-file", "memprofile", "mem profile filename",
+		&memProfileFile, "mem-profile-file",
+		".dev/cli/memprofile", "mem profile filename",
 	)
 
 	// Viper binds

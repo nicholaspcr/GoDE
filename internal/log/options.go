@@ -7,8 +7,6 @@ import (
 )
 
 type Config struct {
-	// Writer is the location where logs are written to. Defaults to os.Stdout.
-	Writer io.Writer `json:",omitempty" yaml:",omitempty"`
 	// Type can be either "json" or "text"
 	Type string `json:"type" yaml:"type"`
 	// Level is the minimum log level to output. Defaults to slog.LevelInfo.
@@ -16,8 +14,10 @@ type Config struct {
 	// Pretty contain configurations regarding formatting for JSON logs.
 	Pretty *PrettyConfig `json:"pretty" yaml:"pretty"`
 
+	// writer is the location where logs are written to. Defaults to os.Stdout.
+	writer io.Writer
 	// handlerOptions are the options to pass to the handler.
-	handlerOptions *slog.HandlerOptions `json:",omitempty" yaml:",omitempty"`
+	handlerOptions *slog.HandlerOptions
 }
 
 // PrettyConfig contain configurations regarding formatting for JSON logs.
@@ -30,7 +30,7 @@ type PrettyConfig struct {
 }
 
 var defaultConfig = Config{
-	Writer: os.Stdout,
+	writer: os.Stdout,
 	Type:   "json",
 	Level:  slog.LevelInfo,
 	Pretty: &PrettyConfig{
@@ -48,7 +48,7 @@ func DefaultConfig() Config { return defaultConfig }
 type Option func(*Config)
 
 func WithWriter(w io.Writer) Option {
-	return func(c *Config) { c.Writer = w }
+	return func(c *Config) { c.writer = w }
 }
 
 func WithType(t string) Option {

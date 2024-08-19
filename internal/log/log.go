@@ -24,15 +24,15 @@ func New(opts ...Option) *slog.Logger {
 	var h slog.Handler
 	switch cfg.Type {
 	case "text":
-		h = slog.NewTextHandler(cfg.Writer, cfg.handlerOptions)
+		h = slog.NewTextHandler(cfg.writer, cfg.handlerOptions)
 	default:
-		h = slog.NewJSONHandler(cfg.Writer, cfg.handlerOptions)
+		h = slog.NewJSONHandler(cfg.writer, cfg.handlerOptions)
 	}
 
 	if cfg.Pretty.Enable {
 		h = &prettyHandler{
 			Handler: h,
-			Logger:  log.New(cfg.Writer, "", 0),
+			Logger:  log.New(cfg.writer, "", 0),
 			cfg:     cfg.Pretty,
 		}
 	}

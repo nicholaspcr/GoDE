@@ -35,7 +35,6 @@ var rootCmd = &cobra.Command{
 proto files found on the API folder. Requests can be made via gRPC or HTTP.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		logger := log.New(
-			log.WithWriter(cfg.Log.Writer),
 			log.WithType(cfg.Log.Type),
 			log.WithLevel(cfg.Log.Level),
 			log.WithPrettyConfig(cfg.Log.Pretty),

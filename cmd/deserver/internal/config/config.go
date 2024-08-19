@@ -3,11 +3,10 @@ package config
 import (
 	"encoding/json"
 
-	"gopkg.in/yaml.v3"
-
 	"github.com/nicholaspcr/GoDE/cmd/deserver/internal/server"
 	"github.com/nicholaspcr/GoDE/internal/log"
 	"github.com/nicholaspcr/GoDE/internal/store"
+	"gopkg.in/yaml.v3"
 )
 
 // Config configuration.

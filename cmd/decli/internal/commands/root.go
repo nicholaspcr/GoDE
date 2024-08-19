@@ -41,7 +41,6 @@ server.
 `,
 	PersistentPreRunE: func(cmd *cobra.Command, _ []string) (err error) {
 		logOpts := []log.Option{
-			log.WithWriter(cfg.Log.Writer),
 			log.WithType(cfg.Log.Type),
 			log.WithLevel(cfg.Log.Level),
 			log.WithPrettyConfig(cfg.Log.Pretty),

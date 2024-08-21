@@ -4,8 +4,10 @@ package gorm
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/glebarez/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -23,14 +25,27 @@ type gormStore struct {
 }
 
 // New returns a new GormStore.
-func New(_ context.Context) (*gormStore, error) {
-	sqlitePath := ".dev/sqlite.db"
-	if memoryEnabled {
-		sqlitePath = ":memory:"
-	}
-	db, err := gorm.Open(sqlite.Open(sqlitePath), &gorm.Config{})
-	if err != nil {
-		return nil, err
+func New(_ context.Context, cfg Config) (*gormStore, error) {
+	var db *gorm.DB
+	var err error
+
+	if cfg.UseMemory {
+		sqlitePath := ".dev/sqlite.db"
+		if memoryEnabled {
+			sqlitePath = ":memory:"
+		}
+		db, err = gorm.Open(sqlite.Open(sqlitePath), &gorm.Config{})
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		sqlDB, err := sql.Open("pgx", "mydb_dsn")
+		if err != nil {
+			return nil, err
+		}
+		db, err = gorm.Open(postgres.New(postgres.Config{
+			Conn: sqlDB,
+		}), &gorm.Config{})
 	}
 
 	store := &gormStore{

@@ -1,3 +1,5 @@
+// Package gorm contains the gorm implementation of the interfaces defined in
+// the store package.
 package gorm
 
 import (

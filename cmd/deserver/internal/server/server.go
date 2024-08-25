@@ -23,11 +23,11 @@ type Server interface {
 }
 
 // New returns a new server instance
-func New(_ context.Context, opts ...serverOpts) (Server, error) {
+func New(ctx context.Context, cfg Config, opts ...serverOpts) (Server, error) {
 	sessionStore := session.NewInMemoryStore()
 
 	srv := &server{
-		cfg: DefaultConfig(),
+		cfg: cfg,
 		handlers: []handlers.Handler{
 			handlers.NewUserHandler(),
 			handlers.NewDEHandler(),

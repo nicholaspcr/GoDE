@@ -16,12 +16,12 @@ proto files. Requests can be made via gRPC or HTTP.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 
-		st, err := store.New(ctx)
+		st, err := store.New(ctx, cfg.Store)
 		if err != nil {
 			return err
 		}
 
-		srv, err := server.New(ctx, server.WithStore(st))
+		srv, err := server.New(ctx, cfg.Server, server.WithStore(st))
 		if err != nil {
 			return err
 		}

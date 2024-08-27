@@ -11,6 +11,6 @@ func Default() *Config {
 	return &Config{
 		Log:    log.DefaultConfig(),
 		Server: server.DefaultConfig(),
-		Store:  store.Config{},
+		Store:  store.DefaultConfig(),
 	}
 }

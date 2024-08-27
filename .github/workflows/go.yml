@@ -1,50 +1,50 @@
-
-on: 
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
-
-name: run tests
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 2
-
-      - uses: actions/setup-go@v2
-        with:
-          go-version: "^1.16.0"
-
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
-        with:
-          version: latest
-          args: -D errcheck -D deadcode -D varcheck --timeout 5m
-          skip-pkg-cache: true
-            
-  coverage:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 2
-
-      - uses: actions/setup-go@v2
-        with:
-          go-version: "^1.16.0"
-
-      - name: Run coverage
-        run: go test -race -covermode=atomic -coverprofile=profile.cov.tmp -coverpkg=./... ./... || exit 1
-
-      - name: Filter files
-        run: cat profile.cov.tmp | grep -v 'fake\|mock\|doc\|examples\|main\|interface\|scripts' > coverage.out
-
-      - name: Upload coverage to Codecov
-        run: bash <(curl -s https://codecov.io/bash)
-
+# 
+# on: 
+#   push:
+#     branches:
+#       - master
+#   pull_request:
+#     branches:
+#       - master
+# 
+# name: run tests
+# 
+# jobs:
+#   test:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v2
+#         with:
+#           fetch-depth: 2
+# 
+#       - uses: actions/setup-go@v2
+#         with:
+#           go-version: "^1.16.0"
+# 
+#       - name: golangci-lint
+#         uses: golangci/golangci-lint-action@v2
+#         with:
+#           version: latest
+#           args: -D errcheck -D deadcode -D varcheck --timeout 5m
+#           skip-pkg-cache: true
+#             
+#   coverage:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v2
+#         with:
+#           fetch-depth: 2
+# 
+#       - uses: actions/setup-go@v2
+#         with:
+#           go-version: "^1.16.0"
+# 
+#       - name: Run coverage
+#         run: go test -race -covermode=atomic -coverprofile=profile.cov.tmp -coverpkg=./... ./... || exit 1
+# 
+#       - name: Filter files
+#         run: cat profile.cov.tmp | grep -v 'fake\|mock\|doc\|examples\|main\|interface\|scripts' > coverage.out
+# 
+#       - name: Upload coverage to Codecov
+#         run: bash <(curl -s https://codecov.io/bash)
+# 

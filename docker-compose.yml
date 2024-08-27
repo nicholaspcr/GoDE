@@ -1,2 +1,15 @@
 services:
-# TODO: Add servers
+  postgres:
+    container_name: postgres
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: db
+      POSTGRES_PASSWORD: root
+      POSTGRES_USER: root
+    ports:
+      - 5432:5432
+      - "15432:5432"
+    volumes:
+      # - ./.dev/deserver/data:/var/lib/postgresql/data
+      - ./.dev/deserver/data:/data/postgres

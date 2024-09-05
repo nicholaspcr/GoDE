@@ -3,6 +3,7 @@ syntax = "proto3";
 package api.v1;
 
 import "api/v1/definitions.proto";
+import "api/v1/differential_evolution_config.proto";
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
@@ -40,6 +41,7 @@ message RunRequest {
   string algorithm = 1;
   string variant = 2;
   string problem = 3;
+  DEConfig de_config = 4;
 }
 
 message RunResponse {

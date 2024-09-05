@@ -1,0 +1,24 @@
+
+syntax = "proto3";
+
+package api.v1;
+
+
+option go_package = "pkg/api";
+
+message DEConfig {
+  int64 executions = 1;
+  int64 generations = 2;
+  int64 dimensions = 3;
+  int64 objective_func_amount = 4;
+
+  oneof algorithm_config {
+    GDE3Config gde3 = 5;
+  }
+}
+
+message GDE3Config {
+  float cr = 1;
+  float f = 2;
+  float p = 3;
+}

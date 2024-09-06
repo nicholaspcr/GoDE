@@ -15,11 +15,6 @@ type Constants struct {
 
 	// ObjFuncAmount represents the amount of objective functions.
 	ObjFuncAmount int `json:"obj_func_amount" yaml:"obj_func_amount" name:"obj_func_amount"`
-
-	// constants used for the gde3 algorithm.
-	CR float64 `json:"cr" yaml:"cr" name:"cr"`
-	F  float64 `json:"f"  yaml:"f"  name:"f"`
-	P  float64 `json:"p"  yaml:"p"  name:"p"`
 }
 
 // ModeOption defines a configuration method for the de struct

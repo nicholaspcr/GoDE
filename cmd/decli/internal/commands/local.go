@@ -53,14 +53,16 @@ var localRunCmd = &cobra.Command{
 				gde3.New(
 					gde3.WithInitialPopulation(initialPopulation),
 					gde3.WithPopulationParams(populationParams),
-					gde3.WithConstants(de.Constants{
-						F:             cfg.Local.Constants.F,
-						P:             cfg.Local.Constants.P,
-						CR:            cfg.Local.Constants.CR,
-						ObjFuncAmount: populationParams.ObjectivesSize,
-						Executions:    cfg.Local.Executions,
-						Generations:   cfg.Local.Generations,
-						Dimensions:    cfg.Local.Dimensions.Size,
+					gde3.WithConstants(gde3.Constants{
+						DE: de.Constants{
+							ObjFuncAmount: populationParams.ObjectivesSize,
+							Executions:    cfg.Local.Executions,
+							Generations:   cfg.Local.Generations,
+							Dimensions:    cfg.Local.Dimensions.Size,
+						},
+						F:  cfg.Local.Constants.F,
+						P:  cfg.Local.Constants.P,
+						CR: cfg.Local.Constants.CR,
 					}),
 					gde3.WithProblem(problem),
 					gde3.WithVariant(variant),

@@ -19,7 +19,7 @@ type gde3 struct {
 	populationParams  models.PopulationParams
 	problem           problems.Interface
 	variant           variants.Interface
-	contants          de.Constants
+	constants         Constants
 	store             store.Store
 }
 
@@ -85,7 +85,7 @@ func (g *gde3) Execute(
 	var genRankZero []models.Vector
 	var bestInGen []models.Vector
 
-	for gen := 0; gen < g.contants.Generations; gen++ {
+	for gen := 0; gen < g.constants.DE.Generations; gen++ {
 		logger.Debug("Running generation",
 			slog.Int("execution_n", execNum),
 			slog.Int("generation_n", gen),
@@ -100,9 +100,9 @@ func (g *gde3) Execute(
 				genRankZero,
 				variants.Parameters{
 					DIM:     popuParams.DimensionSize,
-					F:       g.contants.F,
+					F:       g.constants.F,
 					CurrPos: i,
-					P:       g.contants.P,
+					P:       g.constants.P,
 
 					Random: random,
 				})
@@ -119,7 +119,7 @@ func (g *gde3) Execute(
 
 			for j := 0; j < popuParams.DimensionSize; j++ {
 				changeProb := random.Float64()
-				if changeProb < g.contants.CR || currInd == luckyIndex {
+				if changeProb < g.constants.CR || currInd == luckyIndex {
 					trial.Elements[currInd] = vr.Elements[currInd]
 				}
 

@@ -21,4 +21,5 @@ message GDE3Config {
   float cr = 1;
   float f = 2;
   float p = 3;
+  PopulationParameters population_parameters = 4;
 }

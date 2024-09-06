@@ -2,10 +2,13 @@ package handlers
 
 import (
 	"context"
+	"errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
+	"github.com/nicholaspcr/GoDE/pkg/de"
+	"github.com/nicholaspcr/GoDE/pkg/de/gde3"
 	"github.com/nicholaspcr/GoDE/pkg/problems/many/dtlz"
 	"github.com/nicholaspcr/GoDE/pkg/problems/many/wfg"
 	"github.com/nicholaspcr/GoDE/pkg/problems/multi"
@@ -107,5 +110,41 @@ func (deh *deHandler) ListSupportedProblems(
 func (deh *deHandler) Run(
 	ctx context.Context, req *api.RunRequest,
 ) (*api.RunResponse, error) {
+	var algo de.Algorithm
+
+	switch req.Algorithm {
+	case "gde3":
+		algo = gde3.New(
+			gde3.WithConstants(gde3.Constants{
+				DE: de.Constants{
+					Executions:    int(req.DeConfig.Executions),
+					Generations:   int(req.DeConfig.Generations),
+					Dimensions:    int(req.DeConfig.Dimensions),
+					ObjFuncAmount: int(req.DeConfig.ObjectiveFuncAmount),
+				},
+				CR: float64(req.DeConfig.GetGde3().Cr),
+				F:  float64(req.DeConfig.GetGde3().F),
+				P:  float64(req.DeConfig.GetGde3().GetP()),
+			}),
+		// gde3.WithPopulationParams()
+		// gde3.WithInitialPopulation()
+		)
+
+	default:
+		return nil, errors.New("unsupported algorithms")
+	}
+
+	DE := de.New(
+		// de.WithAlgorithm(req.Algorithm),
+		de.WithExecutions(int(req.DeConfig.Executions)),
+		de.WithGenerations(int(req.DeConfig.Generations)),
+		de.WithDimensions(int(req.DeConfig.Dimensions)),
+		de.WithObjFuncAmount(int(req.DeConfig.ObjectiveFuncAmount)),
+		de.WithAlgorithm(algo),
+	)
+	if err := DE.Execute(ctx); err != nil {
+		return nil, err
+	}
+
 	return nil, nil
 }

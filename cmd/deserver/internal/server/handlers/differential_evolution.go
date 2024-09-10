@@ -9,6 +9,7 @@ import (
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/nicholaspcr/GoDE/pkg/de"
 	"github.com/nicholaspcr/GoDE/pkg/de/gde3"
+	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems/many/dtlz"
 	"github.com/nicholaspcr/GoDE/pkg/problems/many/wfg"
 	"github.com/nicholaspcr/GoDE/pkg/problems/multi"
@@ -124,10 +125,22 @@ func (deh *deHandler) Run(
 				},
 				CR: float64(req.DeConfig.GetGde3().Cr),
 				F:  float64(req.DeConfig.GetGde3().F),
-				P:  float64(req.DeConfig.GetGde3().GetP()),
+				P:  float64(req.DeConfig.GetGde3().P),
 			}),
-		// gde3.WithPopulationParams()
-		// gde3.WithInitialPopulation()
+			gde3.WithPopulationParams(models.PopulationParams{
+				PopulationSize: int(req.DeConfig.GetGde3().GetPopulationParameters().PopulationSize),
+				DimensionSize:  int(req.DeConfig.GetGde3().GetPopulationParameters().DimensionsSize),
+				ObjectivesSize: int(req.DeConfig.GetGde3().GetPopulationParameters().DimensionsSize),
+				FloorRange:     req.DeConfig.GetGde3().GetPopulationParameters().Floors,
+				CeilRange:      req.DeConfig.GetGde3().GetPopulationParameters().Ceils,
+			}),
+			gde3.WithInitialPopulation(generatePopulation(models.PopulationParams{
+				PopulationSize: int(req.DeConfig.GetGde3().GetPopulationParameters().PopulationSize),
+				DimensionSize:  int(req.DeConfig.GetGde3().GetPopulationParameters().DimensionsSize),
+				ObjectivesSize: int(req.DeConfig.GetGde3().GetPopulationParameters().DimensionsSize),
+				FloorRange:     req.DeConfig.GetGde3().GetPopulationParameters().Floors,
+				CeilRange:      req.DeConfig.GetGde3().GetPopulationParameters().Ceils,
+			})),
 		)
 
 	default:
@@ -135,7 +148,7 @@ func (deh *deHandler) Run(
 	}
 
 	DE := de.New(
-		// de.WithAlgorithm(req.Algorithm),
+		de.WithAlgorithm(algo),
 		de.WithExecutions(int(req.DeConfig.Executions)),
 		de.WithGenerations(int(req.DeConfig.Generations)),
 		de.WithDimensions(int(req.DeConfig.Dimensions)),

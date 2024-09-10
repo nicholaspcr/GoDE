@@ -3,6 +3,7 @@ syntax = "proto3";
 
 package api.v1;
 
+import "api/v1/definitions.proto";
 
 option go_package = "pkg/api";
 

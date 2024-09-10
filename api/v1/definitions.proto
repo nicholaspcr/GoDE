@@ -19,10 +19,11 @@ message Population {
 
 // PopulationParameters are the values used by a Population in a generation.
 message PopulationParameters {
-  int64 dimensions_size = 1;
-  int64 objetives_size = 2;
-  repeated double floors = 3;
-  repeated double ceils = 4;
+  int64 population_size = 1;
+  int64 dimensions_size = 2;
+  int64 objetives_size = 3;
+  repeated double floors = 4;
+  repeated double ceils = 5;
 }
 
 // GenerationIDs contain identifiers for a Generation.

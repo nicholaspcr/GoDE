@@ -4,17 +4,29 @@ package api.v1;
 
 option go_package = "pkg/api";
 
+// VectorIDs contain identifiers for a population.
+message VectorIDs {
+  uint64 id = 1;
+}
+
 // Vector is an element used in the Differential Evoluition algorithm.
 message Vector {
-  repeated double elements = 1;
-  repeated double objectives = 2;
-  double crowding_distance = 3;
+  VectorIDs ids = 1;
+  repeated double elements = 2;
+  repeated double objectives = 3;
+  double crowding_distance = 4;
+}
+
+// PopulationIDs contain identifiers for a population.
+message PopulationIDs {
+  uint64 id = 1;
 }
 
 // Population is a vector set, which describes the population of a generation in
 // the evolutionary algorithm.
 message Population {
-  repeated Vector vectors = 1;
+  PopulationIDs ids = 1;
+  repeated Vector vectors = 2;
 }
 
 // PopulationParameters are the values used by a Population in a generation.
@@ -35,7 +47,7 @@ message GenerationIDs {
 // generation a new population is generated via mutation and filtered according
 // to their performance in the problem.
 message Generation {
-  uint64 id = 1;
+  GenerationIDs ids = 1;
   uint64 execution_id = 2;
   repeated Population populations = 3;
 }

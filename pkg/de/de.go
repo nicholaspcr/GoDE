@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/nicholaspcr/GoDE/pkg/models"
 )
 
@@ -64,31 +65,21 @@ func (mode *de) Execute(ctx context.Context) error {
 	wgExecs.Wait()
 	close(paretoCh)
 
-	// TODO: Filter the rank zero of each algorithm in parallel.
-	// This affects the behavior of the algorithm, since the ranking between
-	// different rank zeros in succession can lead to getting better vectors
-	// than the process of filtering the rank zeros in parallel.
-	//
-	// Before doing this I should do a benchmark to see if it is a permissable.
-
-	// TODO: Taking into consideration the benchmark mentioned in the TODO
-	// above, what should be tested is the degree of deviation from the results
-	// known from the test functions. Write both results to different files and
-	// define the difference between them.
 	now := time.Now()
 	finalPareto := filterPareto(ctx, paretoCh)
 	logger.Info("Filtering Pareto", slog.Duration("time", time.Since(now)))
 	_ = finalPareto
 
-	//now := time.Now()
-	//finalParetoParallel := filterParetoParallel(ctx, paretoCh)
-	//logger.Info("Filtering Pareto Parallel",
-	//	slog.Duration("time", time.Since(now)),
-	//)
-	//_ = finalParetoParallel
-
-	// TODO: Write the ranked pareto into its own separate section, make it a
-	// separate table on the database.
+	pareto := &api.Pareto{
+		Ids: &api.ParetoIDs{
+			Id:     0, // TODO Get this from store.
+			UserId: "TODO",
+		},
+		Population: &api.Population{
+			// TODO: FIll this.
+		},
+	}
+	_ = pareto
 
 	//	// result of the ranked pareto
 	//	f, err := os.Create(

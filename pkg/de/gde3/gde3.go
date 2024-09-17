@@ -39,8 +39,8 @@ func New(opts ...Option) de.Algorithm {
 // Mode and executing the gde3 algorithm
 func (g *gde3) Execute(
 	ctx context.Context,
-	pareto chan<- []models.Vector,
-	maxObjectives chan<- []float64,
+	paretoCh chan<- []models.Vector,
+	maxObjCh chan<- []float64,
 ) error {
 	logger := slog.Default()
 	random := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -67,18 +67,6 @@ func (g *gde3) Execute(
 		}
 	}
 
-	//// writes the header in this execution's file
-	//if err := store.Header(); err != nil {
-	//	// TODO: Add header contents to methods
-	//	return err
-	//}
-	// writes the initial generation
-
-	// TODO: Update how the population is written
-	//if err := store.Population(population); err != nil {
-	//	panic(err)
-	//}
-
 	// stores the rank[0] of each generation
 	bestElems := make([]models.Vector, 0, popuParams.DimensionSize)
 
@@ -103,8 +91,7 @@ func (g *gde3) Execute(
 					F:       g.constants.F,
 					CurrPos: i,
 					P:       g.constants.P,
-
-					Random: random,
+					Random:  random,
 				})
 			if err != nil {
 				return err
@@ -150,27 +137,13 @@ func (g *gde3) Execute(
 		population, bestInGen = de.ReduceByCrowdDistance(
 			ctx, population, popuParams.DimensionSize,
 		)
+
+		// NOTE: It probably would be a good idea to send the elements into the
+		// channel directly instead of appending.
 		bestElems = append(bestElems, bestInGen...)
-
-		//// writes the objectives of the population
-		//if err := store.Population(population); err != nil {
-		//	return err
-		//}
-
-		// TODO: Update how the population is written
-		//// checks for the biggest objective
-		//for _, vector := range population {
-		//	for j, obj := range vector.Objs {
-		//		if obj > maxObjs[j] {
-		//			maxObjs[j] = obj
-		//		}
-		//	}
-		//}
 	}
 
-	// logger.Debug("bestElems: ", bestElems)
-	// sending via channel the data
-	// maximumObjs <- maxObjs
-	pareto <- bestElems
+	maxObjCh <- maxObjs
+	paretoCh <- bestElems
 	return nil
 }

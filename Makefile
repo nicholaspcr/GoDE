@@ -13,7 +13,11 @@ help: ## Shows help message.
 .PHONY: init
 init: ## Set up all the necessary requirements to run the repository locally.
 	@mkdir -p .dev
+	@mkdir -p .dev/server
+	@mkdir -p .dev/cli
 	@mkdir -p .env
+	@mkdir -p .env/server
+	@mkdir -p .env/cli
 
 .PHONY: deps
 deps: ## Downloads dependencies.

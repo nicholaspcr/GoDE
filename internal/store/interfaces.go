@@ -19,6 +19,7 @@ type UserOperations interface {
 	DeleteUser(context.Context, *api.UserIDs) error
 }
 
+// TenantOperations is the interface for the tenant store.
 type TenantOperations interface {
 	CreateTenant(context.Context, *api.Tenant) error
 	GetTenant(context.Context, *api.TenantIDs) (*api.Tenant, error)

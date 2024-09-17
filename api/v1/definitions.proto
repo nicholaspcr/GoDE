@@ -17,18 +17,6 @@ message Vector {
   double crowding_distance = 4;
 }
 
-// PopulationIDs contain identifiers for a population.
-message PopulationIDs {
-  uint64 id = 1;
-}
-
-// Population is a vector set, which describes the population of a generation in
-// the evolutionary algorithm.
-message Population {
-  PopulationIDs ids = 1;
-  repeated Vector vectors = 2;
-}
-
 // PopulationParameters are the values used by a Population in a generation.
 message PopulationParameters {
   int64 population_size = 1;
@@ -38,20 +26,6 @@ message PopulationParameters {
   repeated double ceils = 5;
 }
 
-// GenerationIDs contain identifiers for a Generation.
-message GenerationIDs {
-  uint64 id = 1;
-}
-
-// Generation is a steps on the Differential Evolution algorithm, each
-// generation a new population is generated via mutation and filtered according
-// to their performance in the problem.
-message Generation {
-  GenerationIDs ids = 1;
-  uint64 execution_id = 2;
-  repeated Population populations = 3;
-}
-
 message ParetoIDs {
   uint64 id = 1;
   string user_id = 2;
@@ -59,8 +33,6 @@ message ParetoIDs {
 
 message Pareto {
   ParetoIDs ids = 1;
-  Population population = 2;
+  repeated Vector vectors = 2;
   repeated double max_objs = 3;
 }
-
-

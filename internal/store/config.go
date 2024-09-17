@@ -19,5 +19,8 @@ type Postgresql struct {
 
 // DefaultConfig returns the standard configuration for the Store package.
 func DefaultConfig() Config {
-	return Config{Type: "memory"}
+	return Config{
+		Type:   "sqlite",
+		Sqlite: Sqlite{Filepath: ".dev/server/sqlite.db"},
+	}
 }

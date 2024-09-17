@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/nicholaspcr/GoDE/pkg/models"
 )
 
@@ -24,12 +23,19 @@ type Algorithm interface {
 // Evolutionary algorithm.
 type de struct {
 	algorithm Algorithm
+	config    Config
 	constants Constants
 }
 
 // New Mode iterface based on the configuration options given.
 func New(opts ...ModeOptions) *de {
-	m := &de{}
+	m := &de{
+		config: Config{
+			paretoChannelLimiter:  100,
+			maximumChannelLimiter: 100,
+			resultLimiter:         1000,
+		},
+	}
 	for _, opt := range opts {
 		opt(m)
 	}
@@ -37,9 +43,8 @@ func New(opts ...ModeOptions) *de {
 }
 
 func (mode *de) Execute(ctx context.Context) error {
-	logger := slog.Default()
-	paretoCh := make(chan []models.Vector, 100)
-	maxObjsCh := make(chan<- []float64, 100)
+	paretoCh := make(chan []models.Vector, mode.config.paretoChannelLimiter)
+	maxObjsCh := make(chan<- []float64, mode.config.maximumChannelLimiter)
 	wgExecs := &sync.WaitGroup{}
 
 	// Runs algorithm for Executions amount of times.
@@ -54,7 +59,7 @@ func (mode *de) Execute(ctx context.Context) error {
 				paretoCh,
 				maxObjsCh,
 			); err != nil {
-				logger.Error("Unexpected error while executing the algorith",
+				slog.Error("Unexpected error while executing the algorith",
 					slog.Int("Execution", idx),
 					slog.String("error", err.Error()),
 				)
@@ -66,50 +71,23 @@ func (mode *de) Execute(ctx context.Context) error {
 	close(paretoCh)
 
 	now := time.Now()
-	finalPareto := filterPareto(ctx, paretoCh)
-	logger.Info("Filtering Pareto", slog.Duration("time", time.Since(now)))
+	finalPareto := mode.filterPareto(ctx, paretoCh)
+	slog.Info("Filtering Pareto", slog.Duration("time", time.Since(now)))
 	_ = finalPareto
 
-	pareto := &api.Pareto{
-		Ids: &api.ParetoIDs{
-			Id:     0, // TODO Get this from store.
-			UserId: "TODO",
-		},
-		Population: &api.Population{
-			// TODO: FIll this.
-		},
-	}
-	_ = pareto
+	// TODO:: Define what to store on the database
+	// At this point we have a pareto which is a set of the best points
+	// We have the best maximum values which are used in tests
+	//
+	// Probably best to insert it into a few tables.
+	// Table_1: Pareto => (user_id, pareto_id)
+	// Table_2: Vectors => (pareto_id, array_of_X)
+	// Table_3: Max_objectives => (pareto_id, array_of_max_objs)
 
-	//	// result of the ranked pareto
-	//	f, err := os.Create(
-	//		homePath + multiExecutionsPath + "/rankedPareto.csv",
-	//	)
-	//	// creates writer and writes the elements objs
-	//	w := writer.NewWriter(f)
-	//	w.Comma = ';'
-	//	if err := w.WriteHeader(m.constants.ObjFuncAmount); err != nil {
-	//		panic(err)
-	//	}
-	//	if err := w.ElementsObjs(rankedPareto); err != nil {
-	//		panic(err)
-	//	}
-
-	// TODO: The biggest objectives values are to be a part of the pareto table.
-
-	//	// getting biggest objs values
-	//	mo := make([]float64, m.constants.Dimensions)
-	//	for arr := range maximumObjs {
-	//		for i, obj := range arr {
-	//			if obj > mo[i] {
-	//				mo[i] = obj
-	//			}
-	//		}
-	//	}
 	return nil
 }
 
-func filterPareto(
+func (mode *de) filterPareto(
 	ctx context.Context, pareto chan []models.Vector,
 ) []models.Vector {
 	finalPareto := make([]models.Vector, 0, 2000)
@@ -123,42 +101,9 @@ func filterPareto(
 			ctx, finalPareto, len(finalPareto),
 		)
 
-		// TODO: Make it configurable.
-		// Limits the amounts of dots to 1k.
-		if len(finalPareto) > 1000 {
-			finalPareto = finalPareto[:1000]
+		if len(finalPareto) > mode.config.resultLimiter {
+			finalPareto = finalPareto[:mode.config.resultLimiter]
 		}
 	}
-	return finalPareto
-}
-
-func filterParetoParallel(
-	ctx context.Context, pareto chan []models.Vector,
-) []models.Vector {
-	wgRank := &sync.WaitGroup{}
-	filterCh := make(chan []models.Vector, 100)
-	finalPareto := make([]models.Vector, 0, 2000)
-	for v := range pareto {
-		v := v
-		wgRank.Add(1)
-		go func(v []models.Vector) {
-			defer wgRank.Done()
-			_, v = ReduceByCrowdDistance(ctx, v, len(v))
-			filterCh <- v
-		}(v)
-	}
-
-	wgRank.Wait()
-	close(filterCh)
-
-	for v := range filterCh {
-		finalPareto = append(
-			finalPareto,
-			v...,
-		)
-	}
-
-	// Final filtering of the ranked pareto.
-	_, finalPareto = ReduceByCrowdDistance(ctx, finalPareto, len(finalPareto))
 	return finalPareto
 }

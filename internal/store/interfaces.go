@@ -25,3 +25,12 @@ type TenantOperations interface {
 	GetTenant(context.Context, *api.TenantIDs) (*api.Tenant, error)
 	DeleteTenant(context.Context, *api.TenantIDs) error
 }
+
+// ParetoOperations is the interface for the pareto store.
+type ParetoOperations interface {
+	CreatePareto(context.Context, *api.Pareto) error
+	GetPareto(context.Context, *api.ParetoIDs) error
+	UpdatePareto(context.Context, *api.Pareto) error
+	DeletePareto(context.Context, *api.Pareto) error
+	ListParetos(context.Context, *api.UserIDs) ([]*api.Pareto, error)
+}

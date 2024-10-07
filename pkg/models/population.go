@@ -3,31 +3,9 @@ package models
 import (
 	"errors"
 	"math/rand"
-
-	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 )
 
 type Population []Vector
-
-// ToPB converts the population to a protobuf message.
-func (p Population) ToPB() *api.Population {
-	popu := &api.Population{
-		Vectors: make([]*api.Vector, len(p)),
-	}
-	for i, v := range p {
-		popu.Vectors[i] = v.ToPB()
-	}
-	return popu
-}
-
-// PopulationFromPB converts the population from a protobuf message.
-func PopulationFromPB(pop *api.Population) Population {
-	p := make([]Vector, len(pop.Vectors))
-	for i, v := range pop.Vectors {
-		p[i] = VectorFromPB(v)
-	}
-	return p
-}
 
 // Copy returns a copy of the population.
 func (p Population) Copy() Population {

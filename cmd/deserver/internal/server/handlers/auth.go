@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/base64"
 	"errors"
 
@@ -69,7 +70,14 @@ func (ah authHandler) Login(
 		return nil, errors.New("invalid credentials")
 	}
 
-	authToken := base64.StdEncoding.EncodeToString([]byte(usr.Ids.Email))
+	tokenSuffix := make([]byte, 4)
+	if _, err := rand.Read(tokenSuffix); err != nil {
+		return nil, err
+	}
+
+	authToken := base64.StdEncoding.EncodeToString(
+		append([]byte(usr.Ids.Email), tokenSuffix...),
+	)
 	ah.session.Add(authToken)
 
 	return &api.AuthServiceLoginResponse{Token: authToken}, nil

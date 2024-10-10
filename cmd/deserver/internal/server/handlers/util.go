@@ -21,6 +21,7 @@ func generatePopulation(p models.PopulationParams) models.Population {
 	ret := make(models.Population, p.PopulationSize)
 	for i := 0; i < p.PopulationSize; i++ {
 		ret[i].Elements = make([]float64, p.DimensionSize)
+		ret[i].Objectives = make([]float64, p.ObjectivesSize)
 
 		for j := 0; j < p.DimensionSize; j++ {
 			// range between floor and ceiling

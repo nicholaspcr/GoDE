@@ -130,14 +130,14 @@ func (deh *deHandler) Run(
 			gde3.WithPopulationParams(models.PopulationParams{
 				PopulationSize: int(req.DeConfig.GetGde3().GetPopulationParameters().PopulationSize),
 				DimensionSize:  int(req.DeConfig.GetGde3().GetPopulationParameters().DimensionsSize),
-				ObjectivesSize: int(req.DeConfig.GetGde3().GetPopulationParameters().DimensionsSize),
+				ObjectivesSize: int(req.DeConfig.GetGde3().GetPopulationParameters().ObjetivesSize),
 				FloorRange:     req.DeConfig.GetGde3().GetPopulationParameters().Floors,
 				CeilRange:      req.DeConfig.GetGde3().GetPopulationParameters().Ceils,
 			}),
 			gde3.WithInitialPopulation(generatePopulation(models.PopulationParams{
 				PopulationSize: int(req.DeConfig.GetGde3().GetPopulationParameters().PopulationSize),
 				DimensionSize:  int(req.DeConfig.GetGde3().GetPopulationParameters().DimensionsSize),
-				ObjectivesSize: int(req.DeConfig.GetGde3().GetPopulationParameters().DimensionsSize),
+				ObjectivesSize: int(req.DeConfig.GetGde3().GetPopulationParameters().ObjetivesSize),
 				FloorRange:     req.DeConfig.GetGde3().GetPopulationParameters().Floors,
 				CeilRange:      req.DeConfig.GetGde3().GetPopulationParameters().Ceils,
 			})),
@@ -153,7 +153,6 @@ func (deh *deHandler) Run(
 		de.WithGenerations(int(req.DeConfig.Generations)),
 		de.WithDimensions(int(req.DeConfig.Dimensions)),
 		de.WithObjFuncAmount(int(req.DeConfig.ObjectiveFuncAmount)),
-		de.WithAlgorithm(algo),
 	)
 	if err := DE.Execute(ctx); err != nil {
 		return nil, err

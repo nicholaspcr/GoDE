@@ -3,18 +3,19 @@ syntax = "proto3";
 
 package api.v1;
 
-import "api/v1/definitions.proto";
-
 option go_package = "pkg/api";
 
 message DEConfig {
   int64 executions = 1;
   int64 generations = 2;
-  int64 dimensions = 3;
-  int64 objective_func_amount = 4;
+  int64 population_size = 3;
+  int64 dimensions_size = 4;
+  int64 objetives_size = 5;
+  float floor_limiter = 6;
+  float ceil_limiter = 7;
 
   oneof algorithm_config {
-    GDE3Config gde3 = 5;
+    GDE3Config gde3 = 8;
   }
 }
 
@@ -22,5 +23,4 @@ message GDE3Config {
   float cr = 1;
   float f = 2;
   float p = 3;
-  PopulationParameters population_parameters = 4;
 }

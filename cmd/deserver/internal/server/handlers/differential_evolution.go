@@ -10,9 +10,11 @@ import (
 	"github.com/nicholaspcr/GoDE/pkg/de"
 	"github.com/nicholaspcr/GoDE/pkg/de/gde3"
 	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/problems"
 	"github.com/nicholaspcr/GoDE/pkg/problems/many/dtlz"
 	"github.com/nicholaspcr/GoDE/pkg/problems/many/wfg"
 	"github.com/nicholaspcr/GoDE/pkg/problems/multi"
+	"github.com/nicholaspcr/GoDE/pkg/variants"
 	"github.com/nicholaspcr/GoDE/pkg/variants/best"
 	currenttobest "github.com/nicholaspcr/GoDE/pkg/variants/current-to-best"
 	"github.com/nicholaspcr/GoDE/pkg/variants/pbest"
@@ -113,6 +115,30 @@ func (deh *deHandler) Run(
 ) (*api.RunResponse, error) {
 	var algo de.Algorithm
 
+	populationParams := models.PopulationParams{
+		PopulationSize: int(req.DeConfig.PopulationSize),
+		DimensionSize:  int(req.DeConfig.DimensionsSize),
+		ObjectivesSize: int(req.DeConfig.ObjetivesSize),
+		FloorRange:     make([]float64, req.DeConfig.DimensionsSize),
+		CeilRange:      make([]float64, req.DeConfig.DimensionsSize),
+	}
+
+	// Setup the limiters for the population.
+	for i := range populationParams.CeilRange {
+		populationParams.CeilRange[i] = float64(req.DeConfig.CeilLimiter)
+		populationParams.FloorRange[i] = float64(req.DeConfig.FloorLimiter)
+	}
+
+	problem, err := problemFromName(req.Problem)
+	if err != nil {
+		return nil, err
+	}
+
+	variant, err := variantFromName(req.Variant)
+	if err != nil {
+		return nil, err
+	}
+
 	switch req.Algorithm {
 	case "gde3":
 		algo = gde3.New(
@@ -120,27 +146,17 @@ func (deh *deHandler) Run(
 				DE: de.Constants{
 					Executions:    int(req.DeConfig.Executions),
 					Generations:   int(req.DeConfig.Generations),
-					Dimensions:    int(req.DeConfig.Dimensions),
-					ObjFuncAmount: int(req.DeConfig.ObjectiveFuncAmount),
+					Dimensions:    int(req.DeConfig.DimensionsSize),
+					ObjFuncAmount: int(req.DeConfig.ObjetivesSize),
 				},
 				CR: float64(req.DeConfig.GetGde3().Cr),
 				F:  float64(req.DeConfig.GetGde3().F),
 				P:  float64(req.DeConfig.GetGde3().P),
 			}),
-			gde3.WithPopulationParams(models.PopulationParams{
-				PopulationSize: int(req.DeConfig.GetGde3().GetPopulationParameters().PopulationSize),
-				DimensionSize:  int(req.DeConfig.GetGde3().GetPopulationParameters().DimensionsSize),
-				ObjectivesSize: int(req.DeConfig.GetGde3().GetPopulationParameters().ObjetivesSize),
-				FloorRange:     req.DeConfig.GetGde3().GetPopulationParameters().Floors,
-				CeilRange:      req.DeConfig.GetGde3().GetPopulationParameters().Ceils,
-			}),
-			gde3.WithInitialPopulation(generatePopulation(models.PopulationParams{
-				PopulationSize: int(req.DeConfig.GetGde3().GetPopulationParameters().PopulationSize),
-				DimensionSize:  int(req.DeConfig.GetGde3().GetPopulationParameters().DimensionsSize),
-				ObjectivesSize: int(req.DeConfig.GetGde3().GetPopulationParameters().ObjetivesSize),
-				FloorRange:     req.DeConfig.GetGde3().GetPopulationParameters().Floors,
-				CeilRange:      req.DeConfig.GetGde3().GetPopulationParameters().Ceils,
-			})),
+			gde3.WithInitialPopulation(generatePopulation(populationParams)),
+			gde3.WithPopulationParams(populationParams),
+			gde3.WithProblem(problem),
+			gde3.WithVariant(variant),
 		)
 
 	default:
@@ -151,12 +167,32 @@ func (deh *deHandler) Run(
 		de.WithAlgorithm(algo),
 		de.WithExecutions(int(req.DeConfig.Executions)),
 		de.WithGenerations(int(req.DeConfig.Generations)),
-		de.WithDimensions(int(req.DeConfig.Dimensions)),
-		de.WithObjFuncAmount(int(req.DeConfig.ObjectiveFuncAmount)),
+		de.WithDimensions(int(req.DeConfig.DimensionsSize)),
+		de.WithObjFuncAmount(int(req.DeConfig.ObjetivesSize)),
 	)
 	if err := DE.Execute(ctx); err != nil {
 		return nil, err
 	}
 
 	return nil, nil
+}
+
+// problemFromName returns the problems.Interface implementation of the problem
+// referenced by name.
+func problemFromName(p string) (problems.Interface, error) {
+	switch p {
+	case "zdt1":
+		return multi.Zdt1(), nil
+	}
+	return nil, errors.New("Does not exist")
+}
+
+// variantFromName returns the variants.Interface implementation of the variant
+// referenced by name.
+func variantFromName(p string) (variants.Interface, error) {
+	switch p {
+	case "rand1":
+		return rand.Rand1(), nil
+	}
+	return nil, errors.New("Does not exist")
 }

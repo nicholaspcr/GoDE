@@ -1,19 +1,18 @@
 package config
 
 import (
-	"encoding/json"
-
+	"github.com/nicholaspcr/GoDE/cmd/decli/internal/state/sqlite"
 	"github.com/nicholaspcr/GoDE/internal/log"
-	"gopkg.in/yaml.v3"
 )
 
 type (
 	// Config is a set of values that are necessary to execute an Differential
 	// Evolutionary algorithm.
 	Config struct {
-		Local  LocalConfig  `json:"local" yaml:"local"`
-		Log    LogConfig    `json:"log" yaml:"log"`
-		Server ServerConfig `json:"server" yaml:"server"`
+		Local  LocalConfig   `json:"local" yaml:"local"`
+		Log    LogConfig     `json:"log" yaml:"log"`
+		Server ServerConfig  `json:"server" yaml:"server"`
+		Sqlite sqlite.Config `json:"sqlite" yaml:"sqlite"`
 	}
 
 	LocalConfig struct {
@@ -55,52 +54,3 @@ type (
 		P  float64 `json:"p"  yaml:"p"`
 	}
 )
-
-// Default configuration of the decli binary.
-func Default() *Config {
-	return &Config{
-		Local: LocalConfig{
-			PopulationSize: 50,
-			Generations:    100,
-			Executions:     1,
-			Dimensions: Dimensions{
-				Size:   7,
-				Floors: []float64{0, 0, 0, 0, 0, 0, 0},
-				Ceils:  []float64{1, 1, 1, 1, 1, 1, 1},
-			},
-			Constants: Constants{
-				M:  int(3),
-				CR: float64(0.9),
-				F:  float64(0.5),
-				P:  float64(0.2),
-			},
-			Problem: "dtlz1",
-			Variant: "rand1",
-		},
-		Log: LogConfig{
-			Config: log.DefaultConfig(),
-		},
-		Server: ServerConfig{
-			GRPCAddr: "localhost:3030",
-			HTTPAddr: "http://localhost:8081",
-		},
-	}
-}
-
-// StringifyJSON returns a string with the JSON object of the configuration.
-func (cfg *Config) StringifyJSON() (string, error) {
-	b, err := json.MarshalIndent(cfg, "", "    ")
-	if err != nil {
-		return "", err
-	}
-	return string(b), nil
-}
-
-// StringifyYAML returns a string block with the yaml configuration contents.
-func (cfg *Config) StringifyYAML() (string, error) {
-	b, err := yaml.Marshal(cfg)
-	if err != nil {
-		return "", err
-	}
-	return string(b), nil
-}

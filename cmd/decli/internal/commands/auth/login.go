@@ -59,8 +59,8 @@ var loginCmd = &cobra.Command{
 			return err
 		}
 
-		slog.Info("Logged in successfully", slog.String("token", resp.Token))
-		return nil
+		slog.Debug("Logged in successfully", slog.String("token", resp.Token))
+		return db.SaveAuthToken(resp.Token)
 	},
 }
 

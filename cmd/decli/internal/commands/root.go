@@ -11,6 +11,8 @@ import (
 
 	authcmd "github.com/nicholaspcr/GoDE/cmd/decli/internal/commands/auth"
 	"github.com/nicholaspcr/GoDE/cmd/decli/internal/config"
+	"github.com/nicholaspcr/GoDE/cmd/decli/internal/state"
+	"github.com/nicholaspcr/GoDE/cmd/decli/internal/state/sqlite"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -20,6 +22,7 @@ var (
 	memProfileFile string
 	cpuProfileFile string
 	cfg            *config.Config
+	db             state.Operations
 )
 
 // Executes the CLI.
@@ -40,6 +43,8 @@ allows the usage of the algorithm locally and the ability to connect to a
 server.
 `,
 	PersistentPreRunE: func(cmd *cobra.Command, _ []string) (err error) {
+		ctx := cmd.Context()
+
 		logOpts := []log.Option{
 			log.WithType(cfg.Log.Type),
 			log.WithLevel(cfg.Log.Level),
@@ -55,11 +60,22 @@ server.
 		logger := log.New(logOpts...)
 		slog.SetDefault(logger)
 
+		db, err = sqlite.New(ctx, cfg.Sqlite)
+		if err != nil {
+			return err
+		}
+
 		cpuProfile, err := os.Create(cpuProfileFile)
 		if err != nil {
 			return err
 		}
-		return pprof.StartCPUProfile(cpuProfile)
+		if err := pprof.StartCPUProfile(cpuProfile); err != nil {
+			return err
+		}
+
+		// NOTE: this function call has to be on the end of the PersistentPreRun.
+		setupCommands()
+		return nil
 	},
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		slog.Debug("Initialization of CLI:",
@@ -77,6 +93,12 @@ server.
 		}
 		return pprof.WriteHeapProfile(memProfile)
 	},
+}
+
+// Sets the config and state handler for isolated command packages.
+func setupCommands() {
+	authcmd.SetupConfig(cfg)
+	authcmd.SetupStateHandler(db)
 }
 
 func init() {
@@ -142,7 +164,4 @@ func initConfig() {
 	if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 		cobra.CheckErr(err)
 	}
-
-	// Setup config for isolated configurations.
-	authcmd.SetupConfig(cfg)
 }

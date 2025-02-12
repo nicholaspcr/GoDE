@@ -14,7 +14,7 @@ import (
 // loginCmd encapsulates the login related operations
 var loginCmd = &cobra.Command{
 	Use:   "login <email> <password>",
-	Short: "Logs in the user's account",
+	Short: "Log in the user's account",
 	PreRunE: func(cmd *cobra.Command, _ []string) error {
 		return cmd.ValidateRequiredFlags()
 	},

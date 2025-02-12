@@ -15,7 +15,7 @@ var (
 var authCmd = &cobra.Command{
 	Use:   "auth",
 	Short: "encapsulates authentication operations",
-	RunE:  func(_ *cobra.Command, _ []string) error { return nil },
+	RunE:  func(cmd *cobra.Command, _ []string) error { return cmd.Help() },
 }
 
 // RegisterCommands adds the subset of commands into the provided cobra.Command

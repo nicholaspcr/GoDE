@@ -27,8 +27,8 @@ func (st *userStore) CreateUser(
 		Password: usr.Password,
 		Name:     usr.Name,
 	}
-	st.DB.WithContext(ctx).Create(&user)
-	return nil
+	tx := st.DB.WithContext(ctx).Create(&user)
+	return tx.Error
 }
 
 func (st *userStore) GetUser(

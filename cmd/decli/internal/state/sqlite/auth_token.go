@@ -27,7 +27,9 @@ func (st *authTokenStore) GetAuthToken() (string, error) {
 
 // InvalidateAuthToken invalidates the latest authentication token.
 func (st *authTokenStore) InvalidateAuthToken() error {
-	res := st.Where("deleted = ?", false).Update("deleted", true)
+	res := st.Model(&authTokenModel{}).
+		Where("deleted = ?", false).
+		Update("deleted", true)
 	return res.Error
 }
 

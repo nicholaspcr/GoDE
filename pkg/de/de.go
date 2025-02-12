@@ -81,7 +81,7 @@ func (mode *de) Execute(ctx context.Context) error {
 	//
 	// Probably best to insert it into a few tables.
 	// Table_1: Pareto => (user_id, pareto_id)
-	// Table_2: Vectors => (pareto_id, array_of_X)
+	// Table_2: Population => (population_id, array_of_X)
 	// Table_3: Max_objectives => (pareto_id, array_of_max_objs)
 
 	return nil

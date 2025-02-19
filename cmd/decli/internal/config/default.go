@@ -35,7 +35,7 @@ func Default() *Config {
 		},
 		Sqlite: sqlite.Config{
 			Provider: "file",
-			Filepath: ".dev/cli/state.yaml",
+			Filepath: ".dev/cli/state",
 		},
 	}
 }

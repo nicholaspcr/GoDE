@@ -10,6 +10,7 @@ import (
 	"github.com/nicholaspcr/GoDE/internal/log"
 
 	authcmd "github.com/nicholaspcr/GoDE/cmd/decli/internal/commands/auth"
+	"github.com/nicholaspcr/GoDE/cmd/decli/internal/commands/decmd"
 	"github.com/nicholaspcr/GoDE/cmd/decli/internal/config"
 	"github.com/nicholaspcr/GoDE/cmd/decli/internal/state"
 	"github.com/nicholaspcr/GoDE/cmd/decli/internal/state/sqlite"
@@ -99,6 +100,9 @@ server.
 func setupCommands() {
 	authcmd.SetupConfig(cfg)
 	authcmd.SetupStateHandler(db)
+
+	decmd.SetupConfig(cfg)
+	decmd.SetupStateHandler(db)
 }
 
 func init() {
@@ -129,6 +133,7 @@ func init() {
 
 	// Commands
 	authcmd.RegisterCommands(rootCmd)
+	decmd.RegisterCommands(rootCmd)
 
 	rootCmd.AddCommand(localCmd)
 }

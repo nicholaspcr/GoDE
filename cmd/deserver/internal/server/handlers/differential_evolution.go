@@ -184,7 +184,7 @@ func problemFromName(p string) (problems.Interface, error) {
 	case "zdt1":
 		return multi.Zdt1(), nil
 	}
-	return nil, errors.New("Does not exist")
+	return nil, errors.New("does not exist")
 }
 
 // variantFromName returns the variants.Interface implementation of the variant
@@ -194,5 +194,5 @@ func variantFromName(p string) (variants.Interface, error) {
 	case "rand1":
 		return rand.Rand1(), nil
 	}
-	return nil, errors.New("Does not exist")
+	return nil, errors.New("does not exist")
 }

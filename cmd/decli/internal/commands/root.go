@@ -134,8 +134,6 @@ func init() {
 	// Commands
 	authcmd.RegisterCommands(rootCmd)
 	decmd.RegisterCommands(rootCmd)
-
-	rootCmd.AddCommand(localCmd)
 }
 
 func initConfig() {

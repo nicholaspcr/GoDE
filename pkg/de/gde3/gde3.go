@@ -73,7 +73,7 @@ func (g *gde3) Execute(
 	var genRankZero []models.Vector
 	var bestInGen []models.Vector
 
-	for gen := 0; gen < g.constants.DE.Generations; gen++ {
+	for gen := range g.constants.DE.Generations {
 		logger.Debug("Running generation",
 			slog.Int("execution_n", execNum),
 			slog.Int("generation_n", gen),
@@ -81,7 +81,7 @@ func (g *gde3) Execute(
 		// gets non dominated of the current population
 		genRankZero, _ = de.FilterDominated(population)
 
-		for i := 0; i < len(population); i++ {
+		for i := range len(population) {
 			// generates the mutatated vector
 			vr, err := g.variant.Mutate(
 				population,
@@ -104,7 +104,7 @@ func (g *gde3) Execute(
 			currInd := random.Int() % popuParams.DimensionSize
 			luckyIndex := random.Int() % popuParams.DimensionSize
 
-			for j := 0; j < popuParams.DimensionSize; j++ {
+			for range popuParams.DimensionSize {
 				changeProb := random.Float64()
 				if changeProb < g.constants.CR || currInd == luckyIndex {
 					trial.Elements[currInd] = vr.Elements[currInd]

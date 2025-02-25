@@ -61,7 +61,7 @@ server.
 		logger := log.New(logOpts...)
 		slog.SetDefault(logger)
 
-		db, err = sqlite.New(ctx, cfg.Sqlite)
+		db, err = sqlite.New(ctx, cfg.State)
 		if err != nil {
 			return err
 		}

@@ -12,7 +12,7 @@ type (
 		Local  LocalConfig   `json:"local" yaml:"local"`
 		Log    LogConfig     `json:"log" yaml:"log"`
 		Server ServerConfig  `json:"server" yaml:"server"`
-		Sqlite sqlite.Config `json:"sqlite" yaml:"sqlite"`
+		State  sqlite.Config `json:"state" yaml:"state"`
 	}
 
 	LocalConfig struct {

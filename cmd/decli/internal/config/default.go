@@ -33,7 +33,7 @@ func Default() *Config {
 			GRPCAddr: "localhost:3030",
 			HTTPAddr: "http://localhost:8081",
 		},
-		Sqlite: sqlite.Config{
+		State: sqlite.Config{
 			Provider: "file",
 			Filepath: ".dev/cli/state",
 		},

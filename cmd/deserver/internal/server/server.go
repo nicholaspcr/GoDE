@@ -30,7 +30,7 @@ func New(ctx context.Context, cfg Config, opts ...serverOpts) (Server, error) {
 		cfg: cfg,
 		handlers: []handlers.Handler{
 			handlers.NewUserHandler(),
-			handlers.NewDEHandler(),
+			handlers.NewDEHandler(cfg.DE),
 			handlers.NewAuthHandler(sessionStore),
 		},
 		sessionStore: sessionStore,

@@ -2,10 +2,9 @@ package de
 
 // Config of the DE implementation
 type Config struct {
-	paretoChannelLimiter  int
-	maximumChannelLimiter int
-
-	resultLimiter int
+	ParetoChannelLimiter int
+	MaxChannelLimiter    int
+	ResultLimiter        int
 }
 
 // Constants are the set of values that determine the behaviour of the Mode

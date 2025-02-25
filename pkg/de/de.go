@@ -2,6 +2,7 @@ package de
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"sync"
 	"time"
@@ -28,27 +29,26 @@ type de struct {
 }
 
 // New Mode iterface based on the configuration options given.
-func New(opts ...ModeOptions) *de {
-	m := &de{
-		config: Config{
-			paretoChannelLimiter:  100,
-			maximumChannelLimiter: 100,
-			resultLimiter:         1000,
-		},
-	}
+func New(cfg Config, opts ...ModeOptions) (*de, error) {
+	m := &de{config: cfg}
 	for _, opt := range opts {
 		opt(m)
 	}
-	return m
+
+	if m.algorithm == nil {
+		return nil, errors.New("no algorithm set")
+	}
+
+	return m, nil
 }
 
 func (mode *de) Execute(ctx context.Context) error {
-	paretoCh := make(chan []models.Vector, mode.config.paretoChannelLimiter)
-	maxObjsCh := make(chan<- []float64, mode.config.maximumChannelLimiter)
+	paretoCh := make(chan []models.Vector, mode.config.ParetoChannelLimiter)
+	maxObjsCh := make(chan<- []float64, mode.config.MaxChannelLimiter)
 	wgExecs := &sync.WaitGroup{}
 
 	// Runs algorithm for Executions amount of times.
-	for i := 1; i <= mode.constants.Executions; i++ {
+	for i := range mode.constants.Executions {
 		wgExecs.Add(1)
 		// Initialize worker responsible for DE execution.
 		go func(idx int) {
@@ -101,8 +101,8 @@ func (mode *de) filterPareto(
 			ctx, finalPareto, len(finalPareto),
 		)
 
-		if len(finalPareto) > mode.config.resultLimiter {
-			finalPareto = finalPareto[:mode.config.resultLimiter]
+		if len(finalPareto) > mode.config.ResultLimiter {
+			finalPareto = finalPareto[:mode.config.ResultLimiter]
 		}
 	}
 	return finalPareto

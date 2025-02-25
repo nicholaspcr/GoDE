@@ -25,13 +25,14 @@ import (
 
 // deHandler is responsible for the de service operations.
 type deHandler struct {
+	cfg de.Config
 	store.Store
 	api.UnimplementedDifferentialEvolutionServiceServer
 }
 
 // NewDEHandler returns a handle that implements
 // DifferentialEvolutionServiceServer.
-func NewDEHandler() Handler { return &deHandler{} }
+func NewDEHandler(deCfg de.Config) Handler { return &deHandler{cfg: deCfg} }
 
 // RegisterService adds DifferentialEvolutionService to the RPC server.
 func (deh *deHandler) RegisterService(srv *grpc.Server) {
@@ -163,13 +164,18 @@ func (deh *deHandler) Run(
 		return nil, errors.New("unsupported algorithms")
 	}
 
-	DE := de.New(
+	DE, err := de.New(
+		deh.cfg,
 		de.WithAlgorithm(algo),
 		de.WithExecutions(int(req.DeConfig.Executions)),
 		de.WithGenerations(int(req.DeConfig.Generations)),
 		de.WithDimensions(int(req.DeConfig.DimensionsSize)),
 		de.WithObjFuncAmount(int(req.DeConfig.ObjetivesSize)),
 	)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := DE.Execute(ctx); err != nil {
 		return nil, err
 	}

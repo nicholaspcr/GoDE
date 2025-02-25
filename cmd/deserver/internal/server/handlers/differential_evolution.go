@@ -181,8 +181,50 @@ func (deh *deHandler) Run(
 // referenced by name.
 func problemFromName(p string) (problems.Interface, error) {
 	switch p {
-	case "zdt1":
+	case multi.Vnt1().Name():
+		return multi.Vnt1(), nil
+	case multi.Zdt1().Name():
 		return multi.Zdt1(), nil
+	case multi.Zdt2().Name():
+		return multi.Zdt2(), nil
+	case multi.Zdt3().Name():
+		return multi.Zdt3(), nil
+	case multi.Zdt4().Name():
+		return multi.Zdt4(), nil
+	case multi.Zdt6().Name():
+		return multi.Zdt6(), nil
+	case dtlz.Dtlz1().Name():
+		return dtlz.Dtlz1(), nil
+	case dtlz.Dtlz2().Name():
+		return dtlz.Dtlz2(), nil
+	case dtlz.Dtlz3().Name():
+		return dtlz.Dtlz3(), nil
+	case dtlz.Dtlz4().Name():
+		return dtlz.Dtlz4(), nil
+	case dtlz.Dtlz5().Name():
+		return dtlz.Dtlz5(), nil
+	case dtlz.Dtlz6().Name():
+		return dtlz.Dtlz6(), nil
+	case dtlz.Dtlz7().Name():
+		return dtlz.Dtlz7(), nil
+	case wfg.Wfg1().Name():
+		return wfg.Wfg1(), nil
+	case wfg.Wfg2().Name():
+		return wfg.Wfg2(), nil
+	case wfg.Wfg3().Name():
+		return wfg.Wfg3(), nil
+	case wfg.Wfg4().Name():
+		return wfg.Wfg4(), nil
+	case wfg.Wfg5().Name():
+		return wfg.Wfg5(), nil
+	case wfg.Wfg6().Name():
+		return wfg.Wfg6(), nil
+	case wfg.Wfg7().Name():
+		return wfg.Wfg7(), nil
+	case wfg.Wfg8().Name():
+		return wfg.Wfg8(), nil
+	case wfg.Wfg9().Name():
+		return wfg.Wfg9(), nil
 	}
 	return nil, errors.New("does not exist")
 }
@@ -191,8 +233,18 @@ func problemFromName(p string) (problems.Interface, error) {
 // referenced by name.
 func variantFromName(p string) (variants.Interface, error) {
 	switch p {
-	case "rand1":
+	case rand.Rand1().Name():
 		return rand.Rand1(), nil
+	case rand.Rand2().Name():
+		return rand.Rand2(), nil
+	case best.Best1().Name():
+		return best.Best1(), nil
+	case best.Best2().Name():
+		return best.Best2(), nil
+	case currenttobest.CurrToBest1().Name():
+		return currenttobest.CurrToBest1(), nil
+	case pbest.Pbest().Name():
+		return pbest.Pbest(), nil
 	}
 	return nil, errors.New("does not exist")
 }

@@ -10,8 +10,9 @@ import (
 
 type userModel struct {
 	gorm.Model
-	Email    string `gorm:"index:user_email_index,not null,size:255"`
-	Password string `gorm:"not null,size:255"`
+	Username string `gorm:"index:username_index,not null,size:64"`
+	Email    string `gorm:"index:user_email_index,not null,size:256"`
+	Password string `gorm:"not null,size:256"`
 }
 
 type userStore struct{ *gorm.DB }
@@ -22,7 +23,8 @@ func (st *userStore) CreateUser(
 	ctx context.Context, usr *api.User,
 ) error {
 	user := userModel{
-		Email:    usr.GetIds().Email,
+		Username: usr.GetIds().Username,
+		Email:    usr.Email,
 		Password: usr.Password,
 	}
 	tx := st.DB.WithContext(ctx).Create(&user)
@@ -34,14 +36,13 @@ func (st *userStore) GetUser(
 ) (*api.User, error) {
 	var usr userModel
 
-	tx := st.First(&usr, "email = ?", usrIDs.Email)
+	tx := st.First(&usr, "username = ?", usrIDs.Username)
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
 	return &api.User{
-		Ids:      &api.UserIDs{Email: usr.Email},
+		Ids:      &api.UserIDs{Username: usr.Username},
 		Password: usr.Password,
-		Name:     usr.Name,
 	}, nil
 }
 
@@ -50,7 +51,7 @@ func (st *userStore) UpdateUser(
 ) error {
 	var model userModel
 
-	tx := st.First(&model, "email = ?", usr.GetIds().Email)
+	tx := st.First(&model, "username = ?", usr.GetIds().Username)
 	if tx.Error != nil {
 		return tx.Error
 	}
@@ -61,11 +62,9 @@ func (st *userStore) UpdateUser(
 		default:
 			return errors.ErrUnsupportedFieldMask
 		case "email":
-			columns[field] = usr.GetIds().Email
+			columns[field] = usr.Email
 		case "password":
 			columns[field] = usr.Password
-		case "name":
-			columns[field] = usr.Name
 		}
 	}
 
@@ -79,7 +78,7 @@ func (st *userStore) UpdateUser(
 func (st *userStore) DeleteUser(
 	ctx context.Context, usrIDs *api.UserIDs,
 ) error {
-	model := userModel{Email: usrIDs.Email}
+	model := userModel{Username: usrIDs.Username}
 	tx := st.DB.Delete(&model)
 	return tx.Error
 }

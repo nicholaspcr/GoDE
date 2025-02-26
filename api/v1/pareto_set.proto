@@ -19,7 +19,7 @@ service ParetoService {
   rpc ListByUser(ParetoServiceListByUserRequest) returns (
       stream ParetoServiceListByUserResponse
   ) {
-    option (google.api.http) = {get: "/v1/paretos/{user_ids.email}"};
+    option (google.api.http) = {get: "/v1/paretos/{user_ids.username}"};
   }
 }
 

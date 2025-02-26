@@ -12,7 +12,6 @@ type userModel struct {
 	gorm.Model
 	Email    string `gorm:"index:user_email_index,not null,size:255"`
 	Password string `gorm:"not null,size:255"`
-	Name     string `gorm:"size:64"`
 }
 
 type userStore struct{ *gorm.DB }
@@ -25,7 +24,6 @@ func (st *userStore) CreateUser(
 	user := userModel{
 		Email:    usr.GetIds().Email,
 		Password: usr.Password,
-		Name:     usr.Name,
 	}
 	tx := st.DB.WithContext(ctx).Create(&user)
 	return tx.Error

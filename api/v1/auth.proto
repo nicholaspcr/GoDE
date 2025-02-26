@@ -35,7 +35,7 @@ message AuthServiceRegisterRequest {
 }
 
 message AuthServiceLoginRequest {
-  string email = 1;
+  string username = 1;
   string password = 2;
 }
 
@@ -44,5 +44,5 @@ message AuthServiceLoginResponse {
 }
 
 message AuthServiceLogoutRequest {
-  string email = 1;
+  string username = 1;
 }

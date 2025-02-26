@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/base64"
 	"errors"
 
@@ -61,7 +60,7 @@ func (ah authHandler) Register(
 func (ah authHandler) Login(
 	ctx context.Context, req *api.AuthServiceLoginRequest,
 ) (*api.AuthServiceLoginResponse, error) {
-	usr, err := ah.db.GetUser(ctx, &api.UserIDs{Email: req.Email})
+	usr, err := ah.db.GetUser(ctx, &api.UserIDs{Username: req.Username})
 	if err != nil {
 		return nil, err
 	}
@@ -70,14 +69,7 @@ func (ah authHandler) Login(
 		return nil, errors.New("invalid credentials")
 	}
 
-	tokenSuffix := make([]byte, 4)
-	if _, err := rand.Read(tokenSuffix); err != nil {
-		return nil, err
-	}
-
-	authToken := base64.StdEncoding.EncodeToString(
-		append([]byte(usr.Ids.Email), tokenSuffix...),
-	)
+	authToken := base64.StdEncoding.EncodeToString([]byte(usr.Ids.Username))
 	ah.session.Add(authToken)
 
 	return &api.AuthServiceLoginResponse{Token: authToken}, nil
@@ -86,7 +78,7 @@ func (ah authHandler) Login(
 func (ah authHandler) Logout(
 	ctx context.Context, req *api.AuthServiceLogoutRequest,
 ) (*emptypb.Empty, error) {
-	authToken := base64.StdEncoding.EncodeToString([]byte(req.Email))
+	authToken := base64.StdEncoding.EncodeToString([]byte(req.Username))
 	ah.session.Remove(authToken)
 
 	return api.Empty, nil

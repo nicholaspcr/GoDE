@@ -21,7 +21,7 @@ var registerCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
 
-		if name == "" || password == "" || email == "" {
+		if username == "" || password == "" || email == "" {
 			return errors.New("missing neccessary fields (name,password,email)")
 		}
 
@@ -40,8 +40,8 @@ var registerCmd = &cobra.Command{
 			ctx,
 			&api.AuthServiceRegisterRequest{
 				User: &api.User{
-					Ids:      &api.UserIDs{Email: email},
-					Name:     name,
+					Ids:      &api.UserIDs{Username: username},
+					Email:    email,
 					Password: password,
 				},
 			},
@@ -57,19 +57,19 @@ var registerCmd = &cobra.Command{
 
 func init() {
 	// Requirements
-	registerCmd.MarkFlagRequired("name")
+	registerCmd.MarkFlagRequired("username")
 	registerCmd.MarkFlagRequired("email")
 	registerCmd.MarkFlagRequired("password")
 
 	// Flags
-	registerCmd.Flags().StringVar(&email, "email", "", "user's email")
+	registerCmd.Flags().StringVar(&username, "username", "", "user's name")
 	registerCmd.Flags().StringVar(&password, "password", "", "user's password")
-	registerCmd.Flags().StringVar(&name, "name", "", "user's name")
+	registerCmd.Flags().StringVar(&email, "email", "", "user's email")
 
 	// Viper binds
 	viper.BindPFlag("email", registerCmd.Flags().Lookup("email"))
 	viper.BindPFlag("password", registerCmd.Flags().Lookup("password"))
-	viper.BindPFlag("name", registerCmd.Flags().Lookup("name"))
+	viper.BindPFlag("username", registerCmd.Flags().Lookup("username"))
 
 	// Commands
 	authCmd.AddCommand(registerCmd)

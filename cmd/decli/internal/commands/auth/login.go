@@ -13,7 +13,7 @@ import (
 
 // loginCmd encapsulates the login related operations
 var loginCmd = &cobra.Command{
-	Use:   "login <email> <password>",
+	Use:   "login <username> <password>",
 	Short: "Log in the user's account",
 	PreRunE: func(cmd *cobra.Command, _ []string) error {
 		return cmd.ValidateRequiredFlags()
@@ -26,15 +26,15 @@ var loginCmd = &cobra.Command{
 		case 0:
 			break
 		case 2:
-			email = args[0]
+			username = args[0]
 			password = args[1]
 		default:
 			return errors.New("invalid amount of arguments")
 		}
 
 		// Validate
-		if password == "" || email == "" {
-			return errors.New("missing neccessary fields (email,password)")
+		if password == "" || username == "" {
+			return errors.New("missing neccessary fields (username,password)")
 		}
 
 		conn, err := grpc.NewClient(
@@ -51,7 +51,7 @@ var loginCmd = &cobra.Command{
 		resp, err := client.Login(
 			ctx,
 			&api.AuthServiceLoginRequest{
-				Email:    email,
+				Username: username,
 				Password: password,
 			},
 		)
@@ -66,15 +66,15 @@ var loginCmd = &cobra.Command{
 
 func init() {
 	// Requirements
-	loginCmd.MarkFlagRequired("email")
+	loginCmd.MarkFlagRequired("username")
 	loginCmd.MarkFlagRequired("password")
 
 	// Flags
-	loginCmd.Flags().StringVar(&email, "email", "", "user's email")
+	loginCmd.Flags().StringVar(&username, "username", "", "user's name")
 	loginCmd.Flags().StringVar(&password, "password", "", "user's password")
 
 	// Viper binds
-	viper.BindPFlag("email", loginCmd.Flags().Lookup("email"))
+	viper.BindPFlag("username", loginCmd.Flags().Lookup("username"))
 	viper.BindPFlag("password", loginCmd.Flags().Lookup("password"))
 
 	// Commands

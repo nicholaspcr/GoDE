@@ -1,7 +1,7 @@
 package authcmd
 
 var (
-	name     string
+	username string
 	password string
 	email    string
 )

@@ -2,10 +2,8 @@ package middleware
 
 import (
 	"context"
-	"encoding/base64"
 	"strings"
 
-	"github.com/nicholaspcr/GoDE/cmd/deserver/internal/server/ctxkey"
 	"github.com/nicholaspcr/GoDE/cmd/deserver/internal/server/session"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -67,14 +65,6 @@ func UnaryAuthMiddleware(
 			if !sessionStore.Get(string(token)) {
 				return nil, errTokenInvalid
 			}
-
-			usernameBytes, err := base64.StdEncoding.DecodeString(token)
-			if err != nil {
-				return nil, err
-			}
-			username := string(usernameBytes)
-
-			ctx = ctxkey.WithUsername(ctx, username)
 		}
 
 		return handler(ctx, req)

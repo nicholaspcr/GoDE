@@ -8,9 +8,9 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/nicholaspcr/GoDE/cmd/deserver/internal/server/handlers"
-	"github.com/nicholaspcr/GoDE/cmd/deserver/internal/server/middleware"
-	"github.com/nicholaspcr/GoDE/cmd/deserver/internal/server/session"
+	"github.com/nicholaspcr/GoDE/internal/server/handlers"
+	"github.com/nicholaspcr/GoDE/internal/server/middleware"
+	"github.com/nicholaspcr/GoDE/internal/server/session"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -29,9 +29,9 @@ func New(ctx context.Context, cfg Config, opts ...serverOpts) (Server, error) {
 	srv := &server{
 		cfg: cfg,
 		handlers: []handlers.Handler{
+			handlers.NewAuthHandler(sessionStore),
 			handlers.NewUserHandler(),
 			handlers.NewDEHandler(cfg.DE),
-			handlers.NewAuthHandler(sessionStore),
 		},
 		sessionStore: sessionStore,
 	}

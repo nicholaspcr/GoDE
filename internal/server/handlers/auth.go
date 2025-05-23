@@ -6,7 +6,7 @@ import (
 	"errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/nicholaspcr/GoDE/cmd/deserver/internal/server/session"
+	"github.com/nicholaspcr/GoDE/internal/server/session"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"google.golang.org/grpc"

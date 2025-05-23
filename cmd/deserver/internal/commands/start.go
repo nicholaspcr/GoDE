@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"github.com/nicholaspcr/GoDE/cmd/deserver/internal/server"
+	"github.com/nicholaspcr/GoDE/internal/server"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/spf13/cobra"
 )

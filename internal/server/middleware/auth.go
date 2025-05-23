@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/nicholaspcr/GoDE/cmd/deserver/internal/server/session"
+	"github.com/nicholaspcr/GoDE/internal/server/session"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"

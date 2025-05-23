@@ -1,17 +1,16 @@
 # GoDE
 
-This is a personal project and is subject to drastic changes at any time, the
-contents below describe the idea behind this repository and what is all about.
+GoDE is a personal project currently under active development, so its features
+and direction may change significantly. This document outlines the project's
+core concept and goals.
 
-This is an extension of the [GDE3](https://github.com/nicholaspcr/GDE3) project
-developed for a scientific research project in the university of
-[CEFET-MG](https://www.cefetmg.br/). The main purpose of this project is to take
-a chance of developing on top of the work done regarding the heuristics
-performances.
+This project extends the [GDE3](https://github.com/nicholaspcr/GDE3) initiative,
+which originated from a scientific research endeavor at
+[CEFET-MG](https://www.cefetmg.br/). The primary goal of GoDE is to build upon
+the existing work on heuristic performance.
 
-
-The main idea around what is going to be added is the separation of the
-executable into a server and a CLI, allowing for multiple people to make
-requests to run distinct Differential Evolutionary (DE) instances in a single
-server. A few other things will be added, with the possible inclusion of
-front-end pages and a SQL database, suggestions are more than welcome.
+Key planned enhancements include refactoring the executable into a server and a
+Command Line Interface (CLI). This will enable multiple users to concurrently
+request and run distinct Differential Evolutionary (DE) instances on a single
+server. Other potential additions involve front-end interfaces and a SQL
+database. Suggestions for further development are welcome.

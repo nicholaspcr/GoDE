@@ -232,7 +232,7 @@ func problemFromName(p string) (problems.Interface, error) {
 	case wfg.Wfg9().Name():
 		return wfg.Wfg9(), nil
 	}
-	return nil, errors.New("does not exist")
+	return nil, errors.New("problem does not exist")
 }
 
 // variantFromName returns the variants.Interface implementation of the variant
@@ -252,5 +252,5 @@ func variantFromName(p string) (variants.Interface, error) {
 	case pbest.Pbest().Name():
 		return pbest.Pbest(), nil
 	}
-	return nil, errors.New("does not exist")
+	return nil, errors.New("variant does not exist")
 }

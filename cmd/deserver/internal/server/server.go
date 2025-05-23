@@ -65,8 +65,8 @@ func (s *server) Start(ctx context.Context) error {
 
 	grpcSrv := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
-			middleware.UnaryAuthMiddleware(s.sessionStore),
 			logging.UnaryServerInterceptor(InterceptorLogger(logger)),
+			middleware.UnaryAuthMiddleware(s.sessionStore),
 		),
 		grpc.ChainStreamInterceptor(
 			logging.StreamServerInterceptor(InterceptorLogger(logger)),

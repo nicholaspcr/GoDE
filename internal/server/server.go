@@ -1,3 +1,4 @@
+// Package server contains all logic related to the DE API.
 package server
 
 import (

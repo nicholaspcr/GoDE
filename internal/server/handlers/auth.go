@@ -26,17 +26,17 @@ func NewAuthHandler(sessionStore session.Store) Handler {
 }
 
 // setStore assings the implementation of the store to the auth handler.
-func (uh *authHandler) SetStore(st store.Store) {
-	uh.db = st
+func (ah *authHandler) SetStore(st store.Store) {
+	ah.db = st
 }
 
 // RegisterService adds authService to the RPC server.
-func (uh *authHandler) RegisterService(srv *grpc.Server) {
-	api.RegisterAuthServiceServer(srv, uh)
+func (ah *authHandler) RegisterService(srv *grpc.Server) {
+	api.RegisterAuthServiceServer(srv, ah)
 }
 
 // RegisterHTTPHandler adds AuthService to the grpc-gateway.
-func (uh *authHandler) RegisterHTTPHandler(
+func (ah *authHandler) RegisterHTTPHandler(
 	ctx context.Context,
 	mux *runtime.ServeMux,
 	lisAddr string,

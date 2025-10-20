@@ -119,7 +119,7 @@ func (deh *deHandler) Run(
 	populationParams := models.PopulationParams{
 		PopulationSize: int(req.DeConfig.PopulationSize),
 		DimensionSize:  int(req.DeConfig.DimensionsSize),
-		ObjectivesSize: int(req.DeConfig.ObjetivesSize),
+		ObjectivesSize: int(req.DeConfig.ObjectivesSize),
 		FloorRange:     make([]float64, req.DeConfig.DimensionsSize),
 		CeilRange:      make([]float64, req.DeConfig.DimensionsSize),
 	}
@@ -140,6 +140,11 @@ func (deh *deHandler) Run(
 		return nil, err
 	}
 
+	initialPopulation, err := generatePopulation(populationParams, rand.New(rand.NewSource(time.Now().UnixNano())))
+	if err != nil {
+		return nil, err
+	}
+
 	switch req.Algorithm {
 	case "gde3":
 		algo = gde3.New(
@@ -148,13 +153,13 @@ func (deh *deHandler) Run(
 					Executions:    int(req.DeConfig.Executions),
 					Generations:   int(req.DeConfig.Generations),
 					Dimensions:    int(req.DeConfig.DimensionsSize),
-					ObjFuncAmount: int(req.DeConfig.ObjetivesSize),
+					ObjFuncAmount: int(req.DeConfig.ObjectivesSize),
 				},
 				CR: float64(req.DeConfig.GetGde3().Cr),
 				F:  float64(req.DeConfig.GetGde3().F),
 				P:  float64(req.DeConfig.GetGde3().P),
 			}),
-			gde3.WithInitialPopulation(generatePopulation(populationParams)),
+			gde3.WithInitialPopulation(initialPopulation),
 			gde3.WithPopulationParams(populationParams),
 			gde3.WithProblem(problem),
 			gde3.WithVariant(variant),
@@ -170,7 +175,7 @@ func (deh *deHandler) Run(
 		de.WithExecutions(int(req.DeConfig.Executions)),
 		de.WithGenerations(int(req.DeConfig.Generations)),
 		de.WithDimensions(int(req.DeConfig.DimensionsSize)),
-		de.WithObjFuncAmount(int(req.DeConfig.ObjetivesSize)),
+		de.WithObjFuncAmount(int(req.DeConfig.ObjectivesSize)),
 	)
 	if err != nil {
 		return nil, err

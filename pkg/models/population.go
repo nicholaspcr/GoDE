@@ -1,7 +1,7 @@
 package models
 
 import (
-	"errors"
+	"fmt"
 	"math/rand"
 )
 
@@ -24,11 +24,16 @@ type PopulationParams struct {
 }
 
 // GeneratePopulation generates a population with the given parameters.
-func GeneratePopulation(params PopulationParams) (Population, error) {
+func GeneratePopulation(params PopulationParams, random *rand.Rand) (Population, error) {
 	vectors := make([]Vector, params.PopulationSize)
 	if len(params.FloorRange) != params.DimensionSize ||
 		len(params.CeilRange) != params.DimensionSize {
-		return Population{}, errors.New("float range and ceil range must have the same size as the dimension size")
+		return Population{}, fmt.Errorf(
+			"floor range and ceil range must have the same size as the dimension size, got %d, %d and %d",
+			len(params.FloorRange),
+			len(params.CeilRange),
+			params.DimensionSize,
+		)
 	}
 
 	for i := 0; i < params.PopulationSize; i++ {
@@ -40,7 +45,7 @@ func GeneratePopulation(params PopulationParams) (Population, error) {
 
 		for j := 0; j < params.DimensionSize; j++ {
 			vectors[i].Elements[j] = params.FloorRange[j] +
-				(params.CeilRange[j]-params.FloorRange[j])*rand.Float64()
+				(params.CeilRange[j]-params.FloorRange[j])*random.Float64()
 		}
 
 	}

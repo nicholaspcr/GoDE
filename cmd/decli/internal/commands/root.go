@@ -34,7 +34,6 @@ func Execute() {
 	}
 }
 
-
 func startCPUProfile() error {
 	cpuProfile, err := os.Create(cpuProfileFile)
 	if err != nil {
@@ -79,9 +78,7 @@ server.
 	},
 }
 
-func persistentPreRun(cmd *cobra.Command, _ []string) (err error) {
-	ctx := cmd.Context()
-
+func setupLogger() error {
 	logOpts := []log.Option{
 		log.WithType(cfg.Log.Type),
 		log.WithLevel(cfg.Log.Level),
@@ -97,8 +94,18 @@ func persistentPreRun(cmd *cobra.Command, _ []string) (err error) {
 	logger := log.New(logOpts...)
 	slog.SetDefault(logger)
 
+	return nil
+}
+
+func persistentPreRun(cmd *cobra.Command, _ []string) (err error) {
+	ctx := cmd.Context()
+
 	db, err = sqlite.New(ctx, cfg.State)
 	if err != nil {
+		return err
+	}
+
+	if err := setupLogger(); err != nil {
 		return err
 	}
 
@@ -167,6 +174,9 @@ func initConfig() error {
 		}
 	}
 
-	fmt.Println("Using config file:", viper.ConfigFileUsed())
+	if err := setupLogger(); err != nil {
+		return err
+	}
+	slog.Info("Using config file", slog.Any("path", viper.ConfigFileUsed()))
 	return viper.Unmarshal(&cfg)
 }

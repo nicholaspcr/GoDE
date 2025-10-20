@@ -9,8 +9,10 @@ type Population []Vector
 
 // Copy returns a copy of the population.
 func (p Population) Copy() Population {
-	newP := make([]Vector, len(p))
-	copy(newP, p)
+	newP := make(Population, len(p))
+	for i, v := range p {
+		newP[i] = v.Copy()
+	}
 	return newP
 }
 

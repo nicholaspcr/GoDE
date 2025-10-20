@@ -1,0 +1,21 @@
+run:
+  timeout: 5m
+  skip-dirs:
+    - .dev
+
+linters:
+  enable:
+    - govet
+    - revive
+    - staticcheck
+    - goimports
+    - unconvert
+    - typecheck
+    - unused
+    - gosimple
+    - structcheck
+    - varcheck
+    - ineffassign
+    - deadcode
+    - bodyclose
+    - stylecheck

@@ -54,3 +54,16 @@ proto: proto-lint proto-remove proto-generate ## Lints and generates proto code
 .PHONY: dev
 dev: ## Runs the dev environment for all applications.
 	@docker compose -f docker-compose.yml up
+
+.PHONY: build
+build: ## Builds the binaries for the applications.
+	@go build -o ./.dev/decli ./cmd/decli
+	@go build -o ./.dev/deserver ./cmd/deserver
+
+.PHONY: test
+test: ## Runs all the tests.
+	@go test -v ./...
+
+.PHONY: lint
+lint: ## Lints the codebase.
+	@golangci-lint run

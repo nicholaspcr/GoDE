@@ -34,6 +34,23 @@ func Execute() {
 	}
 }
 
+
+func startCPUProfile() error {
+	cpuProfile, err := os.Create(cpuProfileFile)
+	if err != nil {
+		return err
+	}
+	return pprof.StartCPUProfile(cpuProfile)
+}
+
+func writeHeapProfile() error {
+	memProfile, err := os.Create(memProfileFile)
+	if err != nil {
+		return err
+	}
+	return pprof.WriteHeapProfile(memProfile)
+}
+
 // rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
 	Use:   "decli",
@@ -43,40 +60,11 @@ A CLI for using the implementation of the differential evolution algorithm, this
 allows the usage of the algorithm locally and the ability to connect to a
 server.
 `,
-	PersistentPreRunE: func(cmd *cobra.Command, _ []string) (err error) {
-		ctx := cmd.Context()
-
-		logOpts := []log.Option{
-			log.WithType(cfg.Log.Type),
-			log.WithLevel(cfg.Log.Level),
-			log.WithPrettyConfig(cfg.Log.Pretty),
-		}
-		if cfg.Log.Filename != "" {
-			f, err := os.Create(cfg.Log.Filename)
-			if err != nil {
-				return err
-			}
-			logOpts = append(logOpts, log.WithWriter(f))
-		}
-		logger := log.New(logOpts...)
-		slog.SetDefault(logger)
-
-		db, err = sqlite.New(ctx, cfg.State)
-		if err != nil {
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		if err := initConfig(); err != nil {
 			return err
 		}
-
-		cpuProfile, err := os.Create(cpuProfileFile)
-		if err != nil {
-			return err
-		}
-		if err := pprof.StartCPUProfile(cpuProfile); err != nil {
-			return err
-		}
-
-		// NOTE: this function call has to be on the end of the PersistentPreRun.
-		setupCommands()
-		return nil
+		return persistentPreRun(cmd, args)
 	},
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		slog.Debug("Initialization of CLI:",
@@ -87,13 +75,40 @@ server.
 	},
 	PersistentPostRunE: func(_ *cobra.Command, _ []string) error {
 		pprof.StopCPUProfile()
+		return writeHeapProfile()
+	},
+}
 
-		memProfile, err := os.Create(memProfileFile)
+func persistentPreRun(cmd *cobra.Command, _ []string) (err error) {
+	ctx := cmd.Context()
+
+	logOpts := []log.Option{
+		log.WithType(cfg.Log.Type),
+		log.WithLevel(cfg.Log.Level),
+		log.WithPrettyConfig(cfg.Log.Pretty),
+	}
+	if cfg.Log.Filename != "" {
+		f, err := os.Create(cfg.Log.Filename)
 		if err != nil {
 			return err
 		}
-		return pprof.WriteHeapProfile(memProfile)
-	},
+		logOpts = append(logOpts, log.WithWriter(f))
+	}
+	logger := log.New(logOpts...)
+	slog.SetDefault(logger)
+
+	db, err = sqlite.New(ctx, cfg.State)
+	if err != nil {
+		return err
+	}
+
+	if err := startCPUProfile(); err != nil {
+		return err
+	}
+
+	// NOTE: this function call has to be on the end of the PersistentPreRun.
+	setupCommands()
+	return nil
 }
 
 // Sets the config and state handler for isolated command packages.
@@ -106,8 +121,6 @@ func setupCommands() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
-
 	// Flags
 	rootCmd.PersistentFlags().StringVar(
 		&cfgFile, "config", "", "config file (default is $HOME/.decli.yaml)",
@@ -122,26 +135,19 @@ func init() {
 		".dev/cli/memprofile", "mem profile filename",
 	)
 
-	// Viper binds
-	viper.BindPFlag("useViper", rootCmd.PersistentFlags().Lookup("viper"))
-	viper.BindPFlag(
-		"cpuProfileFile", rootCmd.PersistentFlags().Lookup("cpu-profile-file"),
-	)
-	viper.BindPFlag(
-		"memProfileFile", rootCmd.PersistentFlags().Lookup("mem-profile-file"),
-	)
-
 	// Commands
 	authcmd.RegisterCommands(rootCmd)
 	decmd.RegisterCommands(rootCmd)
 }
 
-func initConfig() {
+func initConfig() error {
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	} else {
 		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
+		if err != nil {
+			return err
+		}
 
 		// Search config in home directory with name ".decli" (no extention)
 		viper.AddConfigPath(home)
@@ -155,16 +161,12 @@ func initConfig() {
 	viper.AutomaticEnv()
 	cfg = config.Default()
 
-	err := viper.ReadInConfig()
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return err
+		}
+	}
 
-	// No error, using the config config from viper. Unmarshal and return.
-	if err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-		cobra.CheckErr(viper.Unmarshal(&cfg))
-		return
-	}
-	// If the error isn't config not found then CheckErr.
-	if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-		cobra.CheckErr(err)
-	}
+	fmt.Println("Using config file:", viper.ConfigFileUsed())
+	return viper.Unmarshal(&cfg)
 }

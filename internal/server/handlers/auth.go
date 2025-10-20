@@ -9,6 +9,7 @@ import (
 	"github.com/nicholaspcr/GoDE/internal/server/session"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
+	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -51,6 +52,11 @@ func (ah *authHandler) RegisterHTTPHandler(
 func (ah authHandler) Register(
 	ctx context.Context, req *api.AuthServiceRegisterRequest,
 ) (*emptypb.Empty, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.User.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+	req.User.Password = string(hashedPassword)
 	if err := ah.db.CreateUser(ctx, req.User); err != nil {
 		return nil, err
 	}
@@ -65,7 +71,7 @@ func (ah authHandler) Login(
 		return nil, err
 	}
 
-	if usr.Password != req.Password {
+	if err := bcrypt.CompareHashAndPassword([]byte(usr.Password), []byte(req.Password)); err != nil {
 		return nil, errors.New("invalid credentials")
 	}
 

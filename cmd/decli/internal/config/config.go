@@ -27,7 +27,7 @@ type (
 		Generations    int64      `json:"generations" yaml:"generations"`
 		PopulationSize int64      `json:"population_size" yaml:"population_size"`
 		DimensionsSize int64      `json:"dimensions_size" yaml:"dimensions_size"`
-		ObjetivesSize  int64      `json:"objectives_size" yaml:"objectives_size"`
+		ObjectivesSize int64      `json:"objectives_size" yaml:"objectives_size"`
 		FloorLimiter   float32    `json:"floor_limiter" yaml:"floor_limiter"`
 		CeilLimiter    float32    `json:"ceil_limiter" yaml:"ceil_limiter"`
 		GDE3           GDE3Config `json:"gde3" yaml:"gde3"`

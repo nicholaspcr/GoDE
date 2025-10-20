@@ -18,7 +18,7 @@ type gormStore struct {
 }
 
 // New returns a new GormStore.
-func New(_ context.Context, dialector gorm.Dialector) (*gormStore, error) {
+func New(dialector gorm.Dialector) (*gormStore, error) {
 	db, err := gorm.Open(dialector)
 	if err != nil {
 		return nil, err

@@ -2,11 +2,11 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 
 	"github.com/glebarez/sqlite"
 	"github.com/nicholaspcr/GoDE/internal/store/gorm"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"gorm.io/driver/postgres"
 )
 
@@ -20,16 +20,12 @@ func New(ctx context.Context, cfg Config) (Store, error) {
 	case "sqlite":
 		dialector = sqlite.Open(cfg.Sqlite.Filepath)
 	case "postgres":
-		sqlDB, err := sql.Open("pgx", "mydb_dsn")
-		if err != nil {
-			return nil, err
-		}
-		dialector = postgres.New(postgres.Config{Conn: sqlDB})
+		dialector = postgres.Open(cfg.Postgresql.DNS)
 	default:
 		return nil, errors.New("invalid store type")
 	}
 
-	st, err := gorm.New(ctx, dialector)
+	st, err := gorm.New(dialector)
 	if err != nil {
 		return nil, err
 	}

@@ -17,65 +17,72 @@ import (
 
 var (
 	problemSet = map[string]problems.Interface{
-		multi.Zdt1().Name(): multi.Zdt1(),
-		multi.Zdt2().Name(): multi.Zdt2(),
-		multi.Zdt3().Name(): multi.Zdt3(),
-		multi.Zdt4().Name(): multi.Zdt4(),
-		multi.Zdt6().Name(): multi.Zdt6(),
-		multi.Vnt1().Name(): multi.Vnt1(),
+		"zdt1": multi.Zdt1(),
+		"zdt2": multi.Zdt2(),
+		"zdt3": multi.Zdt3(),
+		"zdt4": multi.Zdt4(),
+		"zdt6": multi.Zdt6(),
+		"vnt1": multi.Vnt1(),
 
-		dtlz.Dtlz1().Name(): dtlz.Dtlz1(),
-		dtlz.Dtlz2().Name(): dtlz.Dtlz2(),
-		dtlz.Dtlz3().Name(): dtlz.Dtlz3(),
-		dtlz.Dtlz4().Name(): dtlz.Dtlz4(),
-		dtlz.Dtlz5().Name(): dtlz.Dtlz5(),
-		dtlz.Dtlz6().Name(): dtlz.Dtlz6(),
-		dtlz.Dtlz7().Name(): dtlz.Dtlz7(),
+		"dtlz1": dtlz.Dtlz1(),
+		"dtlz2": dtlz.Dtlz2(),
+		"dtlz3": dtlz.Dtlz3(),
+		"dtlz4": dtlz.Dtlz4(),
+		"dtlz5": dtlz.Dtlz5(),
+		"dtlz6": dtlz.Dtlz6(),
+		"dtlz7": dtlz.Dtlz7(),
 
-		wfg.Wfg1().Name(): wfg.Wfg1(),
-		wfg.Wfg2().Name(): wfg.Wfg2(),
-		wfg.Wfg3().Name(): wfg.Wfg3(),
-		wfg.Wfg4().Name(): wfg.Wfg4(),
-		wfg.Wfg5().Name(): wfg.Wfg5(),
-		wfg.Wfg6().Name(): wfg.Wfg6(),
-		wfg.Wfg7().Name(): wfg.Wfg7(),
-		wfg.Wfg8().Name(): wfg.Wfg8(),
-		wfg.Wfg9().Name(): wfg.Wfg9(),
+		"wfg1": wfg.Wfg1(),
+		"wfg2": wfg.Wfg2(),
+		"wfg3": wfg.Wfg3(),
+		"wfg4": wfg.Wfg4(),
+		"wfg5": wfg.Wfg5(),
+		"wfg6": wfg.Wfg6(),
+		"wfg7": wfg.Wfg7(),
+		"wfg8": wfg.Wfg8(),
+		"wfg9": wfg.Wfg9(),
 	}
 
 	variantSet = map[string]variants.Interface{
-		rand.Rand1().Name():                rand.Rand1(),
-		rand.Rand2().Name():                rand.Rand2(),
-		best.Best1().Name():                best.Best1(),
-		best.Best2().Name():                best.Best2(),
-		pbest.Pbest().Name():               pbest.Pbest(),
-		currenttobest.CurrToBest1().Name(): currenttobest.CurrToBest1(),
+		"rand/1":                rand.Rand1(),
+		"rand/2":                rand.Rand2(),
+		"best/1":                best.Best1(),
+		"best/2":                best.Best2(),
+		"pbest/1":               pbest.Pbest(),
+		"current-to-best/1": currenttobest.CurrToBest1(),
 	}
 )
 
-// GetProblemByProblemName -> returns the problem function of the given name
+// GetProblemByName -> returns the problem function of the given name
 func GetProblemByName(name string) (problems.Interface, error) {
 	name = strings.ToLower(name)
-	for k, v := range problemSet {
-		if name == k {
-			return v, nil
-		}
+	if p, ok := problemSet[name]; ok {
+		return p, nil
 	}
 	return nil, errors.New("problem not found")
 }
 
-// GetVariantByVariantName -> returns the variant function of the given name
+// GetVariantByName -> returns the variant function of the given name
 func GetVariantByName(name string) (variants.Interface, error) {
 	name = strings.ToLower(name)
-	for k, v := range variantSet {
-		if name == k {
-			return v, nil
-		}
+	if v, ok := variantSet[name]; ok {
+		return v, nil
 	}
 	return nil, errors.New("variant not found")
 }
 
-// GetAllProblems -> returns all variants
+// GetAllProblems -> returns all problems
+func GetAllProblems() []problems.Interface {
+	out := make([]problems.Interface, len(problemSet))
+	index := 0
+	for _, p := range problemSet {
+		out[index] = p
+		index++
+	}
+	return out
+}
+
+// GetAllVariants -> returns all variants
 func GetAllVariants() []variants.Interface {
 	out := make([]variants.Interface, len(variantSet))
 	index := 0

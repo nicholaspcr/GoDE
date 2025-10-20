@@ -9,6 +9,11 @@ import (
 var (
 	cfg *config.Config
 	db  state.Operations
+
+	// flags
+	username string
+	password string
+	email    string
 )
 
 // authCmd encapsulates the authentication operations.

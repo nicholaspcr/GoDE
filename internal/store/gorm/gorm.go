@@ -6,6 +6,7 @@ import (
 	"context"
 
 	"gorm.io/gorm"
+	"gorm.io/plugin/opentelemetry"
 )
 
 type Dialector gorm.Dialector
@@ -21,6 +22,10 @@ type gormStore struct {
 func New(dialector gorm.Dialector) (*gormStore, error) {
 	db, err := gorm.Open(dialector)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := db.Use(opentelemetry.NewPlugin()); err != nil {
 		return nil, err
 	}
 

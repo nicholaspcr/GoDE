@@ -13,6 +13,8 @@ import (
 	"github.com/nicholaspcr/GoDE/internal/server/middleware"
 	"github.com/nicholaspcr/GoDE/internal/server/session"
 	"github.com/nicholaspcr/GoDE/internal/store"
+	"github.com/nicholaspcr/GoDE/internal/telemetry"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -62,14 +64,27 @@ func (s *server) Start(ctx context.Context) error {
 	defer cancel()
 	slog.Info("Creating server")
 
+	tracerProvider, err := telemetry.NewTracerProvider("deserver")
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := tracerProvider.Shutdown(ctx); err != nil {
+			slog.Error("failed to shutdown tracer provider: %v", err)
+		}
+	}()
+
 	logger := slog.Default()
 
 	grpcSrv := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
+			otelgrpc.UnaryServerInterceptor(),
+			middleware.UnaryAuthMiddleware(s.sessionStore),
 			logging.UnaryServerInterceptor(InterceptorLogger(logger)),
 			middleware.UnaryAuthMiddleware(s.sessionStore),
 		),
 		grpc.ChainStreamInterceptor(
+			otelgrpc.StreamServerInterceptor(),
 			logging.StreamServerInterceptor(InterceptorLogger(logger)),
 		),
 	)

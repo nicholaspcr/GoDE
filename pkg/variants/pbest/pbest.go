@@ -29,9 +29,7 @@ func (p *pbest) Mutate(
 
 	err := variants.GenerateIndices(1, len(elems), ind, params.Random)
 	if err != nil {
-		return models.Vector{}, errors.New(
-			"insufficient size for the population, must me equal or greater than 5",
-		)
+		return models.Vector{}, variants.ErrInsufficientPopulation
 	}
 
 	indexLimit := int(math.Ceil(float64(len(rankZero)) * params.P))

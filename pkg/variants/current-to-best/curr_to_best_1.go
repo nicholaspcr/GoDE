@@ -30,9 +30,7 @@ func (c *currToBest1) Mutate(
 	ind[0] = p.CurrPos
 	err := variants.GenerateIndices(1, len(elems), ind, p.Random)
 	if err != nil {
-		return models.Vector{}, errors.New(
-			"insufficient size for the population, must me equal or greater than 5",
-		)
+		return models.Vector{}, variants.ErrInsufficientPopulation
 	}
 
 	arr := make([]float64, p.DIM)

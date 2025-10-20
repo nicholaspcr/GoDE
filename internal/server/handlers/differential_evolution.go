@@ -67,13 +67,13 @@ func (deh *deHandler) ListSupportedVariants(
 	ctx context.Context, _ *emptypb.Empty,
 ) (*api.ListSupportedVariantsResponse, error) {
 	return &api.ListSupportedVariantsResponse{
-		Variants: []string{
-			rand.Rand1().Name(),
-			rand.Rand2().Name(),
-			best.Best1().Name(),
-			best.Best2().Name(),
-			pbest.Pbest().Name(),
-			currenttobest.CurrToBest1().Name(),
+		Variants: []*api.Variant{
+			{Name: rand.Rand1().Name(), Description: "a + F(b - c)"},
+			{Name: rand.Rand2().Name(), Description: "a + F(b - c) + F(d - e)"},
+			{Name: best.Best1().Name(), Description: "best + F(a - b)"},
+			{Name: best.Best2().Name(), Description: "best + F(a - b) + F(c - d)"},
+			{Name: pbest.Pbest().Name(), Description: "pbest + F(a - b) + F(c - d)"},
+			{Name: currenttobest.CurrToBest1().Name(), Description: "current-to-best/1"},
 		},
 	}, nil
 }

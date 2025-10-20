@@ -32,8 +32,13 @@ message ListSupportedAlgorithmsResponse {
   repeated string algorithms = 1;
 }
 
+message Variant {
+  string name = 1;
+  string description = 2;
+}
+
 message ListSupportedVariantsResponse {
-  repeated string variants = 1;
+  repeated Variant variants = 1;
 }
 
 message ListSupportedProblemsResponse {

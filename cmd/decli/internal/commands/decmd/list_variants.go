@@ -2,6 +2,8 @@ package decmd
 
 import (
 	"fmt"
+	"os"
+	"text/tabwriter"
 
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/spf13/cobra"
@@ -23,8 +25,13 @@ var listVariantsCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Println(res.GetVariants())
-		return nil
+		w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
+		fmt.Fprintln(w, "Name\tDescription")
+		fmt.Fprintln(w, "----\t----------- ")
+		for _, v := range res.GetVariants() {
+			fmt.Fprintf(w, "%s\t%s\n", v.Name, v.Description)
+		}
+		return w.Flush()
 	},
 }
 

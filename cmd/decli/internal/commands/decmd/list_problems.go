@@ -2,6 +2,8 @@ package decmd
 
 import (
 	"fmt"
+	"os"
+	"text/tabwriter"
 
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/spf13/cobra"
@@ -23,8 +25,13 @@ var listProblemsCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Println(res.GetProblems())
-		return nil
+		w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
+		fmt.Fprintln(w, "Name\tDescription")
+		fmt.Fprintln(w, "----\t----------- ")
+		for _, p := range res.GetProblems() {
+			fmt.Fprintf(w, "%s\t%s\n", p.Name, p.Description)
+		}
+		return w.Flush()
 	},
 }
 

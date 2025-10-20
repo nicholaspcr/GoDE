@@ -41,8 +41,13 @@ message ListSupportedVariantsResponse {
   repeated Variant variants = 1;
 }
 
+message Problem {
+  string name = 1;
+  string description = 2;
+}
+
 message ListSupportedProblemsResponse {
-  repeated string problems = 1;
+  repeated Problem problems = 1;
 }
 
 message RunRequest {

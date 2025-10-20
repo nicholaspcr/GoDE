@@ -59,7 +59,7 @@ func (mode *de) Execute(ctx context.Context) error {
 				paretoCh,
 				maxObjsCh,
 			); err != nil {
-				slog.Error("Unexpected error while executing the algorith",
+				slog.Error("Unexpected error while executing the algorithm",
 					slog.Int("Execution", idx),
 					slog.String("error", err.Error()),
 				)

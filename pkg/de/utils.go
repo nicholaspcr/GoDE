@@ -34,11 +34,7 @@ func ReduceByCrowdDistance(
 
 	zero := make([]models.Vector, len(ranks[0]))
 
-	// TODO: is this the best method for copying the vectors?
-	for idx, v := range ranks[0] {
-		zero[idx] = v.Copy()
-	}
-	// copy(zero, ranks[0])
+	copy(zero, ranks[0])
 
 	return elems, zero
 }

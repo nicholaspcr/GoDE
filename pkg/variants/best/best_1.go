@@ -24,7 +24,7 @@ func (b *best1) Mutate(
 	p variants.Parameters,
 ) (models.Vector, error) {
 	// random element from rankZero
-	bestIdx := rand.Int() % len(rankZero)
+	bestIdx := p.Random.Intn(len(rankZero))
 	// indices of the elements to be used in the mutation
 	index := make([]int, 3)
 	index[0] = p.CurrPos

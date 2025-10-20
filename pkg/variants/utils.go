@@ -12,12 +12,18 @@ func GenerateIndices(startInd, NP int, r []int, random *rand.Rand) error {
 			"insufficient elements in population to generate random indices",
 		)
 	}
+	used := make(map[int]bool, len(r))
+	for i := 0; i < startInd; i++ {
+		used[r[i]] = true
+	}
+
 	for i := startInd; i < len(r); i++ {
-		for done := false; !done; {
-			r[i] = random.Int() % NP
-			done = true
-			for j := 0; j < i; j++ {
-				done = done && r[j] != r[i]
+		for {
+			val := random.Intn(NP)
+			if !used[val] {
+				r[i] = val
+				used[val] = true
+				break
 			}
 		}
 	}

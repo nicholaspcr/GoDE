@@ -6,7 +6,7 @@ import (
 	"context"
 
 	"gorm.io/gorm"
-	"gorm.io/plugin/opentelemetry"
+	"gorm.io/plugin/opentelemetry/tracing"
 )
 
 type Dialector gorm.Dialector
@@ -25,7 +25,7 @@ func New(dialector gorm.Dialector) (*gormStore, error) {
 		return nil, err
 	}
 
-	if err := db.Use(opentelemetry.NewPlugin()); err != nil {
+	if err := db.Use(tracing.NewPlugin()); err != nil {
 		return nil, err
 	}
 

@@ -114,9 +114,10 @@ func (g *gde3) runGeneration(
 		population = g.selection(population, trial, i)
 	}
 
-	return de.ReduceByCrowdDistance(
+	reducedPop, rankZero := de.ReduceByCrowdDistance(
 		ctx, population, g.populationParams.PopulationSize,
 	)
+	return reducedPop, rankZero, nil
 }
 
 func (g *gde3) mutateAndCrossover(

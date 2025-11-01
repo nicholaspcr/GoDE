@@ -28,7 +28,7 @@ type de struct {
 	constants Constants
 }
 
-// New Mode iterface based on the configuration options given.
+// New creates a new DE instance based on the configuration options given.
 func New(cfg Config, opts ...ModeOptions) (*de, error) {
 	m := &de{config: cfg}
 	for _, opt := range opts {
@@ -42,10 +42,26 @@ func New(cfg Config, opts ...ModeOptions) (*de, error) {
 	return m, nil
 }
 
-func (mode *de) Execute(ctx context.Context) error {
+func (mode *de) Execute(ctx context.Context) ([]models.Vector, [][]float64, error) {
 	paretoCh := make(chan []models.Vector, mode.config.ParetoChannelLimiter)
-	maxObjsCh := make(chan<- []float64, mode.config.MaxChannelLimiter)
+	maxObjsCh := make(chan []float64, mode.config.MaxChannelLimiter)
 	wgExecs := &sync.WaitGroup{}
+
+	// Collect max objectives from all executions
+	allMaxObjs := make([][]float64, 0, mode.constants.Executions)
+	var maxObjsMu sync.Mutex
+
+	// Goroutine to consume max objectives (prevents deadlock)
+	wgMaxObjs := &sync.WaitGroup{}
+	wgMaxObjs.Add(1)
+	go func() {
+		defer wgMaxObjs.Done()
+		for maxObjs := range maxObjsCh {
+			maxObjsMu.Lock()
+			allMaxObjs = append(allMaxObjs, maxObjs)
+			maxObjsMu.Unlock()
+		}
+	}()
 
 	// Runs algorithm for Executions amount of times.
 	for i := range mode.constants.Executions {
@@ -69,22 +85,14 @@ func (mode *de) Execute(ctx context.Context) error {
 
 	wgExecs.Wait()
 	close(paretoCh)
+	close(maxObjsCh)
+	wgMaxObjs.Wait()
 
 	now := time.Now()
 	finalPareto := mode.filterPareto(ctx, paretoCh)
 	slog.Info("Filtering Pareto", slog.Duration("time", time.Since(now)))
-	_ = finalPareto
 
-	// TODO:: Define what to store on the database
-	// At this point we have a pareto which is a set of the best points
-	// We have the best maximum values which are used in tests
-	//
-	// Probably best to insert it into a few tables.
-	// Table_1: Pareto => (user_id, pareto_id)
-	// Table_2: Population => (population_id, array_of_X)
-	// Table_3: Max_objectives => (pareto_id, array_of_max_objs)
-
-	return nil
+	return finalPareto, allMaxObjs, nil
 }
 
 func (mode *de) filterPareto(

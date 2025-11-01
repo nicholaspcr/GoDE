@@ -137,7 +137,7 @@ func TestValidateToken(t *testing.T) {
 }
 
 func TestTokenExpiration(t *testing.T) {
-	service := NewJWTService("test-secret", 100*time.Millisecond)
+	service := NewJWTService("test-secret", 1*time.Second)
 
 	// Generate token
 	token, err := service.GenerateToken("testuser")
@@ -145,11 +145,12 @@ func TestTokenExpiration(t *testing.T) {
 
 	// Should be valid immediately
 	claims, err := service.ValidateToken(token)
-	assert.NoError(t, err)
+	require.NoError(t, err)
+	require.NotNil(t, claims)
 	assert.Equal(t, "testuser", claims.Username)
 
 	// Wait for expiration
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(1200 * time.Millisecond)
 
 	// Should be expired now
 	_, err = service.ValidateToken(token)

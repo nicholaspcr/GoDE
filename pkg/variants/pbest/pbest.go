@@ -1,7 +1,6 @@
 package pbest
 
 import (
-	"errors"
 	"math"
 	"math/rand"
 

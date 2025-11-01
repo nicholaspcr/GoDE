@@ -1,9 +1,6 @@
 package currenttobest
 
 import (
-	"errors"
-	"math/rand"
-
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
 )

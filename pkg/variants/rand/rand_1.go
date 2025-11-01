@@ -1,8 +1,6 @@
 package rand
 
 import (
-	"fmt"
-
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
 )

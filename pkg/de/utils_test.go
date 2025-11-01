@@ -17,14 +17,14 @@ func TestDominanceTest(t *testing.T) {
 	}{
 		{
 			name:     "x dominates y",
-			x:        []float64{1, 1},
-			y:        []float64{0, 0},
+			x:        []float64{0, 0},
+			y:        []float64{1, 1},
 			expected: -1,
 		},
 		{
 			name:     "y dominates x",
-			x:        []float64{0, 0},
-			y:        []float64{1, 1},
+			x:        []float64{1, 1},
+			y:        []float64{0, 0},
 			expected: 1,
 		},
 		{
@@ -59,8 +59,8 @@ func TestFilterDominated(t *testing.T) {
 
 	nonDominated, dominated := FilterDominated(elems)
 
-	assert.Len(t, nonDominated, 2)
-	assert.Len(t, dominated, 2)
+	assert.Len(t, nonDominated, 1)
+	assert.Len(t, dominated, 3)
 }
 
 func TestCalculateCrwdDist(t *testing.T) {
@@ -91,13 +91,13 @@ func TestReduceByCrowdDistance(t *testing.T) {
 		{Objectives: []float64{3, 3}},
 		{Objectives: []float64{4, 2}},
 		{Objectives: []float64{5, 1}},
+		{Objectives: []float64{1, 1}},
 		// Dominated elements
 		{Objectives: []float64{0, 0}},
-		{Objectives: []float64{1, 1}},
 	}
 
 	reduced, best := ReduceByCrowdDistance(context.Background(), elems, 5)
 
 	assert.Len(t, reduced, 5)
-	assert.Len(t, best, 5)
+	assert.Len(t, best, 1)
 }

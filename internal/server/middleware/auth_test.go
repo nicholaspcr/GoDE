@@ -206,7 +206,7 @@ func TestUnaryAuthMiddleware_ValidToken(t *testing.T) {
 			assert.True(t, handlerCalled, "handler should have been called")
 
 			// Verify username was added to context
-			username := receivedCtx.Value("username")
+			username := receivedCtx.Value(usernameCtxKey)
 			assert.Equal(t, "testuser", username)
 		})
 	}

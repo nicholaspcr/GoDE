@@ -23,7 +23,7 @@ func (w *wfg5) Evaluate(e *models.Vector, M int) error {
 	var y []float64
 	xu := arange(2, 2*n_var+1, 2)
 
-	for i := 0; i < n_var; i++ {
+	for i := 0; i < len(e.Elements); i++ {
 		y = append(y, e.Elements[i]/xu[i])
 	}
 

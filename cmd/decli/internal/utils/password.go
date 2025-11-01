@@ -13,7 +13,7 @@ func ReadPassword(prompt string) (string, error) {
 	fmt.Print(prompt)
 
 	// Read password with terminal echo disabled
-	passwordBytes, err := term.ReadPassword(int(syscall.Stdin))
+	passwordBytes, err := term.ReadPassword(syscall.Stdin)
 	if err != nil {
 		return "", fmt.Errorf("failed to read password: %w", err)
 	}

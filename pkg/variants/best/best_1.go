@@ -33,7 +33,7 @@ func (b *best1) Mutate(
 	arr := make([]float64, p.DIM)
 	for i := 0; i < p.DIM; i++ {
 		arr[i] = rankZero[bestIdx].Elements[i] +
-			p.F*(elems[index[i]].Elements[i]-elems[index[2]].Elements[i])
+			p.F*(elems[index[1]].Elements[i]-elems[index[2]].Elements[i])
 	}
 
 	ret := models.Vector{

@@ -2,11 +2,10 @@ package handlers
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/nicholaspcr/GoDE/internal/server/session"
+	"github.com/nicholaspcr/GoDE/internal/server/auth"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"golang.org/x/crypto/bcrypt"
@@ -16,14 +15,14 @@ import (
 
 // authHandler is responsible for the auth service operations.
 type authHandler struct {
-	db      store.Store
-	session session.Store
+	db         store.Store
+	jwtService auth.JWTService
 	api.UnimplementedAuthServiceServer
 }
 
 // NewAuthHandler returns a handle that implements api's authServiceServer.
-func NewAuthHandler(sessionStore session.Store) Handler {
-	return &authHandler{session: sessionStore}
+func NewAuthHandler(jwtService auth.JWTService) Handler {
+	return &authHandler{jwtService: jwtService}
 }
 
 // setStore assings the implementation of the store to the auth handler.
@@ -75,17 +74,20 @@ func (ah authHandler) Login(
 		return nil, errors.New("invalid credentials")
 	}
 
-	authToken := base64.StdEncoding.EncodeToString([]byte(usr.Ids.Username))
-	ah.session.Add(authToken)
+	// Generate JWT token
+	token, err := ah.jwtService.GenerateToken(usr.Ids.Username)
+	if err != nil {
+		return nil, err
+	}
 
-	return &api.AuthServiceLoginResponse{Token: authToken}, nil
+	return &api.AuthServiceLoginResponse{Token: token}, nil
 }
 
 func (ah authHandler) Logout(
 	ctx context.Context, req *api.AuthServiceLogoutRequest,
 ) (*emptypb.Empty, error) {
-	authToken := base64.StdEncoding.EncodeToString([]byte(req.Username))
-	ah.session.Remove(authToken)
-
+	// JWT is stateless, so logout is handled client-side by discarding the token
+	// This endpoint exists for API compatibility and future extensions
+	// (e.g., token blacklisting, revocation lists)
 	return api.Empty, nil
 }

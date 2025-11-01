@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/nicholaspcr/GoDE/internal/server/session"
+	"github.com/nicholaspcr/GoDE/internal/server/auth"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -25,10 +25,9 @@ var (
 	)
 )
 
-// UnaryAuthMiddleware checks for the Basic authentication and validates if the
-// provided token matches with the server's store.
+// UnaryAuthMiddleware checks for Bearer authentication and validates JWT tokens.
 func UnaryAuthMiddleware(
-	sessionStore session.Store, ignoreMethods ...string,
+	jwtService auth.JWTService, ignoreMethods ...string,
 ) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
@@ -60,11 +59,15 @@ func UnaryAuthMiddleware(
 			}
 
 			token := values[0]
-			token = strings.TrimPrefix(token, "Basic ")
+			token = strings.TrimPrefix(token, "Bearer ")
 
-			if !sessionStore.Get(string(token)) {
+			claims, err := jwtService.ValidateToken(token)
+			if err != nil {
 				return nil, errTokenInvalid
 			}
+
+			// Add user info to context for downstream handlers
+			ctx = context.WithValue(ctx, "username", claims.Username)
 		}
 
 		return handler(ctx, req)

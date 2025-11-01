@@ -9,9 +9,9 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/nicholaspcr/GoDE/internal/server/auth"
 	"github.com/nicholaspcr/GoDE/internal/server/handlers"
 	"github.com/nicholaspcr/GoDE/internal/server/middleware"
-	"github.com/nicholaspcr/GoDE/internal/server/session"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/internal/telemetry"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -27,16 +27,16 @@ type Server interface {
 
 // New returns a new server instance
 func New(ctx context.Context, cfg Config, opts ...serverOpts) (Server, error) {
-	sessionStore := session.NewInMemoryStore()
+	jwtService := auth.NewJWTService(cfg.JWTSecret, cfg.JWTExpiry)
 
 	srv := &server{
 		cfg: cfg,
 		handlers: []handlers.Handler{
-			handlers.NewAuthHandler(sessionStore),
+			handlers.NewAuthHandler(jwtService),
 			handlers.NewUserHandler(),
 			handlers.NewDEHandler(cfg.DE),
 		},
-		sessionStore: sessionStore,
+		jwtService: jwtService,
 	}
 
 	for _, opt := range opts {
@@ -52,10 +52,10 @@ func New(ctx context.Context, cfg Config, opts ...serverOpts) (Server, error) {
 }
 
 type server struct {
-	st           store.Store
-	cfg          Config
-	handlers     []handlers.Handler
-	sessionStore session.Store
+	st         store.Store
+	cfg        Config
+	handlers   []handlers.Handler
+	jwtService auth.JWTService
 }
 
 // Start starts the server.
@@ -79,7 +79,7 @@ func (s *server) Start(ctx context.Context) error {
 	grpcSrv := grpc.NewServer(
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.ChainUnaryInterceptor(
-			middleware.UnaryAuthMiddleware(s.sessionStore),
+			middleware.UnaryAuthMiddleware(s.jwtService),
 			logging.UnaryServerInterceptor(InterceptorLogger(logger)),
 		),
 		grpc.ChainStreamInterceptor(

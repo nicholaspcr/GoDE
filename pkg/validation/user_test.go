@@ -197,11 +197,11 @@ func TestValidateStringLength(t *testing.T) {
 		max     int
 		wantErr bool
 	}{
-		{"within range", "hello", 1, 10, "test", false},
-		{"exact min", "a", 1, 10, "test", false},
-		{"exact max", "1234567890", 1, 10, "test", false},
-		{"too short", "", 1, 10, "test", true},
-		{"too long", "12345678901", 1, 10, "test", true},
+		{"within range", "hello", "test", 1, 10, false},
+		{"exact min", "a", "test", 1, 10, false},
+		{"exact max", "1234567890", "test", 1, 10, false},
+		{"too short", "", "test", 1, 10, true},
+		{"too long", "12345678901", "test", 1, 10, true},
 	}
 
 	for _, tt := range tests {

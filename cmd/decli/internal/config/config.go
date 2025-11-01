@@ -41,8 +41,8 @@ type (
 
 	// LogConfig is a set of values that are necessary to configure the logger.
 	LogConfig struct {
-		log.Config `json:"config" yaml:"config" mapstructure:",squash"`
 		Filename   string `json:"filename" yaml:"filename"`
+		log.Config `json:"config" yaml:"config" mapstructure:",squash"`
 	}
 
 	// ServerConfig is a set of values that are necessary for making requests to

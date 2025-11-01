@@ -17,8 +17,8 @@ type gde3 struct {
 	problem           problems.Interface
 	variant           variants.Interface
 	store             store.Store
-	populationParams  models.PopulationParams
 	initialPopulation models.Population
+	populationParams  models.PopulationParams
 	constants         Constants
 }
 

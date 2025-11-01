@@ -56,11 +56,11 @@ func FastNonDominatedRanking(
 	fronts := make([][]int, 1)                // F equivalent
 	fronts[0] = []int{}                       // initializes first front
 
-	for p := 0; p < len(elems); p++ {
+	for p := range len(elems) {
 		ithDominated[p] = make([]int, 0) // S_p size 0
 		dominatingIth[p] = 0             // N_p = 0
 
-		for q := 0; q < len(elems); q++ {
+		for q := range len(elems) {
 			dominanceTestResult := DominanceTest(
 				elems[p].Objectives, elems[q].Objectives,
 			)
@@ -147,9 +147,9 @@ func FilterDominated(
 	nonDominated := make([]models.Vector, 0)
 	dominated := make([]models.Vector, 0)
 
-	for p := 0; p < len(elems); p++ {
+	for p := range len(elems) {
 		counter := 0
-		for q := 0; q < len(elems); q++ {
+		for q := range len(elems) {
 			if p == q {
 				continue
 			}
@@ -185,7 +185,7 @@ func CalculateCrwdDist(elems []models.Vector) {
 
 	szObjectives := len(elems[0].Objectives)
 
-	for m := 0; m < szObjectives; m++ {
+	for m := range szObjectives {
 		// sort by current objective
 		sort.SliceStable(elems, func(i, j int) bool {
 			return elems[i].Objectives[m] < elems[j].Objectives[m]

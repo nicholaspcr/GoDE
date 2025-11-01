@@ -23,6 +23,8 @@ var (
 		codes.Unauthenticated,
 		"authorization token is invalid",
 	)
+
+	usernameCtxKey struct{} = struct{}{}
 )
 
 // UnaryAuthMiddleware checks for Bearer authentication and validates JWT tokens.
@@ -67,7 +69,7 @@ func UnaryAuthMiddleware(
 			}
 
 			// Add user info to context for downstream handlers
-			ctx = context.WithValue(ctx, "username", claims.Username)
+			ctx = context.WithValue(ctx, usernameCtxKey, claims.Username)
 		}
 
 		return handler(ctx, req)

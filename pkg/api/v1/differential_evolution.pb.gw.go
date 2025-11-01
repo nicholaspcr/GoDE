@@ -10,6 +10,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 
@@ -25,116 +26,119 @@ import (
 )
 
 // Suppress "imported and not used" errors
-var _ codes.Code
-var _ io.Reader
-var _ status.Status
-var _ = runtime.String
-var _ = utilities.NewDoubleArray
-var _ = metadata.Join
+var (
+	_ codes.Code
+	_ io.Reader
+	_ status.Status
+	_ = errors.New
+	_ = runtime.String
+	_ = utilities.NewDoubleArray
+	_ = metadata.Join
+)
 
 func request_DifferentialEvolutionService_ListSupportedAlgorithms_0(ctx context.Context, marshaler runtime.Marshaler, client DifferentialEvolutionServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq emptypb.Empty
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq emptypb.Empty
+		metadata runtime.ServerMetadata
+	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	msg, err := client.ListSupportedAlgorithms(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_DifferentialEvolutionService_ListSupportedAlgorithms_0(ctx context.Context, marshaler runtime.Marshaler, server DifferentialEvolutionServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq emptypb.Empty
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq emptypb.Empty
+		metadata runtime.ServerMetadata
+	)
 	msg, err := server.ListSupportedAlgorithms(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_DifferentialEvolutionService_ListSupportedVariants_0(ctx context.Context, marshaler runtime.Marshaler, client DifferentialEvolutionServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq emptypb.Empty
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq emptypb.Empty
+		metadata runtime.ServerMetadata
+	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	msg, err := client.ListSupportedVariants(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_DifferentialEvolutionService_ListSupportedVariants_0(ctx context.Context, marshaler runtime.Marshaler, server DifferentialEvolutionServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq emptypb.Empty
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq emptypb.Empty
+		metadata runtime.ServerMetadata
+	)
 	msg, err := server.ListSupportedVariants(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_DifferentialEvolutionService_ListSupportedProblems_0(ctx context.Context, marshaler runtime.Marshaler, client DifferentialEvolutionServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq emptypb.Empty
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq emptypb.Empty
+		metadata runtime.ServerMetadata
+	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	msg, err := client.ListSupportedProblems(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_DifferentialEvolutionService_ListSupportedProblems_0(ctx context.Context, marshaler runtime.Marshaler, server DifferentialEvolutionServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq emptypb.Empty
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq emptypb.Empty
+		metadata runtime.ServerMetadata
+	)
 	msg, err := server.ListSupportedProblems(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_DifferentialEvolutionService_Run_0(ctx context.Context, marshaler runtime.Marshaler, client DifferentialEvolutionServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RunRequest
-	var metadata runtime.ServerMetadata
-
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq RunRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	msg, err := client.Run(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_DifferentialEvolutionService_Run_0(ctx context.Context, marshaler runtime.Marshaler, server DifferentialEvolutionServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RunRequest
-	var metadata runtime.ServerMetadata
-
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq RunRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.Run(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 // RegisterDifferentialEvolutionServiceHandlerServer registers the http handlers for service DifferentialEvolutionService to "mux".
 // UnaryRPC     :call DifferentialEvolutionServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterDifferentialEvolutionServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterDifferentialEvolutionServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server DifferentialEvolutionServiceServer) error {
-
-	mux.Handle("GET", pattern_DifferentialEvolutionService_ListSupportedAlgorithms_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_DifferentialEvolutionService_ListSupportedAlgorithms_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.v1.DifferentialEvolutionService/ListSupportedAlgorithms", runtime.WithHTTPPathPattern("/v1/de/supported/algorithms"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/api.v1.DifferentialEvolutionService/ListSupportedAlgorithms", runtime.WithHTTPPathPattern("/v1/de/supported/algorithms"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -146,20 +150,15 @@ func RegisterDifferentialEvolutionServiceHandlerServer(ctx context.Context, mux 
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DifferentialEvolutionService_ListSupportedAlgorithms_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_DifferentialEvolutionService_ListSupportedVariants_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_DifferentialEvolutionService_ListSupportedVariants_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.v1.DifferentialEvolutionService/ListSupportedVariants", runtime.WithHTTPPathPattern("/v1/de/supported/variants"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/api.v1.DifferentialEvolutionService/ListSupportedVariants", runtime.WithHTTPPathPattern("/v1/de/supported/variants"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -171,20 +170,15 @@ func RegisterDifferentialEvolutionServiceHandlerServer(ctx context.Context, mux 
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DifferentialEvolutionService_ListSupportedVariants_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_DifferentialEvolutionService_ListSupportedProblems_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_DifferentialEvolutionService_ListSupportedProblems_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.v1.DifferentialEvolutionService/ListSupportedProblems", runtime.WithHTTPPathPattern("/v1/de/supported/problems"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/api.v1.DifferentialEvolutionService/ListSupportedProblems", runtime.WithHTTPPathPattern("/v1/de/supported/problems"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -196,20 +190,15 @@ func RegisterDifferentialEvolutionServiceHandlerServer(ctx context.Context, mux 
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DifferentialEvolutionService_ListSupportedProblems_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_DifferentialEvolutionService_Run_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_DifferentialEvolutionService_Run_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.v1.DifferentialEvolutionService/Run", runtime.WithHTTPPathPattern("/v1/de/run"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/api.v1.DifferentialEvolutionService/Run", runtime.WithHTTPPathPattern("/v1/de/run"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -221,9 +210,7 @@ func RegisterDifferentialEvolutionServiceHandlerServer(ctx context.Context, mux 
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DifferentialEvolutionService_Run_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
 
 	return nil
@@ -232,25 +219,24 @@ func RegisterDifferentialEvolutionServiceHandlerServer(ctx context.Context, mux 
 // RegisterDifferentialEvolutionServiceHandlerFromEndpoint is same as RegisterDifferentialEvolutionServiceHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
 func RegisterDifferentialEvolutionServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
-	conn, err := grpc.DialContext(ctx, endpoint, opts...)
+	conn, err := grpc.NewClient(endpoint, opts...)
 	if err != nil {
 		return err
 	}
 	defer func() {
 		if err != nil {
 			if cerr := conn.Close(); cerr != nil {
-				grpclog.Infof("Failed to close conn to %s: %v", endpoint, cerr)
+				grpclog.Errorf("Failed to close conn to %s: %v", endpoint, cerr)
 			}
 			return
 		}
 		go func() {
 			<-ctx.Done()
 			if cerr := conn.Close(); cerr != nil {
-				grpclog.Infof("Failed to close conn to %s: %v", endpoint, cerr)
+				grpclog.Errorf("Failed to close conn to %s: %v", endpoint, cerr)
 			}
 		}()
 	}()
-
 	return RegisterDifferentialEvolutionServiceHandler(ctx, mux, conn)
 }
 
@@ -264,16 +250,13 @@ func RegisterDifferentialEvolutionServiceHandler(ctx context.Context, mux *runti
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "DifferentialEvolutionServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "DifferentialEvolutionServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "DifferentialEvolutionServiceClient" to call the correct interceptors.
+// "DifferentialEvolutionServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterDifferentialEvolutionServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client DifferentialEvolutionServiceClient) error {
-
-	mux.Handle("GET", pattern_DifferentialEvolutionService_ListSupportedAlgorithms_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_DifferentialEvolutionService_ListSupportedAlgorithms_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/api.v1.DifferentialEvolutionService/ListSupportedAlgorithms", runtime.WithHTTPPathPattern("/v1/de/supported/algorithms"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/api.v1.DifferentialEvolutionService/ListSupportedAlgorithms", runtime.WithHTTPPathPattern("/v1/de/supported/algorithms"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -284,18 +267,13 @@ func RegisterDifferentialEvolutionServiceHandlerClient(ctx context.Context, mux 
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DifferentialEvolutionService_ListSupportedAlgorithms_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_DifferentialEvolutionService_ListSupportedVariants_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_DifferentialEvolutionService_ListSupportedVariants_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/api.v1.DifferentialEvolutionService/ListSupportedVariants", runtime.WithHTTPPathPattern("/v1/de/supported/variants"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/api.v1.DifferentialEvolutionService/ListSupportedVariants", runtime.WithHTTPPathPattern("/v1/de/supported/variants"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -306,18 +284,13 @@ func RegisterDifferentialEvolutionServiceHandlerClient(ctx context.Context, mux 
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DifferentialEvolutionService_ListSupportedVariants_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_DifferentialEvolutionService_ListSupportedProblems_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_DifferentialEvolutionService_ListSupportedProblems_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/api.v1.DifferentialEvolutionService/ListSupportedProblems", runtime.WithHTTPPathPattern("/v1/de/supported/problems"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/api.v1.DifferentialEvolutionService/ListSupportedProblems", runtime.WithHTTPPathPattern("/v1/de/supported/problems"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -328,18 +301,13 @@ func RegisterDifferentialEvolutionServiceHandlerClient(ctx context.Context, mux 
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DifferentialEvolutionService_ListSupportedProblems_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_DifferentialEvolutionService_Run_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_DifferentialEvolutionService_Run_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/api.v1.DifferentialEvolutionService/Run", runtime.WithHTTPPathPattern("/v1/de/run"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/api.v1.DifferentialEvolutionService/Run", runtime.WithHTTPPathPattern("/v1/de/run"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -350,30 +318,21 @@ func RegisterDifferentialEvolutionServiceHandlerClient(ctx context.Context, mux 
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DifferentialEvolutionService_Run_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
 	return nil
 }
 
 var (
 	pattern_DifferentialEvolutionService_ListSupportedAlgorithms_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "de", "supported", "algorithms"}, ""))
-
-	pattern_DifferentialEvolutionService_ListSupportedVariants_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "de", "supported", "variants"}, ""))
-
-	pattern_DifferentialEvolutionService_ListSupportedProblems_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "de", "supported", "problems"}, ""))
-
-	pattern_DifferentialEvolutionService_Run_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "de", "run"}, ""))
+	pattern_DifferentialEvolutionService_ListSupportedVariants_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "de", "supported", "variants"}, ""))
+	pattern_DifferentialEvolutionService_ListSupportedProblems_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "de", "supported", "problems"}, ""))
+	pattern_DifferentialEvolutionService_Run_0                     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "de", "run"}, ""))
 )
 
 var (
 	forward_DifferentialEvolutionService_ListSupportedAlgorithms_0 = runtime.ForwardResponseMessage
-
-	forward_DifferentialEvolutionService_ListSupportedVariants_0 = runtime.ForwardResponseMessage
-
-	forward_DifferentialEvolutionService_ListSupportedProblems_0 = runtime.ForwardResponseMessage
-
-	forward_DifferentialEvolutionService_Run_0 = runtime.ForwardResponseMessage
+	forward_DifferentialEvolutionService_ListSupportedVariants_0   = runtime.ForwardResponseMessage
+	forward_DifferentialEvolutionService_ListSupportedProblems_0   = runtime.ForwardResponseMessage
+	forward_DifferentialEvolutionService_Run_0                     = runtime.ForwardResponseMessage
 )

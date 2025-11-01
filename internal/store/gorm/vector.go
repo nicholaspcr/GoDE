@@ -9,12 +9,11 @@ import (
 )
 
 type vectorModel struct {
+	Pareto paretoModel `gorm:"foreignKey:ParetoID"`
 	gorm.Model
-	ParetoID uint
-	Pareto   paretoModel `gorm:"foreignKey:ParetoID"`
-
-	ElementsJSON     string  `gorm:"type:text"`
-	ObjectivesJSON   string  `gorm:"type:text"`
+	ElementsJSON     string `gorm:"type:text"`
+	ObjectivesJSON   string `gorm:"type:text"`
+	ParetoID         uint
 	CrowdingDistance float64
 }
 

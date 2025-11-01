@@ -6,9 +6,9 @@ import (
 	_ "net/http/pprof"
 	"os"
 
-	"github.com/nicholaspcr/GoDE/cmd/decli/internal/config"
 	authcmd "github.com/nicholaspcr/GoDE/cmd/decli/internal/commands/auth"
 	"github.com/nicholaspcr/GoDE/cmd/decli/internal/commands/decmd"
+	"github.com/nicholaspcr/GoDE/cmd/decli/internal/config"
 	"github.com/nicholaspcr/GoDE/cmd/decli/internal/state"
 	"github.com/nicholaspcr/GoDE/cmd/decli/internal/state/sqlite"
 	sharedCfg "github.com/nicholaspcr/GoDE/internal/config"

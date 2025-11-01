@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	"github.com/glebarez/sqlite"
-	"github.com/nicholaspcr/GoDE/internal/store/gorm"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/nicholaspcr/GoDE/internal/store/gorm"
 	"gorm.io/driver/postgres"
 )
 

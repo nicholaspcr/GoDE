@@ -53,9 +53,9 @@ func New(ctx context.Context, cfg Config, opts ...serverOpts) (Server, error) {
 
 type server struct {
 	st         store.Store
+	jwtService auth.JWTService
 	cfg        Config
 	handlers   []handlers.Handler
-	jwtService auth.JWTService
 }
 
 // Start starts the server.

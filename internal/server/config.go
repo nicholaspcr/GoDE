@@ -10,8 +10,8 @@ import (
 type Config struct {
 	LisAddr   string
 	HTTPPort  string
-	DE        de.Config
 	JWTSecret string
+	DE        de.Config
 	JWTExpiry time.Duration
 }
 

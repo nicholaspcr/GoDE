@@ -25,7 +25,7 @@ func (v *zdt4) Evaluate(e *models.Vector, M int) error {
 	evalG := func(x []float64) float64 {
 		g := 0.0
 		for i := 1; i < len(x); i++ {
-			g += math.Pow(x[i], 2) - 10*math.Cos(4*math.Pi*x[i])
+			g += x[i]*x[i] - 10*math.Cos(4*math.Pi*x[i])
 		}
 		sz := float64(len(x) - 1)
 		return 1.0 + 10.0*sz + g

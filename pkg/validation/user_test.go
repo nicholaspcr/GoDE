@@ -102,8 +102,8 @@ func TestValidateEmail(t *testing.T) {
 
 func TestValidateUser(t *testing.T) {
 	tests := []struct {
-		name    string
 		user    *api.User
+		name    string
 		wantErr bool
 	}{
 		{
@@ -192,9 +192,9 @@ func TestValidateStringLength(t *testing.T) {
 	tests := []struct {
 		name    string
 		value   string
+		field   string
 		min     int
 		max     int
-		field   string
 		wantErr bool
 	}{
 		{"within range", "hello", 1, 10, "test", false},

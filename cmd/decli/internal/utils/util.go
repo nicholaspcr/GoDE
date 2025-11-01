@@ -44,11 +44,11 @@ var (
 	}
 
 	variantSet = map[string]variants.Interface{
-		"rand/1":                rand.Rand1(),
-		"rand/2":                rand.Rand2(),
-		"best/1":                best.Best1(),
-		"best/2":                best.Best2(),
-		"pbest/1":               pbest.Pbest(),
+		"rand/1":            rand.Rand1(),
+		"rand/2":            rand.Rand2(),
+		"best/1":            best.Best1(),
+		"best/2":            best.Best2(),
+		"pbest/1":           pbest.Pbest(),
 		"current-to-best/1": currenttobest.CurrToBest1(),
 	}
 )

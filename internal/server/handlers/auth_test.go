@@ -20,11 +20,11 @@ func TestAuthHandler_Register(t *testing.T) {
 	jwtService := auth.NewJWTService("test-secret", 24*time.Hour)
 
 	tests := []struct {
-		name       string
 		req        *api.AuthServiceRegisterRequest
 		setupMock  func(*mock.MockStore)
-		wantErr    bool
+		name       string
 		wantCode   codes.Code
+		wantErr    bool
 		checkStore bool
 	}{
 		{
@@ -162,11 +162,11 @@ func TestAuthHandler_Login(t *testing.T) {
 	require.NoError(t, err)
 
 	tests := []struct {
-		name      string
-		req       *api.AuthServiceLoginRequest
-		setupMock func(*mock.MockStore)
-		wantErr   bool
-		wantCode  codes.Code
+		req        *api.AuthServiceLoginRequest
+		setupMock  func(*mock.MockStore)
+		name       string
+		wantCode   codes.Code
+		wantErr    bool
 		checkToken bool
 	}{
 		{
@@ -183,7 +183,7 @@ func TestAuthHandler_Login(t *testing.T) {
 					}, nil
 				}
 			},
-			wantErr:   false,
+			wantErr:    false,
 			checkToken: true,
 		},
 		{

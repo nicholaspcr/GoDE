@@ -7,8 +7,8 @@ import (
 )
 
 type authTokenModel struct {
-	Token     string `gorm:"primaryKey"`
 	CreatedAt time.Time
+	Token     string `gorm:"primaryKey"`
 	Deleted   bool
 }
 

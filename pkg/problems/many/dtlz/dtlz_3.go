@@ -28,7 +28,7 @@ func (v *dtlz3) Evaluate(e *models.Vector, M int) error {
 	evalG := func(v []float64) float64 {
 		g := 0.0
 		for _, x := range v {
-			g += math.Pow(x-0.5, 2) - math.Cos(20.0*math.Pi*(x-0.5))
+			g += (x-0.5)*(x-0.5) - math.Cos(20.0*math.Pi*(x-0.5))
 		}
 		k := float64(len(v))
 		return 100.0 * (k + g)

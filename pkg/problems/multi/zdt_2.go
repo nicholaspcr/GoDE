@@ -2,7 +2,6 @@ package multi
 
 import (
 	"errors"
-	"math"
 
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
@@ -32,7 +31,7 @@ func (v *zdt2) Evaluate(e *models.Vector, M int) error {
 		return 1.0 + constant*g
 	}
 	evalH := func(f, g float64) float64 {
-		return 1.0 - math.Pow(f/g, 2)
+		return 1.0 - f/g*(f/g)
 	}
 	g := evalG(e.Elements)
 	h := evalH(e.Elements[0], g)

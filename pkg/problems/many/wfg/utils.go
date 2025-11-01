@@ -165,7 +165,7 @@ func _reduction_non_sep(x []float64, A int) float64 {
 
 func _shape_concave(X []float64, m int) float64 {
 	M := len(X)
-	var ret float64 = 1.0
+	var ret = 1.0
 	if m == 1 {
 		for _, x := range X[:M] {
 			ret *= math.Sin(0.5 * x * math.Pi)
@@ -183,7 +183,7 @@ func _shape_concave(X []float64, m int) float64 {
 
 func _shape_convex(X []float64, m int) float64 {
 	M := len(X)
-	var ret float64 = 1.0
+	var ret = 1.0
 	if m == 1 {
 		for _, x := range X[:M] {
 			ret *= 1.0 - math.Cos(0.5*x*math.Pi)
@@ -201,7 +201,7 @@ func _shape_convex(X []float64, m int) float64 {
 
 func _shape_linear(X []float64, m int) float64 {
 	M := len(X)
-	var ret float64 = 1.0
+	var ret = 1.0
 	if m == 1 {
 		// prod
 		for _, v := range X {
@@ -227,5 +227,5 @@ func _shape_mixed(X, A, alpha float64) float64 {
 
 func _shape_disconnected(X, alpha, beta, A float64) float64 {
 	aux := math.Cos(A * math.Pi * math.Pow(X, beta))
-	return _correct_to_01(1.0 - math.Pow(X, alpha)*math.Pow(aux, 2))
+	return _correct_to_01(1.0 - math.Pow(X, alpha)*aux*aux)
 }

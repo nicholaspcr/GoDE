@@ -55,9 +55,9 @@ type (
 	// Dimensions is a set of values to define the behaviour that happens in
 	// each dimension of the DE.
 	Dimensions struct {
-		Size   int       `json:"size"   yaml:"size"`
 		Floors []float64 `json:"floors" yaml:"floors"`
 		Ceils  []float64 `json:"ceils"  yaml:"ceils"`
+		Size   int       `json:"size"   yaml:"size"`
 	}
 
 	// Constants is a set of values to define the behaviour of a DE.

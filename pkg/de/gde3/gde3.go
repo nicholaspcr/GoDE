@@ -14,12 +14,12 @@ import (
 
 // gde3 type that contains the definition of the GDE3 algorithm.
 type gde3 struct {
-	initialPopulation models.Population
-	populationParams  models.PopulationParams
 	problem           problems.Interface
 	variant           variants.Interface
-	constants         Constants
 	store             store.Store
+	populationParams  models.PopulationParams
+	initialPopulation models.Population
+	constants         Constants
 }
 
 type Option func(*gde3) *gde3

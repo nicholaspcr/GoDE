@@ -15,8 +15,8 @@ import (
 
 // userHandler is responsible for the user service operations.
 type userHandler struct {
-	store.Store
 	api.UnimplementedUserServiceServer
+	store.Store
 }
 
 // NewUserHandler returns a handle that implements api's UserServiceServer.

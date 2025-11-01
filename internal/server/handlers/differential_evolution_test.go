@@ -440,11 +440,11 @@ func TestDEHandler_Run_Success(t *testing.T) {
 				Problem:   tt.problem,
 				Variant:   tt.variant,
 				DeConfig: &api.DEConfig{
-					PopulationSize: 30,  // Population size large enough for all variants
-					DimensionsSize: 10,  // Small dimensions for fast test
-					ObjetivesSize:  2,   // 2 objectives for multi-objective
-					Executions:     1,   // Single execution for speed
-					Generations:    5,   // Few generations for speed
+					PopulationSize: 30, // Population size large enough for all variants
+					DimensionsSize: 10, // Small dimensions for fast test
+					ObjetivesSize:  2,  // 2 objectives for multi-objective
+					Executions:     1,  // Single execution for speed
+					Generations:    5,  // Few generations for speed
 					FloorLimiter:   0.0,
 					CeilLimiter:    1.0,
 					AlgorithmConfig: &api.DEConfig_Gde3{
@@ -471,8 +471,8 @@ func TestDEHandler_Run_Success(t *testing.T) {
 
 			// Verify vectors have correct structure
 			for _, vec := range resp.Pareto.Vectors {
-				assert.Len(t, vec.Elements, 10)       // DimensionsSize
-				assert.Len(t, vec.Objectives, 2)      // ObjetivesSize
+				assert.Len(t, vec.Elements, 10)  // DimensionsSize
+				assert.Len(t, vec.Objectives, 2) // ObjetivesSize
 				assert.GreaterOrEqual(t, vec.CrowdingDistance, 0.0)
 			}
 
@@ -495,7 +495,7 @@ func TestDEHandler_Run_MultipleExecutions(t *testing.T) {
 		Problem:   "zdt1",
 		Variant:   "rand1",
 		DeConfig: &api.DEConfig{
-			PopulationSize: 30,  // Large enough for all variants
+			PopulationSize: 30, // Large enough for all variants
 			DimensionsSize: 10,
 			ObjetivesSize:  2,
 			Executions:     3, // Multiple executions

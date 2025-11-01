@@ -65,11 +65,12 @@ func FastNonDominatedRanking(
 				elems[p].Objectives, elems[q].Objectives,
 			)
 
-			if dominanceTestResult == -1 {
+			switch dominanceTestResult {
+			case -1:
 				// p dominates q
 				// add q to the set of solutions dominated by p
 				ithDominated[p] = append(ithDominated[p], q)
-			} else if dominanceTestResult == 1 {
+			case 1:
 				// q dominates p
 				// increment the domination counter of p
 				dominatingIth[p]++

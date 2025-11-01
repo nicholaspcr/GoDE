@@ -30,9 +30,9 @@ import (
 
 // deHandler is responsible for the de service operations.
 type deHandler struct {
-	cfg de.Config
-	store.Store
 	api.UnimplementedDifferentialEvolutionServiceServer
+	store.Store
+	cfg de.Config
 }
 
 // NewDEHandler returns a handle that implements

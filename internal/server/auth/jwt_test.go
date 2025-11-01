@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -137,7 +138,11 @@ func TestValidateToken(t *testing.T) {
 }
 
 func TestTokenExpiration(t *testing.T) {
-	service := NewJWTService("test-secret", 1*time.Second)
+	service := NewJWTService("test-secret", 10*time.Millisecond)
+
+	// This sets the precision for the JWT package used for creating tokens.
+	// We set this to a lower value in tests as the default is 1s.
+	jwt.TimePrecision = time.Millisecond
 
 	// Generate token
 	token, err := service.GenerateToken("testuser")
@@ -150,7 +155,7 @@ func TestTokenExpiration(t *testing.T) {
 	assert.Equal(t, "testuser", claims.Username)
 
 	// Wait for expiration
-	time.Sleep(1200 * time.Millisecond)
+	time.Sleep(15 * time.Millisecond)
 
 	// Should be expired now
 	_, err = service.ValidateToken(token)

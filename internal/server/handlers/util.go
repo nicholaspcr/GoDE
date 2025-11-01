@@ -3,7 +3,7 @@ package handlers
 import (
 	crypto_rand "crypto/rand"
 	"encoding/hex"
-	"math/rand/v2"
+	"math/rand"
 
 	"github.com/nicholaspcr/GoDE/pkg/models"
 )

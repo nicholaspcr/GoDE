@@ -3,6 +3,8 @@ package handlers
 import (
 	"context"
 	"errors"
+	"math/rand"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/nicholaspcr/GoDE/internal/store"
@@ -18,7 +20,7 @@ import (
 	"github.com/nicholaspcr/GoDE/pkg/variants/best"
 	currenttobest "github.com/nicholaspcr/GoDE/pkg/variants/current-to-best"
 	"github.com/nicholaspcr/GoDE/pkg/variants/pbest"
-	"github.com/nicholaspcr/GoDE/pkg/variants/rand"
+	variantsrand "github.com/nicholaspcr/GoDE/pkg/variants/rand"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -68,8 +70,8 @@ func (deh *deHandler) ListSupportedVariants(
 ) (*api.ListSupportedVariantsResponse, error) {
 	return &api.ListSupportedVariantsResponse{
 		Variants: []*api.Variant{
-			{Name: rand.Rand1().Name(), Description: "a + F(b - c)"},
-			{Name: rand.Rand2().Name(), Description: "a + F(b - c) + F(d - e)"},
+			{Name: variantsrand.Rand1().Name(), Description: "a + F(b - c)"},
+			{Name: variantsrand.Rand2().Name(), Description: "a + F(b - c) + F(d - e)"},
 			{Name: best.Best1().Name(), Description: "best + F(a - b)"},
 			{Name: best.Best2().Name(), Description: "best + F(a - b) + F(c - d)"},
 			{Name: pbest.Pbest().Name(), Description: "pbest + F(a - b) + F(c - d)"},
@@ -119,7 +121,7 @@ func (deh *deHandler) Run(
 	populationParams := models.PopulationParams{
 		PopulationSize: int(req.DeConfig.PopulationSize),
 		DimensionSize:  int(req.DeConfig.DimensionsSize),
-		ObjectivesSize: int(req.DeConfig.ObjectivesSize),
+		ObjectivesSize: int(req.DeConfig.ObjetivesSize),
 		FloorRange:     make([]float64, req.DeConfig.DimensionsSize),
 		CeilRange:      make([]float64, req.DeConfig.DimensionsSize),
 	}
@@ -153,7 +155,7 @@ func (deh *deHandler) Run(
 					Executions:    int(req.DeConfig.Executions),
 					Generations:   int(req.DeConfig.Generations),
 					Dimensions:    int(req.DeConfig.DimensionsSize),
-					ObjFuncAmount: int(req.DeConfig.ObjectivesSize),
+					ObjFuncAmount: int(req.DeConfig.ObjetivesSize),
 				},
 				CR: float64(req.DeConfig.GetGde3().Cr),
 				F:  float64(req.DeConfig.GetGde3().F),
@@ -175,17 +177,39 @@ func (deh *deHandler) Run(
 		de.WithExecutions(int(req.DeConfig.Executions)),
 		de.WithGenerations(int(req.DeConfig.Generations)),
 		de.WithDimensions(int(req.DeConfig.DimensionsSize)),
-		de.WithObjFuncAmount(int(req.DeConfig.ObjectivesSize)),
+		de.WithObjFuncAmount(int(req.DeConfig.ObjetivesSize)),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := DE.Execute(ctx); err != nil {
+	finalPareto, maxObjs, err := DE.Execute(ctx)
+	if err != nil {
 		return nil, err
 	}
 
-	return nil, nil
+	// Convert vectors to proto format
+	vectorsProto := make([]*api.Vector, len(finalPareto))
+	for i, vec := range finalPareto {
+		vectorsProto[i] = &api.Vector{
+			Elements:         vec.Elements,
+			Objectives:       vec.Objectives,
+			CrowdingDistance: vec.CrowdingDistance,
+		}
+	}
+
+	// Flatten max objectives from all executions
+	flatMaxObjs := make([]float64, 0, len(maxObjs)*populationParams.ObjectivesSize)
+	for _, objs := range maxObjs {
+		flatMaxObjs = append(flatMaxObjs, objs...)
+	}
+
+	return &api.RunResponse{
+		Pareto: &api.Pareto{
+			Vectors: vectorsProto,
+			MaxObjs: flatMaxObjs,
+		},
+	}, nil
 }
 
 // problemFromName returns the problems.Interface implementation of the problem
@@ -244,10 +268,10 @@ func problemFromName(p string) (problems.Interface, error) {
 // referenced by name.
 func variantFromName(p string) (variants.Interface, error) {
 	switch p {
-	case rand.Rand1().Name():
-		return rand.Rand1(), nil
-	case rand.Rand2().Name():
-		return rand.Rand2(), nil
+	case variantsrand.Rand1().Name():
+		return variantsrand.Rand1(), nil
+	case variantsrand.Rand2().Name():
+		return variantsrand.Rand2(), nil
 	case best.Best1().Name():
 		return best.Best1(), nil
 	case best.Best2().Name():

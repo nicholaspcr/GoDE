@@ -3,8 +3,6 @@
 package gorm
 
 import (
-	"context"
-
 	"gorm.io/gorm"
 	"gorm.io/plugin/opentelemetry/tracing"
 )

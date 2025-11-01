@@ -77,14 +77,12 @@ func (s *server) Start(ctx context.Context) error {
 	logger := slog.Default()
 
 	grpcSrv := grpc.NewServer(
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.ChainUnaryInterceptor(
-			otelgrpc.UnaryServerInterceptor(),
 			middleware.UnaryAuthMiddleware(s.sessionStore),
 			logging.UnaryServerInterceptor(InterceptorLogger(logger)),
-			middleware.UnaryAuthMiddleware(s.sessionStore),
 		),
 		grpc.ChainStreamInterceptor(
-			otelgrpc.StreamServerInterceptor(),
 			logging.StreamServerInterceptor(InterceptorLogger(logger)),
 		),
 	)

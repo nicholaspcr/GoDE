@@ -1,3 +1,33 @@
+// Package validation provides comprehensive input validation utilities for the GoDE project.
+//
+// This package offers a collection of validation functions for common data types and formats,
+// including user credentials, email addresses, numeric ranges, and differential evolution
+// configuration parameters. All validation functions return structured errors that conform
+// to gRPC status codes for consistent API error handling.
+//
+// Key Features:
+//   - Generic type constraints for type-safe numeric validation
+//   - Regex-based format validation for emails and usernames
+//   - Comprehensive DE (Differential Evolution) configuration validation
+//   - User credential validation (username, email, password)
+//   - Structured error responses with field context
+//
+// Example usage:
+//
+//	// Validate user input
+//	if err := validation.ValidateUsername("john_doe"); err != nil {
+//	    return err // Returns structured ValidationError
+//	}
+//
+//	// Validate numeric ranges
+//	if err := validation.ValidateRange(populationSize, int64(4), int64(10000), "population_size"); err != nil {
+//	    return err
+//	}
+//
+//	// Validate DE configuration
+//	if err := validation.ValidateDEConfig(deConfig); err != nil {
+//	    return err // Returns gRPC-compatible error
+//	}
 package validation
 
 import (

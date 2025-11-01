@@ -408,6 +408,18 @@ func TestDEHandler_Run_Success(t *testing.T) {
 			variant:   "rand2",
 		},
 		{
+			name:      "GDE3 with zdt3 and best1",
+			algorithm: "gde3",
+			problem:   "zdt3",
+			variant:   "best1",
+		},
+		{
+			name:      "GDE3 with zdt4 and best2",
+			algorithm: "gde3",
+			problem:   "zdt4",
+			variant:   "best2",
+		},
+		{
 			name:      "GDE3 with dtlz1 and pbest",
 			algorithm: "gde3",
 			problem:   "dtlz1",
@@ -419,8 +431,6 @@ func TestDEHandler_Run_Success(t *testing.T) {
 			problem:   "wfg1",
 			variant:   "currToBest1",
 		},
-		// Note: best1 and best2 variants have a bug in their implementation
-		// (GenerateIndices count mismatch) and are not tested here
 	}
 
 	for _, tt := range tests {

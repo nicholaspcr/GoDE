@@ -1,96 +1,70 @@
-run:
-  timeout: 5m
-  skip-dirs:
-    - .dev
-    - bin
-  skip-files:
-    - ".*\\.pb\\.go$"
-    - ".*\\.pb\\.gw\\.go$"
-
+version: "2"
 linters:
   enable:
-    # Core linters
-    - govet
-    - staticcheck
-    - typecheck
-    - unused
-    - gosimple
-    - ineffassign
-
-    # Style and formatting
-    - goimports
-    - gofmt
-    - revive
-
-    # Best practices
-    - unconvert
     - bodyclose
-    - errcheck
-    - gosec
-    - gocritic
-
-    # Performance
-    - prealloc
-
-    # Complexity
-    - gocyclo
     - gocognit
-
-  disable:
-    # Deprecated linters (replaced by unused)
-    - structcheck
-    - varcheck
-    - deadcode
-
-    # Can be noisy
-    - stylecheck
-
-linters-settings:
-  govet:
-    enable-all: true
-    disable:
-      - shadow
-
-  gocyclo:
-    min-complexity: 15
-
-  gocognit:
-    min-complexity: 20
-
-  revive:
+    - gocritic
+    - gocyclo
+    - gosec
+    - prealloc
+    - revive
+    - unconvert
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+      exclude-functions:
+        - (io.Closer).Close
+    gocognit:
+      min-complexity: 20
+    gocyclo:
+      min-complexity: 15
+    gosec:
+      excludes:
+        - G104
+    govet:
+      disable:
+        - shadow
+      enable-all: true
+    revive:
+      rules:
+        - name: exported
+          disabled: true
+        - name: package-comments
+          disabled: true
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
     rules:
-      - name: exported
-        disabled: true
-      - name: package-comments
-        disabled: true
-
-  errcheck:
-    check-type-assertions: true
-    check-blank: true
-    exclude-functions:
-      - (io.Closer).Close
-
-  gosec:
-    excludes:
-      - G104  # Audit errors not checked (covered by errcheck)
-
+      - linters:
+          - errcheck
+          - gocyclo
+          - gosec
+        path: _test\.go
+      - linters:
+          - all
+        path: .*\.pb\.go$
+      - linters:
+          - all
+        path: .*\.pb\.gw\.go$
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
-  exclude-rules:
-    # Exclude test files from certain checks
-    - path: _test\.go
-      linters:
-        - gosec
-        - errcheck
-        - gocyclo
-
-    # Exclude generated files
-    - path: ".*\\.pb\\.go$"
-      linters:
-        - all
-
-    - path: ".*\\.pb\\.gw\\.go$"
-      linters:
-        - all
-
   max-issues-per-linter: 0
   max-same-issues: 0
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

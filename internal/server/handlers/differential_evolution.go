@@ -16,12 +16,15 @@ import (
 	"github.com/nicholaspcr/GoDE/pkg/problems/many/dtlz"
 	"github.com/nicholaspcr/GoDE/pkg/problems/many/wfg"
 	"github.com/nicholaspcr/GoDE/pkg/problems/multi"
+	"github.com/nicholaspcr/GoDE/pkg/validation"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
 	"github.com/nicholaspcr/GoDE/pkg/variants/best"
 	currenttobest "github.com/nicholaspcr/GoDE/pkg/variants/current-to-best"
 	"github.com/nicholaspcr/GoDE/pkg/variants/pbest"
 	variantsrand "github.com/nicholaspcr/GoDE/pkg/variants/rand"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -116,6 +119,11 @@ func (deh *deHandler) ListSupportedProblems(
 func (deh *deHandler) Run(
 	ctx context.Context, req *api.RunRequest,
 ) (*api.RunResponse, error) {
+	// Validate DE configuration
+	if err := validation.ValidateDEConfig(req.DeConfig); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
 	var algo de.Algorithm
 
 	populationParams := models.PopulationParams{

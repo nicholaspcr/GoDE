@@ -6,7 +6,10 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
+	"github.com/nicholaspcr/GoDE/pkg/validation"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -43,8 +46,13 @@ func (uh *userHandler) RegisterHTTPHandler(
 func (uh *userHandler) Create(
 	ctx context.Context, req *api.UserServiceCreateRequest,
 ) (*emptypb.Empty, error) {
+	// Validate user
+	if err := validation.ValidateUser(req.User); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
 	if err := uh.CreateUser(ctx, req.User); err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return api.Empty, nil
 }

@@ -395,11 +395,11 @@ func TestValidateRange(t *testing.T) {
 		max     int64
 		wantErr bool
 	}{
-		{"within range", 5, 1, 10, "test", false},
-		{"exact min", 1, 1, 10, "test", false},
-		{"exact max", 10, 1, 10, "test", false},
-		{"below min", 0, 1, 10, "test", true},
-		{"above max", 11, 1, 10, "test", true},
+		{"within range", "test", 5, 1, 10, false},
+		{"exact min", "test", 1, 1, 10, false},
+		{"exact max", "test", 10, 1, 10, false},
+		{"below min", "test", 0, 1, 10, true},
+		{"above max", "test", 11, 1, 10, true},
 	}
 
 	for _, tt := range tests {
@@ -423,11 +423,11 @@ func TestValidateRangeFloat(t *testing.T) {
 		max     float32
 		wantErr bool
 	}{
-		{"within range", 0.5, 0.0, 1.0, "test", false},
-		{"exact min", 0.0, 0.0, 1.0, "test", false},
-		{"exact max", 1.0, 0.0, 1.0, "test", false},
-		{"below min", -0.1, 0.0, 1.0, "test", true},
-		{"above max", 1.1, 0.0, 1.0, "test", true},
+		{"within range", "test", 0.5, 0.0, 1.0, false},
+		{"exact min", "test", 0.0, 0.0, 1.0, false},
+		{"exact max", "test", 1.0, 0.0, 1.0, false},
+		{"below min", "test", -0.1, 0.0, 1.0, true},
+		{"above max", "test", 1.1, 0.0, 1.0, true},
 	}
 
 	for _, tt := range tests {

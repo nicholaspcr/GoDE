@@ -4,7 +4,7 @@ go 1.25
 
 require (
 	github.com/fatih/color v1.15.0
-	github.com/glebarez/sqlite v1.9.0
+	github.com/glebarez/sqlite v1.11.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0

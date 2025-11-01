@@ -5,8 +5,8 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/spf13/cobra"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // listVariantsCmd list all available variants.
@@ -20,7 +20,7 @@ var listVariantsCmd = &cobra.Command{
 		}
 		defer conn.Close()
 
-		res, err := client.ListSupportedVariants(ctx, &api.Empty{})
+		res, err := client.ListSupportedVariants(ctx, &emptypb.Empty{})
 		if err != nil {
 			return err
 		}

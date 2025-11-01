@@ -5,8 +5,8 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/spf13/cobra"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // listProblemsCmd list all available problems.
@@ -20,7 +20,7 @@ var listProblemsCmd = &cobra.Command{
 		}
 		defer conn.Close()
 
-		res, err := client.ListSupportedProblems(ctx, &api.Empty{})
+		res, err := client.ListSupportedProblems(ctx, &emptypb.Empty{})
 		if err != nil {
 			return err
 		}

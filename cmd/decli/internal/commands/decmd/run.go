@@ -32,7 +32,7 @@ var runCmd = &cobra.Command{
 				Generations:    run.DeConfig.Generations,
 				PopulationSize: run.DeConfig.PopulationSize,
 				DimensionsSize: run.DeConfig.DimensionsSize,
-				ObjectivesSize: run.DeConfig.ObjectivesSize,
+				ObjetivesSize:  run.DeConfig.ObjectivesSize,
 				FloorLimiter:   run.DeConfig.FloorLimiter,
 				CeilLimiter:    run.DeConfig.CeilLimiter,
 				AlgorithmConfig: &api.DEConfig_Gde3{Gde3: &api.GDE3Config{

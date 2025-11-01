@@ -3,8 +3,8 @@ package decmd
 import (
 	"fmt"
 
-	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/spf13/cobra"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // listAlgorithmsCmd list all available algorithms.
@@ -18,7 +18,7 @@ var listAlgorithmsCmd = &cobra.Command{
 		}
 		defer conn.Close()
 
-		res, err := client.ListSupportedAlgorithms(ctx, &api.Empty{})
+		res, err := client.ListSupportedAlgorithms(ctx, &emptypb.Empty{})
 		if err != nil {
 			return err
 		}

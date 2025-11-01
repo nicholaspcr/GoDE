@@ -12,7 +12,6 @@ var (
 
 	// flags
 	username string
-	password string
 	email    string
 )
 

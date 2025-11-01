@@ -3,6 +3,7 @@ package authcmd
 import (
 	"log/slog"
 
+	"github.com/nicholaspcr/GoDE/cmd/decli/internal/utils"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -15,6 +16,15 @@ var registerCmd = &cobra.Command{
 	Short: "Creates an account",
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
+
+		// Prompt for password securely with confirmation
+		password, err := utils.ReadPasswordWithConfirmation(
+			"Password: ",
+			"Confirm password: ",
+		)
+		if err != nil {
+			return err
+		}
 
 		conn, err := grpc.NewClient(
 			cfg.Server.GRPCAddr,
@@ -49,13 +59,11 @@ var registerCmd = &cobra.Command{
 func init() {
 	// Flags
 	registerCmd.Flags().StringVar(&username, "username", "", "user's name")
-	registerCmd.Flags().StringVar(&password, "password", "", "user's password")
 	registerCmd.Flags().StringVar(&email, "email", "", "user's email")
 
 	// Requirements
 	registerCmd.MarkFlagRequired("username")
 	registerCmd.MarkFlagRequired("email")
-	registerCmd.MarkFlagRequired("password")
 
 	// Commands
 	authCmd.AddCommand(registerCmd)

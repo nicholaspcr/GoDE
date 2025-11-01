@@ -39,7 +39,7 @@ func (v *zdt6) Evaluate(e *models.Vector, M int) error {
 		return g
 	}
 	evalH := func(f, g float64) float64 {
-		return 1.0 - math.Pow(f/g, 2)
+		return 1.0 - f/g*(f/g)
 	}
 	F := evalF(e.Elements[0])
 	G := evalG(e.Elements)

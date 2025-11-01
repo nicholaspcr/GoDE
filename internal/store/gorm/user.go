@@ -79,6 +79,6 @@ func (st *userStore) DeleteUser(
 	ctx context.Context, usrIDs *api.UserIDs,
 ) error {
 	model := userModel{Username: usrIDs.Username}
-	tx := st.DB.Delete(&model)
+	tx := st.Delete(&model)
 	return tx.Error
 }

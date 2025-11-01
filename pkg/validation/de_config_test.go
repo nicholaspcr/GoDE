@@ -9,8 +9,8 @@ import (
 
 func TestValidateDEConfig(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *api.DEConfig
+		name    string
 		wantErr bool
 	}{
 		{
@@ -282,8 +282,8 @@ func TestValidateDEConfig(t *testing.T) {
 
 func TestValidateGDE3Config(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *api.GDE3Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -389,10 +389,10 @@ func TestValidateGDE3Config(t *testing.T) {
 func TestValidateRange(t *testing.T) {
 	tests := []struct {
 		name    string
+		field   string
 		value   int64
 		min     int64
 		max     int64
-		field   string
 		wantErr bool
 	}{
 		{"within range", 5, 1, 10, "test", false},
@@ -417,10 +417,10 @@ func TestValidateRange(t *testing.T) {
 func TestValidateRangeFloat(t *testing.T) {
 	tests := []struct {
 		name    string
+		field   string
 		value   float32
 		min     float32
 		max     float32
-		field   string
 		wantErr bool
 	}{
 		{"within range", 0.5, 0.0, 1.0, "test", false},

@@ -26,9 +26,9 @@ func (v *vnt1) Evaluate(e *models.Vector, M int) error {
 
 	a, b := e.Elements[0], e.Elements[1]
 
-	powSum := math.Pow(a, 2) + math.Pow(b, 2)
+	powSum := a*a + b*b
 	f1 := 0.5*(powSum) + math.Sin(powSum)
-	f2 := 15.0 + math.Pow(3*a-2*b+4, 2)/8.0 + math.Pow(a-b+1, 2)/27.0
+	f2 := 15.0 + (3*a-2*b+4)*(3*a-2*b+4)/8.0 + (a-b+1)*(a-b+1)/27.0
 	f3 := -1.1*math.Exp((-1)*powSum) + 1.0/(powSum+1)
 
 	var newObjs []float64

@@ -65,10 +65,10 @@ func TestValidateToken(t *testing.T) {
 	service := NewJWTService(secret, 24*time.Hour)
 
 	tests := []struct {
-		name      string
 		setupFn   func() string
-		wantErr   bool
+		name      string
 		wantClaim string
+		wantErr   bool
 	}{
 		{
 			name: "valid token",

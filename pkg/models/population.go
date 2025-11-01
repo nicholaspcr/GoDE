@@ -18,11 +18,11 @@ func (p Population) Copy() Population {
 
 // PopulationParams is the set of parameters to generate a population.
 type PopulationParams struct {
+	FloorRange     []float64
+	CeilRange      []float64
 	DimensionSize  int
 	PopulationSize int
 	ObjectivesSize int
-	FloorRange     []float64
-	CeilRange      []float64
 }
 
 // GeneratePopulation generates a population with the given parameters.

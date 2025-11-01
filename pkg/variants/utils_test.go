@@ -10,11 +10,11 @@ import (
 func TestGenerateIndices(t *testing.T) {
 	tests := []struct {
 		name      string
+		r         []int
+		expectedR []int
 		startInd  int
 		NP        int
-		r         []int
 		wantErr   bool
-		expectedR []int
 	}{
 		{
 			name:     "success",

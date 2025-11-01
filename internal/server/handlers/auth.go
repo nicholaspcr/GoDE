@@ -18,9 +18,9 @@ import (
 
 // authHandler is responsible for the auth service operations.
 type authHandler struct {
+	api.UnimplementedAuthServiceServer
 	db         store.Store
 	jwtService auth.JWTService
-	api.UnimplementedAuthServiceServer
 }
 
 // NewAuthHandler returns a handle that implements api's authServiceServer.

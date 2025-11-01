@@ -16,11 +16,11 @@ import (
 
 func TestUserHandler_Create(t *testing.T) {
 	tests := []struct {
-		name      string
 		req       *api.UserServiceCreateRequest
 		setupMock func(*mock.MockStore)
-		wantErr   bool
+		name      string
 		wantCode  codes.Code
+		wantErr   bool
 	}{
 		{
 			name: "successful creation",
@@ -128,11 +128,11 @@ func TestUserHandler_Create(t *testing.T) {
 
 func TestUserHandler_Get(t *testing.T) {
 	tests := []struct {
-		name       string
 		req        *api.UserServiceGetRequest
 		setupMock  func(*mock.MockStore)
-		wantErr    bool
 		wantResult *api.User
+		name       string
+		wantErr    bool
 	}{
 		{
 			name: "successful get",
@@ -193,9 +193,9 @@ func TestUserHandler_Get(t *testing.T) {
 
 func TestUserHandler_Update(t *testing.T) {
 	tests := []struct {
-		name      string
 		req       *api.UserServiceUpdateRequest
 		setupMock func(*mock.MockStore)
+		name      string
 		wantErr   bool
 	}{
 		{
@@ -258,9 +258,9 @@ func TestUserHandler_Update(t *testing.T) {
 
 func TestUserHandler_Delete(t *testing.T) {
 	tests := []struct {
-		name      string
 		req       *api.UserServiceDeleteRequest
 		setupMock func(*mock.MockStore)
+		name      string
 		wantErr   bool
 	}{
 		{

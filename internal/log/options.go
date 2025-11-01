@@ -7,26 +7,19 @@ import (
 )
 
 type Config struct {
-	// Type can be either "json" or "text"
-	Type string `json:"type" yaml:"type"`
-	// Level is the minimum log level to output. Defaults to slog.LevelInfo.
-	Level slog.Level `json:"level" yaml:"level"`
-	// Pretty contain configurations regarding formatting for JSON logs.
-	Pretty *PrettyConfig `json:"pretty" yaml:"pretty"`
-
-	// writer is the location where logs are written to. Defaults to os.Stdout.
-	writer io.Writer
-	// handlerOptions are the options to pass to the handler.
+	writer         io.Writer
+	Pretty         *PrettyConfig `json:"pretty" yaml:"pretty"`
 	handlerOptions *slog.HandlerOptions
+	Type           string     `json:"type" yaml:"type"`
+	Level          slog.Level `json:"level" yaml:"level"`
 }
 
 // PrettyConfig contain configurations regarding formatting for JSON logs.
 type PrettyConfig struct {
-	Enable bool `json:"enable" yaml:"enable"`
-	Color  bool `json:"color" yaml:"color"`
-	// TimeFormat is the format for timestamps. Defaults to time.RFC3339.
 	TimeFormat string `json:"time-format" yaml:"time-format"`
 	Indent     string `json:"indent" yaml:"indent"`
+	Enable     bool   `json:"enable" yaml:"enable"`
+	Color      bool   `json:"color" yaml:"color"`
 }
 
 var defaultConfig = Config{

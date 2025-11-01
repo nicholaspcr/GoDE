@@ -17,10 +17,10 @@ var (
 
 // ValidationError represents a validation error with context.
 type ValidationError struct {
-	Field   string
 	Value   interface{}
-	Message string
 	Err     error
+	Field   string
+	Message string
 }
 
 func (e *ValidationError) Error() string {

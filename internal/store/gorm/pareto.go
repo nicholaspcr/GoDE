@@ -9,12 +9,11 @@ import (
 )
 
 type paretoModel struct {
+	User userModel `gorm:"foreignKey:UserID"`
 	gorm.Model
-	UserID uint
-	User   userModel `gorm:"foreignKey:UserID"`
-
-	Vectors    []vectorModel
 	MaxObjsJSON string `gorm:"type:text"`
+	Vectors     []vectorModel
+	UserID      uint
 }
 
 // SetMaxObjs serializes float64 slice to JSON

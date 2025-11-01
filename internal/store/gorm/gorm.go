@@ -14,6 +14,8 @@ type Dialector gorm.Dialector
 type gormStore struct {
 	db *gorm.DB
 	*userStore
+	*paretoStore
+	*vectorStore
 }
 
 // New returns a new GormStore.
@@ -28,8 +30,10 @@ func New(dialector gorm.Dialector) (*gormStore, error) {
 	}
 
 	store := &gormStore{
-		db:        db,
-		userStore: newUserStore(db),
+		db:          db,
+		userStore:   newUserStore(db),
+		paretoStore: newParetoStore(db),
+		vectorStore: newVectorStore(db),
 	}
 
 	return store, nil
@@ -38,5 +42,7 @@ func New(dialector gorm.Dialector) (*gormStore, error) {
 func (s *gormStore) AutoMigrate() error {
 	return s.db.AutoMigrate(
 		&userModel{},
+		&paretoModel{},
+		&vectorModel{},
 	)
 }

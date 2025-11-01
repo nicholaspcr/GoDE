@@ -9,6 +9,7 @@ import (
 // Store contains the methods to interact with the database
 type Store interface {
 	UserOperations
+	ParetoOperations
 }
 
 // UserOperations is the interface for the user store.

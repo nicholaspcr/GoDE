@@ -70,7 +70,7 @@ func (s *server) Start(ctx context.Context) error {
 	}
 	defer func() {
 		if err := tracerProvider.Shutdown(ctx); err != nil {
-			slog.Error("failed to shutdown tracer provider: %v", err)
+			slog.Error("failed to shutdown tracer provider", slog.String("error", err.Error()))
 		}
 	}()
 

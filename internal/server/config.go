@@ -20,6 +20,8 @@ type Config struct {
 	RateLimit      RateLimitConfig
 	MetricsEnabled bool
 	MetricsType    telemetry.MetricsExporterType
+	PprofEnabled   bool
+	PprofPort      string
 }
 
 // TLSConfig contains TLS/HTTPS configuration.
@@ -50,6 +52,12 @@ func DefaultConfig() Config {
 		metricsType = telemetry.MetricsExporterStdout
 	}
 
+	pprofEnabled := os.Getenv("PPROF_ENABLED") == "true"
+	pprofPort := os.Getenv("PPROF_PORT")
+	if pprofPort == "" {
+		pprofPort = ":6060" // Default pprof port
+	}
+
 	return Config{
 		LisAddr:        "localhost:3030",
 		HTTPPort:       ":8081",
@@ -57,6 +65,8 @@ func DefaultConfig() Config {
 		JWTExpiry:      24 * time.Hour,
 		MetricsEnabled: true, // Metrics enabled by default
 		MetricsType:    metricsType,
+		PprofEnabled:   pprofEnabled,
+		PprofPort:      pprofPort,
 		TLS: TLSConfig{
 			Enabled:  false, // TLS disabled by default for development
 			CertFile: "",

@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	_ "net/http/pprof" // Import pprof for profiling endpoints
 	"os"
 	"os/signal"
 	"syscall"
@@ -103,6 +104,32 @@ func (s *server) Start(ctx context.Context) error {
 			return err
 		}
 		slog.Info("Metrics initialized successfully")
+	}
+
+	// Start pprof server if enabled
+	if s.cfg.PprofEnabled {
+		slog.Info("Starting pprof server", slog.String("port", s.cfg.PprofPort))
+		slog.Warn("pprof is enabled - this should only be used in development or with proper security")
+
+		pprofServer := &http.Server{
+			Addr:    s.cfg.PprofPort,
+			Handler: nil, // Use default http.DefaultServeMux which pprof registers to
+		}
+
+		go func() {
+			if err := pprofServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				slog.Error("pprof server error", slog.String("error", err.Error()))
+			}
+		}()
+
+		// Defer pprof server shutdown
+		defer func() {
+			shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer shutdownCancel()
+			if err := pprofServer.Shutdown(shutdownCtx); err != nil {
+				slog.Error("failed to shutdown pprof server", slog.String("error", err.Error()))
+			}
+		}()
 	}
 
 	logger := slog.Default()

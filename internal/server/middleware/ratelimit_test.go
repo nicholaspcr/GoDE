@@ -213,14 +213,20 @@ func TestRateLimiter_UnaryDERateLimitMiddleware(t *testing.T) {
 		assert.Equal(t, "response", resp)
 		assert.Equal(t, 1, handlerCalled)
 
-		// Second request should be rate limited (only 1 per second)
+		// Second request should succeed (burst allows it)
+		resp, err = middleware(ctx, nil, info, mockHandler)
+		assert.NoError(t, err)
+		assert.Equal(t, "response", resp)
+		assert.Equal(t, 2, handlerCalled)
+
+		// Third request should be rate limited (burst=2, rate=1/sec, so 3rd immediate request fails)
 		_, err = middleware(ctx, nil, info, mockHandler)
 		require.Error(t, err)
 		st, ok := status.FromError(err)
 		require.True(t, ok)
 		assert.Equal(t, codes.ResourceExhausted, st.Code())
 		assert.Contains(t, st.Message(), "too many DE execution requests")
-		assert.Equal(t, 1, handlerCalled)
+		assert.Equal(t, 2, handlerCalled) // Handler should not be called
 	})
 
 	t.Run("concurrency limit is enforced", func(t *testing.T) {

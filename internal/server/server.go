@@ -7,6 +7,10 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -153,6 +157,10 @@ func (s *server) Start(ctx context.Context) error {
 
 	grpcSrv := grpc.NewServer(grpcOpts...)
 
+	// Register health check service
+	healthServer := s.setupHealthCheck(grpcSrv)
+	defer healthServer.Shutdown()
+
 	slog.Info("Registering RPC services")
 	for _, handler := range s.handlers {
 		handler.RegisterService(grpcSrv)
@@ -201,6 +209,29 @@ func (s *server) Start(ctx context.Context) error {
 		handler.RegisterHTTPHandler(ctx, mux, lisAddr, dialOpts)
 	}
 
+	// Add health check HTTP endpoints
+	mux.HandlePath("GET", "/health", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"UP"}`))
+	})
+
+	mux.HandlePath("GET", "/readiness", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+		// Check if services are ready
+		if !s.checkDatabaseHealth(ctx) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write([]byte(`{"status":"DOWN","reason":"database unavailable"}`))
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"UP"}`))
+	})
+
+	slog.Info("Health check endpoints available at /health and /readiness")
+
 	// Add Prometheus metrics endpoint if using Prometheus exporter
 	// Note: The Prometheus exporter automatically registers with prometheus.DefaultRegisterer
 	// and the metrics are exposed via promhttp.Handler()
@@ -243,9 +274,54 @@ func (s *server) Start(ctx context.Context) error {
 		}()
 	}
 
-	// Wait for shutdown signal
-	<-ctx.Done()
-	slog.Info("Shutting down server")
+	// Setup signal handling for graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+	// Wait for shutdown signal or context cancellation
+	select {
+	case sig := <-sigChan:
+		slog.Info("Received shutdown signal", slog.String("signal", sig.String()))
+	case <-ctx.Done():
+		slog.Info("Context cancelled, initiating shutdown")
+	}
+
+	// Graceful shutdown
+	slog.Info("Starting graceful shutdown...")
+
+	// Create shutdown context with timeout
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer shutdownCancel()
+
+	// Stop accepting new connections
+	healthServer.Shutdown()
+	slog.Info("Health check service stopped")
+
+	// Shutdown HTTP server
+	if err := httpServer.Shutdown(shutdownCtx); err != nil {
+		slog.Error("Error shutting down HTTP server", slog.String("error", err.Error()))
+	} else {
+		slog.Info("HTTP server shut down gracefully")
+	}
+
+	// Gracefully stop gRPC server
+	// This will wait for in-flight requests to complete
+	stopped := make(chan struct{})
+	go func() {
+		grpcSrv.GracefulStop()
+		close(stopped)
+	}()
+
+	// Wait for graceful stop or force stop after timeout
+	select {
+	case <-stopped:
+		slog.Info("gRPC server shut down gracefully")
+	case <-shutdownCtx.Done():
+		slog.Warn("Graceful shutdown timeout, forcing stop")
+		grpcSrv.Stop()
+	}
+
+	slog.Info("Server shutdown complete")
 	return nil
 }
 

@@ -1,15 +1,108 @@
 services:
   postgres:
-    container_name: postgres
+    container_name: gode-postgres
     image: postgres:15
     restart: unless-stopped
     environment:
-      POSTGRES_DB: db
-      POSTGRES_PASSWORD: root
-      POSTGRES_USER: root
+      POSTGRES_DB: gode
+      POSTGRES_PASSWORD: gode_password
+      POSTGRES_USER: gode_user
     ports:
-      - 5432:5432
-      - "15432:5432"
+      - "5432:5432"
     volumes:
-      # - ./.dev/deserver/data:/var/lib/postgresql/data
-      - ./.dev/deserver/data:/data/postgres
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gode_user -d gode"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gode-network
+
+  deserver:
+    container_name: gode-server
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Database configuration
+      STORE_TYPE: postgres
+      STORE_POSTGRESQL_DNS: postgres://gode_user:gode_password@postgres:5432/gode?sslmode=disable
+
+      # JWT configuration (MUST be changed in production!)
+      JWT_SECRET: development-secret-key-change-in-production-min-32-chars
+
+      # Server configuration
+      GRPC_PORT: 3030
+      HTTP_PORT: 8081
+
+      # Observability
+      METRICS_ENABLED: "true"
+      METRICS_TYPE: prometheus
+
+      # Rate limiting
+      RATE_LIMIT_AUTH_PER_MINUTE: 10
+      RATE_LIMIT_DE_PER_USER: 20
+      RATE_LIMIT_MAX_CONCURRENT_DE: 5
+    ports:
+      - "3030:3030"  # gRPC
+      - "8081:8081"  # HTTP/REST
+    networks:
+      - gode-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  prometheus:
+    container_name: gode-prometheus
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - gode-network
+    depends_on:
+      - deserver
+
+  grafana:
+    container_name: gode-grafana
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: ""
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    networks:
+      - gode-network
+    depends_on:
+      - prometheus
+
+volumes:
+  postgres_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  gode-network:
+    driver: bridge

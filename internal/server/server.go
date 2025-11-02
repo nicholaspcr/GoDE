@@ -3,6 +3,7 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
 	"log/slog"
 	"net"
 	"net/http"
@@ -16,6 +17,7 @@ import (
 	"github.com/nicholaspcr/GoDE/internal/telemetry"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
@@ -76,16 +78,53 @@ func (s *server) Start(ctx context.Context) error {
 
 	logger := slog.Default()
 
-	grpcSrv := grpc.NewServer(
+	// Initialize rate limiter
+	rateLimiter := middleware.NewRateLimiter(
+		s.cfg.RateLimit.AuthRequestsPerMinute,
+		s.cfg.RateLimit.DEExecutionsPerUser,
+		s.cfg.RateLimit.MaxConcurrentDEPerUser,
+		s.cfg.RateLimit.MaxRequestsPerSecond,
+	)
+
+	// Prepare gRPC server options
+	grpcOpts := []grpc.ServerOption{
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
+		grpc.MaxRecvMsgSize(s.cfg.RateLimit.MaxMessageSizeBytes),
+		grpc.MaxSendMsgSize(s.cfg.RateLimit.MaxMessageSizeBytes),
 		grpc.ChainUnaryInterceptor(
-			middleware.UnaryAuthMiddleware(s.jwtService),
-			logging.UnaryServerInterceptor(InterceptorLogger(logger)),
+			middleware.UnaryPanicRecoveryMiddleware(),           // Panic recovery first
+			rateLimiter.UnaryGlobalRateLimitMiddleware(),        // Global rate limit
+			rateLimiter.UnaryAuthRateLimitMiddleware(),          // Auth-specific rate limit
+			rateLimiter.UnaryDERateLimitMiddleware(),            // DE-specific rate limit
+			middleware.UnaryAuthMiddleware(s.jwtService),        // Authentication
+			logging.UnaryServerInterceptor(InterceptorLogger(logger)), // Logging
 		),
 		grpc.ChainStreamInterceptor(
+			middleware.StreamPanicRecoveryMiddleware(), // Panic recovery for streams
 			logging.StreamServerInterceptor(InterceptorLogger(logger)),
 		),
-	)
+	}
+
+	// Add TLS credentials if enabled
+	if s.cfg.TLS.Enabled {
+		slog.Info("TLS enabled, loading certificates",
+			slog.String("cert", s.cfg.TLS.CertFile),
+			slog.String("key", s.cfg.TLS.KeyFile),
+		)
+		cert, err := tls.LoadX509KeyPair(s.cfg.TLS.CertFile, s.cfg.TLS.KeyFile)
+		if err != nil {
+			return err
+		}
+		creds := credentials.NewTLS(&tls.Config{
+			Certificates: []tls.Certificate{cert},
+			MinVersion:   tls.VersionTLS12, // Enforce minimum TLS 1.2
+		})
+		grpcOpts = append(grpcOpts, grpc.Creds(creds))
+	} else {
+		slog.Warn("TLS is disabled - this is insecure for production use")
+	}
+
+	grpcSrv := grpc.NewServer(grpcOpts...)
 
 	slog.Info("Registering RPC services")
 	for _, handler := range s.handlers {
@@ -103,7 +142,7 @@ func (s *server) Start(ctx context.Context) error {
 	go func() {
 		if err := grpcSrv.Serve(lis); err != nil {
 			slog.Error(
-				"Unexpected panic on the server",
+				"Unexpected error on the gRPC server",
 				slog.String("error", err.Error()),
 			)
 			cancel()
@@ -112,8 +151,22 @@ func (s *server) Start(ctx context.Context) error {
 
 	// NOTE: Make sure the gRPC server is running properly and accessible.
 	mux := runtime.NewServeMux()
-	dialOpts := []grpc.DialOption{
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+
+	// Prepare dial options for HTTP gateway
+	var dialOpts []grpc.DialOption
+	if s.cfg.TLS.Enabled {
+		// Use TLS credentials for gateway connection
+		cert, err := tls.LoadX509KeyPair(s.cfg.TLS.CertFile, s.cfg.TLS.KeyFile)
+		if err != nil {
+			return err
+		}
+		creds := credentials.NewTLS(&tls.Config{
+			Certificates: []tls.Certificate{cert},
+			MinVersion:   tls.VersionTLS12,
+		})
+		dialOpts = []grpc.DialOption{grpc.WithTransportCredentials(creds)}
+	} else {
+		dialOpts = []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	}
 
 	slog.Info("Registering grpc-gateway handlers")
@@ -123,15 +176,36 @@ func (s *server) Start(ctx context.Context) error {
 
 	// Start HTTP server (and proxy calls to gRPC server endpoint)
 	slog.Info("HTTP server listening on: ", slog.String("port", s.cfg.HTTPPort))
-	go func() {
-		if err := http.ListenAndServe(s.cfg.HTTPPort, mux); err != nil {
-			slog.Error(
-				"Unexpected panic on the web server",
-				slog.String("error", err.Error()),
-			)
-			cancel()
+	httpServer := &http.Server{
+		Addr:    s.cfg.HTTPPort,
+		Handler: mux,
+	}
+
+	// Add TLS to HTTP server if enabled
+	if s.cfg.TLS.Enabled {
+		httpServer.TLSConfig = &tls.Config{
+			MinVersion: tls.VersionTLS12,
 		}
-	}()
+		go func() {
+			if err := httpServer.ListenAndServeTLS(s.cfg.TLS.CertFile, s.cfg.TLS.KeyFile); err != nil && err != http.ErrServerClosed {
+				slog.Error(
+					"Unexpected error on the HTTP server",
+					slog.String("error", err.Error()),
+				)
+				cancel()
+			}
+		}()
+	} else {
+		go func() {
+			if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				slog.Error(
+					"Unexpected error on the HTTP server",
+					slog.String("error", err.Error()),
+				)
+				cancel()
+			}
+		}()
+	}
 
 	// Wait for shutdown signal
 	<-ctx.Done()

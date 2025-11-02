@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"fmt"
+
 	"github.com/nicholaspcr/GoDE/internal/server"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/spf13/cobra"
@@ -11,10 +13,15 @@ var StartCmd = &cobra.Command{
 	Use:     "start",
 	Aliases: []string{"run"},
 	Short:   "starts a server that implements the API services",
-	Long: `starts a server that implements the services described in the 
+	Long: `starts a server that implements the services described in the
 proto files. Requests can be made via gRPC or HTTP.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
+
+		// Validate server configuration
+		if err := cfg.Server.Validate(); err != nil {
+			return fmt.Errorf("invalid server configuration: %w", err)
+		}
 
 		st, err := store.New(ctx, cfg.Store)
 		if err != nil {

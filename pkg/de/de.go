@@ -69,6 +69,14 @@ func (mode *de) Execute(ctx context.Context) ([]models.Vector, [][]float64, erro
 		// Initialize worker responsible for DE execution.
 		go func(idx int) {
 			defer wgExecs.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					slog.Error("panic recovered in DE execution goroutine",
+						slog.Int("execution_id", idx),
+						slog.Any("panic", r),
+					)
+				}
+			}()
 			// running the algorithm execution.
 			if err := mode.algorithm.Execute(
 				WithContextExecutionNumber(ctx, idx),

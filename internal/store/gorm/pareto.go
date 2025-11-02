@@ -11,8 +11,8 @@ import (
 type paretoModel struct {
 	User userModel `gorm:"foreignKey:UserID"`
 	gorm.Model
-	MaxObjsJSON string `gorm:"type:text"`
-	Vectors     []vectorModel
+	MaxObjsJSON string        `gorm:"type:text"`
+	Vectors     []vectorModel `gorm:"foreignKey:ParetoID"`
 	UserID      uint
 }
 

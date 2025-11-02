@@ -42,6 +42,7 @@ func (st *userStore) GetUser(
 	}
 	return &api.User{
 		Ids:      &api.UserIDs{Username: usr.Username},
+		Email:    usr.Email,
 		Password: usr.Password,
 	}, nil
 }
@@ -78,7 +79,6 @@ func (st *userStore) UpdateUser(
 func (st *userStore) DeleteUser(
 	ctx context.Context, usrIDs *api.UserIDs,
 ) error {
-	model := userModel{Username: usrIDs.Username}
-	tx := st.Delete(&model)
+	tx := st.DB.WithContext(ctx).Where("username = ?", usrIDs.Username).Delete(&userModel{})
 	return tx.Error
 }

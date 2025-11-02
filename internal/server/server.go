@@ -16,6 +16,7 @@ import (
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/internal/telemetry"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -58,6 +59,7 @@ type server struct {
 	jwtService auth.JWTService
 	handlers   []handlers.Handler
 	cfg        Config
+	metrics    *telemetry.Metrics
 }
 
 // Start starts the server.
@@ -66,6 +68,7 @@ func (s *server) Start(ctx context.Context) error {
 	defer cancel()
 	slog.Info("Creating server")
 
+	// Initialize tracing
 	tracerProvider, err := telemetry.NewTracerProvider("deserver")
 	if err != nil {
 		return err
@@ -75,6 +78,28 @@ func (s *server) Start(ctx context.Context) error {
 			slog.Error("failed to shutdown tracer provider", slog.String("error", err.Error()))
 		}
 	}()
+
+	// Initialize metrics if enabled
+	var meterProvider *sdkmetric.MeterProvider
+	if s.cfg.MetricsEnabled {
+		slog.Info("Initializing metrics", slog.String("type", string(s.cfg.MetricsType)))
+		var err error
+		meterProvider, err = telemetry.NewMeterProvider("deserver", s.cfg.MetricsType)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if err := meterProvider.Shutdown(ctx); err != nil {
+				slog.Error("failed to shutdown meter provider", slog.String("error", err.Error()))
+			}
+		}()
+
+		s.metrics, err = telemetry.InitMetrics(ctx, "deserver")
+		if err != nil {
+			return err
+		}
+		slog.Info("Metrics initialized successfully")
+	}
 
 	logger := slog.Default()
 
@@ -92,15 +117,17 @@ func (s *server) Start(ctx context.Context) error {
 		grpc.MaxRecvMsgSize(s.cfg.RateLimit.MaxMessageSizeBytes),
 		grpc.MaxSendMsgSize(s.cfg.RateLimit.MaxMessageSizeBytes),
 		grpc.ChainUnaryInterceptor(
-			middleware.UnaryPanicRecoveryMiddleware(),           // Panic recovery first
-			rateLimiter.UnaryGlobalRateLimitMiddleware(),        // Global rate limit
-			rateLimiter.UnaryAuthRateLimitMiddleware(),          // Auth-specific rate limit
-			rateLimiter.UnaryDERateLimitMiddleware(),            // DE-specific rate limit
-			middleware.UnaryAuthMiddleware(s.jwtService),        // Authentication
+			middleware.UnaryPanicRecoveryMiddleware(),                 // Panic recovery first
+			middleware.UnaryMetricsMiddleware(s.metrics),              // Metrics collection
+			rateLimiter.UnaryGlobalRateLimitMiddleware(),              // Global rate limit
+			rateLimiter.UnaryAuthRateLimitMiddleware(),                // Auth-specific rate limit
+			rateLimiter.UnaryDERateLimitMiddleware(),                  // DE-specific rate limit
+			middleware.UnaryAuthMiddleware(s.jwtService),              // Authentication
 			logging.UnaryServerInterceptor(InterceptorLogger(logger)), // Logging
 		),
 		grpc.ChainStreamInterceptor(
-			middleware.StreamPanicRecoveryMiddleware(), // Panic recovery for streams
+			middleware.StreamPanicRecoveryMiddleware(),         // Panic recovery for streams
+			middleware.StreamMetricsMiddleware(s.metrics),      // Metrics for streams
 			logging.StreamServerInterceptor(InterceptorLogger(logger)),
 		),
 	}
@@ -172,6 +199,15 @@ func (s *server) Start(ctx context.Context) error {
 	slog.Info("Registering grpc-gateway handlers")
 	for _, handler := range s.handlers {
 		handler.RegisterHTTPHandler(ctx, mux, lisAddr, dialOpts)
+	}
+
+	// Add Prometheus metrics endpoint if using Prometheus exporter
+	// Note: The Prometheus exporter automatically registers with prometheus.DefaultRegisterer
+	// and the metrics are exposed via promhttp.Handler()
+	if s.cfg.MetricsEnabled && s.cfg.MetricsType == telemetry.MetricsExporterPrometheus {
+		slog.Info("Prometheus metrics endpoint will be available at /metrics via Prometheus client")
+		// The actual metrics endpoint is provided by the Prometheus exporter
+		// Users should access it via the Prometheus client library's HTTP handler
 	}
 
 	// Start HTTP server (and proxy calls to gRPC server endpoint)

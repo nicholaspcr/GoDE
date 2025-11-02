@@ -5,18 +5,21 @@ import (
 	"os"
 	"time"
 
+	"github.com/nicholaspcr/GoDE/internal/telemetry"
 	"github.com/nicholaspcr/GoDE/pkg/de"
 )
 
 // Config contains all the necessary configuration options for the server.
 type Config struct {
-	LisAddr   string
-	HTTPPort  string
-	JWTSecret string
-	DE        de.Config
-	JWTExpiry time.Duration
-	TLS       TLSConfig
-	RateLimit RateLimitConfig
+	LisAddr        string
+	HTTPPort       string
+	JWTSecret      string
+	DE             de.Config
+	JWTExpiry      time.Duration
+	TLS            TLSConfig
+	RateLimit      RateLimitConfig
+	MetricsEnabled bool
+	MetricsType    telemetry.MetricsExporterType
 }
 
 // TLSConfig contains TLS/HTTPS configuration.
@@ -42,11 +45,18 @@ type RateLimitConfig struct {
 
 // DefaultConfig returns the default configuration of the server.
 func DefaultConfig() Config {
+	metricsType := telemetry.MetricsExporterPrometheus
+	if os.Getenv("METRICS_TYPE") == "stdout" {
+		metricsType = telemetry.MetricsExporterStdout
+	}
+
 	return Config{
-		LisAddr:   "localhost:3030",
-		HTTPPort:  ":8081",
-		JWTSecret: os.Getenv("JWT_SECRET"), // No default - must be set via env var
-		JWTExpiry: 24 * time.Hour,
+		LisAddr:        "localhost:3030",
+		HTTPPort:       ":8081",
+		JWTSecret:      os.Getenv("JWT_SECRET"), // No default - must be set via env var
+		JWTExpiry:      24 * time.Hour,
+		MetricsEnabled: true, // Metrics enabled by default
+		MetricsType:    metricsType,
 		TLS: TLSConfig{
 			Enabled:  false, // TLS disabled by default for development
 			CertFile: "",

@@ -1,5 +1,7 @@
 package store
 
+import "fmt"
+
 // Config contains options related to the Store implementation.
 type Config struct {
 	// Type supported are 'memory', 'sqlite', 'postgresql'.
@@ -22,5 +24,19 @@ func DefaultConfig() Config {
 	return Config{
 		Type:   "sqlite",
 		Sqlite: Sqlite{Filepath: ".dev/server/sqlite.db"},
+	}
+}
+
+// ConnectionString returns the database connection string for migrations.
+func (c *Config) ConnectionString() string {
+	switch c.Type {
+	case "sqlite":
+		return fmt.Sprintf("sqlite3://%s", c.Sqlite.Filepath)
+	case "postgresql":
+		return c.Postgresql.DNS
+	case "memory":
+		return "" // Memory store doesn't support migrations
+	default:
+		return ""
 	}
 }

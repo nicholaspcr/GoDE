@@ -3,15 +3,29 @@ package store
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/glebarez/sqlite"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/nicholaspcr/GoDE/internal/migrations"
 	"github.com/nicholaspcr/GoDE/internal/store/gorm"
 	"gorm.io/driver/postgres"
 )
 
 // New returns a new Store instance
 func New(ctx context.Context, cfg Config) (Store, error) {
+	// Run migrations first (except for memory stores)
+	if cfg.Type != "memory" {
+		connStr := cfg.ConnectionString()
+		if connStr != "" {
+			slog.Info("Running database migrations before connecting...")
+			if err := migrations.Run(connStr); err != nil {
+				slog.Error("Migration failed", slog.String("error", err.Error()))
+				return nil, err
+			}
+		}
+	}
+
 	var dialector gorm.Dialector
 
 	switch cfg.Type {
@@ -30,8 +44,11 @@ func New(ctx context.Context, cfg Config) (Store, error) {
 		return nil, err
 	}
 
-	if err := st.AutoMigrate(); err != nil {
-		return nil, err
+	// For memory stores, still use AutoMigrate since migrations don't work with :memory:
+	if cfg.Type == "memory" {
+		if err := st.AutoMigrate(); err != nil {
+			return nil, err
+		}
 	}
 
 	return st, nil

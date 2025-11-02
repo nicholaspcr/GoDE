@@ -8,15 +8,21 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
+	"github.com/nicholaspcr/GoDE/internal/store/migrations"
 )
 
 // Run executes database migrations.
 func Run(databaseURL string) error {
 	slog.Info("Running database migrations", slog.String("url", maskPassword(databaseURL)))
 
-	// Create migrate instance with file source
-	m, err := migrate.New("file://db/migrations", databaseURL)
+	// Create migrate instance with embedded filesystem source
+	sourceDriver, err := iofs.New(migrations.FS, ".")
+	if err != nil {
+		return fmt.Errorf("failed to create iofs driver: %w", err)
+	}
+
+	m, err := migrate.NewWithSourceInstance("iofs", sourceDriver, databaseURL)
 	if err != nil {
 		return fmt.Errorf("failed to create migrate instance: %w", err)
 	}
@@ -51,7 +57,13 @@ func Rollback(databaseURL string, steps int) error {
 		slog.String("url", maskPassword(databaseURL)),
 		slog.Int("steps", steps))
 
-	m, err := migrate.New("file://db/migrations", databaseURL)
+	// Create migrate instance with embedded filesystem source
+	sourceDriver, err := iofs.New(migrations.FS, ".")
+	if err != nil {
+		return fmt.Errorf("failed to create iofs driver: %w", err)
+	}
+
+	m, err := migrate.NewWithSourceInstance("iofs", sourceDriver, databaseURL)
 	if err != nil {
 		return fmt.Errorf("failed to create migrate instance: %w", err)
 	}
@@ -81,7 +93,13 @@ func Rollback(databaseURL string, steps int) error {
 
 // Version returns the current migration version.
 func Version(databaseURL string) (uint, bool, error) {
-	m, err := migrate.New("file://db/migrations", databaseURL)
+	// Create migrate instance with embedded filesystem source
+	sourceDriver, err := iofs.New(migrations.FS, ".")
+	if err != nil {
+		return 0, false, fmt.Errorf("failed to create iofs driver: %w", err)
+	}
+
+	m, err := migrate.NewWithSourceInstance("iofs", sourceDriver, databaseURL)
 	if err != nil {
 		return 0, false, fmt.Errorf("failed to create migrate instance: %w", err)
 	}

@@ -1,0 +1,56 @@
+# Multi-stage Dockerfile for decli
+# Stage 1: Build the Go binary
+FROM golang:1.25-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache git ca-certificates
+
+# Set working directory
+WORKDIR /app
+
+# Copy go mod files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build the binary
+# CGO_ENABLED=0 for a fully static binary
+# -ldflags to strip debug info and reduce binary size
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags="-w -s" \
+    -o /app/bin/decli \
+    ./cmd/decli
+
+# Stage 2: Create minimal runtime image
+FROM alpine:latest
+
+# Install runtime dependencies
+RUN apk add --no-cache ca-certificates
+
+# Create non-root user
+RUN addgroup -g 1000 decli && \
+    adduser -D -u 1000 -G decli decli
+
+# Set working directory
+WORKDIR /home/decli
+
+# Copy binary from builder
+COPY --from=builder /app/bin/decli /usr/local/bin/decli
+
+# Create directory for CLI state/config
+RUN mkdir -p /home/decli/.decli && \
+    chown -R decli:decli /home/decli
+
+# Switch to non-root user
+USER decli
+
+# Set default server address (can be overridden)
+ENV DESERVER_ADDRESS=localhost:3030
+
+# Default command shows help
+ENTRYPOINT ["decli"]
+CMD ["--help"]

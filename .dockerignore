@@ -1,0 +1,50 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Development files
+.dev/
+.vscode/
+.idea/
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# Test files
+*_test.go
+testdata/
+
+# CI/CD
+.github/
+
+# Build artifacts
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Temporary files
+*.tmp
+*.log
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Docker files (don't need them in context)
+docker-compose.yml
+Dockerfile*
+
+# Scripts (usually not needed in container)
+scripts/

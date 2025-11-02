@@ -1,0 +1,68 @@
+# Multi-stage Dockerfile for deserver
+# Stage 1: Build the Go binary
+FROM golang:1.25-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache git ca-certificates tzdata
+
+# Set working directory
+WORKDIR /app
+
+# Copy go mod files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build the binary
+# CGO_ENABLED=0 for a fully static binary
+# -ldflags to strip debug info and reduce binary size
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags="-w -s" \
+    -o /app/bin/deserver \
+    ./cmd/deserver
+
+# Stage 2: Create minimal runtime image
+FROM alpine:latest
+
+# Install runtime dependencies
+RUN apk add --no-cache ca-certificates tzdata
+
+# Create non-root user
+RUN addgroup -g 1000 deserver && \
+    adduser -D -u 1000 -G deserver deserver
+
+# Set working directory
+WORKDIR /home/deserver
+
+# Copy binary from builder
+COPY --from=builder /app/bin/deserver /usr/local/bin/deserver
+
+# Copy migrations are embedded, no need to copy them
+
+# Change ownership
+RUN chown -R deserver:deserver /home/deserver
+
+# Switch to non-root user
+USER deserver
+
+# Expose ports
+# 3030 for gRPC
+# 8081 for HTTP/REST
+EXPOSE 3030 8081
+
+# Set environment variables with defaults
+ENV STORE_TYPE=postgres \
+    METRICS_ENABLED=true \
+    METRICS_TYPE=prometheus
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8081/health || exit 1
+
+# Run the server
+ENTRYPOINT ["deserver"]
+CMD ["start"]

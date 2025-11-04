@@ -122,3 +122,39 @@ Key services:
 - **Pareto filtering**: Uses non-dominated sorting with crowding distance reduction
 - **Concurrent executions**: Multiple DE runs execute in goroutines, results aggregated through channels
 - **OpenTelemetry**: Instrumentation is enabled for gRPC and GORM operations
+
+## Commit Message Guidelines
+
+When creating commits for this repository:
+
+1. **Keep commits compact and focused**: Each commit should address a single concern or feature
+2. **Use conventional commit format**:
+   - `feat:` for new features
+   - `fix:` for bug fixes
+   - `docs:` for documentation changes
+   - `test:` for test additions/changes
+   - `refactor:` for code refactoring
+   - `chore:` for maintenance tasks
+   - `perf:` for performance improvements
+
+3. **Do NOT include AI attribution**:
+   - Do not add "Generated with Claude Code" or similar AI references
+   - Do not add "Co-Authored-By: Claude" lines
+   - The presence of CLAUDE.md in the repository already indicates AI assistance is used
+   - Commit messages should focus on the technical changes, not the tools used to create them
+
+4. **Write clear, descriptive messages**:
+   - First line: concise summary (50-72 chars)
+   - Optional body: detailed explanation of what and why (not how)
+   - Use bullet points for multiple changes
+   - Reference issue numbers when applicable
+
+**Example of a good commit message:**
+```
+fix: correct best/1 variant mutation index calculation
+
+- Changed index[i] to index[1] in best_1.go line 36
+- Bug caused index out of bounds when DIM >= 3
+- Add comprehensive unit tests for best/1 and best/2 variants
+- All 77 tests now passing
+```

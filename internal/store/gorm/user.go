@@ -36,14 +36,14 @@ func (st *userStore) GetUser(
 ) (*api.User, error) {
 	var usr userModel
 
-	tx := st.First(&usr, "username = ?", usrIDs.Username)
+	tx := st.DB.WithContext(ctx).First(&usr, "username = ?", usrIDs.Username)
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
 	return &api.User{
 		Ids:      &api.UserIDs{Username: usr.Username},
 		Email:    usr.Email,
-		Password: usr.Password,
+		Password: "", // Never return password hash to clients
 	}, nil
 }
 
@@ -52,7 +52,7 @@ func (st *userStore) UpdateUser(
 ) error {
 	var model userModel
 
-	tx := st.First(&model, "username = ?", usr.GetIds().Username)
+	tx := st.DB.WithContext(ctx).First(&model, "username = ?", usr.GetIds().Username)
 	if tx.Error != nil {
 		return tx.Error
 	}
@@ -69,7 +69,7 @@ func (st *userStore) UpdateUser(
 		}
 	}
 
-	tx = st.DB.Model(&model).Updates(columns)
+	tx = st.DB.WithContext(ctx).Model(&model).Updates(columns)
 	if tx.Error != nil {
 		return tx.Error
 	}

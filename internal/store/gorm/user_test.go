@@ -46,7 +46,7 @@ func TestUserStore_CreateUser(t *testing.T) {
 		retrieved, err := store.GetUser(ctx, &api.UserIDs{Username: "testuser"})
 		require.NoError(t, err)
 		assert.Equal(t, "testuser", retrieved.GetIds().Username)
-		assert.Equal(t, "hashedpassword123", retrieved.Password)
+		assert.Equal(t, "", retrieved.Password) // Password should never be returned
 	})
 
 	t.Run("create user with duplicate username", func(t *testing.T) {
@@ -99,7 +99,7 @@ func TestUserStore_GetUser(t *testing.T) {
 		retrieved, err := store.GetUser(ctx, &api.UserIDs{Username: "gettest"})
 		assert.NoError(t, err)
 		assert.Equal(t, "gettest", retrieved.GetIds().Username)
-		assert.Equal(t, "hashedpass", retrieved.Password)
+		assert.Equal(t, "", retrieved.Password) // Password should never be returned
 	})
 
 	t.Run("get non-existent user", func(t *testing.T) {
@@ -134,7 +134,7 @@ func TestUserStore_UpdateUser(t *testing.T) {
 		retrieved, err := store.GetUser(ctx, &api.UserIDs{Username: "updatetest"})
 		require.NoError(t, err)
 		assert.Equal(t, "new@example.com", retrieved.Email)
-		assert.Equal(t, "oldpassword", retrieved.Password) // Should remain unchanged
+		assert.Equal(t, "", retrieved.Password) // Password should never be returned
 	})
 
 	t.Run("update user password", func(t *testing.T) {
@@ -145,10 +145,10 @@ func TestUserStore_UpdateUser(t *testing.T) {
 		err := store.UpdateUser(ctx, updatedUser, "password")
 		assert.NoError(t, err)
 
-		// Verify update
+		// Password was updated but GetUser never returns it
 		retrieved, err := store.GetUser(ctx, &api.UserIDs{Username: "updatetest"})
 		require.NoError(t, err)
-		assert.Equal(t, "newpassword", retrieved.Password)
+		assert.Equal(t, "", retrieved.Password) // Password should never be returned
 	})
 
 	t.Run("update user with multiple fields", func(t *testing.T) {
@@ -164,7 +164,7 @@ func TestUserStore_UpdateUser(t *testing.T) {
 		retrieved, err := store.GetUser(ctx, &api.UserIDs{Username: "updatetest"})
 		require.NoError(t, err)
 		assert.Equal(t, "newest@example.com", retrieved.Email)
-		assert.Equal(t, "newestpassword", retrieved.Password)
+		assert.Equal(t, "", retrieved.Password) // Password should never be returned
 	})
 
 	t.Run("update non-existent user", func(t *testing.T) {

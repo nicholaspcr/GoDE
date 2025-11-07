@@ -14,18 +14,19 @@ import (
 )
 
 func TestNewRateLimiter(t *testing.T) {
-	rl := NewRateLimiter(5, 10, 3, 100)
+	rl := NewRateLimiter(5, 3, 10, 3, 100)
 
 	assert.NotNil(t, rl)
 	assert.NotNil(t, rl.globalLimiter)
-	assert.NotNil(t, rl.authLimiters)
+	assert.NotNil(t, rl.loginLimiters)
+	assert.NotNil(t, rl.registerLimiters)
 	assert.NotNil(t, rl.userDELimiters)
 	assert.Equal(t, 3, rl.maxConcurrentDE)
 }
 
 func TestRateLimiter_UnaryGlobalRateLimitMiddleware(t *testing.T) {
 	// Create rate limiter with very low limit for testing
-	rl := NewRateLimiter(5, 10, 3, 2) // 2 requests per second
+	rl := NewRateLimiter(5, 3, 10, 3, 2) // 2 requests per second
 
 	middleware := rl.UnaryGlobalRateLimitMiddleware()
 	ctx := context.Background()
@@ -70,7 +71,7 @@ func TestRateLimiter_UnaryGlobalRateLimitMiddleware(t *testing.T) {
 
 func TestRateLimiter_UnaryAuthRateLimitMiddleware(t *testing.T) {
 	// Create rate limiter with very low auth limit for testing
-	rl := NewRateLimiter(60, 10, 3, 100) // 60 per minute = 1 per second
+	rl := NewRateLimiter(60, 60, 10, 3, 100) // 60 login/register per minute = 1 per second
 
 	middleware := rl.UnaryAuthRateLimitMiddleware()
 
@@ -119,7 +120,7 @@ func TestRateLimiter_UnaryAuthRateLimitMiddleware(t *testing.T) {
 		st, ok := status.FromError(err)
 		require.True(t, ok)
 		assert.Equal(t, codes.ResourceExhausted, st.Code())
-		assert.Contains(t, st.Message(), "too many authentication attempts")
+		assert.Contains(t, st.Message(), "too many login attempts")
 		assert.Equal(t, 2, handlerCalled)
 	})
 
@@ -139,25 +140,21 @@ func TestRateLimiter_UnaryAuthRateLimitMiddleware(t *testing.T) {
 		assert.Equal(t, "response", resp)
 		assert.Equal(t, 1, handlerCalled)
 
-		// Second request should succeed (burst allowance)
-		resp, err = middleware(ctx, nil, info, mockHandler)
-		assert.NoError(t, err)
-		assert.Equal(t, "response", resp)
-		assert.Equal(t, 2, handlerCalled)
-
-		// Third request should be rate limited
+		// Second request should succeed (burst allowance of 1 for register)
+		// Actually, register has burst=1, so second request should fail
 		_, err = middleware(ctx, nil, info, mockHandler)
 		require.Error(t, err)
 		st, ok := status.FromError(err)
 		require.True(t, ok)
 		assert.Equal(t, codes.ResourceExhausted, st.Code())
-		assert.Equal(t, 2, handlerCalled)
+		assert.Contains(t, st.Message(), "too many registration attempts")
+		assert.Equal(t, 1, handlerCalled)
 	})
 }
 
 func TestRateLimiter_UnaryDERateLimitMiddleware(t *testing.T) {
 	// Create rate limiter with low limits for testing
-	rl := NewRateLimiter(5, 60, 2, 100) // 60 DE per minute = 1 per second, max 2 concurrent
+	rl := NewRateLimiter(5, 3, 60, 2, 100) // 60 DE per minute = 1 per second, max 2 concurrent
 
 	middleware := rl.UnaryDERateLimitMiddleware()
 
@@ -231,7 +228,7 @@ func TestRateLimiter_UnaryDERateLimitMiddleware(t *testing.T) {
 
 	t.Run("concurrency limit is enforced", func(t *testing.T) {
 		// Create a new rate limiter with higher rate limit but low concurrency
-		rl2 := NewRateLimiter(5, 600, 2, 100) // 600 DE per minute = 10 per second, max 2 concurrent
+		rl2 := NewRateLimiter(5, 3, 600, 2, 100) // 600 DE per minute = 10 per second, max 2 concurrent
 		middleware2 := rl2.UnaryDERateLimitMiddleware()
 
 		handlerCalled = 0
@@ -291,21 +288,24 @@ func TestRateLimiter_UnaryDERateLimitMiddleware(t *testing.T) {
 }
 
 func TestRateLimiter_Cleanup(t *testing.T) {
-	rl := NewRateLimiter(5, 10, 3, 100)
+	rl := NewRateLimiter(5, 3, 10, 3, 100)
 
 	// Create some limiters
-	rl.getAuthLimiter("ip1")
-	rl.getAuthLimiter("ip2")
+	rl.getLoginLimiter("ip1")
+	rl.getLoginLimiter("ip2")
+	rl.getRegisterLimiter("ip3")
 	rl.getUserDELimiter("user1")
 	rl.getUserDELimiter("user2")
 
-	assert.Len(t, rl.authLimiters, 2)
+	assert.Len(t, rl.loginLimiters, 2)
+	assert.Len(t, rl.registerLimiters, 1)
 	assert.Len(t, rl.userDELimiters, 2)
 
 	// Cleanup
 	rl.Cleanup(time.Hour)
 
-	assert.Len(t, rl.authLimiters, 0)
+	assert.Len(t, rl.loginLimiters, 0)
+	assert.Len(t, rl.registerLimiters, 0)
 	assert.Len(t, rl.userDELimiters, 0)
 }
 

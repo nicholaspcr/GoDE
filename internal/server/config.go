@@ -33,8 +33,10 @@ type TLSConfig struct {
 
 // RateLimitConfig contains rate limiting configuration.
 type RateLimitConfig struct {
-	// AuthRequestsPerMinute limits authentication requests per IP
-	AuthRequestsPerMinute int `json:"auth_requests_per_minute" yaml:"auth_requests_per_minute"`
+	// LoginRequestsPerMinute limits login requests per IP
+	LoginRequestsPerMinute int `json:"login_requests_per_minute" yaml:"login_requests_per_minute"`
+	// RegisterRequestsPerMinute limits registration requests per IP (stricter than login)
+	RegisterRequestsPerMinute int `json:"register_requests_per_minute" yaml:"register_requests_per_minute"`
 	// DEExecutionsPerUser limits DE executions per user
 	DEExecutionsPerUser int `json:"de_executions_per_user" yaml:"de_executions_per_user"`
 	// MaxConcurrentDEPerUser limits concurrent DE executions per user
@@ -73,11 +75,12 @@ func DefaultConfig() Config {
 			KeyFile:  "",
 		},
 		RateLimit: RateLimitConfig{
-			AuthRequestsPerMinute:  5,
-			DEExecutionsPerUser:    10,
-			MaxConcurrentDEPerUser: 3,
-			MaxRequestsPerSecond:   100,
-			MaxMessageSizeBytes:    4 * 1024 * 1024, // 4MB
+			LoginRequestsPerMinute:    5,  // 5 login attempts per minute per IP
+			RegisterRequestsPerMinute: 3,  // 3 registrations per minute per IP (stricter)
+			DEExecutionsPerUser:       10,
+			MaxConcurrentDEPerUser:    3,
+			MaxRequestsPerSecond:      100,
+			MaxMessageSizeBytes:       4 * 1024 * 1024, // 4MB
 		},
 		DE: de.Config{
 			ParetoChannelLimiter: 100,
@@ -118,8 +121,11 @@ func (c *Config) Validate() error {
 	}
 
 	// Rate limit validation
-	if c.RateLimit.AuthRequestsPerMinute < 1 {
-		return fmt.Errorf("auth_requests_per_minute must be at least 1")
+	if c.RateLimit.LoginRequestsPerMinute < 1 {
+		return fmt.Errorf("login_requests_per_minute must be at least 1")
+	}
+	if c.RateLimit.RegisterRequestsPerMinute < 1 {
+		return fmt.Errorf("register_requests_per_minute must be at least 1")
 	}
 	if c.RateLimit.DEExecutionsPerUser < 1 {
 		return fmt.Errorf("de_executions_per_user must be at least 1")

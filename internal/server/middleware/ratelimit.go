@@ -16,10 +16,15 @@ import (
 
 // RateLimiter manages rate limiting for different types of requests.
 type RateLimiter struct {
-	// Per-IP rate limiters for auth endpoints
-	authLimiters     map[string]*rate.Limiter
-	authLimiterMutex sync.RWMutex
-	authLimit        rate.Limit
+	// Per-IP rate limiters for login endpoints
+	loginLimiters     map[string]*rate.Limiter
+	loginLimiterMutex sync.RWMutex
+	loginLimit        rate.Limit
+
+	// Per-IP rate limiters for registration endpoints (stricter)
+	registerLimiters     map[string]*rate.Limiter
+	registerLimiterMutex sync.RWMutex
+	registerLimit        rate.Limit
 
 	// Per-user rate limiters for DE executions
 	userDELimiters     map[string]*rateLimiterWithConcurrency
@@ -40,14 +45,16 @@ type rateLimiterWithConcurrency struct {
 }
 
 // NewRateLimiter creates a new rate limiter with the specified limits.
-func NewRateLimiter(authRequestsPerMinute, deExecutionsPerUser, maxConcurrentDE, maxRequestsPerSecond int) *RateLimiter {
+func NewRateLimiter(loginRequestsPerMinute, registerRequestsPerMinute, deExecutionsPerUser, maxConcurrentDE, maxRequestsPerSecond int) *RateLimiter {
 	return &RateLimiter{
-		authLimiters:   make(map[string]*rate.Limiter),
-		authLimit:      rate.Limit(float64(authRequestsPerMinute) / 60.0), // Convert to per-second
-		userDELimiters: make(map[string]*rateLimiterWithConcurrency),
-		deLimit:        rate.Limit(float64(deExecutionsPerUser) / 60.0), // Convert to per-second
-		maxConcurrentDE: maxConcurrentDE,
-		globalLimiter:  rate.NewLimiter(rate.Limit(maxRequestsPerSecond), maxRequestsPerSecond),
+		loginLimiters:    make(map[string]*rate.Limiter),
+		loginLimit:       rate.Limit(float64(loginRequestsPerMinute) / 60.0), // Convert to per-second
+		registerLimiters: make(map[string]*rate.Limiter),
+		registerLimit:    rate.Limit(float64(registerRequestsPerMinute) / 60.0), // Convert to per-second
+		userDELimiters:   make(map[string]*rateLimiterWithConcurrency),
+		deLimit:          rate.Limit(float64(deExecutionsPerUser) / 60.0), // Convert to per-second
+		maxConcurrentDE:  maxConcurrentDE,
+		globalLimiter:    rate.NewLimiter(rate.Limit(maxRequestsPerSecond), maxRequestsPerSecond),
 	}
 }
 
@@ -73,28 +80,54 @@ func getUsernameFromContext(ctx context.Context) string {
 	return usernames[0]
 }
 
-// getAuthLimiter gets or creates a rate limiter for the given IP.
-func (rl *RateLimiter) getAuthLimiter(ip string) *rate.Limiter {
-	rl.authLimiterMutex.RLock()
-	limiter, exists := rl.authLimiters[ip]
-	rl.authLimiterMutex.RUnlock()
+// getLoginLimiter gets or creates a rate limiter for login requests from the given IP.
+func (rl *RateLimiter) getLoginLimiter(ip string) *rate.Limiter {
+	rl.loginLimiterMutex.RLock()
+	limiter, exists := rl.loginLimiters[ip]
+	rl.loginLimiterMutex.RUnlock()
 
 	if exists {
 		return limiter
 	}
 
-	rl.authLimiterMutex.Lock()
-	defer rl.authLimiterMutex.Unlock()
+	rl.loginLimiterMutex.Lock()
+	defer rl.loginLimiterMutex.Unlock()
 
 	// Double-check after acquiring write lock
-	limiter, exists = rl.authLimiters[ip]
+	limiter, exists = rl.loginLimiters[ip]
 	if exists {
 		return limiter
 	}
 
 	// Create new limiter with burst of 2 to allow occasional bursts
-	limiter = rate.NewLimiter(rl.authLimit, 2)
-	rl.authLimiters[ip] = limiter
+	limiter = rate.NewLimiter(rl.loginLimit, 2)
+	rl.loginLimiters[ip] = limiter
+
+	return limiter
+}
+
+// getRegisterLimiter gets or creates a rate limiter for registration requests from the given IP.
+func (rl *RateLimiter) getRegisterLimiter(ip string) *rate.Limiter {
+	rl.registerLimiterMutex.RLock()
+	limiter, exists := rl.registerLimiters[ip]
+	rl.registerLimiterMutex.RUnlock()
+
+	if exists {
+		return limiter
+	}
+
+	rl.registerLimiterMutex.Lock()
+	defer rl.registerLimiterMutex.Unlock()
+
+	// Double-check after acquiring write lock
+	limiter, exists = rl.registerLimiters[ip]
+	if exists {
+		return limiter
+	}
+
+	// Create new limiter with burst of 1 (stricter for registration)
+	limiter = rate.NewLimiter(rl.registerLimit, 1)
+	rl.registerLimiters[ip] = limiter
 
 	return limiter
 }
@@ -185,11 +218,20 @@ func (rl *RateLimiter) UnaryAuthRateLimitMiddleware() grpc.UnaryServerIntercepto
 		}
 
 		ip := getIPFromContext(ctx)
-		limiter := rl.getAuthLimiter(ip)
+		var limiter *rate.Limiter
+		var errorMsg string
+
+		// Use different rate limiters for login vs registration
+		if info.FullMethod == "/api.v1.AuthService/Register" {
+			limiter = rl.getRegisterLimiter(ip)
+			errorMsg = "too many registration attempts, please try again later"
+		} else {
+			limiter = rl.getLoginLimiter(ip)
+			errorMsg = "too many login attempts, please try again later"
+		}
 
 		if !limiter.Allow() {
-			return nil, status.Errorf(codes.ResourceExhausted,
-				"too many authentication attempts, please try again later")
+			return nil, status.Errorf(codes.ResourceExhausted, "%s", errorMsg)
 		}
 
 		return handler(ctx, req)
@@ -243,9 +285,13 @@ func (rl *RateLimiter) UnaryDERateLimitMiddleware() grpc.UnaryServerInterceptor 
 func (rl *RateLimiter) Cleanup(maxAge time.Duration) {
 	// For simplicity, we'll clear all limiters.
 	// In a production system, you'd track last access time and only remove old ones.
-	rl.authLimiterMutex.Lock()
-	rl.authLimiters = make(map[string]*rate.Limiter)
-	rl.authLimiterMutex.Unlock()
+	rl.loginLimiterMutex.Lock()
+	rl.loginLimiters = make(map[string]*rate.Limiter)
+	rl.loginLimiterMutex.Unlock()
+
+	rl.registerLimiterMutex.Lock()
+	rl.registerLimiters = make(map[string]*rate.Limiter)
+	rl.registerLimiterMutex.Unlock()
 
 	rl.userDELimiterMutex.Lock()
 	rl.userDELimiters = make(map[string]*rateLimiterWithConcurrency)

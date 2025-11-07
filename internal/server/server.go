@@ -42,6 +42,7 @@ func New(ctx context.Context, cfg Config, opts ...serverOpts) (Server, error) {
 		handlers: []handlers.Handler{
 			handlers.NewAuthHandler(jwtService),
 			handlers.NewUserHandler(),
+			handlers.NewParetoHandler(),
 			handlers.NewDEHandler(cfg.DE),
 		},
 		jwtService: jwtService,
@@ -136,11 +137,32 @@ func (s *server) Start(ctx context.Context) error {
 
 	// Initialize rate limiter
 	rateLimiter := middleware.NewRateLimiter(
-		s.cfg.RateLimit.AuthRequestsPerMinute,
+		s.cfg.RateLimit.LoginRequestsPerMinute,
+		s.cfg.RateLimit.RegisterRequestsPerMinute,
 		s.cfg.RateLimit.DEExecutionsPerUser,
 		s.cfg.RateLimit.MaxConcurrentDEPerUser,
 		s.cfg.RateLimit.MaxRequestsPerSecond,
 	)
+
+	// Start periodic rate limiter cleanup to prevent memory leaks
+	cleanupDone := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(1 * time.Hour)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				rateLimiter.Cleanup(1 * time.Hour)
+				slog.Debug("Rate limiter cleanup completed")
+			case <-ctx.Done():
+				close(cleanupDone)
+				return
+			}
+		}
+	}()
+	defer func() {
+		<-cleanupDone // Wait for cleanup goroutine to finish
+	}()
 
 	// Prepare gRPC server options
 	grpcOpts := []grpc.ServerOption{

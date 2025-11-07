@@ -3,6 +3,8 @@
 package gorm
 
 import (
+	"time"
+
 	"gorm.io/gorm"
 	"gorm.io/plugin/opentelemetry/tracing"
 )
@@ -24,6 +26,18 @@ func New(dialector gorm.Dialector) (*gormStore, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Configure connection pool settings
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	// Set connection pool parameters for optimal performance and resource management
+	sqlDB.SetMaxIdleConns(10)                  // Maximum number of idle connections in the pool
+	sqlDB.SetMaxOpenConns(100)                 // Maximum number of open connections to the database
+	sqlDB.SetConnMaxLifetime(time.Hour)        // Maximum amount of time a connection may be reused
+	sqlDB.SetConnMaxIdleTime(10 * time.Minute) // Maximum amount of time a connection may be idle
 
 	if err := db.Use(tracing.NewPlugin()); err != nil {
 		return nil, err

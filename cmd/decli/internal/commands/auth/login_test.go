@@ -1,58 +1,12 @@
 package authcmd
 
 import (
-	"context"
 	"testing"
 
-	"github.com/nicholaspcr/GoDE/cmd/decli/internal/state"
-	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
-
-// mockAuthClient implements api.AuthServiceClient for testing
-type mockAuthClient struct {
-	api.AuthServiceClient
-	loginFn    func(ctx context.Context, req *api.AuthServiceLoginRequest, opts ...grpc.CallOption) (*api.AuthServiceLoginResponse, error)
-	registerFn func(ctx context.Context, req *api.AuthServiceRegisterRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-}
-
-func (m *mockAuthClient) Login(ctx context.Context, req *api.AuthServiceLoginRequest, opts ...grpc.CallOption) (*api.AuthServiceLoginResponse, error) {
-	if m.loginFn != nil {
-		return m.loginFn(ctx, req, opts...)
-	}
-	return &api.AuthServiceLoginResponse{Token: "test-token"}, nil
-}
-
-func (m *mockAuthClient) Register(ctx context.Context, req *api.AuthServiceRegisterRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	if m.registerFn != nil {
-		return m.registerFn(ctx, req, opts...)
-	}
-	return &emptypb.Empty{}, nil
-}
-
-// mockStateDB implements state.State for testing
-type mockStateDB struct {
-	state.State
-	savedToken string
-}
-
-func (m *mockStateDB) SaveAuthToken(token string) error {
-	m.savedToken = token
-	return nil
-}
-
-func (m *mockStateDB) GetAuthToken() (string, error) {
-	return m.savedToken, nil
-}
-
-func (m *mockStateDB) DeleteAuthToken() error {
-	m.savedToken = ""
-	return nil
-}
 
 func TestLoginCommand(t *testing.T) {
 	// Test that login command is properly initialized

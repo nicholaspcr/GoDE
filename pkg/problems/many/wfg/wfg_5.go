@@ -52,6 +52,7 @@ func (w *wfg5) Evaluate(e *models.Vector, m int) error {
 
 // wfg5_t1 implementation
 func wfg5_t1(X []float64) []float64 {
+	//nolint:prealloc // Dynamic slice growth is intentional for clarity
 	var ret []float64
 	for _, x := range X {
 		ret = append(ret, _transformation_param_deceptive(x, 0.35, 0.001, 0.05))

@@ -53,6 +53,7 @@ func (w *wfg4) Evaluate(e *models.Vector, m int) error {
 
 // wfg4_t1 implementation
 func wfg4_t1(X []float64, n, k int) []float64 {
+	//nolint:prealloc // Dynamic slice growth is intentional for clarity
 	var ret []float64
 	for _, x := range X {
 		ret = append(

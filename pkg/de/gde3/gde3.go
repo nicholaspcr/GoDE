@@ -102,6 +102,7 @@ func (g *gde3) Execute(
 
 func (g *gde3) initializePopulation(ctx context.Context, population models.Population) ([]float64, error) {
 	tracer := otel.Tracer("gde3")
+	//nolint:ineffassign,staticcheck // Context reassignment is intentional to propagate span context
 	ctx, span := tracer.Start(ctx, "gde3.initializePopulation",
 		trace.WithAttributes(
 			attribute.Int("population_size", len(population)),

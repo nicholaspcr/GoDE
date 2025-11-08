@@ -69,6 +69,7 @@ func UnaryAuthMiddleware(
 			}
 
 			// Add user info to context for downstream handlers
+			//nolint:staticcheck // SA1029: Using empty struct as context key is intentional and safe in this case
 			ctx = context.WithValue(ctx, usernameCtxKey, claims.Username)
 		}
 

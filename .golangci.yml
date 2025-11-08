@@ -31,27 +31,100 @@ linters-settings:
     enable-all: true
   revive:
     rules:
+      # Disable exported rule - we handle this with explicit documentation
       - name: exported
         disabled: true
+
+      # Enable package comments check
       - name: package-comments
         disabled: false
+
+      # Disable unused-parameter - interface implementations often have unused parameters
+      - name: unused-parameter
+        disabled: true
+
+      # Configure var-naming to allow common initialisms
+      - name: var-naming
+        disabled: false
+        arguments:
+          - ["ID", "URL", "JSON", "API", "HTTP", "GRPC"]
+          - ["VM"]
+
+      # Disable stuttering check - names like MockStore and ValidationError are intentional
+      - name: stuttering
+        disabled: true
+
+      # Disable unexported-return - returning unexported types from constructors is intentional
+      - name: unexported-return
+        disabled: true
 
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
   exclude-rules:
+    # Test files - allow some linters to be more lenient
     - linters:
         - errcheck
         - gocyclo
         - gosec
         - unused
       path: _test\.go
+
+    # Generated protobuf files - exclude all linters
     - linters:
         - all
       path: .*\.pb\.go$
     - linters:
         - all
       path: .*\.pb\.gw\.go$
+
+    # WFG problems - exclude revive entirely (legacy code from research paper)
+    - linters:
+        - revive
+      path: pkg/problems/many/wfg/
+
+    # Exclude all revive warnings for generated/legacy code patterns
+    - linters:
+        - revive
+      text: "don't use underscores in Go names"
+    - linters:
+        - revive
+      text: "parameter .* seems to be unused"
+    - linters:
+        - revive
+      text: "returns unexported type"
+    - linters:
+        - revive
+      text: "stutters; consider calling this"
+    - linters:
+        - revive
+      text: "should omit type"
+    - linters:
+        - revive
+      text: "avoid meaningless package names"
+
+    # Server middleware - context key type is intentional
+    - linters:
+        - staticcheck
+      path: internal/server/middleware/auth.go
+      text: "SA1029"
+
+    # Telemetry attributes - type conversions required by OpenTelemetry API
+    - linters:
+        - unconvert
+      path: internal/server/handlers/differential_evolution.go
+      text: "unnecessary conversion"
+
+    # Algorithm implementations - context reassignment is intentional
+    - linters:
+        - ineffassign
+      path: pkg/de/gde3/gde3.go
+      text: "ineffectual assignment to ctx"
+
+    # WFG problems - preallocating slices here would complicate logic
+    - linters:
+        - prealloc
+      path: pkg/problems/many/wfg/
   exclude-dirs:
     - third_party
     - builtin

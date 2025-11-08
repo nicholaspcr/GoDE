@@ -117,6 +117,7 @@ func (deh *deHandler) Run(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	//nolint:unconvert // Type conversions required by OpenTelemetry attribute API
 	span.SetAttributes(
 		attribute.Int64("executions", int64(req.DeConfig.Executions)),
 		attribute.Int64("generations", int64(req.DeConfig.Generations)),

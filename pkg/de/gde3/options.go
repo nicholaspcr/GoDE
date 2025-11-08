@@ -1,7 +1,6 @@
 package gde3
 
 import (
-	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
@@ -21,14 +20,6 @@ func WithProblem(p problems.Interface) Option {
 func WithVariant(v variants.Interface) Option {
 	return func(m *gde3) *gde3 {
 		m.variant = v
-		return m
-	}
-}
-
-// WithStore gde3termines the store to be used for storing the algorithm results.
-func WithStore(s store.Store) Option {
-	return func(m *gde3) *gde3 {
-		m.store = s
 		return m
 	}
 }

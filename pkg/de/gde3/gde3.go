@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"math/rand"
 
-	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/de"
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
@@ -16,7 +15,6 @@ import (
 type gde3 struct {
 	problem           problems.Interface
 	variant           variants.Interface
-	store             store.Store
 	initialPopulation models.Population
 	populationParams  models.PopulationParams
 	constants         Constants

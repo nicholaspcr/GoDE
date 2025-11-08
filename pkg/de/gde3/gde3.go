@@ -1,3 +1,4 @@
+// Package gde3 implements the GDE3 multi-objective Differential Evolution algorithm.
 package gde3
 
 import (
@@ -23,10 +24,12 @@ type gde3 struct {
 	constants         Constants
 }
 
+// Option is a functional option for configuring the GDE3 algorithm.
 type Option func(*gde3) *gde3
 
-// GDE3 Returns an instance of an object that implements the GDE3
-// algorithm. It is compliant with the Mode
+// New creates a new GDE3 algorithm instance with the given configuration options.
+// GDE3 is a multi-objective Differential Evolution algorithm that uses non-dominated
+// sorting and crowding distance for selection.
 func New(opts ...Option) de.Algorithm {
 	d := &gde3{}
 	for _, opt := range opts {

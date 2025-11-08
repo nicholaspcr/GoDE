@@ -9,6 +9,8 @@ import (
 
 type zdt2 struct{}
 
+// Zdt2 returns the ZDT2 test problem, a bi-objective benchmark with a non-convex Pareto front.
+// Domain: [0,1]^n, Objectives: 2
 func Zdt2() problems.Interface {
 	return &zdt2{}
 }

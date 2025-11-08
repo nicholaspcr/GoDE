@@ -10,6 +10,8 @@ import (
 
 type zdt3 struct{}
 
+// Zdt3 returns the ZDT3 test problem, a bi-objective benchmark with a disconnected Pareto front.
+// Domain: [0,1]^n, Objectives: 2
 func Zdt3() problems.Interface {
 	return &zdt3{}
 }

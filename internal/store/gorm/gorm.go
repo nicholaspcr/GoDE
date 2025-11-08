@@ -10,6 +10,7 @@ import (
 	"gorm.io/plugin/opentelemetry/tracing"
 )
 
+// Dialector is a type alias for gorm.Dialector used for database connections.
 type Dialector gorm.Dialector
 
 // gormStore is the main store for the application. It contains implementations

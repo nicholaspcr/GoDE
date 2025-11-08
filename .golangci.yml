@@ -22,7 +22,9 @@ linters-settings:
     min-complexity: 15
   gosec:
     excludes:
-      - G104
+      - G104  # Unchecked errors (handled by errcheck linter)
+      - G108  # Profiling endpoint (pprof) - acceptable for development/debugging
+      - G404  # Weak random generator - math/rand is acceptable for DE algorithms and tests
   govet:
     disable:
       - shadow
@@ -42,6 +44,7 @@ issues:
         - errcheck
         - gocyclo
         - gosec
+        - unused
       path: _test\.go
     - linters:
         - all

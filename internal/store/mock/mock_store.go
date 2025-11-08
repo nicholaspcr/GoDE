@@ -1,3 +1,4 @@
+// Package mock provides mock implementations of storage interfaces for testing.
 package mock
 
 import (

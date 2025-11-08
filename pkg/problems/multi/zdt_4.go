@@ -10,6 +10,8 @@ import (
 
 type zdt4 struct{}
 
+// Zdt4 returns the ZDT4 test problem, a bi-objective benchmark with many local Pareto fronts.
+// Domain: x1 in [0,1], xi in [-5,5], Objectives: 2
 func Zdt4() problems.Interface {
 	return &zdt4{}
 }

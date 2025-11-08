@@ -9,6 +9,9 @@ import (
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // gde3 type that contains the definition of the GDE3 algorithm.
@@ -39,17 +42,32 @@ func (g *gde3) Execute(
 	paretoCh chan<- []models.Vector,
 	maxObjCh chan<- []float64,
 ) error {
+	tracer := otel.Tracer("gde3")
+	ctx, span := tracer.Start(ctx, "gde3.Execute",
+		trace.WithAttributes(
+			attribute.Int("population_size", g.populationParams.PopulationSize),
+			attribute.Int("dimensions", g.populationParams.DimensionSize),
+			attribute.Int("objectives", g.populationParams.ObjectivesSize),
+			attribute.Int("generations", g.constants.DE.Generations),
+			attribute.String("variant", g.variant.Name()),
+			attribute.String("problem", g.problem.Name()),
+		),
+	)
+	defer span.End()
+
 	logger := slog.Default()
 	random := rand.New(rand.NewSource(rand.Int63()))
 
 	execNum := de.FromContextExecutionNumber(ctx)
 	logger.Debug("Starting GDE3", slog.Int("execution", execNum))
+	span.SetAttributes(attribute.Int("execution_number", execNum))
 
 	population := g.initialPopulation.Copy()
 	popuParams := g.populationParams
 
-	maxObjs, err := g.initializePopulation(population)
+	maxObjs, err := g.initializePopulation(ctx, population)
 	if err != nil {
+		span.RecordError(err)
 		return err
 	}
 
@@ -63,6 +81,7 @@ func (g *gde3) Execute(
 
 		newPopulation, bestInGen, err := g.runGeneration(ctx, population, random)
 		if err != nil {
+			span.RecordError(err)
 			return err
 		}
 		population = newPopulation
@@ -72,15 +91,25 @@ func (g *gde3) Execute(
 		bestElems = append(bestElems, bestInGen...)
 	}
 
+	span.SetAttributes(attribute.Int("pareto_size", len(bestElems)))
 	maxObjCh <- maxObjs
 	paretoCh <- bestElems
 	return nil
 }
 
-func (g *gde3) initializePopulation(population models.Population) ([]float64, error) {
+func (g *gde3) initializePopulation(ctx context.Context, population models.Population) ([]float64, error) {
+	tracer := otel.Tracer("gde3")
+	ctx, span := tracer.Start(ctx, "gde3.initializePopulation",
+		trace.WithAttributes(
+			attribute.Int("population_size", len(population)),
+		),
+	)
+	defer span.End()
+
 	maxObjs := make([]float64, g.populationParams.ObjectivesSize)
 	for i := range population {
 		if err := g.problem.Evaluate(&population[i], g.populationParams.ObjectivesSize); err != nil {
+			span.RecordError(err)
 			return nil, err
 		}
 		for j, obj := range population[i].Objectives {
@@ -97,15 +126,25 @@ func (g *gde3) runGeneration(
 	population models.Population,
 	random *rand.Rand,
 ) (models.Population, []models.Vector, error) {
+	tracer := otel.Tracer("gde3")
+	ctx, span := tracer.Start(ctx, "gde3.runGeneration",
+		trace.WithAttributes(
+			attribute.Int("population_size", len(population)),
+		),
+	)
+	defer span.End()
+
 	genRankZero, _ := de.FilterDominated(population)
 
 	for i := range len(population) {
-		trial, err := g.mutateAndCrossover(population, genRankZero, i, random)
+		trial, err := g.mutateAndCrossover(ctx, population, genRankZero, i, random)
 		if err != nil {
+			span.RecordError(err)
 			return nil, nil, err
 		}
 
 		if err := g.problem.Evaluate(&trial, g.populationParams.ObjectivesSize); err != nil {
+			span.RecordError(err)
 			return nil, nil, err
 		}
 
@@ -115,14 +154,23 @@ func (g *gde3) runGeneration(
 	reducedPop, rankZero := de.ReduceByCrowdDistance(
 		ctx, population, g.populationParams.PopulationSize,
 	)
+	span.SetAttributes(
+		attribute.Int("rank_zero_size", len(rankZero)),
+		attribute.Int("reduced_population_size", len(reducedPop)),
+	)
 	return reducedPop, rankZero, nil
 }
 
 func (g *gde3) mutateAndCrossover(
+	ctx context.Context,
 	population, genRankZero []models.Vector,
 	currentIdx int,
 	random *rand.Rand,
 ) (models.Vector, error) {
+	tracer := otel.Tracer("gde3")
+	_, span := tracer.Start(ctx, "gde3.mutateAndCrossover")
+	defer span.End()
+
 	popuParams := g.populationParams
 
 	vr, err := g.variant.Mutate(
@@ -137,6 +185,7 @@ func (g *gde3) mutateAndCrossover(
 		},
 	)
 	if err != nil {
+		span.RecordError(err)
 		return models.Vector{}, err
 	}
 

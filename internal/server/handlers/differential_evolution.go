@@ -22,6 +22,8 @@ import (
 	_ "github.com/nicholaspcr/GoDE/pkg/variants/current-to-best"   // Register current-to-best variant
 	_ "github.com/nicholaspcr/GoDE/pkg/variants/pbest"             // Register pbest variant
 	_ "github.com/nicholaspcr/GoDE/pkg/variants/rand"              // Register rand variants
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -99,10 +101,27 @@ func (deh *deHandler) ListSupportedProblems(
 func (deh *deHandler) Run(
 	ctx context.Context, req *api.RunRequest,
 ) (*api.RunResponse, error) {
+	tracer := otel.Tracer("handlers.de")
+	ctx, span := tracer.Start(ctx, "deHandler.Run")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("algorithm", req.Algorithm),
+		attribute.String("problem", req.Problem),
+		attribute.String("variant", req.Variant),
+	)
+
 	// Validate DE configuration
 	if err := validation.ValidateDEConfig(req.DeConfig); err != nil {
+		span.RecordError(err)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+
+	span.SetAttributes(
+		attribute.Int64("executions", int64(req.DeConfig.Executions)),
+		attribute.Int64("generations", int64(req.DeConfig.Generations)),
+		attribute.Int64("population_size", int64(req.DeConfig.PopulationSize)),
+	)
 
 	var algo de.Algorithm
 
@@ -122,16 +141,19 @@ func (deh *deHandler) Run(
 
 	problem, err := problemFromName(req.Problem, int(req.DeConfig.DimensionsSize), int(req.DeConfig.ObjetivesSize))
 	if err != nil {
+		span.RecordError(err)
 		return nil, err
 	}
 
 	variant, err := variantFromName(req.Variant)
 	if err != nil {
+		span.RecordError(err)
 		return nil, err
 	}
 
 	initialPopulation, err := generatePopulation(populationParams, rand.New(rand.NewSource(time.Now().UnixNano())))
 	if err != nil {
+		span.RecordError(err)
 		return nil, err
 	}
 
@@ -156,7 +178,9 @@ func (deh *deHandler) Run(
 		)
 
 	default:
-		return nil, errors.New("unsupported algorithms")
+		err := errors.New("unsupported algorithms")
+		span.RecordError(err)
+		return nil, err
 	}
 
 	DE, err := de.New(
@@ -168,13 +192,16 @@ func (deh *deHandler) Run(
 		de.WithObjFuncAmount(int(req.DeConfig.ObjetivesSize)),
 	)
 	if err != nil {
+		span.RecordError(err)
 		return nil, err
 	}
 
 	finalPareto, maxObjs, err := DE.Execute(ctx)
 	if err != nil {
+		span.RecordError(err)
 		return nil, err
 	}
+	span.SetAttributes(attribute.Int("pareto_result_size", len(finalPareto)))
 
 	// Convert vectors to proto format
 	vectorsProto := make([]*api.Vector, len(finalPareto))

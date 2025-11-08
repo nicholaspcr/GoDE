@@ -169,7 +169,7 @@ func TestGDE3_InitializePopulation(t *testing.T) {
 			WithPopulationParams(params),
 		).(*gde3)
 
-		maxObjs, err := algorithm.initializePopulation(population)
+		maxObjs, err := algorithm.initializePopulation(context.Background(), population)
 		require.NoError(t, err)
 
 		// Verify max objectives
@@ -193,7 +193,7 @@ func TestGDE3_InitializePopulation(t *testing.T) {
 			WithPopulationParams(params),
 		).(*gde3)
 
-		maxObjs, err := algorithm.initializePopulation(population)
+		maxObjs, err := algorithm.initializePopulation(context.Background(), population)
 		require.NoError(t, err)
 
 		// Max objectives should be >= all individual objectives
@@ -228,7 +228,7 @@ func TestGDE3_RunGeneration(t *testing.T) {
 		).(*gde3)
 
 		// Initialize first
-		_, err := algorithm.initializePopulation(population)
+		_, err := algorithm.initializePopulation(context.Background(), population)
 		require.NoError(t, err)
 
 		random := rand.New(rand.NewSource(1))
@@ -255,7 +255,7 @@ func TestGDE3_Selection(t *testing.T) {
 	t.Run("trial dominates current, trial replaces current", func(t *testing.T) {
 		testPop := population.Copy()
 		// Initialize
-		_, _ = algorithm.initializePopulation(testPop)
+		_, _ = algorithm.initializePopulation(context.Background(), testPop)
 
 		// Create a trial that is better
 		trial := testPop[0].Copy()
@@ -272,7 +272,7 @@ func TestGDE3_Selection(t *testing.T) {
 
 	t.Run("population can grow when non-dominating", func(t *testing.T) {
 		testPop := population.Copy()
-		_, _ = algorithm.initializePopulation(testPop)
+		_, _ = algorithm.initializePopulation(context.Background(), testPop)
 
 		trial := testPop[0].Copy()
 		trial.Objectives[0] = trial.Objectives[0] * 0.8

@@ -1,4 +1,4 @@
-version: "2"
+version: 2
 linters:
   enable:
     - bodyclose
@@ -9,62 +9,47 @@ linters:
     - prealloc
     - revive
     - unconvert
-  settings:
-    errcheck:
-      check-type-assertions: true
-      check-blank: true
-      exclude-functions:
-        - (io.Closer).Close
-    gocognit:
-      min-complexity: 20
-    gocyclo:
-      min-complexity: 15
-    gosec:
-      excludes:
-        - G104
-    govet:
-      disable:
-        - shadow
-      enable-all: true
-    revive:
-      rules:
-        - name: exported
-          disabled: true
-        - name: package-comments
-          disabled: true
-  exclusions:
-    generated: lax
-    presets:
-      - comments
-      - common-false-positives
-      - legacy
-      - std-error-handling
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+    exclude-functions:
+      - (io.Closer).Close
+  gocognit:
+    min-complexity: 20
+  gocyclo:
+    min-complexity: 15
+  gosec:
+    excludes:
+      - G104
+  govet:
+    disable:
+      - shadow
+    enable-all: true
+  revive:
     rules:
-      - linters:
-          - errcheck
-          - gocyclo
-          - gosec
-        path: _test\.go
-      - linters:
-          - all
-        path: .*\.pb\.go$
-      - linters:
-          - all
-        path: .*\.pb\.gw\.go$
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
+      - name: exported
+        disabled: true
+      - name: package-comments
+        disabled: false
+
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-formatters:
-  enable:
-    - gofmt
-    - goimports
-  exclusions:
-    generated: lax
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
+  exclude-rules:
+    - linters:
+        - errcheck
+        - gocyclo
+        - gosec
+      path: _test\.go
+    - linters:
+        - all
+      path: .*\.pb\.go$
+    - linters:
+        - all
+      path: .*\.pb\.gw\.go$
+  exclude-dirs:
+    - third_party
+    - builtin
+    - examples

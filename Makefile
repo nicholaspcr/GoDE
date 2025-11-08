@@ -64,6 +64,21 @@ build: ## Builds the binaries for the applications.
 test: ## Runs all the tests.
 	@go test -v ./...
 
+.PHONY: test-unit
+test-unit: ## Runs only unit tests (excludes e2e).
+	@go test -v $(shell go list ./... | grep -v /test/e2e)
+
+.PHONY: test-e2e
+test-e2e: ## Runs end-to-end integration tests with docker-compose.
+	@echo 'Starting e2e test environment...'
+	@docker-compose -f test/e2e/docker-compose.e2e.yaml up -d
+	@echo 'Waiting for services to be ready...'
+	@sleep 10
+	@echo 'Running e2e tests...'
+	@go test -v ./test/e2e/... || (docker-compose -f test/e2e/docker-compose.e2e.yaml down && exit 1)
+	@echo 'Cleaning up e2e environment...'
+	@docker-compose -f test/e2e/docker-compose.e2e.yaml down
+
 .PHONY: lint
 lint: ## Lints the codebase.
 	@golangci-lint run

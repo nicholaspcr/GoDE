@@ -260,7 +260,7 @@ func TestGDE3_Selection(t *testing.T) {
 		// Create a trial that is better
 		trial := testPop[0].Copy()
 		for i := range trial.Objectives {
-			trial.Objectives[i] = trial.Objectives[i] * 0.5
+			trial.Objectives[i] *= 0.5
 		}
 
 		originalObj := testPop[0].Objectives[0]
@@ -275,8 +275,8 @@ func TestGDE3_Selection(t *testing.T) {
 		_, _ = algorithm.initializePopulation(context.Background(), testPop)
 
 		trial := testPop[0].Copy()
-		trial.Objectives[0] = trial.Objectives[0] * 0.8
-		trial.Objectives[1] = trial.Objectives[1] * 1.2
+		trial.Objectives[0] *= 0.8
+		trial.Objectives[1] *= 1.2
 
 		originalLen := len(testPop)
 		newPop := algorithm.selection(testPop, trial, 0)

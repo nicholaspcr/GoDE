@@ -147,8 +147,7 @@ func (st *paretoStore) UpdatePareto(
 	updates := make(map[string]interface{})
 
 	for _, field := range fields {
-		switch field {
-		case "max_objs":
+		if field == "max_objs" {
 			if err := paretoModel.SetMaxObjs(pareto.MaxObjs); err != nil {
 				return err
 			}

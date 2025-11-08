@@ -11,13 +11,13 @@ import (
 // INF is the maximum value used in the crowding distance
 var INF = math.MaxFloat64 - 1e5
 
-// ReduceByCrowdDistance - returns NP api.elements filtered by rank and crowd
+// ReduceByCrowdDistance - returns np api.elements filtered by rank and crowd
 // distance.
 func ReduceByCrowdDistance(
-	ctx context.Context, elems []models.Vector, NP int,
+	ctx context.Context, elems []models.Vector, np int,
 ) ([]models.Vector, []models.Vector) {
 	ranks := FastNonDominatedRanking(ctx, elems)
-	elems = make([]models.Vector, 0, NP)
+	elems = make([]models.Vector, 0, np)
 
 	for i := 0; i < len(ranks); i++ {
 		CalculateCrwdDist(ranks[i])
@@ -26,8 +26,8 @@ func ReduceByCrowdDistance(
 		})
 
 		elems = append(elems, ranks[i]...)
-		if len(elems) >= NP {
-			elems = elems[:NP]
+		if len(elems) >= np {
+			elems = elems[:np]
 			break
 		}
 	}
@@ -204,7 +204,7 @@ func CalculateCrwdDist(elems []models.Vector) {
 
 			// if difference between extremes is less than 1e-8
 			if objMax-objMin > 0 {
-				distance = distance / (objMax - objMin)
+				distance /= (objMax - objMin)
 			}
 
 			// only adds to the crowdDistance if its smaller than max value

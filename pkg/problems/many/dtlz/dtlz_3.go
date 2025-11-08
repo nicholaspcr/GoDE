@@ -10,6 +10,8 @@ import (
 
 type dtlz3 struct{}
 
+// Dtlz3 returns the DTLZ3 test problem, similar to DTLZ2 but with many local Pareto fronts.
+// Domain: [0,1]^n, Objectives: m (configurable)
 func Dtlz3() problems.Interface {
 	return &dtlz3{}
 }
@@ -18,10 +20,10 @@ func (v *dtlz3) Name() string {
 	return "dtlz3"
 }
 
-func (v *dtlz3) Evaluate(e *models.Vector, M int) error {
-	if len(e.Elements) <= M {
+func (v *dtlz3) Evaluate(e *models.Vector, m int) error {
+	if len(e.Elements) <= m {
 		return errors.New(
-			"need to have an M lesser than the amount of variables",
+			"need to have an m lesser than the amount of variables",
 		)
 	}
 
@@ -34,16 +36,16 @@ func (v *dtlz3) Evaluate(e *models.Vector, M int) error {
 		return 100.0 * (k + g)
 	}
 
-	g := evalG(e.Elements[M-1:])
-	objs := make([]float64, M)
+	g := evalG(e.Elements[m-1:])
+	objs := make([]float64, m)
 
-	for i := 0; i < M; i++ {
+	for i := 0; i < m; i++ {
 		prod := (1.0 + g)
-		for j := 0; j < M-(i+1); j++ {
+		for j := 0; j < m-(i+1); j++ {
 			prod *= math.Cos(e.Elements[j] * 0.5 * math.Pi)
 		}
 		if i != 0 {
-			prod *= math.Sin(e.Elements[M-(i+1)] * 0.5 * math.Pi)
+			prod *= math.Sin(e.Elements[m-(i+1)] * 0.5 * math.Pi)
 		}
 		objs[i] = prod
 	}

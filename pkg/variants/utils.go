@@ -6,8 +6,8 @@ import (
 )
 
 // GenerateIndices returns random indices into the r slice.
-func GenerateIndices(startInd, NP int, r []int, random *rand.Rand) error {
-	if len(r) > NP {
+func GenerateIndices(startInd, np int, r []int, random *rand.Rand) error {
+	if len(r) > np {
 		return errors.New(
 			"insufficient elements in population to generate random indices",
 		)
@@ -19,7 +19,7 @@ func GenerateIndices(startInd, NP int, r []int, random *rand.Rand) error {
 
 	for i := startInd; i < len(r); i++ {
 		for {
-			val := random.Intn(NP)
+			val := random.Intn(np)
 			if !used[val] {
 				r[i] = val
 				used[val] = true

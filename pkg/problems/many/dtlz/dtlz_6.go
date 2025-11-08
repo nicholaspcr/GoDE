@@ -10,6 +10,8 @@ import (
 
 type dtlz6 struct{}
 
+// Dtlz6 returns the DTLZ6 test problem, similar to DTLZ5 with different g function.
+// Domain: [0,1]^n, Objectives: m (configurable)
 func Dtlz6() problems.Interface {
 	return &dtlz6{}
 }
@@ -18,10 +20,10 @@ func (v *dtlz6) Name() string {
 	return "dtlz6"
 }
 
-func (v *dtlz6) Evaluate(e *models.Vector, M int) error {
-	if len(e.Elements) <= M {
+func (v *dtlz6) Evaluate(e *models.Vector, m int) error {
+	if len(e.Elements) <= m {
 		return errors.New(
-			"need to have an M lesser than the amount of variables",
+			"need to have an m lesser than the amount of variables",
 		)
 	}
 
@@ -32,24 +34,24 @@ func (v *dtlz6) Evaluate(e *models.Vector, M int) error {
 		}
 		return g
 	}
-	g := evalG(e.Elements[M-1:])
+	g := evalG(e.Elements[m-1:])
 	t := math.Pi / (4.0 * (1.0 + g))
 
-	objs := make([]float64, M)
-	theta := make([]float64, M-1)
+	objs := make([]float64, m)
+	theta := make([]float64, m-1)
 
 	theta[0] = e.Elements[0] * math.Pi / 2.0
-	for i := 1; i < M-1; i++ {
+	for i := 1; i < m-1; i++ {
 		theta[i] = t * (1.0 + 2.0*g*e.Elements[i])
 	}
 
-	for i := 0; i < M; i++ {
+	for i := 0; i < m; i++ {
 		prod := (1 + g)
-		for j := 0; j < M-(i+1); j++ {
+		for j := 0; j < m-(i+1); j++ {
 			prod *= math.Cos(theta[j])
 		}
 		if i != 0 {
-			aux := M - (i + 1)
+			aux := m - (i + 1)
 			prod *= math.Sin(theta[aux])
 		}
 

@@ -1,3 +1,4 @@
+// Package wfg implements the Walking Fish Group (WFG) many-objective test problems.
 package wfg
 
 import (
@@ -7,6 +8,8 @@ import (
 
 type wfg1 struct{}
 
+// Wfg1 returns the WFG1 test problem, a many-objective benchmark with bias and mixed shape.
+// Objectives: m (configurable)
 func Wfg1() problems.Interface {
 	return &wfg1{}
 }
@@ -15,9 +18,9 @@ func (w *wfg1) Name() string {
 	return "wfg1"
 }
 
-func (w *wfg1) Evaluate(e *models.Vector, M int) error {
+func (w *wfg1) Evaluate(e *models.Vector, m int) error {
 	n_var := len(e.Elements)
-	n_obj := M
+	n_obj := m
 	k := 2 * (n_obj - 1)
 
 	var y []float64
@@ -33,8 +36,8 @@ func (w *wfg1) Evaluate(e *models.Vector, M int) error {
 	y = wfg1_t4(y, n_obj, n_var, k)
 
 	// post section
-	A := _ones(n_obj - 1)
-	y = _post(y, A)
+	a := _ones(n_obj - 1)
+	y = _post(y, a)
 
 	var h []float64
 	for m := 0; m < n_obj-1; m++ {
@@ -42,10 +45,10 @@ func (w *wfg1) Evaluate(e *models.Vector, M int) error {
 	}
 	h = append(h, _shape_mixed(y[0], 5.0, 1.0))
 
-	S := arange(2, 2*n_obj+1, 2)
+	s := arange(2, 2*n_obj+1, 2)
 
-	// fmt.Println(y, S, h)
-	newObjs := _calculate(y, S, h)
+	// fmt.Println(y, s, h)
+	newObjs := _calculate(y, s, h)
 
 	e.Objectives = make([]float64, len(newObjs))
 	copy(e.Objectives, newObjs)

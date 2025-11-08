@@ -34,15 +34,15 @@ func _post(t, a []float64) []float64 {
 	return x
 }
 
-func _calculate(X, S, H []float64) []float64 {
+func _calculate(xVec, s, h []float64) []float64 {
 	var x []float64
 
 	// debug printing
-	// fmt.Println("X -> ", X)
-	// fmt.Println("S -> ", S)
-	// fmt.Println("H -> ", H)
-	for i := 0; i < len(H); i++ {
-		x = append(x, X[len(X)-1]+S[i]*H[i])
+	// fmt.Println("xVec -> ", xVec)
+	// fmt.Println("s -> ", s)
+	// fmt.Println("h -> ", h)
+	for i := 0; i < len(h); i++ {
+		x = append(x, xVec[len(xVec)-1]+s[i]*h[i])
 	}
 	return x
 }
@@ -137,7 +137,7 @@ func _reduction_weighted_sum_uniform(y []float64) float64 {
 	for _, v := range y {
 		mean += v
 	}
-	mean = mean / float64(len(y))
+	mean /= float64(len(y))
 	return _correct_to_01(mean)
 }
 
@@ -164,56 +164,59 @@ func _reduction_non_sep(x []float64, A int) float64 {
 // ----------------------------------------------------------------------------
 
 func _shape_concave(X []float64, m int) float64 {
-	M := len(X)
+	n := len(X)
 	var ret = 1.0
-	if m == 1 {
-		for _, x := range X[:M] {
+	switch {
+	case m == 1:
+		for _, x := range X[:n] {
 			ret *= math.Sin(0.5 * x * math.Pi)
 		}
-	} else if 1 < m && m <= M {
-		for _, x := range X[:(M - m + 1)] {
+	case 1 < m && m <= n:
+		for _, x := range X[:(n - m + 1)] {
 			ret *= math.Sin(0.5 * x * math.Pi)
 		}
-		ret *= math.Cos(0.5 * X[M-m+1] * math.Pi)
-	} else {
+		ret *= math.Cos(0.5 * X[n-m+1] * math.Pi)
+	default:
 		ret *= math.Cos(0.5 * X[0] * math.Pi)
 	}
 	return _correct_to_01(ret)
 }
 
 func _shape_convex(X []float64, m int) float64 {
-	M := len(X)
+	n := len(X)
 	var ret = 1.0
-	if m == 1 {
-		for _, x := range X[:M] {
+	switch {
+	case m == 1:
+		for _, x := range X[:n] {
 			ret *= 1.0 - math.Cos(0.5*x*math.Pi)
 		}
-	} else if m > 1 && m <= M {
-		for _, x := range X[:M-m+1] {
+	case m > 1 && m <= n:
+		for _, x := range X[:n-m+1] {
 			ret *= (1.0 - math.Cos(0.5*x*math.Pi))
 		}
-		ret *= (1.0 - math.Sin(0.5*X[M-m+1]*math.Pi))
-	} else {
+		ret *= (1.0 - math.Sin(0.5*X[n-m+1]*math.Pi))
+	default:
 		ret = 1.0 - math.Sin(0.5*X[0]*math.Pi)
 	}
 	return _correct_to_01(ret)
 }
 
 func _shape_linear(X []float64, m int) float64 {
-	M := len(X)
+	n := len(X)
 	var ret = 1.0
-	if m == 1 {
+	switch {
+	case m == 1:
 		// prod
 		for _, v := range X {
 			ret *= v
 		}
-	} else if m > 1 && m <= M {
+	case m > 1 && m <= n:
 		// prod
-		for _, x := range X[:M-m+1] {
+		for _, x := range X[:n-m+1] {
 			ret *= x
 		}
-		ret *= 1.0 - X[M-m+1]
-	} else {
+		ret *= 1.0 - X[n-m+1]
+	default:
 		ret = 1.0 - X[0]
 	}
 	return _correct_to_01(ret)

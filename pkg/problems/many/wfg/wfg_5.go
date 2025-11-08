@@ -7,6 +7,8 @@ import (
 
 type wfg5 struct{}
 
+// Wfg5 returns the WFG5 test problem, a many-objective benchmark with deceptive properties.
+// Objectives: m (configurable)
 func Wfg5() problems.Interface {
 	return &wfg5{}
 }
@@ -15,9 +17,9 @@ func (w *wfg5) Name() string {
 	return "wfg5"
 }
 
-func (w *wfg5) Evaluate(e *models.Vector, M int) error {
+func (w *wfg5) Evaluate(e *models.Vector, m int) error {
 	n_var := len(e.Elements)
-	n_obj := M
+	n_obj := m
 	k := 2 * (n_obj - 1)
 
 	var y []float64
@@ -36,8 +38,8 @@ func (w *wfg5) Evaluate(e *models.Vector, M int) error {
 		h = append(h, _shape_concave(y[:len(y)-1], m+1))
 	}
 
-	S := arange(2, 2*n_obj+1, 2)
-	newObjs := _calculate(y, S, h)
+	s := arange(2, 2*n_obj+1, 2)
+	newObjs := _calculate(y, s, h)
 
 	e.Objectives = make([]float64, len(newObjs))
 	copy(e.Objectives, newObjs)

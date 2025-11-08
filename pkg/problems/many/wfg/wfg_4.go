@@ -7,6 +7,8 @@ import (
 
 type wfg4 struct{}
 
+// Wfg4 returns the WFG4 test problem, a many-objective benchmark with multi-modality.
+// Objectives: m (configurable)
 func Wfg4() problems.Interface {
 	return &wfg4{}
 }
@@ -15,9 +17,9 @@ func (w *wfg4) Name() string {
 	return "wfg4"
 }
 
-func (w *wfg4) Evaluate(e *models.Vector, M int) error {
+func (w *wfg4) Evaluate(e *models.Vector, m int) error {
 	n_var := len(e.Elements)
-	n_obj := M
+	n_obj := m
 	k := 2 * (n_obj - 1)
 
 	var y []float64
@@ -37,8 +39,8 @@ func (w *wfg4) Evaluate(e *models.Vector, M int) error {
 		h = append(h, _shape_concave(y[:len(y)-1], m+1))
 	}
 
-	S := arange(2, 2*n_obj+1, 2)
-	newObjs := _calculate(y, S, h)
+	s := arange(2, 2*n_obj+1, 2)
+	newObjs := _calculate(y, s, h)
 
 	e.Objectives = make([]float64, len(newObjs))
 	copy(e.Objectives, newObjs)

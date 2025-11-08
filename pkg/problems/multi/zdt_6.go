@@ -10,6 +10,8 @@ import (
 
 type zdt6 struct{}
 
+// Zdt6 returns the ZDT6 test problem, a bi-objective benchmark with a non-uniform search space.
+// Domain: [0,1]^n, Objectives: 2
 func Zdt6() problems.Interface {
 	return &zdt6{}
 }
@@ -24,7 +26,7 @@ func (v *zdt6) Evaluate(e *models.Vector, M int) error {
 	}
 	evalF := func(x float64) float64 {
 		f := math.Exp(-4.0 * x)
-		f = f * math.Pow(math.Sin(6*math.Pi*x), 6)
+		f *= math.Pow(math.Sin(6*math.Pi*x), 6)
 		f = 1 - f
 		return f
 	}
@@ -33,7 +35,7 @@ func (v *zdt6) Evaluate(e *models.Vector, M int) error {
 		for i := 1; i < len(x); i++ {
 			g += x[i]
 		}
-		g = g / float64(len(x)-1)
+		g /= float64(len(x) - 1)
 		g = math.Pow(g, 1.0/4)
 		g = g*9 + 1.0
 		return g

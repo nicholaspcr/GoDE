@@ -1,9 +1,7 @@
-// Package many package has the implementation of the dtlz problems
-///
-/*
-The implementations are translations of the python code made by pymoo
-https://pymoo.org/problems/many/dtlz.html
-*/
+// Package dtlz implements the DTLZ many-objective test problem suite.
+//
+// The implementations are translations of the python code made by pymoo
+// https://pymoo.org/problems/many/dtlz.html
 package dtlz
 
 import (
@@ -16,6 +14,8 @@ import (
 
 type dtlz1 struct{}
 
+// Dtlz1 returns the DTLZ1 test problem, a many-objective benchmark with a linear Pareto front.
+// Domain: [0,1]^n, Objectives: m (configurable)
 func Dtlz1() problems.Interface {
 	return &dtlz1{}
 }
@@ -24,10 +24,10 @@ func (v *dtlz1) Name() string {
 	return "dtlz1"
 }
 
-func (v *dtlz1) Evaluate(e *models.Vector, M int) error {
-	if len(e.Elements) <= M {
+func (v *dtlz1) Evaluate(e *models.Vector, m int) error {
+	if len(e.Elements) <= m {
 		return errors.New(
-			"need to have an M lesser than the amount of variables",
+			"need to have an m lesser than the amount of variables",
 		)
 	}
 
@@ -39,16 +39,16 @@ func (v *dtlz1) Evaluate(e *models.Vector, M int) error {
 		k := float64(len(v))
 		return 100.0 * (k + g)
 	}
-	g := evalG(e.Elements[M-1:])
+	g := evalG(e.Elements[m-1:])
 
-	newObjs := make([]float64, M)
-	for i := 0; i < M; i++ {
+	newObjs := make([]float64, m)
+	for i := 0; i < m; i++ {
 		prod := (1.0 + g) * 0.5
-		for j := 0; j < M-(i+1); j++ {
+		for j := 0; j < m-(i+1); j++ {
 			prod *= e.Elements[j]
 		}
 		if i != 0 {
-			prod *= (1 - e.Elements[M-(i+1)])
+			prod *= (1 - e.Elements[m-(i+1)])
 		}
 		newObjs[i] = prod
 	}

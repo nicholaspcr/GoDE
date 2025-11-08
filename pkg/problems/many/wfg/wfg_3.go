@@ -7,6 +7,8 @@ import (
 
 type wfg3 struct{}
 
+// Wfg3 returns the WFG3 test problem, a many-objective benchmark with a linear degenerate Pareto front.
+// Objectives: m (configurable)
 func Wfg3() problems.Interface {
 	return &wfg3{}
 }
@@ -15,9 +17,9 @@ func (w *wfg3) Name() string {
 	return "wfg3"
 }
 
-func (w *wfg3) Evaluate(e *models.Vector, M int) error {
+func (w *wfg3) Evaluate(e *models.Vector, m int) error {
 	n_var := len(e.Elements)
-	n_obj := M
+	n_obj := m
 	k := 2 * (n_obj - 1)
 
 	var y []float64
@@ -32,19 +34,19 @@ func (w *wfg3) Evaluate(e *models.Vector, M int) error {
 	y = wfg2_t3(y, n_obj, n_var, k)
 
 	// post section
-	A := _ones(n_obj - 1)
-	for i := 1; i < len(A); i++ {
-		A[i] = 0
+	a := _ones(n_obj - 1)
+	for i := 1; i < len(a); i++ {
+		a[i] = 0
 	}
-	y = _post(y, A)
+	y = _post(y, a)
 
 	var h []float64
 	for m := 0; m < n_obj; m++ {
 		h = append(h, _shape_linear(y[:len(y)-1], m+1))
 	}
 
-	S := arange(2, 2*n_obj+1, 2)
-	newObjs := _calculate(y, S, h)
+	s := arange(2, 2*n_obj+1, 2)
+	newObjs := _calculate(y, s, h)
 
 	e.Objectives = make([]float64, len(newObjs))
 	copy(e.Objectives, newObjs)

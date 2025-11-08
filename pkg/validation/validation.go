@@ -45,13 +45,13 @@ var (
 )
 
 // ValidateRange checks if a numeric value is within the specified range (inclusive).
-func ValidateRange[T int | int64 | float32 | float64](value T, min, max T, fieldName string) error {
-	if value < min || value > max {
+func ValidateRange[T int | int64 | float32 | float64](value T, minVal, maxVal T, fieldName string) error {
+	if value < minVal || value > maxVal {
 		return NewValidationError(
 			fieldName,
 			value,
 			ErrOutOfRange,
-			fmt.Sprintf("must be between %v and %v, got %v", min, max, value),
+			fmt.Sprintf("must be between %v and %v, got %v", minVal, maxVal, value),
 		)
 	}
 	return nil
@@ -79,14 +79,14 @@ func ValidateNonEmpty(value string, fieldName string) error {
 }
 
 // ValidateStringLength checks if a string length is within bounds.
-func ValidateStringLength(value string, min, max int, fieldName string) error {
+func ValidateStringLength(value string, minLen, maxLen int, fieldName string) error {
 	length := len(value)
-	if length < min || length > max {
+	if length < minLen || length > maxLen {
 		return NewValidationError(
 			fieldName,
 			value,
 			ErrOutOfRange,
-			fmt.Sprintf("length must be between %d and %d characters, got %d", min, max, length),
+			fmt.Sprintf("length must be between %d and %d characters, got %d", minLen, maxLen, length),
 		)
 	}
 	return nil

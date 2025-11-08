@@ -15,6 +15,8 @@ type Parameters struct {
 	P       float64    `json:"p"        yaml:"p"`
 }
 
+// Interface defines the contract for Differential Evolution mutation strategies.
+// Implementations must provide a mutation operation that generates new candidate solutions.
 type Interface interface {
 	Name() string
 	Mutate(

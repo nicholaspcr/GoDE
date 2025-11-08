@@ -21,7 +21,7 @@ var (
 	db  state.Operations
 )
 
-// Executes the CLI.
+// Execute runs the CLI root command and handles any errors.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

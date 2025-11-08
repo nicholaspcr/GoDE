@@ -1,3 +1,4 @@
+// Package authcmd provides CLI commands for user authentication operations.
 package authcmd
 
 import (

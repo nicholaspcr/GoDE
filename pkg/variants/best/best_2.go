@@ -8,6 +8,8 @@ import (
 // best2
 type best2 struct{}
 
+// Best2 returns a DE/best/2 mutation strategy that uses the best individual
+// and two difference vectors: best + F(r1 - r2) + F(r3 - r4).
 func Best2() variants.Interface {
 	return &best2{}
 }

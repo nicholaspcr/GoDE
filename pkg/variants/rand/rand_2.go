@@ -8,6 +8,8 @@ import (
 // rand2 a + F(b-c) + F(d-e)
 type rand2 struct{}
 
+// Rand2 returns a DE/rand/2 mutation strategy that uses randomly selected individuals
+// with two difference vectors: r1 + F(r2 - r3) + F(r4 - r5).
 func Rand2() variants.Interface {
 	return &rand2{}
 }

@@ -1,3 +1,4 @@
+// Package telemetry provides observability through metrics and tracing.
 package telemetry
 
 import (

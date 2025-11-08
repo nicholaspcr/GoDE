@@ -1,3 +1,4 @@
+// Package de provides the core Differential Evolution algorithm framework and execution utilities.
 package de
 
 // Config of the DE implementation

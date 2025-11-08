@@ -1,3 +1,4 @@
+// Package log provides structured logging with custom formatters.
 package log
 
 import (

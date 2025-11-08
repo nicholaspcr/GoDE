@@ -1,3 +1,4 @@
+// Package rand implements DE/rand mutation strategies using randomly selected individuals.
 package rand
 
 import (

@@ -1,3 +1,4 @@
+// Package config manages server configuration including ports, database, and security settings.
 package config
 
 import (

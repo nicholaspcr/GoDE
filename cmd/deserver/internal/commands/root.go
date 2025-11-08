@@ -15,7 +15,7 @@ var (
 	cfg *config.Config
 )
 
-// Executes the CLI.
+// Execute runs the server root command and handles any errors.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

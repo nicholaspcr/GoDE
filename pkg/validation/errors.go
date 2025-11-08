@@ -6,12 +6,19 @@ import (
 )
 
 var (
+	// ErrEmptyField indicates a required field was empty or whitespace-only.
 	ErrEmptyField       = errors.New("field cannot be empty")
+	// ErrInvalidFormat indicates a field value does not match the expected format.
 	ErrInvalidFormat    = errors.New("invalid format")
+	// ErrOutOfRange indicates a numeric value is outside the valid range.
 	ErrOutOfRange       = errors.New("value out of valid range")
+	// ErrInvalidEmail indicates an email address format is invalid.
 	ErrInvalidEmail     = errors.New("invalid email format")
+	// ErrPasswordTooShort indicates a password is shorter than the minimum length.
 	ErrPasswordTooShort = errors.New("password must be at least 8 characters")
+	// ErrPasswordTooLong indicates a password exceeds the maximum length.
 	ErrPasswordTooLong  = errors.New("password exceeds maximum length")
+	// ErrInvalidUsername indicates a username contains invalid characters.
 	ErrInvalidUsername  = errors.New("username contains invalid characters")
 )
 

@@ -1,3 +1,4 @@
+// Package commands provides the server command structure and execution for the deserver.
 package commands
 
 import (

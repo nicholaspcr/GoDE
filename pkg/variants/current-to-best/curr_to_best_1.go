@@ -1,3 +1,4 @@
+// Package currenttobest implements DE/current-to-best mutation strategies that blend current and best individuals.
 package currenttobest
 
 import (
@@ -8,6 +9,8 @@ import (
 // currToBest1
 type currToBest1 struct{}
 
+// CurrToBest1 returns a DE/current-to-best/1 mutation strategy that blends the current
+// individual with the best: current + F(best - r1) + F(r2 - r3).
 func CurrToBest1() variants.Interface {
 	return &currToBest1{}
 }

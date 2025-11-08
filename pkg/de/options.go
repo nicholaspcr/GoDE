@@ -1,6 +1,6 @@
 package de
 
-// ModeOption defines a configuration method for the de struct
+// ModeOptions is a functional option for configuring Differential Evolution execution.
 type ModeOptions func(*de) *de
 
 // WithAlgorithm sets the algorithm to be used.

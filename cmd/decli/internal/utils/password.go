@@ -1,3 +1,4 @@
+// Package utils provides utility functions for the CLI including secure password handling.
 package utils
 
 import (

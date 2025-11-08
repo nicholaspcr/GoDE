@@ -1,3 +1,4 @@
+// Package commands provides the CLI command structure and execution for the decli client.
 package commands
 
 import (

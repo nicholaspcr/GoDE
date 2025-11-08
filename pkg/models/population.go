@@ -1,3 +1,4 @@
+// Package models defines core data structures for Differential Evolution including vectors and populations.
 package models
 
 import (
@@ -5,6 +6,7 @@ import (
 	"math/rand"
 )
 
+// Population represents a collection of solution vectors in a Differential Evolution algorithm.
 type Population []Vector
 
 // Copy returns a copy of the population.

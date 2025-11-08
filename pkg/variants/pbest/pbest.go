@@ -1,3 +1,4 @@
+// Package pbest implements DE/pbest mutation strategies using top-performing individuals.
 package pbest
 
 import (
@@ -11,6 +12,8 @@ import (
 // pbest
 type pbest struct{}
 
+// Pbest returns a DE/pbest mutation strategy that uses a randomly selected individual
+// from the top P% of the population: current + F(pbest - current) + F(r1 - r2).
 func Pbest() variants.Interface {
 	return &pbest{}
 }

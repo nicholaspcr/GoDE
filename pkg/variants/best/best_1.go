@@ -1,3 +1,5 @@
+// Package best implements DE/best mutation strategies.
+// These strategies use the best individual in the population for mutation.
 package best
 
 import (
@@ -8,6 +10,8 @@ import (
 // best1
 type best1 struct{}
 
+// Best1 returns a DE/best/1 mutation strategy that uses the best individual
+// and one difference vector: best + F(r1 - r2).
 func Best1() variants.Interface {
 	return &best1{}
 }

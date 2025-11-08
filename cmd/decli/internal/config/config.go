@@ -1,3 +1,4 @@
+// Package config manages CLI client configuration including server connection settings.
 package config
 
 import (
@@ -15,6 +16,7 @@ type (
 		Run    RunConfig     `json:"run" yaml:"run"`
 	}
 
+	// RunConfig contains parameters for executing a Differential Evolution run.
 	RunConfig struct {
 		Algorithm string   `json:"algorithm" yaml:"algorithm"`
 		Variant   string   `json:"variant" yaml:"variant"`
@@ -22,6 +24,7 @@ type (
 		DeConfig  DEConfig `json:"de" yaml:"de"`
 	}
 
+	// DEConfig contains Differential Evolution algorithm configuration.
 	DEConfig struct {
 		Executions     int64      `json:"executions" yaml:"executions"`
 		Generations    int64      `json:"generations" yaml:"generations"`
@@ -33,6 +36,7 @@ type (
 		GDE3           GDE3Config `json:"gde3" yaml:"gde3"`
 	}
 
+	// GDE3Config contains GDE3-specific algorithm parameters.
 	GDE3Config struct {
 		CR float32 `json:"cr" yaml:"cr"`
 		F  float32 `json:"f" yaml:"f"`

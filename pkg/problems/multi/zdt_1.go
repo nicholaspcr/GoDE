@@ -1,3 +1,4 @@
+// Package multi implements multi-objective test problems including ZDT and VNT benchmark suites.
 package multi
 
 import (
@@ -10,6 +11,8 @@ import (
 
 type zdt1 struct{}
 
+// Zdt1 returns the ZDT1 test problem, a bi-objective benchmark with a convex Pareto front.
+// Domain: [0,1]^n, Objectives: 2
 func Zdt1() problems.Interface {
 	return &zdt1{}
 }

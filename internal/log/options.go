@@ -6,6 +6,7 @@ import (
 	"os"
 )
 
+// Config contains structured logging configuration options.
 type Config struct {
 	writer         io.Writer
 	Pretty         *PrettyConfig `json:"pretty" yaml:"pretty"`
@@ -38,24 +39,30 @@ var defaultConfig = Config{
 // DefaultConfig returns the default configuration for the logger.
 func DefaultConfig() Config { return defaultConfig }
 
+// Option is a functional option for configuring the logger.
 type Option func(*Config)
 
+// WithWriter sets the output writer for the logger.
 func WithWriter(w io.Writer) Option {
 	return func(c *Config) { c.writer = w }
 }
 
+// WithType sets the log format type (json, text, etc).
 func WithType(t string) Option {
 	return func(c *Config) { c.Type = t }
 }
 
+// WithLevel sets the minimum log level.
 func WithLevel(l slog.Level) Option {
 	return func(c *Config) { c.Level = l }
 }
 
+// WithPrettyConfig sets pretty-printing options for logs.
 func WithPrettyConfig(prettyCfg *PrettyConfig) Option {
 	return func(c *Config) { c.Pretty = prettyCfg }
 }
 
+// WithHandlerOptions sets custom slog handler options.
 func WithHandlerOptions(opts *slog.HandlerOptions) Option {
 	return func(c *Config) { c.handlerOptions = opts }
 }

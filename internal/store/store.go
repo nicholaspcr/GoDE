@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/glebarez/sqlite"
+	// pgx driver for PostgreSQL
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/nicholaspcr/GoDE/internal/migrations"
 	"github.com/nicholaspcr/GoDE/internal/store/gorm"

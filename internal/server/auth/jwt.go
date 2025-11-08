@@ -1,3 +1,4 @@
+// Package auth provides JWT-based authentication for the DE server.
 package auth
 
 import (
@@ -8,7 +9,9 @@ import (
 )
 
 var (
+	// ErrInvalidToken indicates a JWT token is malformed or has an invalid signature.
 	ErrInvalidToken = errors.New("invalid token")
+	// ErrExpiredToken indicates a JWT token has passed its expiration time.
 	ErrExpiredToken = errors.New("token has expired")
 )
 

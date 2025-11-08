@@ -1,3 +1,4 @@
+// Package store defines storage interfaces and implementations for persistence.
 package store
 
 import "fmt"
@@ -11,10 +12,15 @@ type Config struct {
 	Postgresql Postgresql
 }
 
+// Memory represents in-memory storage configuration.
 type Memory struct{}
+
+// Sqlite represents SQLite storage configuration.
 type Sqlite struct {
 	Filepath string `json:"filepath" yaml:"filepath"`
 }
+
+// Postgresql represents PostgreSQL storage configuration.
 type Postgresql struct {
 	DNS string `json:"dns" yaml:"dns"`
 }

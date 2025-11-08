@@ -30,6 +30,13 @@ func (c *currToBest1) Mutate(
 		return models.Vector{}, variants.ErrInsufficientPopulation
 	}
 
+	// Validate vectors have non-nil elements
+	for _, idx := range []int{p.CurrPos, bestIdx, ind[1], ind[2], ind[3]} {
+		if elems[idx].Elements == nil || len(elems[idx].Elements) != p.DIM {
+			return models.Vector{}, variants.ErrInvalidVector
+		}
+	}
+
 	arr := make([]float64, p.DIM)
 	for i := 0; i < p.DIM; i++ {
 		arr[i] = elems[p.CurrPos].Elements[i] +

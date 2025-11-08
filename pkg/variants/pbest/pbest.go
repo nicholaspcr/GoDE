@@ -34,6 +34,13 @@ func (p *pbest) Mutate(
 	indexLimit := int(math.Ceil(float64(len(rankZero)) * params.P))
 	bestIndex := rand.Int() % indexLimit
 
+	// Validate vectors have non-nil elements
+	for _, idx := range []int{params.CurrPos, bestIndex, ind[1], ind[2]} {
+		if elems[idx].Elements == nil || len(elems[idx].Elements) != params.DIM {
+			return models.Vector{}, variants.ErrInvalidVector
+		}
+	}
+
 	arr := make([]float64, params.DIM)
 	for i := 0; i < params.DIM; i++ {
 		arr[i] = elems[params.CurrPos].Elements[i] +

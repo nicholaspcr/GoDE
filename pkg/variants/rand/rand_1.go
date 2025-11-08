@@ -33,6 +33,13 @@ func (r *rand1) Mutate(
 		return models.Vector{}, err
 	}
 
+	// Validate vectors have non-nil elements
+	for _, idx := range []int{inds[1], inds[2], inds[3]} {
+		if elems[idx].Elements == nil || len(elems[idx].Elements) != p.DIM {
+			return models.Vector{}, variants.ErrInvalidVector
+		}
+	}
+
 	result := models.Vector{
 		Elements: make([]float64, p.DIM),
 	}

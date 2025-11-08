@@ -30,6 +30,16 @@ func (b *best2) Mutate(
 		return models.Vector{}, variants.ErrInsufficientPopulation
 	}
 
+	// Validate vectors have non-nil elements
+	if rankZero[bestIdx].Elements == nil || len(rankZero[bestIdx].Elements) != p.DIM {
+		return models.Vector{}, variants.ErrInvalidVector
+	}
+	for _, idx := range []int{ind[1], ind[2], ind[3], ind[4]} {
+		if elems[idx].Elements == nil || len(elems[idx].Elements) != p.DIM {
+			return models.Vector{}, variants.ErrInvalidVector
+		}
+	}
+
 	arr := make([]float64, p.DIM)
 	for i := 0; i < p.DIM; i++ {
 		arr[i] = rankZero[bestIdx].Elements[i] +

@@ -28,6 +28,13 @@ func (r *rand2) Mutate(
 		return models.Vector{}, variants.ErrInsufficientPopulation
 	}
 
+	// Validate vectors have non-nil elements
+	for _, idx := range []int{ind[1], ind[2], ind[3], ind[4], ind[5]} {
+		if elems[idx].Elements == nil || len(elems[idx].Elements) != p.DIM {
+			return models.Vector{}, variants.ErrInvalidVector
+		}
+	}
+
 	arr := make([]float64, p.DIM)
 	i1, i2, i3, i4, i5 := ind[1], ind[2], ind[3], ind[4], ind[5]
 	for i := 0; i < p.DIM; i++ {

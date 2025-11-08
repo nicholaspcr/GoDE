@@ -44,7 +44,7 @@ func (v *zdt1) Evaluate(e *models.Vector, M int) error {
 		return errors.New("sqrt of a negative number")
 	}
 
-	var newObjs []float64
+	newObjs := make([]float64, 0, 2)
 	newObjs = append(newObjs, e.Elements[0])
 	newObjs = append(newObjs, g*h)
 

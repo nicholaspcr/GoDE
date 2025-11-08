@@ -39,7 +39,7 @@ func (v *zdt4) Evaluate(e *models.Vector, M int) error {
 	g := evalG(e.Elements)
 	h := evalH(e.Elements[0], g)
 
-	var newObjs []float64
+	newObjs := make([]float64, 0, 2)
 	newObjs = append(newObjs, e.Elements[0])
 	newObjs = append(newObjs, g*h)
 

@@ -31,7 +31,7 @@ func (v *vnt1) Evaluate(e *models.Vector, M int) error {
 	f2 := 15.0 + (3*a-2*b+4)*(3*a-2*b+4)/8.0 + (a-b+1)*(a-b+1)/27.0
 	f3 := -1.1*math.Exp((-1)*powSum) + 1.0/(powSum+1)
 
-	var newObjs []float64
+	newObjs := make([]float64, 0, 3)
 	newObjs = append(newObjs, f1)
 	newObjs = append(newObjs, f2)
 	newObjs = append(newObjs, f3)

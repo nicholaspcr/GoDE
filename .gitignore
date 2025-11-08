@@ -1,5 +1,6 @@
 # General
 .vscode
+.ignore
 
 # Golang
 *.coverprofile

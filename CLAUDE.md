@@ -22,7 +22,7 @@ go test -run TestGenerateIndices ./pkg/variants/...
 # Lint the codebase
 make lint
 
-# Protocol buffers
+# Protocol buffers (uses remote plugins from Buf Schema Registry)
 make proto          # Lint, remove old files, and regenerate
 make proto-generate # Generate only
 make proto-lint     # Lint only

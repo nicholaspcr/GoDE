@@ -1,14 +1,30 @@
+# buf.gen.yaml - Protocol Buffer Code Generation Configuration
+#
+# This file uses remote plugins from the Buf Schema Registry (BSR).
+# Remote plugins eliminate the need for locally installed protoc binaries
+# and ensure consistent code generation across all development environments.
+#
+# Plugin versions are pinned to ensure reproducible builds.
+# Update versions by modifying the plugin paths below (e.g., :v1.36.1 -> :v1.37.0)
+#
+# Available plugins: https://buf.build/plugins
+
 version: v1
 plugins:
-  - plugin: go
+  # protocolbuffers/go - Generates Go structs from .proto messages
+  - plugin: buf.build/protocolbuffers/go:v1.36.1
     out: pkg
     opt:
       - paths=source_relative
-  - plugin: go-grpc
+
+  # grpc/go - Generates Go gRPC service stubs
+  - plugin: buf.build/grpc/go:v1.5.1
     out: pkg
     opt:
       - paths=source_relative
-  - plugin: grpc-gateway
+
+  # grpc-ecosystem/gateway - Generates HTTP/JSON to gRPC reverse proxy
+  - plugin: buf.build/grpc-ecosystem/gateway:v2.27.0
     out: pkg
     opt:
       - paths=source_relative

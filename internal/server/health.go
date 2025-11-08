@@ -31,9 +31,11 @@ func (s *server) checkDatabaseHealth(ctx context.Context) bool {
 		return false
 	}
 
-	// Try to ping the database by attempting a simple query
-	// This is a basic health check - could be enhanced with more sophisticated checks
-	// For now, we assume if the store exists, it's healthy
-	// In a real implementation, you'd want to check the actual DB connection
+	// Ping the database to verify connectivity
+	if err := s.st.HealthCheck(ctx); err != nil {
+		slog.Error("Database health check failed", slog.String("error", err.Error()))
+		return false
+	}
+
 	return true
 }

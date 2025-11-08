@@ -10,6 +10,7 @@ import (
 type Store interface {
 	UserOperations
 	ParetoOperations
+	HealthCheck(context.Context) error
 }
 
 // UserOperations is the interface for the user store.

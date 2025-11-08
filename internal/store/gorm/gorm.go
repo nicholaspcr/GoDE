@@ -3,6 +3,7 @@
 package gorm
 
 import (
+	"context"
 	"time"
 
 	"gorm.io/gorm"
@@ -59,4 +60,13 @@ func (s *gormStore) AutoMigrate() error {
 		&paretoModel{},
 		&vectorModel{},
 	)
+}
+
+// HealthCheck verifies the database connection is alive by pinging it.
+func (s *gormStore) HealthCheck(ctx context.Context) error {
+	sqlDB, err := s.db.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.PingContext(ctx)
 }

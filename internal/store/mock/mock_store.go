@@ -29,6 +29,7 @@ type MockStore struct {
 	DeleteVectorFn func(ctx context.Context, id int64) error
 
 	AutoMigrateFn func() error
+	HealthCheckFn func(ctx context.Context) error
 }
 
 // Verify MockStore implements store.Store
@@ -142,6 +143,14 @@ func (m *MockStore) DeleteVector(ctx context.Context, id int64) error {
 func (m *MockStore) AutoMigrate() error {
 	if m.AutoMigrateFn != nil {
 		return m.AutoMigrateFn()
+	}
+	return nil
+}
+
+// HealthCheck implements store.Store
+func (m *MockStore) HealthCheck(ctx context.Context) error {
+	if m.HealthCheckFn != nil {
+		return m.HealthCheckFn(ctx)
 	}
 	return nil
 }

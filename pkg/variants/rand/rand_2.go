@@ -18,6 +18,7 @@ func (r *rand2) Name() string {
 	return "rand2"
 }
 
+//nolint:revive // rankZero parameter required by variants.Interface
 func (r *rand2) Mutate(
 	elems, rankZero []models.Vector,
 	p variants.Parameters,

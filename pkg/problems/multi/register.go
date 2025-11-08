@@ -2,6 +2,7 @@ package multi
 
 import "github.com/nicholaspcr/GoDE/pkg/problems"
 
+//nolint:revive // Factory functions have unused parameters matching registry interface
 func init() {
 	// Register ZDT problems
 	problems.DefaultRegistry.Register("zdt1", func(dim, _ int) (problems.Interface, error) {

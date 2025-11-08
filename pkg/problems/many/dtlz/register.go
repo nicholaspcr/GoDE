@@ -2,6 +2,7 @@ package dtlz
 
 import "github.com/nicholaspcr/GoDE/pkg/problems"
 
+//nolint:revive // Factory functions have unused parameters matching registry interface
 func init() {
 	// Register DTLZ problems
 	problems.DefaultRegistry.Register("dtlz1", func(dim, objs int) (problems.Interface, error) {

@@ -23,6 +23,7 @@ var (
 )
 
 // ValidationError represents a validation error with context.
+//nolint:revive // Name is intentionally descriptive despite stuttering
 type ValidationError struct {
 	Value   interface{}
 	Err     error

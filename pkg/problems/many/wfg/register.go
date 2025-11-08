@@ -6,6 +6,7 @@ import (
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 )
 
+//nolint:revive // Factory functions have unused parameters matching registry interface
 func init() {
 	// Register WFG problems
 	for i := 1; i <= 9; i++ {

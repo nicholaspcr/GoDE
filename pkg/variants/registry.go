@@ -48,7 +48,7 @@ func (r *Registry) Create(name string) (Interface, error) {
 	r.mu.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("unknown variant: %s", name)
+		return nil, fmt.Errorf("variant does not exist")
 	}
 
 	return factory(), nil

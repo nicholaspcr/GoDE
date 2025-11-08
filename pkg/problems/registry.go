@@ -51,7 +51,7 @@ func (r *Registry) Create(name string, dim, objs int) (Interface, error) {
 	r.mu.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("unknown problem: %s", name)
+		return nil, fmt.Errorf("problem does not exist")
 	}
 
 	return factory(dim, objs)

@@ -1,3 +1,5 @@
+//go:build e2e
+
 package e2e
 
 import (
@@ -22,28 +24,29 @@ const (
 	testTimeout       = 30 * time.Second
 )
 
-// getServerAddr returns the server address from env or default
+// getServerAddr returns the server address - either from testcontainers or env
 func getServerAddr() string {
+	// If testcontainers set it up, use that
+	if addr := getTestServerAddr(); addr != defaultServerAddr {
+		return addr
+	}
+	// Otherwise check environment variable
 	if addr := os.Getenv("E2E_SERVER_ADDR"); addr != "" {
 		return addr
 	}
 	return defaultServerAddr
 }
 
-// skipIfNoServer skips the test if the server is not running
-func skipIfNoServer(t *testing.T) *grpc.ClientConn {
+// setupConnection creates a gRPC connection to the test server
+func setupConnection(t *testing.T) *grpc.ClientConn {
 	t.Helper()
-
-	if os.Getenv("E2E_SKIP") != "" {
-		t.Skip("E2E tests disabled (E2E_SKIP is set)")
-	}
 
 	conn, err := grpc.NewClient(
 		getServerAddr(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
-		t.Skipf("Cannot connect to server at %s: %v (set E2E_SKIP to disable)", getServerAddr(), err)
+		t.Fatalf("Cannot connect to server at %s: %v", getServerAddr(), err)
 	}
 
 	return conn
@@ -51,7 +54,7 @@ func skipIfNoServer(t *testing.T) *grpc.ClientConn {
 
 // TestE2E_FullUserWorkflow tests the complete user journey
 func TestE2E_FullUserWorkflow(t *testing.T) {
-	conn := skipIfNoServer(t)
+	conn := setupConnection(t)
 	defer conn.Close()
 
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
@@ -133,7 +136,7 @@ func TestE2E_FullUserWorkflow(t *testing.T) {
 
 // TestE2E_DEExecution tests differential evolution execution
 func TestE2E_DEExecution(t *testing.T) {
-	conn := skipIfNoServer(t)
+	conn := setupConnection(t)
 	defer conn.Close()
 
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
@@ -218,7 +221,7 @@ func TestE2E_DEExecution(t *testing.T) {
 
 // TestE2E_RateLimiting tests rate limiting behavior
 func TestE2E_RateLimiting(t *testing.T) {
-	conn := skipIfNoServer(t)
+	conn := setupConnection(t)
 	defer conn.Close()
 
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
@@ -253,7 +256,7 @@ func TestE2E_RateLimiting(t *testing.T) {
 
 // TestE2E_UnauthorizedAccess tests that protected endpoints require authentication
 func TestE2E_UnauthorizedAccess(t *testing.T) {
-	conn := skipIfNoServer(t)
+	conn := setupConnection(t)
 	defer conn.Close()
 
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)

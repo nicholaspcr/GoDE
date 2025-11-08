@@ -3,28 +3,14 @@ package server
 
 import (
 	"context"
-	"crypto/tls"
 	"log/slog"
-	"net"
-	"net/http"
 	_ "net/http/pprof" // Import pprof for profiling endpoints
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/nicholaspcr/GoDE/internal/server/auth"
 	"github.com/nicholaspcr/GoDE/internal/server/handlers"
-	"github.com/nicholaspcr/GoDE/internal/server/middleware"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/internal/telemetry"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 // Server is the interface that wraps the server methods.
@@ -68,310 +54,22 @@ type server struct {
 	metrics    *telemetry.Metrics
 }
 
-// Start starts the server.
+// Start starts the server using a lifecycle-based approach.
 func (s *server) Start(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	slog.Info("Creating server")
 
-	// Initialize tracing
-	tracerProvider, err := telemetry.NewTracerProvider("deserver")
-	if err != nil {
+	lifecycle := newLifecycle(s.cfg, s)
+
+	if err := lifecycle.setup(ctx); err != nil {
 		return err
 	}
-	defer func() {
-		if err := tracerProvider.Shutdown(ctx); err != nil {
-			slog.Error("failed to shutdown tracer provider", slog.String("error", err.Error()))
-		}
-	}()
 
-	// Initialize metrics if enabled
-	var meterProvider *sdkmetric.MeterProvider
-	if s.cfg.MetricsEnabled {
-		slog.Info("Initializing metrics", slog.String("type", string(s.cfg.MetricsType)))
-		var err error
-		meterProvider, err = telemetry.NewMeterProvider("deserver", s.cfg.MetricsType)
-		if err != nil {
-			return err
-		}
-		defer func() {
-			if err := meterProvider.Shutdown(ctx); err != nil {
-				slog.Error("failed to shutdown meter provider", slog.String("error", err.Error()))
-			}
-		}()
-
-		s.metrics, err = telemetry.InitMetrics(ctx, "deserver")
-		if err != nil {
-			return err
-		}
-		slog.Info("Metrics initialized successfully")
-	}
-
-	// Start pprof server if enabled
-	if s.cfg.PprofEnabled {
-		slog.Info("Starting pprof server", slog.String("port", s.cfg.PprofPort))
-		slog.Warn("pprof is enabled - this should only be used in development or with proper security")
-
-		pprofServer := &http.Server{
-			Addr:    s.cfg.PprofPort,
-			Handler: nil, // Use default http.DefaultServeMux which pprof registers to
-		}
-
-		go func() {
-			if err := pprofServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-				slog.Error("pprof server error", slog.String("error", err.Error()))
-			}
-		}()
-
-		// Defer pprof server shutdown
-		defer func() {
-			shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer shutdownCancel()
-			if err := pprofServer.Shutdown(shutdownCtx); err != nil {
-				slog.Error("failed to shutdown pprof server", slog.String("error", err.Error()))
-			}
-		}()
-	}
-
-	logger := slog.Default()
-
-	// Initialize rate limiter
-	rateLimiter := middleware.NewRateLimiter(
-		s.cfg.RateLimit.LoginRequestsPerMinute,
-		s.cfg.RateLimit.RegisterRequestsPerMinute,
-		s.cfg.RateLimit.DEExecutionsPerUser,
-		s.cfg.RateLimit.MaxConcurrentDEPerUser,
-		s.cfg.RateLimit.MaxRequestsPerSecond,
-	)
-
-	// Start periodic rate limiter cleanup to prevent memory leaks
-	cleanupDone := make(chan struct{})
-	go func() {
-		ticker := time.NewTicker(1 * time.Hour)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ticker.C:
-				rateLimiter.Cleanup(1 * time.Hour)
-				slog.Debug("Rate limiter cleanup completed")
-			case <-ctx.Done():
-				close(cleanupDone)
-				return
-			}
-		}
-	}()
-	defer func() {
-		<-cleanupDone // Wait for cleanup goroutine to finish
-	}()
-
-	// Prepare gRPC server options
-	grpcOpts := []grpc.ServerOption{
-		grpc.StatsHandler(otelgrpc.NewServerHandler()),
-		grpc.MaxRecvMsgSize(s.cfg.RateLimit.MaxMessageSizeBytes),
-		grpc.MaxSendMsgSize(s.cfg.RateLimit.MaxMessageSizeBytes),
-		grpc.ChainUnaryInterceptor(
-			middleware.UnaryPanicRecoveryMiddleware(),                 // Panic recovery first
-			middleware.UnaryMetricsMiddleware(s.metrics),              // Metrics collection
-			rateLimiter.UnaryGlobalRateLimitMiddleware(),              // Global rate limit
-			rateLimiter.UnaryAuthRateLimitMiddleware(),                // Auth-specific rate limit
-			rateLimiter.UnaryDERateLimitMiddleware(),                  // DE-specific rate limit
-			middleware.UnaryAuthMiddleware(s.jwtService),              // Authentication
-			logging.UnaryServerInterceptor(InterceptorLogger(logger)), // Logging
-		),
-		grpc.ChainStreamInterceptor(
-			middleware.StreamPanicRecoveryMiddleware(),         // Panic recovery for streams
-			middleware.StreamMetricsMiddleware(s.metrics),      // Metrics for streams
-			logging.StreamServerInterceptor(InterceptorLogger(logger)),
-		),
-	}
-
-	// Add TLS credentials if enabled
-	if s.cfg.TLS.Enabled {
-		slog.Info("TLS enabled, loading certificates",
-			slog.String("cert", s.cfg.TLS.CertFile),
-			slog.String("key", s.cfg.TLS.KeyFile),
-		)
-		cert, err := tls.LoadX509KeyPair(s.cfg.TLS.CertFile, s.cfg.TLS.KeyFile)
-		if err != nil {
-			return err
-		}
-		creds := credentials.NewTLS(&tls.Config{
-			Certificates: []tls.Certificate{cert},
-			MinVersion:   tls.VersionTLS12, // Enforce minimum TLS 1.2
-		})
-		grpcOpts = append(grpcOpts, grpc.Creds(creds))
-	} else {
-		slog.Warn("TLS is disabled - this is insecure for production use")
-	}
-
-	grpcSrv := grpc.NewServer(grpcOpts...)
-
-	// Register health check service
-	healthServer := s.setupHealthCheck(grpcSrv)
-	defer healthServer.Shutdown()
-
-	slog.Info("Registering RPC services")
-	for _, handler := range s.handlers {
-		handler.RegisterService(grpcSrv)
-	}
-
-	slog.Info("Creating listener")
-	lis, err := net.Listen("tcp", s.cfg.LisAddr)
-	if err != nil {
+	if err := lifecycle.run(ctx); err != nil {
 		return err
 	}
-	lisAddr := lis.Addr().String()
 
-	slog.Info("RPC server listening on: ", slog.String("addr", lisAddr))
-	go func() {
-		if err := grpcSrv.Serve(lis); err != nil {
-			slog.Error(
-				"Unexpected error on the gRPC server",
-				slog.String("error", err.Error()),
-			)
-			cancel()
-		}
-	}()
-
-	// NOTE: Make sure the gRPC server is running properly and accessible.
-	mux := runtime.NewServeMux()
-
-	// Prepare dial options for HTTP gateway
-	var dialOpts []grpc.DialOption
-	if s.cfg.TLS.Enabled {
-		// Use TLS credentials for gateway connection
-		cert, err := tls.LoadX509KeyPair(s.cfg.TLS.CertFile, s.cfg.TLS.KeyFile)
-		if err != nil {
-			return err
-		}
-		creds := credentials.NewTLS(&tls.Config{
-			Certificates: []tls.Certificate{cert},
-			MinVersion:   tls.VersionTLS12,
-		})
-		dialOpts = []grpc.DialOption{grpc.WithTransportCredentials(creds)}
-	} else {
-		dialOpts = []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	}
-
-	slog.Info("Registering grpc-gateway handlers")
-	for _, handler := range s.handlers {
-		handler.RegisterHTTPHandler(ctx, mux, lisAddr, dialOpts)
-	}
-
-	// Add health check HTTP endpoints
-	mux.HandlePath("GET", "/health", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"UP"}`))
-	})
-
-	mux.HandlePath("GET", "/readiness", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
-		// Check if services are ready
-		if !s.checkDatabaseHealth(ctx) {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusServiceUnavailable)
-			w.Write([]byte(`{"status":"DOWN","reason":"database unavailable"}`))
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"UP"}`))
-	})
-
-	slog.Info("Health check endpoints available at /health and /readiness")
-
-	// Add Prometheus metrics endpoint if using Prometheus exporter
-	// Note: The Prometheus exporter automatically registers with prometheus.DefaultRegisterer
-	// and the metrics are exposed via promhttp.Handler()
-	if s.cfg.MetricsEnabled && s.cfg.MetricsType == telemetry.MetricsExporterPrometheus {
-		slog.Info("Prometheus metrics endpoint will be available at /metrics via Prometheus client")
-		// The actual metrics endpoint is provided by the Prometheus exporter
-		// Users should access it via the Prometheus client library's HTTP handler
-	}
-
-	// Start HTTP server (and proxy calls to gRPC server endpoint)
-	slog.Info("HTTP server listening on: ", slog.String("port", s.cfg.HTTPPort))
-	httpServer := &http.Server{
-		Addr:    s.cfg.HTTPPort,
-		Handler: mux,
-	}
-
-	// Add TLS to HTTP server if enabled
-	if s.cfg.TLS.Enabled {
-		httpServer.TLSConfig = &tls.Config{
-			MinVersion: tls.VersionTLS12,
-		}
-		go func() {
-			if err := httpServer.ListenAndServeTLS(s.cfg.TLS.CertFile, s.cfg.TLS.KeyFile); err != nil && err != http.ErrServerClosed {
-				slog.Error(
-					"Unexpected error on the HTTP server",
-					slog.String("error", err.Error()),
-				)
-				cancel()
-			}
-		}()
-	} else {
-		go func() {
-			if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-				slog.Error(
-					"Unexpected error on the HTTP server",
-					slog.String("error", err.Error()),
-				)
-				cancel()
-			}
-		}()
-	}
-
-	// Setup signal handling for graceful shutdown
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-
-	// Wait for shutdown signal or context cancellation
-	select {
-	case sig := <-sigChan:
-		slog.Info("Received shutdown signal", slog.String("signal", sig.String()))
-	case <-ctx.Done():
-		slog.Info("Context cancelled, initiating shutdown")
-	}
-
-	// Graceful shutdown
-	slog.Info("Starting graceful shutdown...")
-
-	// Create shutdown context with timeout
-	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer shutdownCancel()
-
-	// Stop accepting new connections
-	healthServer.Shutdown()
-	slog.Info("Health check service stopped")
-
-	// Shutdown HTTP server
-	if err := httpServer.Shutdown(shutdownCtx); err != nil {
-		slog.Error("Error shutting down HTTP server", slog.String("error", err.Error()))
-	} else {
-		slog.Info("HTTP server shut down gracefully")
-	}
-
-	// Gracefully stop gRPC server
-	// This will wait for in-flight requests to complete
-	stopped := make(chan struct{})
-	go func() {
-		grpcSrv.GracefulStop()
-		close(stopped)
-	}()
-
-	// Wait for graceful stop or force stop after timeout
-	select {
-	case <-stopped:
-		slog.Info("gRPC server shut down gracefully")
-	case <-shutdownCtx.Done():
-		slog.Warn("Graceful shutdown timeout, forcing stop")
-		grpcSrv.Stop()
-	}
-
-	slog.Info("Server shutdown complete")
-	return nil
+	return lifecycle.shutdown(ctx)
 }
 
 // InterceptorLogger adapts slog logger to interceptor logger.

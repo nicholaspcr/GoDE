@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 const (
@@ -91,7 +92,7 @@ func TestE2E_FullUserWorkflow(t *testing.T) {
 
 	t.Run("03_GetUser", func(t *testing.T) {
 		resp, err := userClient.Get(authCtx, &api.UserServiceGetRequest{
-			Ids: &api.UserIDs{Username: username},
+			UserIds: &api.UserIDs{Username: username},
 		})
 		require.NoError(t, err, "get user should succeed")
 		require.NotNil(t, resp.User)
@@ -103,14 +104,14 @@ func TestE2E_FullUserWorkflow(t *testing.T) {
 	t.Run("04_UpdateUser", func(t *testing.T) {
 		newEmail := fmt.Sprintf("updated_%s@test.com", username)
 		_, err := userClient.Update(authCtx, &api.UserServiceUpdateRequest{
-			User:   &api.User{Ids: &api.UserIDs{Username: username}, Email: newEmail},
-			Fields: []string{"email"},
+			User:      &api.User{Ids: &api.UserIDs{Username: username}, Email: newEmail},
+			FieldMask: &fieldmaskpb.FieldMask{Paths: []string{"email"}},
 		})
 		require.NoError(t, err, "update should succeed")
 
 		// Verify update
 		resp, err := userClient.Get(authCtx, &api.UserServiceGetRequest{
-			Ids: &api.UserIDs{Username: username},
+			UserIds: &api.UserIDs{Username: username},
 		})
 		require.NoError(t, err)
 		assert.Equal(t, newEmail, resp.User.Email)
@@ -118,13 +119,13 @@ func TestE2E_FullUserWorkflow(t *testing.T) {
 
 	t.Run("05_DeleteUser", func(t *testing.T) {
 		_, err := userClient.Delete(authCtx, &api.UserServiceDeleteRequest{
-			Ids: &api.UserIDs{Username: username},
+			UserIds: &api.UserIDs{Username: username},
 		})
 		require.NoError(t, err, "delete should succeed")
 
 		// Verify user is deleted
 		_, err = userClient.Get(authCtx, &api.UserServiceGetRequest{
-			Ids: &api.UserIDs{Username: username},
+			UserIds: &api.UserIDs{Username: username},
 		})
 		assert.Error(t, err, "get should fail after delete")
 	})
@@ -186,36 +187,32 @@ func TestE2E_DEExecution(t *testing.T) {
 	})
 
 	t.Run("04_RunDE", func(t *testing.T) {
-		stream, err := deClient.Run(authCtx, &api.DifferentialEvolutionServiceRunRequest{
-			Algorithm:  "gde3",
-			Problem:    "zdt1",
-			Variant:    "rand/1/bin",
-			Dim:        30,
-			Pop:        100,
-			Iterations: 250,
-			Executions: 1,
+		resp, err := deClient.Run(authCtx, &api.RunRequest{
+			Algorithm: "gde3",
+			Problem:   "zdt1",
+			Variant:   "rand1",
+			DeConfig: &api.DEConfig{
+				Executions:     1,
+				Generations:    250,
+				PopulationSize: 100,
+				DimensionsSize: 30,
+				ObjetivesSize:  2,
+				FloorLimiter:   0.0,
+				CeilLimiter:    1.0,
+				AlgorithmConfig: &api.DEConfig_Gde3{
+					Gde3: &api.GDE3Config{
+						Cr: 0.5,
+						F:  0.5,
+						P:  0.1,
+					},
+				},
+			},
 		})
-		require.NoError(t, err, "stream creation should succeed")
-
-		// Receive results
-		var results []*api.DifferentialEvolutionServiceRunResponse
-		for {
-			resp, err := stream.Recv()
-			if err != nil {
-				break
-			}
-			results = append(results, resp)
-		}
-
-		assert.NotEmpty(t, results, "should receive at least one result")
-
-		// Check the last result has pareto data
-		if len(results) > 0 {
-			lastResult := results[len(results)-1]
-			assert.NotNil(t, lastResult.Pareto, "pareto should not be nil")
-			t.Logf("Received %d results, last pareto has %d vectors",
-				len(results), len(lastResult.Pareto.Vectors))
-		}
+		require.NoError(t, err, "DE execution should succeed")
+		require.NotNil(t, resp, "response should not be nil")
+		require.NotNil(t, resp.Pareto, "pareto should not be nil")
+		assert.NotEmpty(t, resp.Pareto.Vectors, "pareto should contain vectors")
+		t.Logf("Pareto has %d vectors", len(resp.Pareto.Vectors))
 	})
 }
 
@@ -266,22 +263,22 @@ func TestE2E_UnauthorizedAccess(t *testing.T) {
 
 	t.Run("GetUserWithoutAuth", func(t *testing.T) {
 		_, err := userClient.Get(ctx, &api.UserServiceGetRequest{
-			Ids: &api.UserIDs{Username: "anyuser"},
+			UserIds: &api.UserIDs{Username: "anyuser"},
 		})
 		assert.Error(t, err, "should fail without authentication")
 	})
 
 	t.Run("UpdateUserWithoutAuth", func(t *testing.T) {
 		_, err := userClient.Update(ctx, &api.UserServiceUpdateRequest{
-			User:   &api.User{Ids: &api.UserIDs{Username: "anyuser"}, Email: "new@test.com"},
-			Fields: []string{"email"},
+			User:      &api.User{Ids: &api.UserIDs{Username: "anyuser"}, Email: "new@test.com"},
+			FieldMask: &fieldmaskpb.FieldMask{Paths: []string{"email"}},
 		})
 		assert.Error(t, err, "should fail without authentication")
 	})
 
 	t.Run("DeleteUserWithoutAuth", func(t *testing.T) {
 		_, err := userClient.Delete(ctx, &api.UserServiceDeleteRequest{
-			Ids: &api.UserIDs{Username: "anyuser"},
+			UserIds: &api.UserIDs{Username: "anyuser"},
 		})
 		assert.Error(t, err, "should fail without authentication")
 	})

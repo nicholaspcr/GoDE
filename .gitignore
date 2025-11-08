@@ -1,6 +1,9 @@
 # General
 .vscode
 
+# Golang
+*.coverprofile
+
 # git
 .git
 

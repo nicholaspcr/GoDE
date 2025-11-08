@@ -560,7 +560,7 @@ func TestProblemFromName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			problem, err := problemFromName(tt.problemName)
+			problem, err := problemFromName(tt.problemName, 30, 2)
 
 			if tt.wantErr {
 				assert.Error(t, err)

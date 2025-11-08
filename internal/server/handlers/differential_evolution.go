@@ -13,15 +13,15 @@ import (
 	"github.com/nicholaspcr/GoDE/pkg/de/gde3"
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
-	"github.com/nicholaspcr/GoDE/pkg/problems/many/dtlz"
-	"github.com/nicholaspcr/GoDE/pkg/problems/many/wfg"
-	"github.com/nicholaspcr/GoDE/pkg/problems/multi"
+	_ "github.com/nicholaspcr/GoDE/pkg/problems/many/dtlz" // Register DTLZ problems
+	_ "github.com/nicholaspcr/GoDE/pkg/problems/many/wfg"  // Register WFG problems
+	_ "github.com/nicholaspcr/GoDE/pkg/problems/multi"     // Register multi-objective problems
 	"github.com/nicholaspcr/GoDE/pkg/validation"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
-	"github.com/nicholaspcr/GoDE/pkg/variants/best"
-	currenttobest "github.com/nicholaspcr/GoDE/pkg/variants/current-to-best"
-	"github.com/nicholaspcr/GoDE/pkg/variants/pbest"
-	variantsrand "github.com/nicholaspcr/GoDE/pkg/variants/rand"
+	_ "github.com/nicholaspcr/GoDE/pkg/variants/best"              // Register best variants
+	_ "github.com/nicholaspcr/GoDE/pkg/variants/current-to-best"   // Register current-to-best variant
+	_ "github.com/nicholaspcr/GoDE/pkg/variants/pbest"             // Register pbest variant
+	_ "github.com/nicholaspcr/GoDE/pkg/variants/rand"              // Register rand variants
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -71,49 +71,29 @@ func (deh *deHandler) ListSupportedAlgorithms(
 func (deh *deHandler) ListSupportedVariants(
 	ctx context.Context, _ *emptypb.Empty,
 ) (*api.ListSupportedVariantsResponse, error) {
-	return &api.ListSupportedVariantsResponse{
-		Variants: []*api.Variant{
-			{Name: variantsrand.Rand1().Name(), Description: "a + F(b - c)"},
-			{Name: variantsrand.Rand2().Name(), Description: "a + F(b - c) + F(d - e)"},
-			{Name: best.Best1().Name(), Description: "best + F(a - b)"},
-			{Name: best.Best2().Name(), Description: "best + F(a - b) + F(c - d)"},
-			{Name: pbest.Pbest().Name(), Description: "pbest + F(a - b) + F(c - d)"},
-			{Name: currenttobest.CurrToBest1().Name(), Description: "current-to-best/1"},
-		},
-	}, nil
+	metas := variants.DefaultRegistry.ListMetadata()
+	apiVariants := make([]*api.Variant, len(metas))
+	for i, meta := range metas {
+		apiVariants[i] = &api.Variant{
+			Name:        meta.Name,
+			Description: meta.Description,
+		}
+	}
+	return &api.ListSupportedVariantsResponse{Variants: apiVariants}, nil
 }
 
 func (deh *deHandler) ListSupportedProblems(
 	ctx context.Context, _ *emptypb.Empty,
 ) (*api.ListSupportedProblemsResponse, error) {
-	return &api.ListSupportedProblemsResponse{
-		Problems: []*api.Problem{
-			{Name: multi.Zdt1().Name(), Description: "ZDT1 problem"},
-			{Name: multi.Zdt2().Name(), Description: "ZDT2 problem"},
-			{Name: multi.Zdt3().Name(), Description: "ZDT3 problem"},
-			{Name: multi.Zdt4().Name(), Description: "ZDT4 problem"},
-			{Name: multi.Zdt6().Name(), Description: "ZDT6 problem"},
-			{Name: multi.Vnt1().Name(), Description: "VNT1 problem"},
-
-			{Name: dtlz.Dtlz1().Name(), Description: "DTLZ1 problem"},
-			{Name: dtlz.Dtlz2().Name(), Description: "DTLZ2 problem"},
-			{Name: dtlz.Dtlz3().Name(), Description: "DTLZ3 problem"},
-			{Name: dtlz.Dtlz4().Name(), Description: "DTLZ4 problem"},
-			{Name: dtlz.Dtlz5().Name(), Description: "DTLZ5 problem"},
-			{Name: dtlz.Dtlz6().Name(), Description: "DTLZ6 problem"},
-			{Name: dtlz.Dtlz7().Name(), Description: "DTLZ7 problem"},
-
-			{Name: wfg.Wfg1().Name(), Description: "WFG1 problem"},
-			{Name: wfg.Wfg2().Name(), Description: "WFG2 problem"},
-			{Name: wfg.Wfg3().Name(), Description: "WFG3 problem"},
-			{Name: wfg.Wfg4().Name(), Description: "WFG4 problem"},
-			{Name: wfg.Wfg5().Name(), Description: "WFG5 problem"},
-			{Name: wfg.Wfg6().Name(), Description: "WFG6 problem"},
-			{Name: wfg.Wfg7().Name(), Description: "WFG7 problem"},
-			{Name: wfg.Wfg8().Name(), Description: "WFG8 problem"},
-			{Name: wfg.Wfg9().Name(), Description: "WFG9 problem"},
-		},
-	}, nil
+	metas := problems.DefaultRegistry.ListMetadata()
+	apiProblems := make([]*api.Problem, len(metas))
+	for i, meta := range metas {
+		apiProblems[i] = &api.Problem{
+			Name:        meta.Name,
+			Description: meta.Description,
+		}
+	}
+	return &api.ListSupportedProblemsResponse{Problems: apiProblems}, nil
 }
 
 func (deh *deHandler) Run(
@@ -140,7 +120,7 @@ func (deh *deHandler) Run(
 		populationParams.FloorRange[i] = float64(req.DeConfig.FloorLimiter)
 	}
 
-	problem, err := problemFromName(req.Problem)
+	problem, err := problemFromName(req.Problem, int(req.DeConfig.DimensionsSize), int(req.DeConfig.ObjetivesSize))
 	if err != nil {
 		return nil, err
 	}
@@ -221,73 +201,13 @@ func (deh *deHandler) Run(
 }
 
 // problemFromName returns the problems.Interface implementation of the problem
-// referenced by name.
-func problemFromName(p string) (problems.Interface, error) {
-	switch p {
-	case multi.Vnt1().Name():
-		return multi.Vnt1(), nil
-	case multi.Zdt1().Name():
-		return multi.Zdt1(), nil
-	case multi.Zdt2().Name():
-		return multi.Zdt2(), nil
-	case multi.Zdt3().Name():
-		return multi.Zdt3(), nil
-	case multi.Zdt4().Name():
-		return multi.Zdt4(), nil
-	case multi.Zdt6().Name():
-		return multi.Zdt6(), nil
-	case dtlz.Dtlz1().Name():
-		return dtlz.Dtlz1(), nil
-	case dtlz.Dtlz2().Name():
-		return dtlz.Dtlz2(), nil
-	case dtlz.Dtlz3().Name():
-		return dtlz.Dtlz3(), nil
-	case dtlz.Dtlz4().Name():
-		return dtlz.Dtlz4(), nil
-	case dtlz.Dtlz5().Name():
-		return dtlz.Dtlz5(), nil
-	case dtlz.Dtlz6().Name():
-		return dtlz.Dtlz6(), nil
-	case dtlz.Dtlz7().Name():
-		return dtlz.Dtlz7(), nil
-	case wfg.Wfg1().Name():
-		return wfg.Wfg1(), nil
-	case wfg.Wfg2().Name():
-		return wfg.Wfg2(), nil
-	case wfg.Wfg3().Name():
-		return wfg.Wfg3(), nil
-	case wfg.Wfg4().Name():
-		return wfg.Wfg4(), nil
-	case wfg.Wfg5().Name():
-		return wfg.Wfg5(), nil
-	case wfg.Wfg6().Name():
-		return wfg.Wfg6(), nil
-	case wfg.Wfg7().Name():
-		return wfg.Wfg7(), nil
-	case wfg.Wfg8().Name():
-		return wfg.Wfg8(), nil
-	case wfg.Wfg9().Name():
-		return wfg.Wfg9(), nil
-	}
-	return nil, errors.New("problem does not exist")
+// referenced by name using the registry pattern.
+func problemFromName(name string, dim, objs int) (problems.Interface, error) {
+	return problems.DefaultRegistry.Create(name, dim, objs)
 }
 
 // variantFromName returns the variants.Interface implementation of the variant
-// referenced by name.
-func variantFromName(p string) (variants.Interface, error) {
-	switch p {
-	case variantsrand.Rand1().Name():
-		return variantsrand.Rand1(), nil
-	case variantsrand.Rand2().Name():
-		return variantsrand.Rand2(), nil
-	case best.Best1().Name():
-		return best.Best1(), nil
-	case best.Best2().Name():
-		return best.Best2(), nil
-	case currenttobest.CurrToBest1().Name():
-		return currenttobest.CurrToBest1(), nil
-	case pbest.Pbest().Name():
-		return pbest.Pbest(), nil
-	}
-	return nil, errors.New("variant does not exist")
+// referenced by name using the registry pattern.
+func variantFromName(name string) (variants.Interface, error) {
+	return variants.DefaultRegistry.Create(name)
 }

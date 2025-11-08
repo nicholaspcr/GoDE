@@ -1,3 +1,4 @@
+// Package config provides shared configuration utilities for environment variable loading.
 package config
 
 import (
@@ -78,7 +79,7 @@ func bindEnvRecursive(v *viper.Viper, t reflect.Type, prefix string) {
 		} else {
 			// Bind the environment variable
 			envVar := strings.ToUpper(strings.ReplaceAll(key, ".", "_"))
-			v.BindEnv(key, envVar)
+			_ = v.BindEnv(key, envVar)
 		}
 	}
 }

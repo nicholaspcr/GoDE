@@ -325,15 +325,15 @@ func TestConfig_ValidateTLSFiles(t *testing.T) {
 	// Create temporary cert and key files for testing
 	certFile, err := os.CreateTemp("", "cert-*.pem")
 	require.NoError(t, err)
-	defer os.Remove(certFile.Name())
-	certFile.WriteString("fake cert")
-	certFile.Close()
+	defer func() { _ = os.Remove(certFile.Name()) }()
+	_, _ = certFile.WriteString("fake cert")
+	defer func() { _ = certFile.Close() }()
 
 	keyFile, err := os.CreateTemp("", "key-*.pem")
 	require.NoError(t, err)
-	defer os.Remove(keyFile.Name())
-	keyFile.WriteString("fake key")
-	keyFile.Close()
+	defer func() { _ = os.Remove(keyFile.Name()) }()
+	_, _ = keyFile.WriteString("fake key")
+	defer func() { _ = keyFile.Close() }()
 
 	t.Run("TLS with existing files", func(t *testing.T) {
 		config := Config{
@@ -416,9 +416,9 @@ func TestConfig_ValidateTLSFiles(t *testing.T) {
 func TestDefaultConfig(t *testing.T) {
 	// Set JWT_SECRET for this test
 	originalSecret := os.Getenv("JWT_SECRET")
-	defer os.Setenv("JWT_SECRET", originalSecret)
+	defer func() { _ = os.Setenv("JWT_SECRET", originalSecret) }()
 
-	os.Setenv("JWT_SECRET", "test-secret-for-default-config-testing-123456")
+	_ = os.Setenv("JWT_SECRET", "test-secret-for-default-config-testing-123456")
 
 	config := DefaultConfig()
 

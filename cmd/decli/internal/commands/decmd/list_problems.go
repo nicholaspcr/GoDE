@@ -2,6 +2,7 @@ package decmd
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"text/tabwriter"
 
@@ -18,7 +19,11 @@ var listProblemsCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer conn.Close()
+		defer func() {
+			if cerr := conn.Close(); cerr != nil {
+				slog.Warn("Failed to close connection", slog.String("error", cerr.Error()))
+			}
+		}()
 
 		res, err := client.ListSupportedProblems(ctx, &emptypb.Empty{})
 		if err != nil {
@@ -26,10 +31,16 @@ var listProblemsCmd = &cobra.Command{
 		}
 
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
-		fmt.Fprintln(w, "Name\tDescription")
-		fmt.Fprintln(w, "----\t----------- ")
+		if _, err := fmt.Fprintln(w, "Name\tDescription"); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w, "----\t----------- "); err != nil {
+			return err
+		}
 		for _, p := range res.GetProblems() {
-			fmt.Fprintf(w, "%s\t%s\n", p.Name, p.Description)
+			if _, err := fmt.Fprintf(w, "%s\t%s\n", p.Name, p.Description); err != nil {
+				return err
+			}
 		}
 		return w.Flush()
 	},

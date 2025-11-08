@@ -33,7 +33,11 @@ var registerCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer conn.Close()
+		defer func() {
+			if cerr := conn.Close(); cerr != nil {
+				slog.Warn("Failed to close connection", slog.String("error", cerr.Error()))
+			}
+		}()
 
 		client := api.NewAuthServiceClient(conn)
 
@@ -62,8 +66,8 @@ func init() {
 	registerCmd.Flags().StringVar(&email, "email", "", "user's email")
 
 	// Requirements
-	registerCmd.MarkFlagRequired("username")
-	registerCmd.MarkFlagRequired("email")
+	_ = registerCmd.MarkFlagRequired("username")
+	_ = registerCmd.MarkFlagRequired("email")
 
 	// Commands
 	authCmd.AddCommand(registerCmd)

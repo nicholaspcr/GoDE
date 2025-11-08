@@ -44,8 +44,8 @@ func TestMigrationWithSQLite(t *testing.T) {
 	// Create a temporary SQLite database
 	tmpFile, err := os.CreateTemp("", "test_migration_*.db")
 	require.NoError(t, err)
-	defer os.Remove(tmpFile.Name())
-	tmpFile.Close()
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
+	defer func() { _ = tmpFile.Close() }()
 
 	databaseURL := "sqlite3://" + tmpFile.Name()
 
@@ -64,8 +64,8 @@ func TestMigrationRollback(t *testing.T) {
 	// Create a temporary SQLite database
 	tmpFile, err := os.CreateTemp("", "test_rollback_*.db")
 	require.NoError(t, err)
-	defer os.Remove(tmpFile.Name())
-	tmpFile.Close()
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
+	defer func() { _ = tmpFile.Close() }()
 
 	databaseURL := "sqlite3://" + tmpFile.Name()
 

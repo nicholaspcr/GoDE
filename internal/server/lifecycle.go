@@ -118,8 +118,9 @@ func (l *lifecycle) setupPprof() error {
 	slog.Warn("pprof is enabled - this should only be used in development or with proper security")
 
 	l.pprofServer = &http.Server{
-		Addr:    l.cfg.PprofPort,
-		Handler: nil, // Use default http.DefaultServeMux which pprof registers to
+		Addr:              l.cfg.PprofPort,
+		Handler:           nil, // Use default http.DefaultServeMux which pprof registers to
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	go func() {
@@ -240,27 +241,29 @@ func (l *lifecycle) setupHTTPGateway(ctx context.Context) error {
 	// Register HTTP handlers
 	slog.Info("Registering grpc-gateway handlers")
 	for _, handler := range l.server.handlers {
-		handler.RegisterHTTPHandler(ctx, mux, l.cfg.LisAddr, dialOpts)
+		if err := handler.RegisterHTTPHandler(ctx, mux, l.cfg.LisAddr, dialOpts); err != nil {
+			return err
+		}
 	}
 
 	// Add health check HTTP endpoints
-	mux.HandlePath("GET", "/health", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+	_ = mux.HandlePath("GET", "/health", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"UP"}`))
+		_, _ = w.Write([]byte(`{"status":"UP"}`))
 	})
 
-	mux.HandlePath("GET", "/readiness", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+	_ = mux.HandlePath("GET", "/readiness", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
 		if !l.server.checkDatabaseHealth(ctx) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusServiceUnavailable)
-			w.Write([]byte(`{"status":"DOWN","reason":"database unavailable"}`))
+			_, _ = w.Write([]byte(`{"status":"DOWN","reason":"database unavailable"}`))
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"UP"}`))
+		_, _ = w.Write([]byte(`{"status":"UP"}`))
 	})
 
 	slog.Info("Health check endpoints available at /health and /readiness")
@@ -270,8 +273,9 @@ func (l *lifecycle) setupHTTPGateway(ctx context.Context) error {
 	}
 
 	l.httpServer = &http.Server{
-		Addr:    l.cfg.HTTPPort,
-		Handler: mux,
+		Addr:              l.cfg.HTTPPort,
+		Handler:           mux,
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	if l.cfg.TLS.Enabled {

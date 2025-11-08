@@ -30,7 +30,11 @@ var loginCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer conn.Close()
+		defer func() {
+			if cerr := conn.Close(); cerr != nil {
+				slog.Warn("Failed to close connection", slog.String("error", cerr.Error()))
+			}
+		}()
 
 		client := api.NewAuthServiceClient(conn)
 
@@ -55,7 +59,7 @@ func init() {
 	loginCmd.Flags().StringVar(&username, "username", "", "user's name")
 
 	// Requirements
-	loginCmd.MarkFlagRequired("username")
+	_ = loginCmd.MarkFlagRequired("username")
 
 	// Commands
 	authCmd.AddCommand(loginCmd)

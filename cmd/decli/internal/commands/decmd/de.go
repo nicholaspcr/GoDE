@@ -1,5 +1,4 @@
-// Package de_cmd handles all decli commands related to the differential
-// evolution API.
+// Package decmd handles all decli commands related to the differential evolution API.
 package decmd
 
 import (

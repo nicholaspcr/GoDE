@@ -6,7 +6,9 @@ import (
 	"log/slog"
 
 	"github.com/golang-migrate/migrate/v4"
+	// postgres driver for migrate
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	// sqlite3 driver for migrate
 	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/nicholaspcr/GoDE/internal/store/migrations"
@@ -26,7 +28,15 @@ func Run(databaseURL string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create migrate instance: %w", err)
 	}
-	defer m.Close()
+	defer func() {
+		srcErr, dbErr := m.Close()
+		if srcErr != nil {
+			slog.Error("failed to close migrate source", slog.String("error", srcErr.Error()))
+		}
+		if dbErr != nil {
+			slog.Error("failed to close migrate database", slog.String("error", dbErr.Error()))
+		}
+	}()
 
 	// Run migrations
 	if err := m.Up(); err != nil {
@@ -67,7 +77,15 @@ func Rollback(databaseURL string, steps int) error {
 	if err != nil {
 		return fmt.Errorf("failed to create migrate instance: %w", err)
 	}
-	defer m.Close()
+	defer func() {
+		srcErr, dbErr := m.Close()
+		if srcErr != nil {
+			slog.Error("failed to close migrate source", slog.String("error", srcErr.Error()))
+		}
+		if dbErr != nil {
+			slog.Error("failed to close migrate database", slog.String("error", dbErr.Error()))
+		}
+	}()
 
 	if err := m.Steps(-steps); err != nil {
 		return fmt.Errorf("failed to rollback migrations: %w", err)
@@ -103,7 +121,15 @@ func Version(databaseURL string) (uint, bool, error) {
 	if err != nil {
 		return 0, false, fmt.Errorf("failed to create migrate instance: %w", err)
 	}
-	defer m.Close()
+	defer func() {
+		srcErr, dbErr := m.Close()
+		if srcErr != nil {
+			slog.Error("failed to close migrate source", slog.String("error", srcErr.Error()))
+		}
+		if dbErr != nil {
+			slog.Error("failed to close migrate database", slog.String("error", dbErr.Error()))
+		}
+	}()
 
 	version, dirty, err := m.Version()
 	if err != nil {

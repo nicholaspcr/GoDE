@@ -21,7 +21,11 @@ var runCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer conn.Close()
+		defer func() {
+			if cerr := conn.Close(); cerr != nil {
+				slog.Warn("Failed to close connection", slog.String("error", cerr.Error()))
+			}
+		}()
 
 		res, err := client.Run(ctx, &api.RunRequest{
 			Algorithm: run.Algorithm,

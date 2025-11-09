@@ -63,7 +63,7 @@ func (s *executionStore) GetExecution(ctx context.Context, executionID, userID s
 	var model executionModel
 	if err := s.db.WithContext(ctx).Where("id = ? AND user_id = ?", executionID, userID).First(&model).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("execution not found")
+			return nil, store.ErrExecutionNotFound
 		}
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func (s *executionStore) DeleteExecution(ctx context.Context, executionID, userI
 		return result.Error
 	}
 	if result.RowsAffected == 0 {
-		return errors.New("execution not found")
+		return store.ErrExecutionNotFound
 	}
 	return nil
 }
@@ -152,6 +152,11 @@ func (s *executionStore) MarkExecutionForCancellation(ctx context.Context, execu
 // IsExecutionCancelled is not implemented for GORM store (handled by Redis).
 func (s *executionStore) IsExecutionCancelled(ctx context.Context, executionID string) (bool, error) {
 	return false, errors.New("cancellation not supported in database store")
+}
+
+// Subscribe is not implemented for GORM store (handled by Redis).
+func (s *executionStore) Subscribe(ctx context.Context, channel string) (<-chan []byte, error) {
+	return nil, errors.New("pub/sub not supported in database store")
 }
 
 // modelToExecution converts a database model to a store.Execution.

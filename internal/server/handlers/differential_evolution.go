@@ -3,25 +3,24 @@ package handlers
 import (
 	"context"
 	"errors"
-	"math/rand"
-	"time"
+	"fmt"
+	"io"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/nicholaspcr/GoDE/internal/executor"
 	"github.com/nicholaspcr/GoDE/internal/store"
+	"github.com/nicholaspcr/GoDE/internal/tenant"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
-	"github.com/nicholaspcr/GoDE/pkg/de"
-	"github.com/nicholaspcr/GoDE/pkg/de/gde3"
-	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 	_ "github.com/nicholaspcr/GoDE/pkg/problems/many/dtlz" // Register DTLZ problems
 	_ "github.com/nicholaspcr/GoDE/pkg/problems/many/wfg"  // Register WFG problems
 	_ "github.com/nicholaspcr/GoDE/pkg/problems/multi"     // Register multi-objective problems
 	"github.com/nicholaspcr/GoDE/pkg/validation"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
-	_ "github.com/nicholaspcr/GoDE/pkg/variants/best"              // Register best variants
-	_ "github.com/nicholaspcr/GoDE/pkg/variants/current-to-best"   // Register current-to-best variant
-	_ "github.com/nicholaspcr/GoDE/pkg/variants/pbest"             // Register pbest variant
-	_ "github.com/nicholaspcr/GoDE/pkg/variants/rand"              // Register rand variants
+	_ "github.com/nicholaspcr/GoDE/pkg/variants/best"            // Register best variants
+	_ "github.com/nicholaspcr/GoDE/pkg/variants/current-to-best" // Register current-to-best variant
+	_ "github.com/nicholaspcr/GoDE/pkg/variants/pbest"           // Register pbest variant
+	_ "github.com/nicholaspcr/GoDE/pkg/variants/rand"            // Register rand variants
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc"
@@ -34,12 +33,14 @@ import (
 type deHandler struct {
 	api.UnimplementedDifferentialEvolutionServiceServer
 	store.Store
-	cfg de.Config
+	executor *executor.Executor
 }
 
-// NewDEHandler returns a handle that implements
+// NewDEHandler returns a handler that implements
 // DifferentialEvolutionServiceServer.
-func NewDEHandler(deCfg de.Config) Handler { return &deHandler{cfg: deCfg} }
+func NewDEHandler(exec *executor.Executor) Handler {
+	return &deHandler{executor: exec}
+}
 
 // RegisterService adds DifferentialEvolutionService to the RPC server.
 func (deh *deHandler) RegisterService(srv *grpc.Server) {
@@ -98,11 +99,12 @@ func (deh *deHandler) ListSupportedProblems(
 	return &api.ListSupportedProblemsResponse{Problems: apiProblems}, nil
 }
 
-func (deh *deHandler) Run(
+// RunAsync submits a DE execution to run in the background.
+func (deh *deHandler) RunAsync(
 	ctx context.Context, req *api.RunRequest,
-) (*api.RunResponse, error) {
+) (*api.RunAsyncResponse, error) {
 	tracer := otel.Tracer("handlers.de")
-	ctx, span := tracer.Start(ctx, "deHandler.Run")
+	ctx, span := tracer.Start(ctx, "deHandler.RunAsync")
 	defer span.End()
 
 	span.SetAttributes(
@@ -111,131 +113,402 @@ func (deh *deHandler) Run(
 		attribute.String("variant", req.Variant),
 	)
 
+	// Get user ID from context
+	userID, err := tenant.FromContext(ctx)
+	if err != nil {
+		span.RecordError(err)
+		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
+	}
+
 	// Validate DE configuration
 	if err := validation.ValidateDEConfig(req.DeConfig); err != nil {
 		span.RecordError(err)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	//nolint:unconvert // Type conversions required by OpenTelemetry attribute API
 	span.SetAttributes(
 		attribute.Int64("executions", int64(req.DeConfig.Executions)),
 		attribute.Int64("generations", int64(req.DeConfig.Generations)),
 		attribute.Int64("population_size", int64(req.DeConfig.PopulationSize)),
 	)
 
-	var algo de.Algorithm
-
-	populationParams := models.PopulationParams{
-		PopulationSize: int(req.DeConfig.PopulationSize),
-		DimensionSize:  int(req.DeConfig.DimensionsSize),
-		ObjectivesSize: int(req.DeConfig.ObjetivesSize),
-		FloorRange:     make([]float64, req.DeConfig.DimensionsSize),
-		CeilRange:      make([]float64, req.DeConfig.DimensionsSize),
+	// Validate algorithm is supported
+	if req.Algorithm != "gde3" {
+		err := errors.New("unsupported algorithm")
+		span.RecordError(err)
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	// Setup the limiters for the population.
-	for i := range populationParams.CeilRange {
-		populationParams.CeilRange[i] = float64(req.DeConfig.CeilLimiter)
-		populationParams.FloorRange[i] = float64(req.DeConfig.FloorLimiter)
-	}
-
-	problem, err := problemFromName(req.Problem, int(req.DeConfig.DimensionsSize), int(req.DeConfig.ObjetivesSize))
+	// Submit execution with algorithm, problem, and variant names
+	executionID, err := deh.executor.SubmitExecution(ctx, userID, req.Algorithm, req.Problem, req.Variant, req.DeConfig)
 	if err != nil {
 		span.RecordError(err)
-		return nil, err
+		return nil, status.Errorf(codes.Internal, "failed to submit execution: %v", err)
 	}
 
-	variant, err := variantFromName(req.Variant)
+	span.SetAttributes(attribute.String("execution_id", executionID))
+
+	return &api.RunAsyncResponse{
+		ExecutionId: executionID,
+	}, nil
+}
+
+// StreamProgress streams real-time progress updates for an execution.
+func (deh *deHandler) StreamProgress(
+	req *api.StreamProgressRequest,
+	stream api.DifferentialEvolutionService_StreamProgressServer,
+) error {
+	tracer := otel.Tracer("handlers.de")
+	ctx, span := tracer.Start(stream.Context(), "deHandler.StreamProgress")
+	defer span.End()
+
+	span.SetAttributes(attribute.String("execution_id", req.ExecutionId))
+
+	// Get user ID from context
+	userID, err := tenant.FromContext(ctx)
 	if err != nil {
 		span.RecordError(err)
-		return nil, err
+		return status.Error(codes.Unauthenticated, "user not authenticated")
 	}
 
-	initialPopulation, err := generatePopulation(populationParams, rand.New(rand.NewSource(time.Now().UnixNano())))
+	// Verify execution belongs to user
+	execution, err := deh.Store.GetExecution(ctx, req.ExecutionId, userID)
 	if err != nil {
+		if errors.Is(err, store.ErrExecutionNotFound) {
+			return status.Error(codes.NotFound, "execution not found")
+		}
 		span.RecordError(err)
-		return nil, err
+		return status.Errorf(codes.Internal, "failed to get execution: %v", err)
 	}
 
-	switch req.Algorithm {
-	case "gde3":
-		algo = gde3.New(
-			gde3.WithConstants(gde3.Constants{
-				DE: de.Constants{
-					Executions:    int(req.DeConfig.Executions),
-					Generations:   int(req.DeConfig.Generations),
-					Dimensions:    int(req.DeConfig.DimensionsSize),
-					ObjFuncAmount: int(req.DeConfig.ObjetivesSize),
-				},
-				CR: float64(req.DeConfig.GetGde3().Cr),
-				F:  float64(req.DeConfig.GetGde3().F),
-				P:  float64(req.DeConfig.GetGde3().P),
-			}),
-			gde3.WithInitialPopulation(initialPopulation),
-			gde3.WithPopulationParams(populationParams),
-			gde3.WithProblem(problem),
-			gde3.WithVariant(variant),
-		)
-
-	default:
-		err := errors.New("unsupported algorithms")
-		span.RecordError(err)
-		return nil, err
+	if execution.UserID != userID {
+		return status.Error(codes.PermissionDenied, "execution does not belong to user")
 	}
 
-	DE, err := de.New(
-		deh.cfg,
-		de.WithAlgorithm(algo),
-		de.WithExecutions(int(req.DeConfig.Executions)),
-		de.WithGenerations(int(req.DeConfig.Generations)),
-		de.WithDimensions(int(req.DeConfig.DimensionsSize)),
-		de.WithObjFuncAmount(int(req.DeConfig.ObjetivesSize)),
-	)
-	if err != nil {
-		span.RecordError(err)
-		return nil, err
-	}
+	// Subscribe to progress updates
+	progressCh := make(chan *store.ExecutionProgress, 10)
+	errCh := make(chan error, 1)
 
-	finalPareto, maxObjs, err := DE.Execute(ctx)
-	if err != nil {
-		span.RecordError(err)
-		return nil, err
-	}
-	span.SetAttributes(attribute.Int("pareto_result_size", len(finalPareto)))
+	go func() {
+		defer close(progressCh)
+		defer close(errCh)
 
-	// Convert vectors to proto format
-	vectorsProto := make([]*api.Vector, len(finalPareto))
-	for i, vec := range finalPareto {
-		vectorsProto[i] = &api.Vector{
-			Elements:         vec.Elements,
-			Objectives:       vec.Objectives,
-			CrowdingDistance: vec.CrowdingDistance,
+		// Subscribe to Redis pub/sub for progress updates
+		channel := fmt.Sprintf("execution:%s:updates", req.ExecutionId)
+		progressBytes, err := deh.Store.Subscribe(ctx, channel)
+		if err != nil {
+			errCh <- err
+			return
+		}
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case data, ok := <-progressBytes:
+				if !ok {
+					return
+				}
+				// Parse progress from JSON
+				progress := &store.ExecutionProgress{}
+				if err := progress.UnmarshalJSON(data); err != nil {
+					continue
+				}
+				progressCh <- progress
+			}
+		}
+	}()
+
+	// Stream progress updates to client
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case err := <-errCh:
+			if err != nil {
+				span.RecordError(err)
+				return status.Errorf(codes.Internal, "progress stream error: %v", err)
+			}
+		case progress, ok := <-progressCh:
+			if !ok {
+				return nil
+			}
+
+			apiProgress := &api.ExecutionProgress{
+				ExecutionId:         progress.ExecutionID,
+				CurrentGeneration:   progress.CurrentGeneration,
+				TotalGenerations:    progress.TotalGenerations,
+				CompletedExecutions: progress.CompletedExecutions,
+				TotalExecutions:     progress.TotalExecutions,
+				PartialPareto:       progress.PartialPareto,
+			}
+
+			if err := stream.Send(apiProgress); err != nil {
+				if errors.Is(err, io.EOF) {
+					return nil
+				}
+				span.RecordError(err)
+				return status.Errorf(codes.Internal, "failed to send progress: %v", err)
+			}
 		}
 	}
+}
 
-	// Flatten max objectives from all executions
-	flatMaxObjs := make([]float64, 0, len(maxObjs)*populationParams.ObjectivesSize)
-	for _, objs := range maxObjs {
-		flatMaxObjs = append(flatMaxObjs, objs...)
+// GetExecutionStatus returns the current status of an execution.
+func (deh *deHandler) GetExecutionStatus(
+	ctx context.Context, req *api.GetExecutionStatusRequest,
+) (*api.GetExecutionStatusResponse, error) {
+	tracer := otel.Tracer("handlers.de")
+	ctx, span := tracer.Start(ctx, "deHandler.GetExecutionStatus")
+	defer span.End()
+
+	span.SetAttributes(attribute.String("execution_id", req.ExecutionId))
+
+	// Get user ID from context
+	userID, err := tenant.FromContext(ctx)
+	if err != nil {
+		span.RecordError(err)
+		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
+	}
+
+	// Get execution
+	execution, err := deh.Store.GetExecution(ctx, req.ExecutionId, userID)
+	if err != nil {
+		if errors.Is(err, store.ErrExecutionNotFound) {
+			return nil, status.Error(codes.NotFound, "execution not found")
+		}
+		span.RecordError(err)
+		return nil, status.Errorf(codes.Internal, "failed to get execution: %v", err)
+	}
+
+	// Convert to API status
+	apiStatus := convertExecutionStatus(execution.Status)
+
+	response := &api.GetExecutionStatusResponse{
+		ExecutionId: execution.ID,
+		Status:      apiStatus,
+		CreatedAt:   execution.CreatedAt.Unix(),
+		UpdatedAt:   execution.UpdatedAt.Unix(),
+	}
+
+	if execution.CompletedAt != nil {
+		completedAt := execution.CompletedAt.Unix()
+		response.CompletedAt = &completedAt
+	}
+
+	if execution.Error != "" {
+		response.Error = &execution.Error
+	}
+
+	if execution.ParetoID != nil {
+		paretoID := *execution.ParetoID
+		response.ParetoId = &paretoID
+	}
+
+	return response, nil
+}
+
+// GetExecutionResults returns the results of a completed execution.
+func (deh *deHandler) GetExecutionResults(
+	ctx context.Context, req *api.GetExecutionResultsRequest,
+) (*api.RunResponse, error) {
+	tracer := otel.Tracer("handlers.de")
+	ctx, span := tracer.Start(ctx, "deHandler.GetExecutionResults")
+	defer span.End()
+
+	span.SetAttributes(attribute.String("execution_id", req.ExecutionId))
+
+	// Get user ID from context
+	userID, err := tenant.FromContext(ctx)
+	if err != nil {
+		span.RecordError(err)
+		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
+	}
+
+	// Get execution
+	execution, err := deh.Store.GetExecution(ctx, req.ExecutionId, userID)
+	if err != nil {
+		if errors.Is(err, store.ErrExecutionNotFound) {
+			return nil, status.Error(codes.NotFound, "execution not found")
+		}
+		span.RecordError(err)
+		return nil, status.Errorf(codes.Internal, "failed to get execution: %v", err)
+	}
+
+	// Check if execution is completed
+	if execution.Status != store.ExecutionStatusCompleted {
+		return nil, status.Error(codes.FailedPrecondition, "execution is not completed")
+	}
+
+	// Check if pareto ID exists
+	if execution.ParetoID == nil {
+		return nil, status.Error(codes.NotFound, "execution results not found")
+	}
+
+	// Get pareto set
+	paretoSet, err := deh.Store.GetParetoSetByID(ctx, *execution.ParetoID)
+	if err != nil {
+		if errors.Is(err, store.ErrParetoSetNotFound) {
+			return nil, status.Error(codes.NotFound, "pareto set not found")
+		}
+		span.RecordError(err)
+		return nil, status.Errorf(codes.Internal, "failed to get pareto set: %v", err)
+	}
+
+	// Flatten max objectives from store.MaxObjectives
+	flatMaxObjs := make([]float64, 0)
+	for _, maxObj := range paretoSet.MaxObjectives {
+		flatMaxObjs = append(flatMaxObjs, maxObj.Values...)
 	}
 
 	return &api.RunResponse{
 		Pareto: &api.Pareto{
-			Vectors: vectorsProto,
+			Vectors: paretoSet.Vectors,
 			MaxObjs: flatMaxObjs,
 		},
 	}, nil
 }
 
-// problemFromName returns the problems.Interface implementation of the problem
-// referenced by name using the registry pattern.
-func problemFromName(name string, dim, objs int) (problems.Interface, error) {
-	return problems.DefaultRegistry.Create(name, dim, objs)
+// ListExecutions returns a list of executions for the current user.
+func (deh *deHandler) ListExecutions(
+	ctx context.Context, req *api.ListExecutionsRequest,
+) (*api.ListExecutionsResponse, error) {
+	tracer := otel.Tracer("handlers.de")
+	ctx, span := tracer.Start(ctx, "deHandler.ListExecutions")
+	defer span.End()
+
+	// Get user ID from context
+	userID, err := tenant.FromContext(ctx)
+	if err != nil {
+		span.RecordError(err)
+		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
+	}
+
+	// Convert API status filter to store status
+	var statusFilter *store.ExecutionStatus
+	if req.Status != nil && *req.Status != api.ExecutionStatus_EXECUTION_STATUS_UNSPECIFIED {
+		storeStatus := convertAPIStatusToStore(*req.Status)
+		statusFilter = &storeStatus
+	}
+
+	// List executions
+	executions, err := deh.Store.ListExecutions(ctx, userID, statusFilter)
+	if err != nil {
+		span.RecordError(err)
+		return nil, status.Errorf(codes.Internal, "failed to list executions: %v", err)
+	}
+
+	// Convert to API format
+	apiExecutions := make([]*api.ExecutionSummary, len(executions))
+	for i, exec := range executions {
+		apiExecutions[i] = &api.ExecutionSummary{
+			ExecutionId: exec.ID,
+			Status:      convertExecutionStatus(exec.Status),
+			CreatedAt:   exec.CreatedAt.Unix(),
+			UpdatedAt:   exec.UpdatedAt.Unix(),
+		}
+
+		if exec.CompletedAt != nil {
+			completedAt := exec.CompletedAt.Unix()
+			apiExecutions[i].CompletedAt = &completedAt
+		}
+	}
+
+	return &api.ListExecutionsResponse{
+		Executions: apiExecutions,
+	}, nil
 }
 
-// variantFromName returns the variants.Interface implementation of the variant
-// referenced by name using the registry pattern.
-func variantFromName(name string) (variants.Interface, error) {
-	return variants.DefaultRegistry.Create(name)
+// CancelExecution cancels a running execution.
+func (deh *deHandler) CancelExecution(
+	ctx context.Context, req *api.CancelExecutionRequest,
+) (*emptypb.Empty, error) {
+	tracer := otel.Tracer("handlers.de")
+	ctx, span := tracer.Start(ctx, "deHandler.CancelExecution")
+	defer span.End()
+
+	span.SetAttributes(attribute.String("execution_id", req.ExecutionId))
+
+	// Get user ID from context
+	userID, err := tenant.FromContext(ctx)
+	if err != nil {
+		span.RecordError(err)
+		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
+	}
+
+	// Cancel execution
+	if err := deh.executor.CancelExecution(ctx, req.ExecutionId, userID); err != nil {
+		if errors.Is(err, store.ErrExecutionNotFound) {
+			return nil, status.Error(codes.NotFound, "execution not found")
+		}
+		span.RecordError(err)
+		return nil, status.Errorf(codes.Internal, "failed to cancel execution: %v", err)
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
+// DeleteExecution deletes an execution and its results.
+func (deh *deHandler) DeleteExecution(
+	ctx context.Context, req *api.DeleteExecutionRequest,
+) (*emptypb.Empty, error) {
+	tracer := otel.Tracer("handlers.de")
+	ctx, span := tracer.Start(ctx, "deHandler.DeleteExecution")
+	defer span.End()
+
+	span.SetAttributes(attribute.String("execution_id", req.ExecutionId))
+
+	// Get user ID from context
+	userID, err := tenant.FromContext(ctx)
+	if err != nil {
+		span.RecordError(err)
+		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
+	}
+
+	// Delete execution
+	if err := deh.Store.DeleteExecution(ctx, req.ExecutionId, userID); err != nil {
+		if errors.Is(err, store.ErrExecutionNotFound) {
+			return nil, status.Error(codes.NotFound, "execution not found")
+		}
+		span.RecordError(err)
+		return nil, status.Errorf(codes.Internal, "failed to delete execution: %v", err)
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
+// convertExecutionStatus converts store.ExecutionStatus to api.ExecutionStatus.
+func convertExecutionStatus(status store.ExecutionStatus) api.ExecutionStatus {
+	switch status {
+	case store.ExecutionStatusPending:
+		return api.ExecutionStatus_EXECUTION_STATUS_PENDING
+	case store.ExecutionStatusRunning:
+		return api.ExecutionStatus_EXECUTION_STATUS_RUNNING
+	case store.ExecutionStatusCompleted:
+		return api.ExecutionStatus_EXECUTION_STATUS_COMPLETED
+	case store.ExecutionStatusFailed:
+		return api.ExecutionStatus_EXECUTION_STATUS_FAILED
+	case store.ExecutionStatusCancelled:
+		return api.ExecutionStatus_EXECUTION_STATUS_CANCELLED
+	default:
+		return api.ExecutionStatus_EXECUTION_STATUS_UNSPECIFIED
+	}
+}
+
+// convertAPIStatusToStore converts api.ExecutionStatus to store.ExecutionStatus.
+func convertAPIStatusToStore(status api.ExecutionStatus) store.ExecutionStatus {
+	switch status {
+	case api.ExecutionStatus_EXECUTION_STATUS_PENDING:
+		return store.ExecutionStatusPending
+	case api.ExecutionStatus_EXECUTION_STATUS_RUNNING:
+		return store.ExecutionStatusRunning
+	case api.ExecutionStatus_EXECUTION_STATUS_COMPLETED:
+		return store.ExecutionStatusCompleted
+	case api.ExecutionStatus_EXECUTION_STATUS_FAILED:
+		return store.ExecutionStatusFailed
+	case api.ExecutionStatus_EXECUTION_STATUS_CANCELLED:
+		return store.ExecutionStatusCancelled
+	default:
+		return store.ExecutionStatusPending
+	}
 }

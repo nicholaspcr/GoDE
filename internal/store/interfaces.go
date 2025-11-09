@@ -36,6 +36,8 @@ type ParetoOperations interface {
 	UpdatePareto(context.Context, *api.Pareto, ...string) error
 	DeletePareto(context.Context, *api.ParetoIDs) error
 	ListParetos(context.Context, *api.UserIDs) ([]*api.Pareto, error)
+	CreateParetoSet(context.Context, *ParetoSet) error
+	GetParetoSetByID(context.Context, uint64) (*ParetoSet, error)
 }
 
 // ExecutionOperations is the interface for the execution store.
@@ -54,4 +56,7 @@ type ExecutionOperations interface {
 	// Cancellation support
 	MarkExecutionForCancellation(ctx context.Context, executionID, userID string) error
 	IsExecutionCancelled(ctx context.Context, executionID string) (bool, error)
+
+	// Real-time updates
+	Subscribe(ctx context.Context, channel string) (<-chan []byte, error)
 }

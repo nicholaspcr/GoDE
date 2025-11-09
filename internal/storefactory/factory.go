@@ -1,4 +1,4 @@
-package store
+package storefactory
 
 import (
 	"context"
@@ -9,12 +9,13 @@ import (
 	// pgx driver for PostgreSQL
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/nicholaspcr/GoDE/internal/migrations"
+	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/internal/store/gorm"
 	"gorm.io/driver/postgres"
 )
 
 // New returns a new Store instance
-func New(ctx context.Context, cfg Config) (Store, error) {
+func New(ctx context.Context, cfg store.Config) (store.Store, error) {
 	// Run migrations first (except for memory stores)
 	if cfg.Type != "memory" {
 		connStr := cfg.ConnectionString()

@@ -121,3 +121,8 @@ func (s *ExecutionStore) MarkExecutionForCancellation(ctx context.Context, execu
 func (s *ExecutionStore) IsExecutionCancelled(ctx context.Context, executionID string) (bool, error) {
 	return s.redis.IsExecutionCancelled(ctx, executionID)
 }
+
+// Subscribe delegates to Redis for pub/sub functionality.
+func (s *ExecutionStore) Subscribe(ctx context.Context, channel string) (<-chan []byte, error) {
+	return s.redis.Subscribe(ctx, channel)
+}

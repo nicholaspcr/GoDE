@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/nicholaspcr/GoDE/internal/server"
-	"github.com/nicholaspcr/GoDE/internal/store"
+	"github.com/nicholaspcr/GoDE/internal/storefactory"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +23,7 @@ proto files. Requests can be made via gRPC or HTTP.`,
 			return fmt.Errorf("invalid server configuration: %w", err)
 		}
 
-		st, err := store.New(ctx, cfg.Store)
+		st, err := storefactory.New(ctx, cfg.Store)
 		if err != nil {
 			return err
 		}

@@ -303,6 +303,11 @@ func (s *ExecutionStore) IsExecutionCancelled(ctx context.Context, executionID s
 	return true, nil
 }
 
+// Subscribe subscribes to real-time updates on a channel.
+func (s *ExecutionStore) Subscribe(ctx context.Context, channel string) (<-chan []byte, error) {
+	return s.client.Subscribe(ctx, channel)
+}
+
 // ConfigToProto converts a DEConfig proto to a store-compatible format for JSON marshaling.
 func ConfigToProto(config *api.DEConfig) map[string]interface{} {
 	result := map[string]interface{}{

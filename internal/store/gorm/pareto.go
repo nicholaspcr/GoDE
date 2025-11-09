@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"gorm.io/gorm"
 )
@@ -237,4 +238,106 @@ func (st *paretoStore) ListParetos(
 	}
 
 	return result, nil
+}
+
+// CreateParetoSet creates a pareto set with vectors and max objectives.
+func (st *paretoStore) CreateParetoSet(ctx context.Context, paretoSet *store.ParetoSet) error {
+	// Create pareto model
+	paretoModel := paretoModel{}
+
+	// Convert max objectives
+	flatMaxObjs := make([]float64, 0)
+	for _, maxObj := range paretoSet.MaxObjectives {
+		flatMaxObjs = append(flatMaxObjs, maxObj.Values...)
+	}
+
+	if err := paretoModel.SetMaxObjs(flatMaxObjs); err != nil {
+		return err
+	}
+
+	// Look up user
+	var user userModel
+	tx := st.DB.WithContext(ctx).Where("username = ?", paretoSet.UserID).First(&user)
+	if tx.Error == nil {
+		paretoModel.UserID = user.ID
+	}
+
+	// Start transaction
+	return st.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Create pareto
+		if err := tx.Create(&paretoModel).Error; err != nil {
+			return err
+		}
+
+		// Set the ID back to the paretoSet
+		paretoSet.ID = uint64(paretoModel.ID)
+
+		// Create vectors
+		for _, vec := range paretoSet.Vectors {
+			vectorModel := vectorModel{
+				ParetoID:         paretoModel.ID,
+				CrowdingDistance: vec.CrowdingDistance,
+			}
+			if err := vectorModel.SetElements(vec.Elements); err != nil {
+				return err
+			}
+			if err := vectorModel.SetObjectives(vec.Objectives); err != nil {
+				return err
+			}
+			if err := tx.Create(&vectorModel).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
+// GetParetoSetByID retrieves a pareto set by its ID.
+func (st *paretoStore) GetParetoSetByID(ctx context.Context, id uint64) (*store.ParetoSet, error) {
+	var paretoModel paretoModel
+	tx := st.DB.WithContext(ctx).Preload("Vectors").Preload("User").First(&paretoModel, id)
+	if tx.Error != nil {
+		if tx.Error == gorm.ErrRecordNotFound {
+			return nil, store.ErrParetoSetNotFound
+		}
+		return nil, tx.Error
+	}
+
+	// Convert to store.ParetoSet
+	maxObjs, err := paretoModel.GetMaxObjs()
+	if err != nil {
+		return nil, err
+	}
+
+	vectors := make([]*api.Vector, len(paretoModel.Vectors))
+	for i, vec := range paretoModel.Vectors {
+		elements, err := vec.GetElements()
+		if err != nil {
+			return nil, err
+		}
+		objectives, err := vec.GetObjectives()
+		if err != nil {
+			return nil, err
+		}
+
+		vectors[i] = &api.Vector{
+			Elements:         elements,
+			Objectives:       objectives,
+			CrowdingDistance: vec.CrowdingDistance,
+		}
+	}
+
+	// Convert flat max objs to store.MaxObjectives
+	maxObjectives := []*store.MaxObjectives{
+		{Values: maxObjs},
+	}
+
+	return &store.ParetoSet{
+		ID:            uint64(paretoModel.ID),
+		UserID:        paretoModel.User.Username,
+		Vectors:       vectors,
+		MaxObjectives: maxObjectives,
+		CreatedAt:     paretoModel.CreatedAt,
+	}, nil
 }

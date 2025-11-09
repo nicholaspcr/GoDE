@@ -5,11 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/nicholaspcr/GoDE/internal/executor"
+	"github.com/nicholaspcr/GoDE/internal/server/middleware"
 	"github.com/nicholaspcr/GoDE/internal/store"
-	"github.com/nicholaspcr/GoDE/internal/tenant"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 	_ "github.com/nicholaspcr/GoDE/pkg/problems/many/dtlz" // Register DTLZ problems
@@ -27,6 +28,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // deHandler is responsible for the de service operations.
@@ -114,9 +116,8 @@ func (deh *deHandler) RunAsync(
 	)
 
 	// Get user ID from context
-	userID, err := tenant.FromContext(ctx)
-	if err != nil {
-		span.RecordError(err)
+	userID := middleware.UsernameFromContext(ctx)
+	if userID == "" {
 		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
 	}
 
@@ -165,9 +166,8 @@ func (deh *deHandler) StreamProgress(
 	span.SetAttributes(attribute.String("execution_id", req.ExecutionId))
 
 	// Get user ID from context
-	userID, err := tenant.FromContext(ctx)
-	if err != nil {
-		span.RecordError(err)
+	userID := middleware.UsernameFromContext(ctx)
+	if userID == "" {
 		return status.Error(codes.Unauthenticated, "user not authenticated")
 	}
 
@@ -265,9 +265,8 @@ func (deh *deHandler) GetExecutionStatus(
 	span.SetAttributes(attribute.String("execution_id", req.ExecutionId))
 
 	// Get user ID from context
-	userID, err := tenant.FromContext(ctx)
-	if err != nil {
-		span.RecordError(err)
+	userID := middleware.UsernameFromContext(ctx)
+	if userID == "" {
 		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
 	}
 
@@ -281,31 +280,29 @@ func (deh *deHandler) GetExecutionStatus(
 		return nil, status.Errorf(codes.Internal, "failed to get execution: %v", err)
 	}
 
-	// Convert to API status
-	apiStatus := convertExecutionStatus(execution.Status)
+	// Convert to API execution
+	apiExecution := executionToProto(execution)
 
-	response := &api.GetExecutionStatusResponse{
-		ExecutionId: execution.ID,
-		Status:      apiStatus,
-		CreatedAt:   execution.CreatedAt.Unix(),
-		UpdatedAt:   execution.UpdatedAt.Unix(),
+	// Get progress if available
+	var apiProgress *api.ExecutionProgress
+	if execution.Status == store.ExecutionStatusRunning {
+		progress, err := deh.Store.GetProgress(ctx, req.ExecutionId)
+		if err == nil {
+			apiProgress = &api.ExecutionProgress{
+				ExecutionId:         progress.ExecutionID,
+				CurrentGeneration:   progress.CurrentGeneration,
+				TotalGenerations:    progress.TotalGenerations,
+				CompletedExecutions: progress.CompletedExecutions,
+				TotalExecutions:     progress.TotalExecutions,
+				PartialPareto:       progress.PartialPareto,
+			}
+		}
 	}
 
-	if execution.CompletedAt != nil {
-		completedAt := execution.CompletedAt.Unix()
-		response.CompletedAt = &completedAt
-	}
-
-	if execution.Error != "" {
-		response.Error = &execution.Error
-	}
-
-	if execution.ParetoID != nil {
-		paretoID := *execution.ParetoID
-		response.ParetoId = &paretoID
-	}
-
-	return response, nil
+	return &api.GetExecutionStatusResponse{
+		Execution: apiExecution,
+		Progress:  apiProgress,
+	}, nil
 }
 
 // GetExecutionResults returns the results of a completed execution.
@@ -319,9 +316,8 @@ func (deh *deHandler) GetExecutionResults(
 	span.SetAttributes(attribute.String("execution_id", req.ExecutionId))
 
 	// Get user ID from context
-	userID, err := tenant.FromContext(ctx)
-	if err != nil {
-		span.RecordError(err)
+	userID := middleware.UsernameFromContext(ctx)
+	if userID == "" {
 		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
 	}
 
@@ -378,16 +374,15 @@ func (deh *deHandler) ListExecutions(
 	defer span.End()
 
 	// Get user ID from context
-	userID, err := tenant.FromContext(ctx)
-	if err != nil {
-		span.RecordError(err)
+	userID := middleware.UsernameFromContext(ctx)
+	if userID == "" {
 		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
 	}
 
 	// Convert API status filter to store status
 	var statusFilter *store.ExecutionStatus
-	if req.Status != nil && *req.Status != api.ExecutionStatus_EXECUTION_STATUS_UNSPECIFIED {
-		storeStatus := convertAPIStatusToStore(*req.Status)
+	if req.Status != api.ExecutionStatus_EXECUTION_STATUS_UNSPECIFIED {
+		storeStatus := convertAPIStatusToStore(req.Status)
 		statusFilter = &storeStatus
 	}
 
@@ -399,19 +394,9 @@ func (deh *deHandler) ListExecutions(
 	}
 
 	// Convert to API format
-	apiExecutions := make([]*api.ExecutionSummary, len(executions))
+	apiExecutions := make([]*api.Execution, len(executions))
 	for i, exec := range executions {
-		apiExecutions[i] = &api.ExecutionSummary{
-			ExecutionId: exec.ID,
-			Status:      convertExecutionStatus(exec.Status),
-			CreatedAt:   exec.CreatedAt.Unix(),
-			UpdatedAt:   exec.UpdatedAt.Unix(),
-		}
-
-		if exec.CompletedAt != nil {
-			completedAt := exec.CompletedAt.Unix()
-			apiExecutions[i].CompletedAt = &completedAt
-		}
+		apiExecutions[i] = executionToProto(exec)
 	}
 
 	return &api.ListExecutionsResponse{
@@ -430,9 +415,8 @@ func (deh *deHandler) CancelExecution(
 	span.SetAttributes(attribute.String("execution_id", req.ExecutionId))
 
 	// Get user ID from context
-	userID, err := tenant.FromContext(ctx)
-	if err != nil {
-		span.RecordError(err)
+	userID := middleware.UsernameFromContext(ctx)
+	if userID == "" {
 		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
 	}
 
@@ -459,9 +443,8 @@ func (deh *deHandler) DeleteExecution(
 	span.SetAttributes(attribute.String("execution_id", req.ExecutionId))
 
 	// Get user ID from context
-	userID, err := tenant.FromContext(ctx)
-	if err != nil {
-		span.RecordError(err)
+	userID := middleware.UsernameFromContext(ctx)
+	if userID == "" {
 		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
 	}
 
@@ -511,4 +494,32 @@ func convertAPIStatusToStore(status api.ExecutionStatus) store.ExecutionStatus {
 	default:
 		return store.ExecutionStatusPending
 	}
+}
+
+// executionToProto converts store.Execution to api.Execution.
+func executionToProto(exec *store.Execution) *api.Execution {
+	apiExec := &api.Execution{
+		Id:        exec.ID,
+		UserId:    exec.UserID,
+		Status:    convertExecutionStatus(exec.Status),
+		Config:    exec.Config,
+		CreatedAt: timestampProto(exec.CreatedAt),
+		UpdatedAt: timestampProto(exec.UpdatedAt),
+		Error:     exec.Error,
+	}
+
+	if exec.CompletedAt != nil {
+		apiExec.CompletedAt = timestampProto(*exec.CompletedAt)
+	}
+
+	if exec.ParetoID != nil {
+		apiExec.ParetoId = *exec.ParetoID
+	}
+
+	return apiExec
+}
+
+// timestampProto converts time.Time to timestamppb.Timestamp.
+func timestampProto(t time.Time) *timestamppb.Timestamp {
+	return timestamppb.New(t)
 }

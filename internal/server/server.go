@@ -3,14 +3,18 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	_ "net/http/pprof" // Register pprof HTTP handlers
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/nicholaspcr/GoDE/internal/executor"
 	"github.com/nicholaspcr/GoDE/internal/server/auth"
 	"github.com/nicholaspcr/GoDE/internal/server/handlers"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/internal/telemetry"
+	"github.com/nicholaspcr/GoDE/pkg/problems"
+	"github.com/nicholaspcr/GoDE/pkg/variants"
 )
 
 // Server is the interface that wraps the server methods.
@@ -24,18 +28,51 @@ func New(ctx context.Context, cfg Config, opts ...serverOpts) (Server, error) {
 	jwtService := auth.NewJWTService(cfg.JWTSecret, cfg.JWTExpiry)
 
 	srv := &server{
-		cfg: cfg,
-		handlers: []handlers.Handler{
-			handlers.NewAuthHandler(jwtService),
-			handlers.NewUserHandler(),
-			handlers.NewParetoHandler(),
-			handlers.NewDEHandler(cfg.DE),
-		},
+		cfg:        cfg,
 		jwtService: jwtService,
 	}
 
 	for _, opt := range opts {
 		opt(srv)
+	}
+
+	// Create executor with the store
+	if srv.st == nil {
+		return nil, fmt.Errorf("store must be provided via WithStore option")
+	}
+
+	exec := executor.New(executor.Config{
+		Store:        srv.st,
+		MaxWorkers:   cfg.Executor.MaxWorkers,
+		ExecutionTTL: cfg.Executor.ExecutionTTL,
+		ResultTTL:    cfg.Executor.ResultTTL,
+		ProgressTTL:  cfg.Executor.ProgressTTL,
+	})
+
+	// Register all problems and variants
+	problemMetas := problems.DefaultRegistry.ListMetadata()
+	for _, meta := range problemMetas {
+		// Create problem instance with default dimensions (will be overridden per execution)
+		prob, err := problems.DefaultRegistry.Create(meta.Name, 10, 2)
+		if err == nil {
+			exec.RegisterProblem(meta.Name, prob)
+		}
+	}
+
+	variantMetas := variants.DefaultRegistry.ListMetadata()
+	for _, meta := range variantMetas {
+		variant, err := variants.DefaultRegistry.Create(meta.Name)
+		if err == nil {
+			exec.RegisterVariant(meta.Name, variant)
+		}
+	}
+
+	// Create handlers with dependencies
+	srv.handlers = []handlers.Handler{
+		handlers.NewAuthHandler(jwtService),
+		handlers.NewUserHandler(),
+		handlers.NewParetoHandler(),
+		handlers.NewDEHandler(exec),
 	}
 
 	// Setup handlers' store

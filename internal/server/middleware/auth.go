@@ -76,3 +76,13 @@ func UnaryAuthMiddleware(
 		return handler(ctx, req)
 	}
 }
+
+// UsernameFromContext extracts the authenticated username from the context.
+// Returns empty string if no username is found.
+func UsernameFromContext(ctx context.Context) string {
+	username, ok := ctx.Value(usernameCtxKey).(string)
+	if !ok {
+		return ""
+	}
+	return username
+}

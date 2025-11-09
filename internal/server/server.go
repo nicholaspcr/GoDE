@@ -4,7 +4,7 @@ package server
 import (
 	"context"
 	"log/slog"
-	_ "net/http/pprof" // Import pprof for profiling endpoints
+	_ "net/http/pprof"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/nicholaspcr/GoDE/internal/server/auth"

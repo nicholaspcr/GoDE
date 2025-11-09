@@ -23,7 +23,13 @@ const (
 	DifferentialEvolutionService_ListSupportedAlgorithms_FullMethodName = "/api.v1.DifferentialEvolutionService/ListSupportedAlgorithms"
 	DifferentialEvolutionService_ListSupportedVariants_FullMethodName   = "/api.v1.DifferentialEvolutionService/ListSupportedVariants"
 	DifferentialEvolutionService_ListSupportedProblems_FullMethodName   = "/api.v1.DifferentialEvolutionService/ListSupportedProblems"
-	DifferentialEvolutionService_Run_FullMethodName                     = "/api.v1.DifferentialEvolutionService/Run"
+	DifferentialEvolutionService_RunAsync_FullMethodName                = "/api.v1.DifferentialEvolutionService/RunAsync"
+	DifferentialEvolutionService_StreamProgress_FullMethodName          = "/api.v1.DifferentialEvolutionService/StreamProgress"
+	DifferentialEvolutionService_GetExecutionStatus_FullMethodName      = "/api.v1.DifferentialEvolutionService/GetExecutionStatus"
+	DifferentialEvolutionService_GetExecutionResults_FullMethodName     = "/api.v1.DifferentialEvolutionService/GetExecutionResults"
+	DifferentialEvolutionService_ListExecutions_FullMethodName          = "/api.v1.DifferentialEvolutionService/ListExecutions"
+	DifferentialEvolutionService_CancelExecution_FullMethodName         = "/api.v1.DifferentialEvolutionService/CancelExecution"
+	DifferentialEvolutionService_DeleteExecution_FullMethodName         = "/api.v1.DifferentialEvolutionService/DeleteExecution"
 )
 
 // DifferentialEvolutionServiceClient is the client API for DifferentialEvolutionService service.
@@ -33,7 +39,14 @@ type DifferentialEvolutionServiceClient interface {
 	ListSupportedAlgorithms(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListSupportedAlgorithmsResponse, error)
 	ListSupportedVariants(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListSupportedVariantsResponse, error)
 	ListSupportedProblems(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListSupportedProblemsResponse, error)
-	Run(ctx context.Context, in *RunRequest, opts ...grpc.CallOption) (*RunResponse, error)
+	// Async execution RPCs
+	RunAsync(ctx context.Context, in *RunRequest, opts ...grpc.CallOption) (*RunAsyncResponse, error)
+	StreamProgress(ctx context.Context, in *StreamProgressRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ExecutionProgress], error)
+	GetExecutionStatus(ctx context.Context, in *GetExecutionStatusRequest, opts ...grpc.CallOption) (*GetExecutionStatusResponse, error)
+	GetExecutionResults(ctx context.Context, in *GetExecutionResultsRequest, opts ...grpc.CallOption) (*RunResponse, error)
+	ListExecutions(ctx context.Context, in *ListExecutionsRequest, opts ...grpc.CallOption) (*ListExecutionsResponse, error)
+	CancelExecution(ctx context.Context, in *CancelExecutionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	DeleteExecution(ctx context.Context, in *DeleteExecutionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type differentialEvolutionServiceClient struct {
@@ -74,10 +87,79 @@ func (c *differentialEvolutionServiceClient) ListSupportedProblems(ctx context.C
 	return out, nil
 }
 
-func (c *differentialEvolutionServiceClient) Run(ctx context.Context, in *RunRequest, opts ...grpc.CallOption) (*RunResponse, error) {
+func (c *differentialEvolutionServiceClient) RunAsync(ctx context.Context, in *RunRequest, opts ...grpc.CallOption) (*RunAsyncResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RunAsyncResponse)
+	err := c.cc.Invoke(ctx, DifferentialEvolutionService_RunAsync_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *differentialEvolutionServiceClient) StreamProgress(ctx context.Context, in *StreamProgressRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ExecutionProgress], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &DifferentialEvolutionService_ServiceDesc.Streams[0], DifferentialEvolutionService_StreamProgress_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[StreamProgressRequest, ExecutionProgress]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type DifferentialEvolutionService_StreamProgressClient = grpc.ServerStreamingClient[ExecutionProgress]
+
+func (c *differentialEvolutionServiceClient) GetExecutionStatus(ctx context.Context, in *GetExecutionStatusRequest, opts ...grpc.CallOption) (*GetExecutionStatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetExecutionStatusResponse)
+	err := c.cc.Invoke(ctx, DifferentialEvolutionService_GetExecutionStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *differentialEvolutionServiceClient) GetExecutionResults(ctx context.Context, in *GetExecutionResultsRequest, opts ...grpc.CallOption) (*RunResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RunResponse)
-	err := c.cc.Invoke(ctx, DifferentialEvolutionService_Run_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, DifferentialEvolutionService_GetExecutionResults_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *differentialEvolutionServiceClient) ListExecutions(ctx context.Context, in *ListExecutionsRequest, opts ...grpc.CallOption) (*ListExecutionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListExecutionsResponse)
+	err := c.cc.Invoke(ctx, DifferentialEvolutionService_ListExecutions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *differentialEvolutionServiceClient) CancelExecution(ctx context.Context, in *CancelExecutionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, DifferentialEvolutionService_CancelExecution_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *differentialEvolutionServiceClient) DeleteExecution(ctx context.Context, in *DeleteExecutionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, DifferentialEvolutionService_DeleteExecution_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +173,14 @@ type DifferentialEvolutionServiceServer interface {
 	ListSupportedAlgorithms(context.Context, *emptypb.Empty) (*ListSupportedAlgorithmsResponse, error)
 	ListSupportedVariants(context.Context, *emptypb.Empty) (*ListSupportedVariantsResponse, error)
 	ListSupportedProblems(context.Context, *emptypb.Empty) (*ListSupportedProblemsResponse, error)
-	Run(context.Context, *RunRequest) (*RunResponse, error)
+	// Async execution RPCs
+	RunAsync(context.Context, *RunRequest) (*RunAsyncResponse, error)
+	StreamProgress(*StreamProgressRequest, grpc.ServerStreamingServer[ExecutionProgress]) error
+	GetExecutionStatus(context.Context, *GetExecutionStatusRequest) (*GetExecutionStatusResponse, error)
+	GetExecutionResults(context.Context, *GetExecutionResultsRequest) (*RunResponse, error)
+	ListExecutions(context.Context, *ListExecutionsRequest) (*ListExecutionsResponse, error)
+	CancelExecution(context.Context, *CancelExecutionRequest) (*emptypb.Empty, error)
+	DeleteExecution(context.Context, *DeleteExecutionRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedDifferentialEvolutionServiceServer()
 }
 
@@ -111,8 +200,26 @@ func (UnimplementedDifferentialEvolutionServiceServer) ListSupportedVariants(con
 func (UnimplementedDifferentialEvolutionServiceServer) ListSupportedProblems(context.Context, *emptypb.Empty) (*ListSupportedProblemsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListSupportedProblems not implemented")
 }
-func (UnimplementedDifferentialEvolutionServiceServer) Run(context.Context, *RunRequest) (*RunResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Run not implemented")
+func (UnimplementedDifferentialEvolutionServiceServer) RunAsync(context.Context, *RunRequest) (*RunAsyncResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RunAsync not implemented")
+}
+func (UnimplementedDifferentialEvolutionServiceServer) StreamProgress(*StreamProgressRequest, grpc.ServerStreamingServer[ExecutionProgress]) error {
+	return status.Errorf(codes.Unimplemented, "method StreamProgress not implemented")
+}
+func (UnimplementedDifferentialEvolutionServiceServer) GetExecutionStatus(context.Context, *GetExecutionStatusRequest) (*GetExecutionStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetExecutionStatus not implemented")
+}
+func (UnimplementedDifferentialEvolutionServiceServer) GetExecutionResults(context.Context, *GetExecutionResultsRequest) (*RunResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetExecutionResults not implemented")
+}
+func (UnimplementedDifferentialEvolutionServiceServer) ListExecutions(context.Context, *ListExecutionsRequest) (*ListExecutionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListExecutions not implemented")
+}
+func (UnimplementedDifferentialEvolutionServiceServer) CancelExecution(context.Context, *CancelExecutionRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CancelExecution not implemented")
+}
+func (UnimplementedDifferentialEvolutionServiceServer) DeleteExecution(context.Context, *DeleteExecutionRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteExecution not implemented")
 }
 func (UnimplementedDifferentialEvolutionServiceServer) mustEmbedUnimplementedDifferentialEvolutionServiceServer() {
 }
@@ -190,20 +297,121 @@ func _DifferentialEvolutionService_ListSupportedProblems_Handler(srv interface{}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DifferentialEvolutionService_Run_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _DifferentialEvolutionService_RunAsync_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RunRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DifferentialEvolutionServiceServer).Run(ctx, in)
+		return srv.(DifferentialEvolutionServiceServer).RunAsync(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: DifferentialEvolutionService_Run_FullMethodName,
+		FullMethod: DifferentialEvolutionService_RunAsync_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DifferentialEvolutionServiceServer).Run(ctx, req.(*RunRequest))
+		return srv.(DifferentialEvolutionServiceServer).RunAsync(ctx, req.(*RunRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DifferentialEvolutionService_StreamProgress_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(StreamProgressRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(DifferentialEvolutionServiceServer).StreamProgress(m, &grpc.GenericServerStream[StreamProgressRequest, ExecutionProgress]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type DifferentialEvolutionService_StreamProgressServer = grpc.ServerStreamingServer[ExecutionProgress]
+
+func _DifferentialEvolutionService_GetExecutionStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetExecutionStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DifferentialEvolutionServiceServer).GetExecutionStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DifferentialEvolutionService_GetExecutionStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DifferentialEvolutionServiceServer).GetExecutionStatus(ctx, req.(*GetExecutionStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DifferentialEvolutionService_GetExecutionResults_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetExecutionResultsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DifferentialEvolutionServiceServer).GetExecutionResults(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DifferentialEvolutionService_GetExecutionResults_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DifferentialEvolutionServiceServer).GetExecutionResults(ctx, req.(*GetExecutionResultsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DifferentialEvolutionService_ListExecutions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListExecutionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DifferentialEvolutionServiceServer).ListExecutions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DifferentialEvolutionService_ListExecutions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DifferentialEvolutionServiceServer).ListExecutions(ctx, req.(*ListExecutionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DifferentialEvolutionService_CancelExecution_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelExecutionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DifferentialEvolutionServiceServer).CancelExecution(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DifferentialEvolutionService_CancelExecution_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DifferentialEvolutionServiceServer).CancelExecution(ctx, req.(*CancelExecutionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DifferentialEvolutionService_DeleteExecution_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteExecutionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DifferentialEvolutionServiceServer).DeleteExecution(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DifferentialEvolutionService_DeleteExecution_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DifferentialEvolutionServiceServer).DeleteExecution(ctx, req.(*DeleteExecutionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -228,10 +436,36 @@ var DifferentialEvolutionService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _DifferentialEvolutionService_ListSupportedProblems_Handler,
 		},
 		{
-			MethodName: "Run",
-			Handler:    _DifferentialEvolutionService_Run_Handler,
+			MethodName: "RunAsync",
+			Handler:    _DifferentialEvolutionService_RunAsync_Handler,
+		},
+		{
+			MethodName: "GetExecutionStatus",
+			Handler:    _DifferentialEvolutionService_GetExecutionStatus_Handler,
+		},
+		{
+			MethodName: "GetExecutionResults",
+			Handler:    _DifferentialEvolutionService_GetExecutionResults_Handler,
+		},
+		{
+			MethodName: "ListExecutions",
+			Handler:    _DifferentialEvolutionService_ListExecutions_Handler,
+		},
+		{
+			MethodName: "CancelExecution",
+			Handler:    _DifferentialEvolutionService_CancelExecution_Handler,
+		},
+		{
+			MethodName: "DeleteExecution",
+			Handler:    _DifferentialEvolutionService_DeleteExecution_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "StreamProgress",
+			Handler:       _DifferentialEvolutionService_StreamProgress_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "api/v1/differential_evolution.proto",
 }

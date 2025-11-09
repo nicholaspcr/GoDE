@@ -6,6 +6,7 @@ import "api/v1/definitions.proto";
 import "api/v1/differential_evolution_config.proto";
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "pkg/api";
 
@@ -20,11 +21,39 @@ service DifferentialEvolutionService {
     option (google.api.http) = {get: "/v1/de/supported/problems"};
   }
 
-  rpc Run(RunRequest) returns (RunResponse){
+  // Async execution RPCs
+  rpc RunAsync(RunRequest) returns (RunAsyncResponse){
     option (google.api.http) = {
       post: "/v1/de/run"
       body: "*"
     };
+  }
+
+  rpc StreamProgress(StreamProgressRequest) returns (stream ExecutionProgress){
+    option (google.api.http) = {get: "/v1/de/executions/{execution_id}/progress"};
+  }
+
+  rpc GetExecutionStatus(GetExecutionStatusRequest) returns (GetExecutionStatusResponse){
+    option (google.api.http) = {get: "/v1/de/executions/{execution_id}"};
+  }
+
+  rpc GetExecutionResults(GetExecutionResultsRequest) returns (RunResponse){
+    option (google.api.http) = {get: "/v1/de/executions/{execution_id}/results"};
+  }
+
+  rpc ListExecutions(ListExecutionsRequest) returns (ListExecutionsResponse){
+    option (google.api.http) = {get: "/v1/de/executions"};
+  }
+
+  rpc CancelExecution(CancelExecutionRequest) returns (google.protobuf.Empty){
+    option (google.api.http) = {
+      post: "/v1/de/executions/{execution_id}/cancel"
+      body: "*"
+    };
+  }
+
+  rpc DeleteExecution(DeleteExecutionRequest) returns (google.protobuf.Empty){
+    option (google.api.http) = {delete: "/v1/de/executions/{execution_id}"};
   }
 }
 
@@ -59,4 +88,76 @@ message RunRequest {
 
 message RunResponse {
   Pareto pareto = 1;
+}
+
+// Execution status enum
+enum ExecutionStatus {
+  EXECUTION_STATUS_UNSPECIFIED = 0;
+  EXECUTION_STATUS_PENDING = 1;
+  EXECUTION_STATUS_RUNNING = 2;
+  EXECUTION_STATUS_COMPLETED = 3;
+  EXECUTION_STATUS_FAILED = 4;
+  EXECUTION_STATUS_CANCELLED = 5;
+}
+
+// Execution metadata
+message Execution {
+  string id = 1;
+  string user_id = 2;
+  ExecutionStatus status = 3;
+  DEConfig config = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+  google.protobuf.Timestamp completed_at = 7;
+  string error = 8;
+  uint64 pareto_id = 9;
+}
+
+// Progress update during execution
+message ExecutionProgress {
+  string execution_id = 1;
+  int32 current_generation = 2;
+  int32 total_generations = 3;
+  int32 completed_executions = 4;
+  int32 total_executions = 5;
+  repeated Vector partial_pareto = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+// Async execution responses
+message RunAsyncResponse {
+  string execution_id = 1;
+}
+
+message StreamProgressRequest {
+  string execution_id = 1;
+}
+
+message GetExecutionStatusRequest {
+  string execution_id = 1;
+}
+
+message GetExecutionStatusResponse {
+  Execution execution = 1;
+  ExecutionProgress progress = 2;
+}
+
+message GetExecutionResultsRequest {
+  string execution_id = 1;
+}
+
+message ListExecutionsRequest {
+  ExecutionStatus status = 1; // Optional filter
+}
+
+message ListExecutionsResponse {
+  repeated Execution executions = 1;
+}
+
+message CancelExecutionRequest {
+  string execution_id = 1;
+}
+
+message DeleteExecutionRequest {
+  string execution_id = 1;
 }

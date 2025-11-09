@@ -1,12 +1,17 @@
 // Package de provides the core Differential Evolution algorithm framework and execution utilities.
 package de
 
+import "github.com/nicholaspcr/GoDE/pkg/models"
+
 // Config of the DE implementation
 type Config struct {
 	ParetoChannelLimiter int
 	MaxChannelLimiter    int
 	ResultLimiter        int
 }
+
+// ProgressCallback is called periodically during execution to report progress.
+type ProgressCallback func(generation int, totalGenerations int, paretoSize int, currentPareto []models.Vector)
 
 // Constants are the set of values that determine the behaviour of the Mode
 // execution.

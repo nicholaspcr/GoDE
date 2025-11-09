@@ -23,9 +23,10 @@ type Algorithm interface {
 // DE contains the necessary methods to setup and execute a Differential
 // Evolutionary algorithm.
 type de struct {
-	algorithm Algorithm
-	config    Config
-	constants Constants
+	algorithm        Algorithm
+	config           Config
+	constants        Constants
+	progressCallback ProgressCallback
 }
 
 // New creates a new DE instance based on the configuration options given.
@@ -43,6 +44,11 @@ func New(cfg Config, opts ...ModeOptions) (*de, error) {
 }
 
 func (mode *de) Execute(ctx context.Context) ([]models.Vector, [][]float64, error) {
+	// Check if context is already cancelled
+	if err := ctx.Err(); err != nil {
+		return nil, nil, err
+	}
+
 	paretoCh := make(chan []models.Vector, mode.config.ParetoChannelLimiter)
 	maxObjsCh := make(chan []float64, mode.config.MaxChannelLimiter)
 	wgExecs := &sync.WaitGroup{}
@@ -83,10 +89,17 @@ func (mode *de) Execute(ctx context.Context) ([]models.Vector, [][]float64, erro
 				paretoCh,
 				maxObjsCh,
 			); err != nil {
-				slog.Error("Unexpected error while executing the algorithm",
-					slog.Int("Execution", idx),
-					slog.String("error", err.Error()),
-				)
+				// Check if error is due to cancellation
+				if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+					slog.Info("Execution cancelled",
+						slog.Int("Execution", idx),
+					)
+				} else {
+					slog.Error("Unexpected error while executing the algorithm",
+						slog.Int("Execution", idx),
+						slog.String("error", err.Error()),
+					)
+				}
 			}
 		}(i)
 	}
@@ -95,6 +108,11 @@ func (mode *de) Execute(ctx context.Context) ([]models.Vector, [][]float64, erro
 	close(paretoCh)
 	close(maxObjsCh)
 	wgMaxObjs.Wait()
+
+	// Check if cancelled before filtering
+	if err := ctx.Err(); err != nil {
+		return nil, nil, err
+	}
 
 	now := time.Now()
 	finalPareto := mode.filterPareto(ctx, paretoCh)

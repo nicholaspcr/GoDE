@@ -43,3 +43,11 @@ func WithObjFuncAmount(n int) ModeOptions {
 		return m
 	}
 }
+
+// WithProgressCallback sets a callback function to receive progress updates.
+func WithProgressCallback(callback ProgressCallback) ModeOptions {
+	return func(m *de) *de {
+		m.progressCallback = callback
+		return m
+	}
+}

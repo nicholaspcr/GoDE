@@ -22,6 +22,7 @@ type gde3 struct {
 	initialPopulation models.Population
 	populationParams  models.PopulationParams
 	constants         Constants
+	progressCallback  de.ProgressCallback
 }
 
 // Option is a functional option for configuring the GDE3 algorithm.
@@ -77,6 +78,12 @@ func (g *gde3) Execute(
 	bestElems := make([]models.Vector, 0, popuParams.PopulationSize)
 
 	for gen := range g.constants.DE.Generations {
+		// Check for cancellation at the start of each generation
+		if err := ctx.Err(); err != nil {
+			span.RecordError(err)
+			return err
+		}
+
 		logger.Debug("Running generation",
 			slog.Int("execution_n", execNum),
 			slog.Int("generation_n", gen),
@@ -92,6 +99,11 @@ func (g *gde3) Execute(
 		// NOTE: It probably would be a good idea to send the elements into the
 		// channel directly instead of appending.
 		bestElems = append(bestElems, bestInGen...)
+
+		// Call progress callback if set
+		if g.progressCallback != nil {
+			g.progressCallback(gen+1, g.constants.DE.Generations, len(bestElems), bestElems)
+		}
 	}
 
 	span.SetAttributes(attribute.Int("pareto_size", len(bestElems)))

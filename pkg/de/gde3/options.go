@@ -1,6 +1,7 @@
 package gde3
 
 import (
+	"github.com/nicholaspcr/GoDE/pkg/de"
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
@@ -37,6 +38,14 @@ func WithPopulationParams(params models.PopulationParams) Option {
 func WithConstants(c Constants) Option {
 	return func(m *gde3) *gde3 {
 		m.constants = c
+		return m
+	}
+}
+
+// WithProgressCallback sets a callback function to receive progress updates.
+func WithProgressCallback(callback de.ProgressCallback) Option {
+	return func(m *gde3) *gde3 {
+		m.progressCallback = callback
 		return m
 	}
 }

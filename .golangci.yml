@@ -7,7 +7,6 @@ linters:
     - gocyclo
     - gosec
     - prealloc
-    - revive
     - unconvert
   exclusions:
     rules:
@@ -33,52 +32,9 @@ linters:
       - path: 'pkg/variants/pbest/pbest\.go'
         linters:
           - gosec
-      - path: 'cmd/decli/internal/commands/'
+      - path: 'pkg/problems/multi/'
         linters:
-          - revive
-      - path: 'cmd/deserver/internal/commands/'
-        linters:
-          - revive
-      - path: 'internal/server/handlers/'
-        linters:
-          - revive
-      - path: 'internal/log/log\.go'
-        linters:
-          - revive
-      - path: 'cmd/decli/internal/state/sqlite/sqlite\.go'
-        linters:
-          - revive
-      - path: 'cmd/decli/internal/utils/'
-        linters:
-          - revive
-      - path: 'internal/server/lifecycle\.go'
-        linters:
-          - revive
-      - path: 'internal/server/middleware/'
-        linters:
-          - revive
-      - path: 'internal/store/'
-        linters:
-          - revive
-      - path: 'pkg/validation/'
-        linters:
-          - revive
-      - path: 'internal/server/options\.go'
-        linters:
-          - revive
-      - path: 'internal/telemetry/'
-        linters:
-          - revive
-      - path: 'pkg/de/'
-        linters:
-          - revive
-      - path: 'pkg/problems/'
-        linters:
-          - revive
           - gocritic
-      - path: 'internal/server/server\.go'
-        linters:
-          - revive
 
 linters-settings:
   errcheck:
@@ -94,14 +50,6 @@ linters-settings:
     disable:
       - shadow
     enable-all: true
-  revive:
-    rules:
-      - name: exported
-        disabled: true
-      - name: package-comments
-        disabled: false
-      - name: unused-parameter
-        disabled: true
 
 issues:
   max-issues-per-linter: 0

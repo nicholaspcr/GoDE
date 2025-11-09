@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	ofJson bool
-	ofYaml bool
+	ofJSON bool
+	ofYAML bool
 )
 
 // configCmd handles commands related to the configuration of the server.
@@ -30,10 +30,10 @@ var configCmd = &cobra.Command{
 		var cfgString string
 		var err error
 
-		if ofJson {
+		if ofJSON {
 			cfgString, err = cfg.StringifyJSON()
 		}
-		if ofYaml {
+		if ofYAML {
 			cfgString, err = cfg.StringifyYAML()
 		}
 
@@ -47,8 +47,8 @@ var configCmd = &cobra.Command{
 }
 
 func init() {
-	configCmd.Flags().BoolVar(&ofJson, "json", true, "Output in JSON")
-	configCmd.Flags().BoolVar(&ofYaml, "yaml", false, "Output in YAML")
+	configCmd.Flags().BoolVar(&ofJSON, "json", true, "Output in JSON")
+	configCmd.Flags().BoolVar(&ofYAML, "yaml", false, "Output in YAML")
 	configCmd.MarkFlagsMutuallyExclusive("json", "yaml")
 	rootCmd.AddCommand(configCmd)
 }

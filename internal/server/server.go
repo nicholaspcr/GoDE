@@ -4,7 +4,7 @@ package server
 import (
 	"context"
 	"log/slog"
-	_ "net/http/pprof"
+	_ "net/http/pprof" // Register pprof HTTP handlers
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/nicholaspcr/GoDE/internal/server/auth"

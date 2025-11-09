@@ -3,7 +3,7 @@ package commands
 import (
 	"fmt"
 	"log/slog"
-	_ "net/http/pprof"
+	_ "net/http/pprof" // Register pprof HTTP handlers
 	"os"
 
 	authcmd "github.com/nicholaspcr/GoDE/cmd/decli/internal/commands/auth"

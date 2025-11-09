@@ -10,6 +10,7 @@ import (
 type Store interface {
 	UserOperations
 	ParetoOperations
+	ExecutionOperations
 	HealthCheck(context.Context) error
 }
 
@@ -35,4 +36,22 @@ type ParetoOperations interface {
 	UpdatePareto(context.Context, *api.Pareto, ...string) error
 	DeletePareto(context.Context, *api.ParetoIDs) error
 	ListParetos(context.Context, *api.UserIDs) ([]*api.Pareto, error)
+}
+
+// ExecutionOperations is the interface for the execution store.
+type ExecutionOperations interface {
+	CreateExecution(ctx context.Context, execution *Execution) error
+	GetExecution(ctx context.Context, executionID, userID string) (*Execution, error)
+	UpdateExecutionStatus(ctx context.Context, executionID string, status ExecutionStatus, errorMsg string) error
+	UpdateExecutionResult(ctx context.Context, executionID string, paretoID uint64) error
+	ListExecutions(ctx context.Context, userID string, status *ExecutionStatus) ([]*Execution, error)
+	DeleteExecution(ctx context.Context, executionID, userID string) error
+
+	// Progress tracking
+	SaveProgress(ctx context.Context, progress *ExecutionProgress) error
+	GetProgress(ctx context.Context, executionID string) (*ExecutionProgress, error)
+
+	// Cancellation support
+	MarkExecutionForCancellation(ctx context.Context, executionID, userID string) error
+	IsExecutionCancelled(ctx context.Context, executionID string) (bool, error)
 }

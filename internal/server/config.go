@@ -3,8 +3,10 @@ package server
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
+	"github.com/nicholaspcr/GoDE/internal/cache/redis"
 	"github.com/nicholaspcr/GoDE/internal/telemetry"
 	"github.com/nicholaspcr/GoDE/pkg/de"
 )
@@ -18,10 +20,21 @@ type Config struct {
 	JWTExpiry      time.Duration
 	TLS            TLSConfig
 	RateLimit      RateLimitConfig
+	Redis          redis.Config
+	Executor       ExecutorConfig
 	MetricsEnabled bool
 	MetricsType    telemetry.MetricsExporterType
 	PprofEnabled   bool
 	PprofPort      string
+}
+
+// ExecutorConfig contains configuration for the background execution executor.
+type ExecutorConfig struct {
+	MaxWorkers    int
+	QueueSize     int
+	ExecutionTTL  time.Duration
+	ResultTTL     time.Duration
+	ProgressTTL   time.Duration
 }
 
 // TLSConfig contains TLS/HTTPS configuration.
@@ -60,6 +73,25 @@ func DefaultConfig() Config {
 		pprofPort = ":6060" // Default pprof port
 	}
 
+	redisHost := os.Getenv("REDIS_HOST")
+	if redisHost == "" {
+		redisHost = "localhost"
+	}
+
+	redisPort := 6379
+	if portStr := os.Getenv("REDIS_PORT"); portStr != "" {
+		if port, err := strconv.Atoi(portStr); err == nil {
+			redisPort = port
+		}
+	}
+
+	redisDB := 0
+	if dbStr := os.Getenv("REDIS_DB"); dbStr != "" {
+		if db, err := strconv.Atoi(dbStr); err == nil {
+			redisDB = db
+		}
+	}
+
 	return Config{
 		LisAddr:        "localhost:3030",
 		HTTPPort:       ":8081",
@@ -69,6 +101,19 @@ func DefaultConfig() Config {
 		MetricsType:    metricsType,
 		PprofEnabled:   pprofEnabled,
 		PprofPort:      pprofPort,
+		Redis: redis.Config{
+			Host:     redisHost,
+			Port:     redisPort,
+			Password: os.Getenv("REDIS_PASSWORD"),
+			DB:       redisDB,
+		},
+		Executor: ExecutorConfig{
+			MaxWorkers:    10,
+			QueueSize:     100,
+			ExecutionTTL:  24 * time.Hour,
+			ResultTTL:     7 * 24 * time.Hour,
+			ProgressTTL:   1 * time.Hour,
+		},
 		TLS: TLSConfig{
 			Enabled:  false, // TLS disabled by default for development
 			CertFile: "",
@@ -151,6 +196,31 @@ func (c *Config) Validate() error {
 	// JWT expiry validation
 	if c.JWTExpiry < time.Minute {
 		return fmt.Errorf("JWT expiry must be at least 1 minute")
+	}
+
+	// Redis validation
+	if c.Redis.Host == "" {
+		return fmt.Errorf("Redis host cannot be empty")
+	}
+	if c.Redis.Port < 1 || c.Redis.Port > 65535 {
+		return fmt.Errorf("Redis port must be between 1 and 65535")
+	}
+
+	// Executor validation
+	if c.Executor.MaxWorkers < 1 {
+		return fmt.Errorf("executor max_workers must be at least 1")
+	}
+	if c.Executor.QueueSize < 1 {
+		return fmt.Errorf("executor queue_size must be at least 1")
+	}
+	if c.Executor.ExecutionTTL < time.Minute {
+		return fmt.Errorf("executor execution_ttl must be at least 1 minute")
+	}
+	if c.Executor.ResultTTL < time.Hour {
+		return fmt.Errorf("executor result_ttl must be at least 1 hour")
+	}
+	if c.Executor.ProgressTTL < time.Minute {
+		return fmt.Errorf("executor progress_ttl must be at least 1 minute")
 	}
 
 	return nil

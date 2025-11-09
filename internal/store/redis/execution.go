@@ -1,0 +1,329 @@
+package redis
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"time"
+
+	"github.com/nicholaspcr/GoDE/internal/cache/redis"
+	"github.com/nicholaspcr/GoDE/internal/store"
+	"github.com/nicholaspcr/GoDE/pkg/api/v1"
+)
+
+// ExecutionStore implements ExecutionOperations using Redis.
+type ExecutionStore struct {
+	client       *redis.Client
+	executionTTL time.Duration
+	progressTTL  time.Duration
+}
+
+// NewExecutionStore creates a new Redis-backed execution store.
+func NewExecutionStore(client *redis.Client, executionTTL, progressTTL time.Duration) *ExecutionStore {
+	return &ExecutionStore{
+		client:       client,
+		executionTTL: executionTTL,
+		progressTTL:  progressTTL,
+	}
+}
+
+func (s *ExecutionStore) executionKey(executionID string) string {
+	return fmt.Sprintf("execution:%s", executionID)
+}
+
+func (s *ExecutionStore) progressKey(executionID string) string {
+	return fmt.Sprintf("execution:%s:progress", executionID)
+}
+
+func (s *ExecutionStore) cancelKey(executionID string) string {
+	return fmt.Sprintf("execution:%s:cancel", executionID)
+}
+
+func (s *ExecutionStore) userExecutionsKey(userID string) string {
+	return fmt.Sprintf("user:%s:executions", userID)
+}
+
+// CreateExecution stores a new execution in Redis.
+func (s *ExecutionStore) CreateExecution(ctx context.Context, execution *store.Execution) error {
+	key := s.executionKey(execution.ID)
+
+	data, err := json.Marshal(execution)
+	if err != nil {
+		return fmt.Errorf("failed to marshal execution: %w", err)
+	}
+
+	if err := s.client.Set(ctx, key, data, s.executionTTL); err != nil {
+		return fmt.Errorf("failed to store execution: %w", err)
+	}
+
+	// Add to user's execution set
+	userKey := s.userExecutionsKey(execution.UserID)
+	if err := s.client.HSet(ctx, userKey, execution.ID, string(data)); err != nil {
+		return fmt.Errorf("failed to add execution to user set: %w", err)
+	}
+	if err := s.client.Expire(ctx, userKey, s.executionTTL); err != nil {
+		return fmt.Errorf("failed to set TTL on user executions: %w", err)
+	}
+
+	return nil
+}
+
+// GetExecution retrieves an execution from Redis.
+func (s *ExecutionStore) GetExecution(ctx context.Context, executionID, userID string) (*store.Execution, error) {
+	key := s.executionKey(executionID)
+
+	data, err := s.client.Get(ctx, key)
+	if err != nil {
+		return nil, fmt.Errorf("execution not found: %w", err)
+	}
+
+	var execution store.Execution
+	if err := json.Unmarshal([]byte(data), &execution); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal execution: %w", err)
+	}
+
+	// Verify ownership
+	if execution.UserID != userID {
+		return nil, fmt.Errorf("execution does not belong to user")
+	}
+
+	return &execution, nil
+}
+
+// UpdateExecutionStatus updates the status of an execution.
+func (s *ExecutionStore) UpdateExecutionStatus(ctx context.Context, executionID string, status store.ExecutionStatus, errorMsg string) error {
+	key := s.executionKey(executionID)
+
+	data, err := s.client.Get(ctx, key)
+	if err != nil {
+		return fmt.Errorf("execution not found: %w", err)
+	}
+
+	var execution store.Execution
+	if err := json.Unmarshal([]byte(data), &execution); err != nil {
+		return fmt.Errorf("failed to unmarshal execution: %w", err)
+	}
+
+	execution.Status = status
+	execution.UpdatedAt = time.Now()
+	if errorMsg != "" {
+		execution.Error = errorMsg
+	}
+	if status == store.ExecutionStatusCompleted || status == store.ExecutionStatusFailed || status == store.ExecutionStatusCancelled {
+		now := time.Now()
+		execution.CompletedAt = &now
+	}
+
+	updatedData, err := json.Marshal(execution)
+	if err != nil {
+		return fmt.Errorf("failed to marshal execution: %w", err)
+	}
+
+	if err := s.client.Set(ctx, key, updatedData, s.executionTTL); err != nil {
+		return fmt.Errorf("failed to update execution: %w", err)
+	}
+
+	// Update in user's execution set
+	userKey := s.userExecutionsKey(execution.UserID)
+	if err := s.client.HSet(ctx, userKey, executionID, string(updatedData)); err != nil {
+		return fmt.Errorf("failed to update execution in user set: %w", err)
+	}
+
+	return nil
+}
+
+// UpdateExecutionResult updates the pareto ID for a completed execution.
+func (s *ExecutionStore) UpdateExecutionResult(ctx context.Context, executionID string, paretoID uint64) error {
+	key := s.executionKey(executionID)
+
+	data, err := s.client.Get(ctx, key)
+	if err != nil {
+		return fmt.Errorf("execution not found: %w", err)
+	}
+
+	var execution store.Execution
+	if err := json.Unmarshal([]byte(data), &execution); err != nil {
+		return fmt.Errorf("failed to unmarshal execution: %w", err)
+	}
+
+	execution.ParetoID = &paretoID
+	execution.UpdatedAt = time.Now()
+
+	updatedData, err := json.Marshal(execution)
+	if err != nil {
+		return fmt.Errorf("failed to marshal execution: %w", err)
+	}
+
+	if err := s.client.Set(ctx, key, updatedData, s.executionTTL); err != nil {
+		return fmt.Errorf("failed to update execution: %w", err)
+	}
+
+	// Update in user's execution set
+	userKey := s.userExecutionsKey(execution.UserID)
+	if err := s.client.HSet(ctx, userKey, executionID, string(updatedData)); err != nil {
+		return fmt.Errorf("failed to update execution in user set: %w", err)
+	}
+
+	return nil
+}
+
+// ListExecutions retrieves all executions for a user, optionally filtered by status.
+func (s *ExecutionStore) ListExecutions(ctx context.Context, userID string, status *store.ExecutionStatus) ([]*store.Execution, error) {
+	userKey := s.userExecutionsKey(userID)
+
+	data, err := s.client.HGetAll(ctx, userKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user executions: %w", err)
+	}
+
+	executions := make([]*store.Execution, 0, len(data))
+	for _, executionData := range data {
+		var execution store.Execution
+		if err := json.Unmarshal([]byte(executionData), &execution); err != nil {
+			continue // Skip invalid entries
+		}
+
+		// Filter by status if provided
+		if status != nil && execution.Status != *status {
+			continue
+		}
+
+		executions = append(executions, &execution)
+	}
+
+	return executions, nil
+}
+
+// DeleteExecution removes an execution from Redis.
+func (s *ExecutionStore) DeleteExecution(ctx context.Context, executionID, userID string) error {
+	// Verify ownership first
+	execution, err := s.GetExecution(ctx, executionID, userID)
+	if err != nil {
+		return err
+	}
+
+	// Delete from Redis
+	key := s.executionKey(executionID)
+	if err := s.client.Delete(ctx, key); err != nil {
+		return fmt.Errorf("failed to delete execution: %w", err)
+	}
+
+	// Remove from user's execution set
+	userKey := s.userExecutionsKey(execution.UserID)
+	fields, err := s.client.HGetAll(ctx, userKey)
+	if err == nil {
+		delete(fields, executionID)
+		// Clear and repopulate
+		if err := s.client.Delete(ctx, userKey); err == nil {
+			for id, data := range fields {
+				_ = s.client.HSet(ctx, userKey, id, data)
+			}
+		}
+	}
+
+	// Delete progress
+	progressKey := s.progressKey(executionID)
+	_ = s.client.Delete(ctx, progressKey)
+
+	// Delete cancellation flag
+	cancelKey := s.cancelKey(executionID)
+	_ = s.client.Delete(ctx, cancelKey)
+
+	return nil
+}
+
+// SaveProgress stores execution progress in Redis.
+func (s *ExecutionStore) SaveProgress(ctx context.Context, progress *store.ExecutionProgress) error {
+	key := s.progressKey(progress.ExecutionID)
+
+	progress.UpdatedAt = time.Now()
+
+	data, err := json.Marshal(progress)
+	if err != nil {
+		return fmt.Errorf("failed to marshal progress: %w", err)
+	}
+
+	if err := s.client.Set(ctx, key, data, s.progressTTL); err != nil {
+		return fmt.Errorf("failed to store progress: %w", err)
+	}
+
+	// Publish progress update to pub/sub channel
+	channel := fmt.Sprintf("execution:%s:updates", progress.ExecutionID)
+	_ = s.client.Publish(ctx, channel, data)
+
+	return nil
+}
+
+// GetProgress retrieves the current progress of an execution.
+func (s *ExecutionStore) GetProgress(ctx context.Context, executionID string) (*store.ExecutionProgress, error) {
+	key := s.progressKey(executionID)
+
+	data, err := s.client.Get(ctx, key)
+	if err != nil {
+		return nil, fmt.Errorf("progress not found: %w", err)
+	}
+
+	var progress store.ExecutionProgress
+	if err := json.Unmarshal([]byte(data), &progress); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal progress: %w", err)
+	}
+
+	return &progress, nil
+}
+
+// MarkExecutionForCancellation sets a cancellation flag for an execution.
+func (s *ExecutionStore) MarkExecutionForCancellation(ctx context.Context, executionID, userID string) error {
+	// Verify ownership
+	if _, err := s.GetExecution(ctx, executionID, userID); err != nil {
+		return err
+	}
+
+	key := s.cancelKey(executionID)
+	if err := s.client.Set(ctx, key, "1", s.executionTTL); err != nil {
+		return fmt.Errorf("failed to set cancellation flag: %w", err)
+	}
+
+	// Publish cancellation event
+	channel := fmt.Sprintf("execution:%s:cancel", executionID)
+	_ = s.client.Publish(ctx, channel, "cancel")
+
+	return nil
+}
+
+// IsExecutionCancelled checks if an execution has been marked for cancellation.
+func (s *ExecutionStore) IsExecutionCancelled(ctx context.Context, executionID string) (bool, error) {
+	key := s.cancelKey(executionID)
+
+	_, err := s.client.Get(ctx, key)
+	if err != nil {
+		// Key doesn't exist, not cancelled
+		return false, nil
+	}
+
+	return true, nil
+}
+
+// ConfigToProto converts a DEConfig proto to a store-compatible format for JSON marshaling.
+func ConfigToProto(config *api.DEConfig) map[string]interface{} {
+	result := map[string]interface{}{
+		"executions":      config.Executions,
+		"generations":     config.Generations,
+		"population_size": config.PopulationSize,
+		"dimensions_size": config.DimensionsSize,
+		"objetives_size":  config.ObjetivesSize,
+		"floor_limiter":   config.FloorLimiter,
+		"ceil_limiter":    config.CeilLimiter,
+	}
+
+	if config.AlgorithmConfig != nil {
+		if gde3 := config.AlgorithmConfig.GetGde3(); gde3 != nil {
+			result["gde3_config"] = map[string]interface{}{
+				"cr": gde3.Cr,
+				"f":  gde3.F,
+				"p":  gde3.P,
+			}
+		}
+	}
+
+	return result
+}

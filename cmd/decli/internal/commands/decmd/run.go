@@ -1,7 +1,9 @@
 package decmd
 
 import (
+	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/nicholaspcr/GoDE/cmd/decli/internal/config"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
@@ -12,10 +14,13 @@ var (
 	run config.RunConfig
 )
 
-// runCmd list all available variants.
+// runCmd submits an async execution and polls until completion.
 var runCmd = &cobra.Command{
 	Use:   "run",
-	Short: "Send run request to server",
+	Short: "Submit DE execution and wait for results (sync wrapper around async API)",
+	Long: `Submit a Differential Evolution execution to the server and wait for it to complete.
+This is a synchronous wrapper around the async API that polls for completion.
+For async operations, use 'run-async' instead.`,
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		ctx, client, conn, err := getClientAndContext(cmd.Context())
 		if err != nil {
@@ -27,7 +32,9 @@ var runCmd = &cobra.Command{
 			}
 		}()
 
-		res, err := client.Run(ctx, &api.RunRequest{
+		// Submit async execution
+		slog.Info("Submitting execution request...")
+		asyncResp, err := client.RunAsync(ctx, &api.RunRequest{
 			Algorithm: run.Algorithm,
 			Variant:   run.Variant,
 			Problem:   run.Problem,
@@ -47,11 +54,60 @@ var runCmd = &cobra.Command{
 			},
 		})
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to submit execution: %w", err)
 		}
 
-		slog.With("pareto", res.Pareto).Info("Finished the call")
-		return nil
+		executionID := asyncResp.ExecutionId
+		slog.Info("Execution submitted", "execution_id", executionID)
+
+		// Poll for completion
+		ticker := time.NewTicker(2 * time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-ticker.C:
+				statusResp, err := client.GetExecutionStatus(ctx, &api.GetExecutionStatusRequest{
+					ExecutionId: executionID,
+				})
+				if err != nil {
+					return fmt.Errorf("failed to get execution status: %w", err)
+				}
+
+				status := statusResp.Execution.Status
+				slog.Info("Execution status", "status", status.String())
+
+				switch status {
+				case api.ExecutionStatus_EXECUTION_STATUS_COMPLETED:
+					// Get results
+					resultsResp, err := client.GetExecutionResults(ctx, &api.GetExecutionResultsRequest{
+						ExecutionId: executionID,
+					})
+					if err != nil {
+						return fmt.Errorf("failed to get results: %w", err)
+					}
+
+					slog.With("pareto", resultsResp.Pareto).Info("Execution completed successfully")
+					return nil
+
+				case api.ExecutionStatus_EXECUTION_STATUS_FAILED:
+					return fmt.Errorf("execution failed: %s", statusResp.Execution.Error)
+
+				case api.ExecutionStatus_EXECUTION_STATUS_CANCELLED:
+					return fmt.Errorf("execution was cancelled")
+
+				case api.ExecutionStatus_EXECUTION_STATUS_PENDING, api.ExecutionStatus_EXECUTION_STATUS_RUNNING:
+					// Continue polling
+					if statusResp.Progress != nil {
+						slog.Info("Progress update",
+							"generation", fmt.Sprintf("%d/%d", statusResp.Progress.CurrentGeneration, statusResp.Progress.TotalGenerations),
+							"execution", fmt.Sprintf("%d/%d", statusResp.Progress.CompletedExecutions, statusResp.Progress.TotalExecutions))
+					}
+				}
+			}
+		}
 	},
 }
 

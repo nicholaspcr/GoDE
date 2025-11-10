@@ -200,10 +200,10 @@ func (c *Config) Validate() error {
 
 	// Redis validation
 	if c.Redis.Host == "" {
-		return fmt.Errorf("Redis host cannot be empty")
+		return fmt.Errorf("redis host cannot be empty")
 	}
 	if c.Redis.Port < 1 || c.Redis.Port > 65535 {
-		return fmt.Errorf("Redis port must be between 1 and 65535")
+		return fmt.Errorf("redis port must be between 1 and 65535")
 	}
 
 	// Executor validation

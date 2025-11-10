@@ -24,6 +24,7 @@ import (
 	_ "github.com/nicholaspcr/GoDE/pkg/variants/rand"            // Register rand variants
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -128,9 +129,9 @@ func (deh *deHandler) RunAsync(
 	}
 
 	span.SetAttributes(
-		attribute.Int64("executions", int64(req.DeConfig.Executions)),
-		attribute.Int64("generations", int64(req.DeConfig.Generations)),
-		attribute.Int64("population_size", int64(req.DeConfig.PopulationSize)),
+		attribute.Int64("executions", req.DeConfig.Executions),
+		attribute.Int64("generations", req.DeConfig.Generations),
+		attribute.Int64("population_size", req.DeConfig.PopulationSize),
 	)
 
 	// Validate algorithm is supported
@@ -165,61 +166,88 @@ func (deh *deHandler) StreamProgress(
 
 	span.SetAttributes(attribute.String("execution_id", req.ExecutionId))
 
-	// Get user ID from context
-	userID := middleware.UsernameFromContext(ctx)
-	if userID == "" {
-		return status.Error(codes.Unauthenticated, "user not authenticated")
-	}
-
-	// Verify execution belongs to user
-	execution, err := deh.Store.GetExecution(ctx, req.ExecutionId, userID)
+	// Verify user access
+	_, err := deh.verifyExecutionAccess(ctx, req.ExecutionId, span)
 	if err != nil {
-		if errors.Is(err, store.ErrExecutionNotFound) {
-			return status.Error(codes.NotFound, "execution not found")
-		}
-		span.RecordError(err)
-		return status.Errorf(codes.Internal, "failed to get execution: %v", err)
+		return err
 	}
 
-	if execution.UserID != userID {
-		return status.Error(codes.PermissionDenied, "execution does not belong to user")
-	}
-
-	// Subscribe to progress updates
+	// Set up progress channels
 	progressCh := make(chan *store.ExecutionProgress, 10)
 	errCh := make(chan error, 1)
 
-	go func() {
-		defer close(progressCh)
-		defer close(errCh)
+	// Start progress subscription goroutine
+	go deh.subscribeToProgress(ctx, req.ExecutionId, progressCh, errCh)
 
-		// Subscribe to Redis pub/sub for progress updates
-		channel := fmt.Sprintf("execution:%s:updates", req.ExecutionId)
-		progressBytes, err := deh.Store.Subscribe(ctx, channel)
-		if err != nil {
-			errCh <- err
+	// Stream progress to client
+	return deh.streamProgressToClient(ctx, stream, progressCh, errCh, span)
+}
+
+// verifyExecutionAccess checks if the user has access to the execution.
+func (deh *deHandler) verifyExecutionAccess(ctx context.Context, executionID string, span trace.Span) (string, error) {
+	userID := middleware.UsernameFromContext(ctx)
+	if userID == "" {
+		return "", status.Error(codes.Unauthenticated, "user not authenticated")
+	}
+
+	execution, err := deh.Store.GetExecution(ctx, executionID, userID) //nolint:staticcheck // Explicit for clarity
+	if err != nil {
+		if errors.Is(err, store.ErrExecutionNotFound) {
+			return "", status.Error(codes.NotFound, "execution not found")
+		}
+		span.RecordError(err)
+		return "", status.Errorf(codes.Internal, "failed to get execution: %v", err)
+	}
+
+	if execution.UserID != userID {
+		return "", status.Error(codes.PermissionDenied, "execution does not belong to user")
+	}
+
+	return userID, nil
+}
+
+// subscribeToProgress subscribes to Redis pub/sub for progress updates.
+func (deh *deHandler) subscribeToProgress(
+	ctx context.Context,
+	executionID string,
+	progressCh chan<- *store.ExecutionProgress,
+	errCh chan<- error,
+) {
+	defer close(progressCh)
+	defer close(errCh)
+
+	channel := fmt.Sprintf("execution:%s:updates", executionID)
+	progressBytes, err := deh.Store.Subscribe(ctx, channel) //nolint:staticcheck // Explicit for clarity
+	if err != nil {
+		errCh <- err
+		return
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
 			return
-		}
-
-		for {
-			select {
-			case <-ctx.Done():
+		case data, ok := <-progressBytes:
+			if !ok {
 				return
-			case data, ok := <-progressBytes:
-				if !ok {
-					return
-				}
-				// Parse progress from JSON
-				progress := &store.ExecutionProgress{}
-				if err := progress.UnmarshalJSON(data); err != nil {
-					continue
-				}
-				progressCh <- progress
 			}
+			progress := &store.ExecutionProgress{}
+			if err := progress.UnmarshalJSON(data); err != nil {
+				continue
+			}
+			progressCh <- progress
 		}
-	}()
+	}
+}
 
-	// Stream progress updates to client
+// streamProgressToClient sends progress updates to the gRPC stream.
+func (deh *deHandler) streamProgressToClient(
+	ctx context.Context,
+	stream api.DifferentialEvolutionService_StreamProgressServer,
+	progressCh <-chan *store.ExecutionProgress,
+	errCh <-chan error,
+	span trace.Span,
+) error {
 	for {
 		select {
 		case <-ctx.Done():
@@ -271,7 +299,7 @@ func (deh *deHandler) GetExecutionStatus(
 	}
 
 	// Get execution
-	execution, err := deh.Store.GetExecution(ctx, req.ExecutionId, userID)
+	execution, err := deh.Store.GetExecution(ctx, req.ExecutionId, userID) //nolint:staticcheck // Explicit for clarity
 	if err != nil {
 		if errors.Is(err, store.ErrExecutionNotFound) {
 			return nil, status.Error(codes.NotFound, "execution not found")
@@ -286,7 +314,7 @@ func (deh *deHandler) GetExecutionStatus(
 	// Get progress if available
 	var apiProgress *api.ExecutionProgress
 	if execution.Status == store.ExecutionStatusRunning {
-		progress, err := deh.Store.GetProgress(ctx, req.ExecutionId)
+		progress, err := deh.Store.GetProgress(ctx, req.ExecutionId) //nolint:staticcheck // Explicit for clarity
 		if err == nil {
 			apiProgress = &api.ExecutionProgress{
 				ExecutionId:         progress.ExecutionID,
@@ -322,7 +350,7 @@ func (deh *deHandler) GetExecutionResults(
 	}
 
 	// Get execution
-	execution, err := deh.Store.GetExecution(ctx, req.ExecutionId, userID)
+	execution, err := deh.Store.GetExecution(ctx, req.ExecutionId, userID) //nolint:staticcheck // Explicit for clarity
 	if err != nil {
 		if errors.Is(err, store.ErrExecutionNotFound) {
 			return nil, status.Error(codes.NotFound, "execution not found")
@@ -342,7 +370,7 @@ func (deh *deHandler) GetExecutionResults(
 	}
 
 	// Get pareto set
-	paretoSet, err := deh.Store.GetParetoSetByID(ctx, *execution.ParetoID)
+	paretoSet, err := deh.Store.GetParetoSetByID(ctx, *execution.ParetoID) //nolint:staticcheck // Explicit for clarity
 	if err != nil {
 		if errors.Is(err, store.ErrParetoSetNotFound) {
 			return nil, status.Error(codes.NotFound, "pareto set not found")

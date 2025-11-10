@@ -11,14 +11,23 @@ This project extends [GDE3](https://github.com/nicholaspcr/GDE3), which originat
 - **6 Mutation Variants**: rand/1, rand/2, best/1, best/2, pbest, current-to-best/1
 - **22 Benchmark Problems**: ZDT, DTLZ, WFG families
 
+### Async Execution Architecture
+- **Background Job Processing**: Long-running optimizations don't block API requests
+- **Redis-Backed State**: Fast access to execution status and progress
+- **Real-time Progress Streaming**: Server-sent events for live progress updates
+- **Cancellation Support**: Stop running executions on demand
+- **Composite Storage**: Hybrid Redis/database architecture for performance and persistence
+- **Worker Pool**: Configurable concurrency limits for resource management
+
 ### Production-Ready Architecture
 - **gRPC + HTTP Gateway**: Dual protocol support
 - **JWT Authentication**: Secure user authentication
 - **Database Support**: PostgreSQL, SQLite, in-memory
+- **Redis Integration**: Required for async execution support
 - **Database Migrations**: Version-controlled schema evolution
 - **Rate Limiting**: Per-IP auth limiting, per-user DE execution limiting
 - **TLS/HTTPS Support**: Secure communication
-- **Health Checks**: Liveness and readiness probes
+- **Health Checks**: Liveness and readiness probes (includes Redis health)
 - **Graceful Shutdown**: Zero-downtime deployments
 
 ### Observability
@@ -31,7 +40,9 @@ This project extends [GDE3](https://github.com/nicholaspcr/GDE3), which originat
 
 ### Prerequisites
 - Go 1.25 or later
+- Redis 6.0 or later (required for async execution)
 - Make (optional, for convenience commands)
+- PostgreSQL 12+ (optional, recommended for production)
 
 ### Installation
 
@@ -48,20 +59,37 @@ make build
 
 ### Configuration
 
-1. Copy the example environment file:
+1. Start Redis (required for async execution):
+```bash
+# Using Docker
+docker run -d -p 6379:6379 redis:latest
+
+# Or using package manager
+# Ubuntu/Debian
+sudo apt-get install redis-server
+sudo systemctl start redis
+
+# macOS
+brew install redis
+brew services start redis
+```
+
+2. Copy the example environment file:
 ```bash
 cp .env.example .env
 ```
 
-2. Generate a secure JWT secret:
+3. Generate a secure JWT secret:
 ```bash
 # Generate a random 32+ character secret
 openssl rand -base64 32
 ```
 
-3. Update `.env` with your JWT secret:
+4. Update `.env` with your configuration:
 ```bash
 JWT_SECRET=your-generated-secret-here
+REDIS_HOST=localhost
+REDIS_PORT=6379
 ```
 
 ### Running the Server
@@ -84,9 +112,14 @@ The server will start on:
 # Liveness probe
 curl http://localhost:8081/health
 
-# Readiness probe (includes DB check)
+# Readiness probe (includes database and Redis health checks)
 curl http://localhost:8081/readiness
 ```
+
+Health checks verify:
+- Server is running (`/health`)
+- Database connectivity (`/readiness`)
+- Redis connectivity (`/readiness`)
 
 ### Metrics
 
@@ -141,6 +174,19 @@ See `.env.example` for all available configuration options.
 - `STORE_SQLITE_FILEPATH` - SQLite file path
 - `STORE_POSTGRESQL_DNS` - PostgreSQL connection string
 
+#### Redis (required for async execution)
+- `REDIS_HOST` - Redis server host (default: localhost)
+- `REDIS_PORT` - Redis server port (default: 6379)
+- `REDIS_PASSWORD` - Redis password (default: empty)
+- `REDIS_DB` - Redis database number (default: 0)
+
+#### Async Executor
+- `EXECUTOR_MAX_WORKERS` - Maximum concurrent workers (default: 10)
+- `EXECUTOR_QUEUE_SIZE` - Execution queue size (default: 100)
+- `EXECUTOR_EXECUTION_TTL` - Execution metadata TTL (default: 24h)
+- `EXECUTOR_RESULT_TTL` - Result data TTL (default: 168h / 7 days)
+- `EXECUTOR_PROGRESS_TTL` - Progress update TTL (default: 1h)
+
 #### Observability
 - `METRICS_ENABLED` - Enable metrics collection (default: true)
 - `METRICS_TYPE` - Exporter type: prometheus, stdout (default: prometheus)
@@ -180,10 +226,14 @@ curl -X POST http://localhost:8081/v1/auth/login \
   }'
 ```
 
-### Running DE
+### Async Execution API
+
+The server provides async execution APIs that allow long-running optimizations to run in the background.
+
+#### Submit Async Execution
 
 ```bash
-curl -X POST http://localhost:8081/v1/de/run \
+curl -X POST http://localhost:8081/v1/de/async/run \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -205,6 +255,83 @@ curl -X POST http://localhost:8081/v1/de/run \
       }
     }
   }'
+```
+
+Returns: `{"execution_id": "uuid-here"}`
+
+#### Check Execution Status
+
+```bash
+curl http://localhost:8081/v1/de/executions/EXECUTION_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+#### Get Execution Results
+
+```bash
+curl http://localhost:8081/v1/de/executions/EXECUTION_ID/results \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+#### List User's Executions
+
+```bash
+# All executions
+curl http://localhost:8081/v1/de/executions \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+# Filter by status
+curl http://localhost:8081/v1/de/executions?status=EXECUTION_STATUS_RUNNING \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+#### Cancel Running Execution
+
+```bash
+curl -X POST http://localhost:8081/v1/de/executions/EXECUTION_ID/cancel \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+#### Delete Execution
+
+```bash
+curl -X DELETE http://localhost:8081/v1/de/executions/EXECUTION_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### CLI Async Commands
+
+The CLI provides convenient commands for async execution:
+
+```bash
+# Submit and wait for completion (polls status)
+./dev/decli de run --algorithm gde3 --variant rand1 --problem zdt1 \
+  --generations 100 --population-size 100
+
+# Submit and return immediately
+./dev/decli de run-async --algorithm gde3 --variant rand1 --problem zdt1 \
+  --generations 100 --population-size 100
+
+# Check status
+./dev/decli de status --execution-id EXECUTION_ID
+
+# Stream real-time progress
+./dev/decli de stream --execution-id EXECUTION_ID
+
+# List executions
+./dev/decli de list
+./dev/decli de list --status running
+
+# Get results
+./dev/decli de results --execution-id EXECUTION_ID
+./dev/decli de results --execution-id EXECUTION_ID --format json --output results.json
+
+# Cancel execution
+./dev/decli de cancel --execution-id EXECUTION_ID
+
+# Delete execution
+./dev/decli de delete --execution-id EXECUTION_ID
+./dev/decli de delete --execution-id EXECUTION_ID --force  # Cancel first if running
 ```
 
 ## Development

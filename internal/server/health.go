@@ -25,17 +25,19 @@ func (s *server) setupHealthCheck(grpcSrv *grpc.Server) *health.Server {
 	return healthServer
 }
 
-// checkDatabaseHealth checks if the database is accessible.
+// checkDatabaseHealth checks if the database and Redis are accessible.
 func (s *server) checkDatabaseHealth(ctx context.Context) bool {
 	if s.st == nil {
+		slog.Error("Store is not initialized")
 		return false
 	}
 
-	// Ping the database to verify connectivity
+	// Check store health (includes both database and Redis for composite stores)
 	if err := s.st.HealthCheck(ctx); err != nil {
-		slog.Error("Database health check failed", slog.String("error", err.Error()))
+		slog.Error("Store health check failed", slog.String("error", err.Error()))
 		return false
 	}
 
+	slog.Debug("Store health check passed (database and Redis)")
 	return true
 }

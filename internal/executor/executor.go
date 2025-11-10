@@ -221,6 +221,7 @@ func (e *Executor) runAlgorithm(ctx context.Context, executionID, problemName, v
 	}
 
 	// Generate initial population
+	// #nosec G404 - Using math/rand for DE algorithm randomness, not cryptographic purposes
 	initialPop, err := models.GeneratePopulation(popParams, rand.New(rand.NewSource(time.Now().UnixNano())))
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to generate population: %w", err)
@@ -253,6 +254,7 @@ func (e *Executor) runAlgorithm(ctx context.Context, executionID, problemName, v
 			})
 		}
 
+		// #nosec G115 - Values validated in ValidateDEConfig, safe to convert
 		progress := &store.ExecutionProgress{
 			ExecutionID:         executionID,
 			CurrentGeneration:   int32(generation),

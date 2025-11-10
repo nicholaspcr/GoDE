@@ -305,7 +305,35 @@ func (s *ExecutionStore) IsExecutionCancelled(ctx context.Context, executionID s
 
 // Subscribe subscribes to real-time updates on a channel.
 func (s *ExecutionStore) Subscribe(ctx context.Context, channel string) (<-chan []byte, error) {
-	return s.client.Subscribe(ctx, channel)
+	pubsub := s.client.Subscribe(ctx, channel)
+
+	// Create output channel
+	ch := make(chan []byte, 100) // Buffer to prevent blocking
+
+	// Start goroutine to receive messages and forward to channel
+	go func() {
+		defer close(ch)
+		defer func() { _ = pubsub.Close() }()
+
+		// Subscribe to the PubSub channel
+		msgChan := pubsub.Channel()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case msg, ok := <-msgChan:
+				if !ok {
+					return
+				}
+				if msg != nil {
+					ch <- []byte(msg.Payload)
+				}
+			}
+		}
+	}()
+
+	return ch, nil
 }
 
 // ConfigToProto converts a DEConfig proto to a store-compatible format for JSON marshaling.
@@ -321,11 +349,11 @@ func ConfigToProto(config *api.DEConfig) map[string]interface{} {
 	}
 
 	if config.AlgorithmConfig != nil {
-		if gde3 := config.AlgorithmConfig.GetGde3(); gde3 != nil {
+		if algConfig, ok := config.AlgorithmConfig.(*api.DEConfig_Gde3); ok && algConfig.Gde3 != nil {
 			result["gde3_config"] = map[string]interface{}{
-				"cr": gde3.Cr,
-				"f":  gde3.F,
-				"p":  gde3.P,
+				"cr": algConfig.Gde3.Cr,
+				"f":  algConfig.Gde3.F,
+				"p":  algConfig.Gde3.P,
 			}
 		}
 	}

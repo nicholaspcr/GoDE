@@ -17,17 +17,32 @@ type MockStore struct {
 	DeleteUserFn func(ctx context.Context, userIDs *api.UserIDs) error
 
 	// Pareto operations
-	CreateParetoFn func(ctx context.Context, pareto *api.Pareto) error
-	GetParetoFn    func(ctx context.Context, ids *api.ParetoIDs) (*api.Pareto, error)
-	UpdateParetoFn func(ctx context.Context, pareto *api.Pareto, fields ...string) error
-	DeleteParetoFn func(ctx context.Context, ids *api.ParetoIDs) error
-	ListParetosFn  func(ctx context.Context, userIDs *api.UserIDs) ([]*api.Pareto, error)
+	CreateParetoFn    func(ctx context.Context, pareto *api.Pareto) error
+	GetParetoFn       func(ctx context.Context, ids *api.ParetoIDs) (*api.Pareto, error)
+	UpdateParetoFn    func(ctx context.Context, pareto *api.Pareto, fields ...string) error
+	DeleteParetoFn    func(ctx context.Context, ids *api.ParetoIDs) error
+	ListParetosFn     func(ctx context.Context, userIDs *api.UserIDs) ([]*api.Pareto, error)
+	CreateParetoSetFn func(ctx context.Context, paretoSet *store.ParetoSet) error
+	GetParetoSetByIDFn func(ctx context.Context, id uint64) (*store.ParetoSet, error)
 
 	// Vector operations
 	CreateVectorFn func(ctx context.Context, vector *api.Vector, paretoID int64) error
 	GetVectorFn    func(ctx context.Context, id int64) (*api.Vector, error)
 	UpdateVectorFn func(ctx context.Context, vector *api.Vector) error
 	DeleteVectorFn func(ctx context.Context, id int64) error
+
+	// Execution operations
+	CreateExecutionFn              func(ctx context.Context, execution *store.Execution) error
+	GetExecutionFn                 func(ctx context.Context, executionID, userID string) (*store.Execution, error)
+	UpdateExecutionStatusFn        func(ctx context.Context, executionID string, status store.ExecutionStatus, errorMsg string) error
+	UpdateExecutionResultFn        func(ctx context.Context, executionID string, paretoID uint64) error
+	ListExecutionsFn               func(ctx context.Context, userID string, status *store.ExecutionStatus) ([]*store.Execution, error)
+	DeleteExecutionFn              func(ctx context.Context, executionID, userID string) error
+	SaveProgressFn                 func(ctx context.Context, progress *store.ExecutionProgress) error
+	GetProgressFn                  func(ctx context.Context, executionID string) (*store.ExecutionProgress, error)
+	MarkExecutionForCancellationFn func(ctx context.Context, executionID, userID string) error
+	IsExecutionCancelledFn         func(ctx context.Context, executionID string) (bool, error)
+	SubscribeFn                    func(ctx context.Context, channel string) (<-chan []byte, error)
 
 	AutoMigrateFn func() error
 	HealthCheckFn func(ctx context.Context) error
@@ -108,6 +123,22 @@ func (m *MockStore) ListParetos(ctx context.Context, userIDs *api.UserIDs) ([]*a
 	return nil, nil
 }
 
+// CreateParetoSet implements store.Store
+func (m *MockStore) CreateParetoSet(ctx context.Context, paretoSet *store.ParetoSet) error {
+	if m.CreateParetoSetFn != nil {
+		return m.CreateParetoSetFn(ctx, paretoSet)
+	}
+	return nil
+}
+
+// GetParetoSetByID implements store.Store
+func (m *MockStore) GetParetoSetByID(ctx context.Context, id uint64) (*store.ParetoSet, error) {
+	if m.GetParetoSetByIDFn != nil {
+		return m.GetParetoSetByIDFn(ctx, id)
+	}
+	return nil, nil
+}
+
 // CreateVector implements store.Store
 func (m *MockStore) CreateVector(ctx context.Context, vector *api.Vector, paretoID int64) error {
 	if m.CreateVectorFn != nil {
@@ -154,4 +185,95 @@ func (m *MockStore) HealthCheck(ctx context.Context) error {
 		return m.HealthCheckFn(ctx)
 	}
 	return nil
+}
+
+// CreateExecution implements store.Store
+func (m *MockStore) CreateExecution(ctx context.Context, execution *store.Execution) error {
+	if m.CreateExecutionFn != nil {
+		return m.CreateExecutionFn(ctx, execution)
+	}
+	return nil
+}
+
+// GetExecution implements store.Store
+func (m *MockStore) GetExecution(ctx context.Context, executionID, userID string) (*store.Execution, error) {
+	if m.GetExecutionFn != nil {
+		return m.GetExecutionFn(ctx, executionID, userID)
+	}
+	return nil, nil
+}
+
+// UpdateExecutionStatus implements store.Store
+func (m *MockStore) UpdateExecutionStatus(ctx context.Context, executionID string, status store.ExecutionStatus, errorMsg string) error {
+	if m.UpdateExecutionStatusFn != nil {
+		return m.UpdateExecutionStatusFn(ctx, executionID, status, errorMsg)
+	}
+	return nil
+}
+
+// UpdateExecutionResult implements store.Store
+func (m *MockStore) UpdateExecutionResult(ctx context.Context, executionID string, paretoID uint64) error {
+	if m.UpdateExecutionResultFn != nil {
+		return m.UpdateExecutionResultFn(ctx, executionID, paretoID)
+	}
+	return nil
+}
+
+// ListExecutions implements store.Store
+func (m *MockStore) ListExecutions(ctx context.Context, userID string, status *store.ExecutionStatus) ([]*store.Execution, error) {
+	if m.ListExecutionsFn != nil {
+		return m.ListExecutionsFn(ctx, userID, status)
+	}
+	return nil, nil
+}
+
+// DeleteExecution implements store.Store
+func (m *MockStore) DeleteExecution(ctx context.Context, executionID, userID string) error {
+	if m.DeleteExecutionFn != nil {
+		return m.DeleteExecutionFn(ctx, executionID, userID)
+	}
+	return nil
+}
+
+// SaveProgress implements store.Store
+func (m *MockStore) SaveProgress(ctx context.Context, progress *store.ExecutionProgress) error {
+	if m.SaveProgressFn != nil {
+		return m.SaveProgressFn(ctx, progress)
+	}
+	return nil
+}
+
+// GetProgress implements store.Store
+func (m *MockStore) GetProgress(ctx context.Context, executionID string) (*store.ExecutionProgress, error) {
+	if m.GetProgressFn != nil {
+		return m.GetProgressFn(ctx, executionID)
+	}
+	return nil, nil
+}
+
+// MarkExecutionForCancellation implements store.Store
+func (m *MockStore) MarkExecutionForCancellation(ctx context.Context, executionID, userID string) error {
+	if m.MarkExecutionForCancellationFn != nil {
+		return m.MarkExecutionForCancellationFn(ctx, executionID, userID)
+	}
+	return nil
+}
+
+// IsExecutionCancelled implements store.Store
+func (m *MockStore) IsExecutionCancelled(ctx context.Context, executionID string) (bool, error) {
+	if m.IsExecutionCancelledFn != nil {
+		return m.IsExecutionCancelledFn(ctx, executionID)
+	}
+	return false, nil
+}
+
+// Subscribe implements store.Store
+func (m *MockStore) Subscribe(ctx context.Context, channel string) (<-chan []byte, error) {
+	if m.SubscribeFn != nil {
+		return m.SubscribeFn(ctx, channel)
+	}
+	// Return a closed channel by default
+	ch := make(chan []byte)
+	close(ch)
+	return ch, nil
 }

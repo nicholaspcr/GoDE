@@ -86,3 +86,10 @@ func UsernameFromContext(ctx context.Context) string {
 	}
 	return username
 }
+
+// ContextWithUsername creates a context with the given username.
+// This is primarily for testing purposes.
+func ContextWithUsername(ctx context.Context, username string) context.Context {
+	//nolint:staticcheck // SA1029: Using empty struct as context key is intentional and safe in this case
+	return context.WithValue(ctx, usernameCtxKey, username)
+}

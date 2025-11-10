@@ -4,18 +4,31 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"time"
 
 	"github.com/glebarez/sqlite"
 	// pgx driver for PostgreSQL
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/nicholaspcr/GoDE/internal/cache/redis"
 	"github.com/nicholaspcr/GoDE/internal/migrations"
 	"github.com/nicholaspcr/GoDE/internal/store"
+	"github.com/nicholaspcr/GoDE/internal/store/composite"
 	"github.com/nicholaspcr/GoDE/internal/store/gorm"
+	redisstore "github.com/nicholaspcr/GoDE/internal/store/redis"
 	"gorm.io/driver/postgres"
 )
 
-// New returns a new Store instance
-func New(ctx context.Context, cfg store.Config) (store.Store, error) {
+// Config extends store.Config with Redis and TTL settings.
+type Config struct {
+	store.Config
+	Redis        redis.Config
+	ExecutionTTL time.Duration
+	ResultTTL    time.Duration
+	ProgressTTL  time.Duration
+}
+
+// New returns a new Store instance that combines database and Redis.
+func New(ctx context.Context, cfg Config) (store.Store, error) {
 	// Run migrations first (except for memory stores)
 	if cfg.Type != "memory" {
 		connStr := cfg.ConnectionString()
@@ -41,17 +54,41 @@ func New(ctx context.Context, cfg store.Config) (store.Store, error) {
 		return nil, errors.New("invalid store type")
 	}
 
-	st, err := gorm.New(dialector)
+	dbStore, err := gorm.New(dialector)
 	if err != nil {
 		return nil, err
 	}
 
 	// For memory stores, still use AutoMigrate since migrations don't work with :memory:
 	if cfg.Type == "memory" {
-		if err := st.AutoMigrate(); err != nil {
+		if err := dbStore.AutoMigrate(); err != nil {
 			return nil, err
 		}
 	}
 
-	return st, nil
+	// Initialize Redis client
+	slog.Info("Connecting to Redis",
+		slog.String("host", cfg.Redis.Host),
+		slog.Int("port", cfg.Redis.Port))
+
+	redisClient, err := redis.NewClient(cfg.Redis)
+	if err != nil {
+		return nil, err
+	}
+
+	slog.Info("Redis connection established")
+
+	// Create Redis execution store
+	redisExecStore := redisstore.NewExecutionStore(
+		redisClient,
+		cfg.ExecutionTTL,
+		cfg.ProgressTTL,
+	)
+
+	// Create and return composite store
+	compositeStore := composite.New(dbStore, redisClient, redisExecStore)
+
+	slog.Info("Composite store initialized with database and Redis")
+
+	return compositeStore, nil
 }

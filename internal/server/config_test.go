@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nicholaspcr/GoDE/internal/cache/redis"
 	"github.com/nicholaspcr/GoDE/pkg/de"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,6 +34,17 @@ func TestConfig_Validate(t *testing.T) {
 					MaxConcurrentDEPerUser:    3,
 					MaxRequestsPerSecond:      100,
 					MaxMessageSizeBytes:       4 * 1024 * 1024,
+				},
+				Redis: redis.Config{
+					Host: "localhost",
+					Port: 6379,
+				},
+				Executor: ExecutorConfig{
+					MaxWorkers:   10,
+					QueueSize:    100,
+					ExecutionTTL: 24 * time.Hour,
+					ResultTTL:    7 * 24 * time.Hour,
+					ProgressTTL:  time.Hour,
 				},
 				DE: de.Config{},
 			},
@@ -353,6 +365,17 @@ func TestConfig_ValidateTLSFiles(t *testing.T) {
 				MaxConcurrentDEPerUser: 3,
 				MaxRequestsPerSecond:   100,
 				MaxMessageSizeBytes:    4 * 1024 * 1024,
+			},
+			Redis: redis.Config{
+				Host: "localhost",
+				Port: 6379,
+			},
+			Executor: ExecutorConfig{
+				MaxWorkers:   10,
+				QueueSize:    100,
+				ExecutionTTL: 24 * time.Hour,
+				ResultTTL:    7 * 24 * time.Hour,
+				ProgressTTL:  time.Hour,
 			},
 		}
 

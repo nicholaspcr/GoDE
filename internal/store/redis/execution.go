@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/nicholaspcr/GoDE/internal/cache/redis"
@@ -216,18 +217,34 @@ func (s *ExecutionStore) DeleteExecution(ctx context.Context, executionID, userI
 		// Clear and repopulate
 		if err := s.client.Delete(ctx, userKey); err == nil {
 			for id, data := range fields {
-				_ = s.client.HSet(ctx, userKey, id, data)
+				if hsetErr := s.client.HSet(ctx, userKey, id, data); hsetErr != nil {
+					slog.Error("failed to repopulate user execution set",
+						slog.String("user_id", execution.UserID),
+						slog.String("execution_id", id),
+						slog.Any("error", hsetErr),
+					)
+				}
 			}
 		}
 	}
 
 	// Delete progress
 	progressKey := s.progressKey(executionID)
-	_ = s.client.Delete(ctx, progressKey)
+	if delErr := s.client.Delete(ctx, progressKey); delErr != nil {
+		slog.Warn("failed to delete progress key",
+			slog.String("execution_id", executionID),
+			slog.Any("error", delErr),
+		)
+	}
 
 	// Delete cancellation flag
 	cancelKey := s.cancelKey(executionID)
-	_ = s.client.Delete(ctx, cancelKey)
+	if delErr := s.client.Delete(ctx, cancelKey); delErr != nil {
+		slog.Warn("failed to delete cancellation key",
+			slog.String("execution_id", executionID),
+			slog.Any("error", delErr),
+		)
+	}
 
 	return nil
 }
@@ -249,7 +266,13 @@ func (s *ExecutionStore) SaveProgress(ctx context.Context, progress *store.Execu
 
 	// Publish progress update to pub/sub channel
 	channel := fmt.Sprintf("execution:%s:updates", progress.ExecutionID)
-	_ = s.client.Publish(ctx, channel, data)
+	if pubErr := s.client.Publish(ctx, channel, data); pubErr != nil {
+		slog.Warn("failed to publish progress update",
+			slog.String("execution_id", progress.ExecutionID),
+			slog.String("channel", channel),
+			slog.Any("error", pubErr),
+		)
+	}
 
 	return nil
 }
@@ -285,7 +308,13 @@ func (s *ExecutionStore) MarkExecutionForCancellation(ctx context.Context, execu
 
 	// Publish cancellation event
 	channel := fmt.Sprintf("execution:%s:cancel", executionID)
-	_ = s.client.Publish(ctx, channel, "cancel")
+	if pubErr := s.client.Publish(ctx, channel, "cancel"); pubErr != nil {
+		slog.Warn("failed to publish cancellation event",
+			slog.String("execution_id", executionID),
+			slog.String("channel", channel),
+			slog.Any("error", pubErr),
+		)
+	}
 
 	return nil
 }
@@ -313,7 +342,14 @@ func (s *ExecutionStore) Subscribe(ctx context.Context, channel string) (<-chan 
 	// Start goroutine to receive messages and forward to channel
 	go func() {
 		defer close(ch)
-		defer func() { _ = pubsub.Close() }()
+		defer func() {
+			if closeErr := pubsub.Close(); closeErr != nil {
+				slog.Warn("failed to close pubsub connection",
+					slog.String("channel", channel),
+					slog.Any("error", closeErr),
+				)
+			}
+		}()
 
 		// Subscribe to the PubSub channel
 		msgChan := pubsub.Channel()

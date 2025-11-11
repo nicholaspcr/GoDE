@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"math/rand"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -23,16 +24,18 @@ import (
 
 // Executor manages background execution of DE algorithms.
 type Executor struct {
-	store           store.Store
-	maxWorkers      int
-	executionTTL    time.Duration
-	resultTTL       time.Duration
-	progressTTL     time.Duration
-	workerPool      chan struct{}
-	activeExecs     map[string]context.CancelFunc
-	activeExecsMu   sync.RWMutex
-	problemRegistry map[string]problems.Interface
-	variantRegistry map[string]variants.Interface
+	store              store.Store
+	maxWorkers         int
+	executionTTL       time.Duration
+	resultTTL          time.Duration
+	progressTTL        time.Duration
+	workerPool         chan struct{}
+	activeExecs        map[string]context.CancelFunc
+	activeExecsMu      sync.RWMutex
+	problemRegistry    map[string]problems.Interface
+	variantRegistry    map[string]variants.Interface
+	completionCounters map[string]*atomic.Int32
+	countersMu         sync.RWMutex
 }
 
 // Config holds configuration for the Executor.
@@ -47,15 +50,16 @@ type Config struct {
 // New creates a new Executor instance.
 func New(cfg Config) *Executor {
 	return &Executor{
-		store:           cfg.Store,
-		maxWorkers:      cfg.MaxWorkers,
-		executionTTL:    cfg.ExecutionTTL,
-		resultTTL:       cfg.ResultTTL,
-		progressTTL:     cfg.ProgressTTL,
-		workerPool:      make(chan struct{}, cfg.MaxWorkers),
-		activeExecs:     make(map[string]context.CancelFunc),
-		problemRegistry: make(map[string]problems.Interface),
-		variantRegistry: make(map[string]variants.Interface),
+		store:              cfg.Store,
+		maxWorkers:         cfg.MaxWorkers,
+		executionTTL:       cfg.ExecutionTTL,
+		resultTTL:          cfg.ResultTTL,
+		progressTTL:        cfg.ProgressTTL,
+		workerPool:         make(chan struct{}, cfg.MaxWorkers),
+		activeExecs:        make(map[string]context.CancelFunc),
+		problemRegistry:    make(map[string]problems.Interface),
+		variantRegistry:    make(map[string]variants.Interface),
+		completionCounters: make(map[string]*atomic.Int32),
 	}
 }
 
@@ -137,7 +141,13 @@ func (e *Executor) executeInBackground(executionID, userID, algorithm, problem, 
 				slog.String("execution_id", executionID),
 				slog.Any("panic", r),
 			)
-			_ = e.store.UpdateExecutionStatus(ctx, executionID, store.ExecutionStatusFailed, fmt.Sprintf("panic: %v", r))
+			if updateErr := e.store.UpdateExecutionStatus(ctx, executionID, store.ExecutionStatusFailed, fmt.Sprintf("panic: %v", r)); updateErr != nil {
+				slog.Error("failed to update execution status after panic",
+					slog.String("execution_id", executionID),
+					slog.String("panic", fmt.Sprintf("%v", r)),
+					slog.Any("update_error", updateErr),
+				)
+			}
 		}
 	}()
 
@@ -153,10 +163,24 @@ func (e *Executor) executeInBackground(executionID, userID, algorithm, problem, 
 	// Execute the algorithm
 	pareto, maxObjs, err := e.runAlgorithm(ctx, executionID, problem, variant, config)
 	if err != nil {
+		var updateErr error
 		if errors.Is(err, context.Canceled) {
-			_ = e.store.UpdateExecutionStatus(ctx, executionID, store.ExecutionStatusCancelled, "")
+			updateErr = e.store.UpdateExecutionStatus(ctx, executionID, store.ExecutionStatusCancelled, "")
+			if updateErr != nil {
+				slog.Error("failed to update execution status to cancelled",
+					slog.String("execution_id", executionID),
+					slog.Any("update_error", updateErr),
+				)
+			}
 		} else {
-			_ = e.store.UpdateExecutionStatus(ctx, executionID, store.ExecutionStatusFailed, err.Error())
+			updateErr = e.store.UpdateExecutionStatus(ctx, executionID, store.ExecutionStatusFailed, err.Error())
+			if updateErr != nil {
+				slog.Error("failed to update execution status to failed",
+					slog.String("execution_id", executionID),
+					slog.String("original_error", err.Error()),
+					slog.Any("update_error", updateErr),
+				)
+			}
 		}
 		slog.Info("execution failed",
 			slog.String("execution_id", executionID),
@@ -168,7 +192,13 @@ func (e *Executor) executeInBackground(executionID, userID, algorithm, problem, 
 	// Save results
 	paretoID, err := e.saveResults(ctx, userID, pareto, maxObjs)
 	if err != nil {
-		_ = e.store.UpdateExecutionStatus(ctx, executionID, store.ExecutionStatusFailed, err.Error())
+		if updateErr := e.store.UpdateExecutionStatus(ctx, executionID, store.ExecutionStatusFailed, err.Error()); updateErr != nil {
+			slog.Error("failed to update execution status after save failure",
+				slog.String("execution_id", executionID),
+				slog.String("save_error", err.Error()),
+				slog.Any("update_error", updateErr),
+			)
+		}
 		slog.Error("failed to save results",
 			slog.String("execution_id", executionID),
 			slog.String("error", err.Error()),
@@ -194,6 +224,19 @@ func (e *Executor) executeInBackground(executionID, userID, algorithm, problem, 
 }
 
 func (e *Executor) runAlgorithm(ctx context.Context, executionID, problemName, variantName string, config *api.DEConfig) ([]models.Vector, [][]float64, error) {
+	// Initialize completion counter for this execution
+	counter := &atomic.Int32{}
+	e.countersMu.Lock()
+	e.completionCounters[executionID] = counter
+	e.countersMu.Unlock()
+
+	// Clean up counter when done
+	defer func() {
+		e.countersMu.Lock()
+		delete(e.completionCounters, executionID)
+		e.countersMu.Unlock()
+	}()
+
 	// Get problem
 	problemImpl, exists := e.problemRegistry[problemName]
 	if !exists {
@@ -240,8 +283,13 @@ func (e *Executor) runAlgorithm(ctx context.Context, executionID, problemName, v
 		P:  float64(config.GetGde3().P),
 	}
 
-	// Create progress callback
+	// Create progress callback that tracks completions
 	progressCallback := func(generation int, totalGenerations int, paretoSize int, currentPareto []models.Vector) {
+		// If this is the final generation, increment completion counter
+		if generation == totalGenerations {
+			counter.Add(1)
+		}
+
 		// Convert to API vectors (limit to avoid excessive data)
 		const maxVectorsInProgress = 100
 		apiVectors := make([]*api.Vector, 0, min(len(currentPareto), maxVectorsInProgress))
@@ -254,12 +302,15 @@ func (e *Executor) runAlgorithm(ctx context.Context, executionID, problemName, v
 			})
 		}
 
+		// Read current completion count
+		completedCount := counter.Load()
+
 		// #nosec G115 - Values validated in ValidateDEConfig, safe to convert
 		progress := &store.ExecutionProgress{
 			ExecutionID:         executionID,
 			CurrentGeneration:   int32(generation),
 			TotalGenerations:    int32(totalGenerations),
-			CompletedExecutions: 0, // TODO: Track subprocess completions
+			CompletedExecutions: completedCount,
 			TotalExecutions:     int32(config.Executions),
 			PartialPareto:       apiVectors,
 			UpdatedAt:           time.Now(),

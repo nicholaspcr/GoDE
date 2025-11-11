@@ -2,6 +2,8 @@ package executor
 
 import (
 	"context"
+	"errors"
+	"sync"
 	"testing"
 	"time"
 
@@ -9,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	api "github.com/nicholaspcr/GoDE/pkg/api/v1"
+	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 	_ "github.com/nicholaspcr/GoDE/pkg/problems/many/dtlz" // Register DTLZ problems
 	_ "github.com/nicholaspcr/GoDE/pkg/problems/many/wfg"  // Register WFG problems
@@ -28,6 +31,7 @@ type mockStore struct {
 	progress   map[string]*store.ExecutionProgress
 	paretoSets map[uint64]*store.ParetoSet
 	nextID     uint64
+	mu         sync.RWMutex
 }
 
 func newMockStore() *mockStore {
@@ -40,11 +44,15 @@ func newMockStore() *mockStore {
 }
 
 func (m *mockStore) CreateExecution(ctx context.Context, execution *store.Execution) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.executions[execution.ID] = execution
 	return nil
 }
 
 func (m *mockStore) GetExecution(ctx context.Context, executionID, userID string) (*store.Execution, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	exec, exists := m.executions[executionID]
 	if !exists || exec.UserID != userID {
 		return nil, store.ErrExecutionNotFound
@@ -53,6 +61,8 @@ func (m *mockStore) GetExecution(ctx context.Context, executionID, userID string
 }
 
 func (m *mockStore) UpdateExecutionStatus(ctx context.Context, executionID string, status store.ExecutionStatus, errorMsg string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	exec, exists := m.executions[executionID]
 	if !exists {
 		return store.ErrExecutionNotFound
@@ -68,6 +78,8 @@ func (m *mockStore) UpdateExecutionStatus(ctx context.Context, executionID strin
 }
 
 func (m *mockStore) UpdateExecutionResult(ctx context.Context, executionID string, paretoID uint64) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	exec, exists := m.executions[executionID]
 	if !exists {
 		return store.ErrExecutionNotFound
@@ -77,6 +89,8 @@ func (m *mockStore) UpdateExecutionResult(ctx context.Context, executionID strin
 }
 
 func (m *mockStore) ListExecutions(ctx context.Context, userID string, status *store.ExecutionStatus) ([]*store.Execution, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	var result []*store.Execution
 	for _, exec := range m.executions {
 		if exec.UserID == userID {
@@ -89,6 +103,8 @@ func (m *mockStore) ListExecutions(ctx context.Context, userID string, status *s
 }
 
 func (m *mockStore) DeleteExecution(ctx context.Context, executionID, userID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	exec, exists := m.executions[executionID]
 	if !exists || exec.UserID != userID {
 		return store.ErrExecutionNotFound
@@ -98,11 +114,15 @@ func (m *mockStore) DeleteExecution(ctx context.Context, executionID, userID str
 }
 
 func (m *mockStore) SaveProgress(ctx context.Context, progress *store.ExecutionProgress) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.progress[progress.ExecutionID] = progress
 	return nil
 }
 
 func (m *mockStore) GetProgress(ctx context.Context, executionID string) (*store.ExecutionProgress, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	prog, exists := m.progress[executionID]
 	if !exists {
 		return nil, store.ErrExecutionNotFound
@@ -111,6 +131,8 @@ func (m *mockStore) GetProgress(ctx context.Context, executionID string) (*store
 }
 
 func (m *mockStore) MarkExecutionForCancellation(ctx context.Context, executionID, userID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	exec, exists := m.executions[executionID]
 	if !exists || exec.UserID != userID {
 		return store.ErrExecutionNotFound
@@ -129,6 +151,8 @@ func (m *mockStore) Subscribe(ctx context.Context, channel string) (<-chan []byt
 }
 
 func (m *mockStore) CreateParetoSet(ctx context.Context, paretoSet *store.ParetoSet) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	paretoSet.ID = m.nextID
 	m.paretoSets[m.nextID] = paretoSet
 	m.nextID++
@@ -136,6 +160,8 @@ func (m *mockStore) CreateParetoSet(ctx context.Context, paretoSet *store.Pareto
 }
 
 func (m *mockStore) GetParetoSetByID(ctx context.Context, id uint64) (*store.ParetoSet, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	ps, exists := m.paretoSets[id]
 	if !exists {
 		return nil, store.ErrParetoSetNotFound
@@ -274,4 +300,496 @@ func TestExecutor_RegisterProblemAndVariant(t *testing.T) {
 	// Verify they're registered by checking the internal maps
 	assert.NotNil(t, exec.problemRegistry["zdt1"])
 	assert.NotNil(t, exec.variantRegistry["rand1"])
+}
+
+// TestExecutor_WorkerPoolExhaustion tests that jobs queue when worker pool is full
+func TestExecutor_WorkerPoolExhaustion(t *testing.T) {
+	mockSt := newMockStore()
+	exec := New(Config{
+		Store:        mockSt,
+		MaxWorkers:   2,
+		ExecutionTTL: time.Hour,
+		ResultTTL:    time.Hour,
+		ProgressTTL:  time.Minute,
+	})
+
+	// Register problem and variant
+	prob, err := problems.DefaultRegistry.Create("zdt1", 10, 2)
+	require.NoError(t, err)
+	exec.RegisterProblem("zdt1", prob)
+
+	variant, err := variants.DefaultRegistry.Create("rand1")
+	require.NoError(t, err)
+	exec.RegisterVariant("rand1", variant)
+
+	ctx := context.Background()
+	userID := "test-user"
+
+	config := &api.DEConfig{
+		Executions:     1,
+		Generations:    5,
+		PopulationSize: 10,
+		DimensionsSize: 10,
+		ObjetivesSize:  2,
+		FloorLimiter:   0.0,
+		CeilLimiter:    1.0,
+		AlgorithmConfig: &api.DEConfig_Gde3{
+			Gde3: &api.GDE3Config{
+				Cr: 0.9,
+				F:  0.5,
+				P:  0.1,
+			},
+		},
+	}
+
+	// Submit 5 jobs with MaxWorkers=2
+	// Only 2 should run concurrently, others should queue
+	var executionIDs []string
+	for i := 0; i < 5; i++ {
+		execID, err := exec.SubmitExecution(ctx, userID, "gde3", "zdt1", "rand1", config)
+		require.NoError(t, err)
+		executionIDs = append(executionIDs, execID)
+	}
+
+	// Wait briefly to let workers start
+	time.Sleep(100 * time.Millisecond)
+
+	// Check that at most 2 are running concurrently
+	exec.activeExecsMu.RLock()
+	activeCount := len(exec.activeExecs)
+	exec.activeExecsMu.RUnlock()
+
+	assert.LessOrEqual(t, activeCount, 2, "Should not exceed MaxWorkers")
+
+	// Wait for all to complete
+	assert.Eventually(t, func() bool {
+		for _, id := range executionIDs {
+			execution, err := mockSt.GetExecution(ctx, id, userID)
+			if err != nil || (execution.Status != store.ExecutionStatusCompleted && execution.Status != store.ExecutionStatusFailed) {
+				return false
+			}
+		}
+		return true
+	}, 10*time.Second, 100*time.Millisecond, "All executions should eventually complete")
+}
+
+// TestExecutor_ConcurrentSubmissions tests race conditions in concurrent submissions
+func TestExecutor_ConcurrentSubmissions(t *testing.T) {
+	mockSt := newMockStore()
+	exec := New(Config{
+		Store:        mockSt,
+		MaxWorkers:   5,
+		ExecutionTTL: time.Hour,
+		ResultTTL:    time.Hour,
+		ProgressTTL:  time.Minute,
+	})
+
+	// Register problem and variant
+	prob, err := problems.DefaultRegistry.Create("zdt1", 10, 2)
+	require.NoError(t, err)
+	exec.RegisterProblem("zdt1", prob)
+
+	variant, err := variants.DefaultRegistry.Create("rand1")
+	require.NoError(t, err)
+	exec.RegisterVariant("rand1", variant)
+
+	ctx := context.Background()
+	userID := "test-user"
+
+	config := &api.DEConfig{
+		Executions:     1,
+		Generations:    2,
+		PopulationSize: 10,
+		DimensionsSize: 10,
+		ObjetivesSize:  2,
+		FloorLimiter:   0.0,
+		CeilLimiter:    1.0,
+		AlgorithmConfig: &api.DEConfig_Gde3{
+			Gde3: &api.GDE3Config{
+				Cr: 0.9,
+				F:  0.5,
+				P:  0.1,
+			},
+		},
+	}
+
+	// Submit 10 jobs concurrently from different goroutines
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var executionIDs []string
+	var errors []error
+
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			execID, err := exec.SubmitExecution(ctx, userID, "gde3", "zdt1", "rand1", config)
+			mu.Lock()
+			if err != nil {
+				errors = append(errors, err)
+			} else {
+				executionIDs = append(executionIDs, execID)
+			}
+			mu.Unlock()
+		}()
+	}
+
+	wg.Wait()
+
+	// All submissions should succeed
+	assert.Empty(t, errors, "No submission errors expected")
+	assert.Len(t, executionIDs, 10, "All 10 submissions should succeed")
+
+	// Wait for all to complete
+	assert.Eventually(t, func() bool {
+		for _, id := range executionIDs {
+			execution, err := mockSt.GetExecution(ctx, id, userID)
+			if err != nil || (execution.Status != store.ExecutionStatusCompleted && execution.Status != store.ExecutionStatusFailed) {
+				return false
+			}
+		}
+		return true
+	}, 10*time.Second, 100*time.Millisecond)
+}
+
+// TestExecutor_CompletionTracking tests that CompletedExecutions is correctly tracked
+func TestExecutor_CompletionTracking(t *testing.T) {
+	mockSt := newMockStore()
+	exec := New(Config{
+		Store:        mockSt,
+		MaxWorkers:   2,
+		ExecutionTTL: time.Hour,
+		ResultTTL:    time.Hour,
+		ProgressTTL:  time.Minute,
+	})
+
+	// Register problem and variant
+	prob, err := problems.DefaultRegistry.Create("zdt1", 10, 2)
+	require.NoError(t, err)
+	exec.RegisterProblem("zdt1", prob)
+
+	variant, err := variants.DefaultRegistry.Create("rand1")
+	require.NoError(t, err)
+	exec.RegisterVariant("rand1", variant)
+
+	ctx := context.Background()
+	userID := "test-user"
+
+	config := &api.DEConfig{
+		Executions:     3,
+		Generations:    2,
+		PopulationSize: 10,
+		DimensionsSize: 10,
+		ObjetivesSize:  2,
+		FloorLimiter:   0.0,
+		CeilLimiter:    1.0,
+		AlgorithmConfig: &api.DEConfig_Gde3{
+			Gde3: &api.GDE3Config{
+				Cr: 0.9,
+				F:  0.5,
+				P:  0.1,
+			},
+		},
+	}
+
+	executionID, err := exec.SubmitExecution(ctx, userID, "gde3", "zdt1", "rand1", config)
+	require.NoError(t, err)
+
+	// Poll progress until complete
+	assert.Eventually(t, func() bool {
+		progress, err := mockSt.GetProgress(ctx, executionID)
+		if err != nil {
+			return false
+		}
+		// Check that CompletedExecutions increases over time
+		if progress.CompletedExecutions > 0 {
+			t.Logf("CompletedExecutions: %d/%d", progress.CompletedExecutions, progress.TotalExecutions)
+			return progress.CompletedExecutions == progress.TotalExecutions
+		}
+		return false
+	}, 10*time.Second, 100*time.Millisecond, "CompletedExecutions should reach TotalExecutions")
+}
+
+// TestExecutor_ActiveExecutionTracking tests that activeExecs map is correctly managed
+func TestExecutor_ActiveExecutionTracking(t *testing.T) {
+	mockSt := newMockStore()
+	exec := New(Config{
+		Store:        mockSt,
+		MaxWorkers:   2,
+		ExecutionTTL: time.Hour,
+		ResultTTL:    time.Hour,
+		ProgressTTL:  time.Minute,
+	})
+
+	// Register problem and variant
+	prob, err := problems.DefaultRegistry.Create("zdt1", 10, 2)
+	require.NoError(t, err)
+	exec.RegisterProblem("zdt1", prob)
+
+	variant, err := variants.DefaultRegistry.Create("rand1")
+	require.NoError(t, err)
+	exec.RegisterVariant("rand1", variant)
+
+	ctx := context.Background()
+	userID := "test-user"
+
+	config := &api.DEConfig{
+		Executions:     1,
+		Generations:    2,
+		PopulationSize: 10,
+		DimensionsSize: 10,
+		ObjetivesSize:  2,
+		FloorLimiter:   0.0,
+		CeilLimiter:    1.0,
+		AlgorithmConfig: &api.DEConfig_Gde3{
+			Gde3: &api.GDE3Config{
+				Cr: 0.9,
+				F:  0.5,
+				P:  0.1,
+			},
+		},
+	}
+
+	executionID, err := exec.SubmitExecution(ctx, userID, "gde3", "zdt1", "rand1", config)
+	require.NoError(t, err)
+
+	// Should appear in activeExecs
+	assert.Eventually(t, func() bool {
+		exec.activeExecsMu.RLock()
+		defer exec.activeExecsMu.RUnlock()
+		_, exists := exec.activeExecs[executionID]
+		return exists
+	}, 2*time.Second, 50*time.Millisecond, "Execution should appear in activeExecs")
+
+	// Wait for completion
+	assert.Eventually(t, func() bool {
+		execution, err := mockSt.GetExecution(ctx, executionID, userID)
+		return err == nil && (execution.Status == store.ExecutionStatusCompleted || execution.Status == store.ExecutionStatusFailed)
+	}, 10*time.Second, 100*time.Millisecond)
+
+	// Should be removed from activeExecs
+	exec.activeExecsMu.RLock()
+	_, exists := exec.activeExecs[executionID]
+	exec.activeExecsMu.RUnlock()
+	assert.False(t, exists, "Execution should be removed from activeExecs after completion")
+}
+
+// panicProblem is a test problem that panics during evaluation
+type panicProblem struct{}
+
+func (p *panicProblem) Name() string {
+	return "panic-problem"
+}
+
+func (p *panicProblem) Evaluate(vector *models.Vector, executionNumber int) error {
+	panic("test panic in problem evaluation")
+}
+
+// TestExecutor_PanicRecovery tests that panics are recovered and executions marked as failed
+func TestExecutor_PanicRecovery(t *testing.T) {
+	mockSt := newMockStore()
+	exec := New(Config{
+		Store:        mockSt,
+		MaxWorkers:   2,
+		ExecutionTTL: time.Hour,
+		ResultTTL:    time.Hour,
+		ProgressTTL:  time.Minute,
+	})
+
+	// Register panic problem and variant
+	exec.RegisterProblem("panic-problem", &panicProblem{})
+
+	variant, err := variants.DefaultRegistry.Create("rand1")
+	require.NoError(t, err)
+	exec.RegisterVariant("rand1", variant)
+
+	ctx := context.Background()
+	userID := "test-user"
+
+	config := &api.DEConfig{
+		Executions:     1,
+		Generations:    2,
+		PopulationSize: 10,
+		DimensionsSize: 10,
+		ObjetivesSize:  2,
+		FloorLimiter:   0.0,
+		CeilLimiter:    1.0,
+		AlgorithmConfig: &api.DEConfig_Gde3{
+			Gde3: &api.GDE3Config{
+				Cr: 0.9,
+				F:  0.5,
+				P:  0.1,
+			},
+		},
+	}
+
+	executionID, err := exec.SubmitExecution(ctx, userID, "gde3", "panic-problem", "rand1", config)
+	require.NoError(t, err)
+
+	// Wait for execution to fail due to panic
+	assert.Eventually(t, func() bool {
+		execution, err := mockSt.GetExecution(ctx, executionID, userID)
+		if err != nil {
+			return false
+		}
+		return execution.Status == store.ExecutionStatusFailed
+	}, 5*time.Second, 100*time.Millisecond, "Execution should be marked as failed after panic")
+
+	// Check error message contains panic info
+	execution, err := mockSt.GetExecution(ctx, executionID, userID)
+	require.NoError(t, err)
+	assert.Contains(t, execution.Error, "panic", "Error should mention panic")
+
+	// Verify execution removed from activeExecs (worker slot released)
+	exec.activeExecsMu.RLock()
+	_, exists := exec.activeExecs[executionID]
+	exec.activeExecsMu.RUnlock()
+	assert.False(t, exists, "Execution should be removed from activeExecs after panic")
+}
+
+// cancellingStore is a mock store that marks executions as cancelled immediately
+type cancellingStore struct {
+	*mockStore
+	cancelAfter time.Duration
+}
+
+func (c *cancellingStore) IsExecutionCancelled(ctx context.Context, executionID string) (bool, error) {
+	// Simulate cancellation after a delay
+	time.Sleep(c.cancelAfter)
+	return true, nil
+}
+
+// TestExecutor_CancellationDuringExecution tests cancelling a running execution
+func TestExecutor_CancellationDuringExecution(t *testing.T) {
+	mockSt := &cancellingStore{
+		mockStore:   newMockStore(),
+		cancelAfter: 200 * time.Millisecond,
+	}
+
+	exec := New(Config{
+		Store:        mockSt,
+		MaxWorkers:   2,
+		ExecutionTTL: time.Hour,
+		ResultTTL:    time.Hour,
+		ProgressTTL:  time.Minute,
+	})
+
+	// Register problem and variant
+	prob, err := problems.DefaultRegistry.Create("zdt1", 10, 2)
+	require.NoError(t, err)
+	exec.RegisterProblem("zdt1", prob)
+
+	variant, err := variants.DefaultRegistry.Create("rand1")
+	require.NoError(t, err)
+	exec.RegisterVariant("rand1", variant)
+
+	ctx := context.Background()
+	userID := "test-user"
+
+	config := &api.DEConfig{
+		Executions:     1,
+		Generations:    100, // Long-running to allow cancellation
+		PopulationSize: 20,
+		DimensionsSize: 10,
+		ObjetivesSize:  2,
+		FloorLimiter:   0.0,
+		CeilLimiter:    1.0,
+		AlgorithmConfig: &api.DEConfig_Gde3{
+			Gde3: &api.GDE3Config{
+				Cr: 0.9,
+				F:  0.5,
+				P:  0.1,
+			},
+		},
+	}
+
+	executionID, err := exec.SubmitExecution(ctx, userID, "gde3", "zdt1", "rand1", config)
+	require.NoError(t, err)
+
+	// Wait a bit then cancel
+	time.Sleep(100 * time.Millisecond)
+	err = exec.CancelExecution(ctx, executionID, userID)
+	require.NoError(t, err)
+
+	// Execution should eventually be marked as cancelled
+	assert.Eventually(t, func() bool {
+		execution, err := mockSt.GetExecution(ctx, executionID, userID)
+		if err != nil {
+			return false
+		}
+		return execution.Status == store.ExecutionStatusCancelled || execution.Status == store.ExecutionStatusFailed
+	}, 5*time.Second, 100*time.Millisecond, "Execution should be cancelled")
+
+	// Worker slot should be released
+	exec.activeExecsMu.RLock()
+	_, exists := exec.activeExecs[executionID]
+	exec.activeExecsMu.RUnlock()
+	assert.False(t, exists, "Execution should be removed from activeExecs after cancellation")
+}
+
+// errorProblem is a test problem that returns an error during evaluation
+type errorProblem struct{}
+
+func (e *errorProblem) Name() string {
+	return "error-problem"
+}
+
+func (e *errorProblem) Evaluate(vector *models.Vector, executionNumber int) error {
+	return errors.New("test evaluation error")
+}
+
+// TestExecutor_WorkerSlotReleaseOnError tests that worker slots are released on error
+func TestExecutor_WorkerSlotReleaseOnError(t *testing.T) {
+	mockSt := newMockStore()
+	exec := New(Config{
+		Store:        mockSt,
+		MaxWorkers:   1,
+		ExecutionTTL: time.Hour,
+		ResultTTL:    time.Hour,
+		ProgressTTL:  time.Minute,
+	})
+
+	// Register error-prone problem
+	exec.RegisterProblem("error-problem", &errorProblem{})
+
+	variant, err := variants.DefaultRegistry.Create("rand1")
+	require.NoError(t, err)
+	exec.RegisterVariant("rand1", variant)
+
+	ctx := context.Background()
+	userID := "test-user"
+
+	config := &api.DEConfig{
+		Executions:     1,
+		Generations:    2,
+		PopulationSize: 10,
+		DimensionsSize: 10,
+		ObjetivesSize:  2,
+		FloorLimiter:   0.0,
+		CeilLimiter:    1.0,
+		AlgorithmConfig: &api.DEConfig_Gde3{
+			Gde3: &api.GDE3Config{
+				Cr: 0.9,
+				F:  0.5,
+				P:  0.1,
+			},
+		},
+	}
+
+	// Submit execution that will fail
+	executionID, err := exec.SubmitExecution(ctx, userID, "gde3", "error-problem", "rand1", config)
+	require.NoError(t, err)
+
+	// Wait for failure
+	assert.Eventually(t, func() bool {
+		execution, err := mockSt.GetExecution(ctx, executionID, userID)
+		if err != nil {
+			return false
+		}
+		return execution.Status == store.ExecutionStatusFailed
+	}, 5*time.Second, 100*time.Millisecond)
+
+	// Worker slot should be released, allowing new submission
+	_, err = exec.SubmitExecution(ctx, userID, "gde3", "error-problem", "rand1", config)
+	require.NoError(t, err, "Should be able to submit new execution after worker slot released")
 }

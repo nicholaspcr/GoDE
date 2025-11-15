@@ -82,11 +82,29 @@ func (l *lifecycle) setup(ctx context.Context) error {
 
 // setupTelemetry initializes tracing and metrics
 func (l *lifecycle) setupTelemetry(ctx context.Context) error {
-	// Initialize tracing
 	var err error
-	l.tracerProvider, err = telemetry.NewTracerProvider("deserver")
-	if err != nil {
-		return err
+
+	// Initialize tracing if enabled
+	if l.cfg.TracingEnabled {
+		slog.Info("Initializing distributed tracing",
+			slog.String("exporter", string(l.cfg.TracingConfig.ExporterType)),
+			slog.Float64("sample_ratio", l.cfg.TracingConfig.SampleRatio),
+		)
+
+		l.tracerProvider, err = telemetry.NewTracerProvider(ctx, "deserver", l.cfg.TracingConfig)
+		if err != nil {
+			return err
+		}
+
+		if l.cfg.TracingConfig.ExporterType == telemetry.TracingExporterOTLP {
+			slog.Info("OTLP trace exporter configured",
+				slog.String("endpoint", l.cfg.TracingConfig.OTLPEndpoint),
+			)
+		}
+
+		slog.Info("Distributed tracing initialized successfully")
+	} else {
+		slog.Info("Distributed tracing is disabled")
 	}
 
 	// Initialize metrics if enabled
@@ -272,9 +290,19 @@ func (l *lifecycle) setupHTTPGateway(ctx context.Context) error {
 		slog.Info("Prometheus metrics endpoint will be available at /metrics via Prometheus client")
 	}
 
-	// Wrap mux with CORS middleware
+	// Wrap mux with middleware (tracing, then CORS)
+	handler := http.Handler(mux)
+
+	// Add tracing middleware if enabled
+	if l.cfg.TracingEnabled {
+		tracingMiddleware := middleware.TracingMiddleware("deserver-http")
+		handler = tracingMiddleware(handler)
+		slog.Info("HTTP tracing middleware enabled")
+	}
+
+	// Add CORS middleware
 	corsMiddleware := middleware.CORSMiddleware(l.cfg.CORS)
-	handler := corsMiddleware(mux)
+	handler = corsMiddleware(handler)
 
 	slog.Info("CORS middleware enabled",
 		slog.Any("allowed_origins", l.cfg.CORS.AllowedOrigins),

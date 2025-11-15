@@ -25,6 +25,8 @@ type Config struct {
 	Executor       ExecutorConfig
 	MetricsEnabled bool
 	MetricsType    telemetry.MetricsExporterType
+	TracingEnabled bool
+	TracingConfig  telemetry.TracingConfig
 	PprofEnabled   bool
 	PprofPort      string
 	CORS           middleware.CORSConfig
@@ -69,6 +71,24 @@ func DefaultConfig() Config {
 		metricsType = telemetry.MetricsExporterStdout
 	}
 
+	tracingEnabled := os.Getenv("TRACING_ENABLED") != "false" // Enabled by default
+	tracingExporterType := telemetry.TracingExporterStdout
+	if os.Getenv("TRACING_EXPORTER") == "otlp" {
+		tracingExporterType = telemetry.TracingExporterOTLP
+	}
+
+	otlpEndpoint := os.Getenv("OTLP_ENDPOINT")
+	if otlpEndpoint == "" {
+		otlpEndpoint = "localhost:4317" // Default Jaeger/OTLP endpoint
+	}
+
+	sampleRatio := 1.0 // Sample all traces by default in development
+	if ratio := os.Getenv("TRACE_SAMPLE_RATIO"); ratio != "" {
+		if parsed, err := strconv.ParseFloat(ratio, 64); err == nil {
+			sampleRatio = parsed
+		}
+	}
+
 	pprofEnabled := os.Getenv("PPROF_ENABLED") == "true"
 	pprofPort := os.Getenv("PPROF_PORT")
 	if pprofPort == "" {
@@ -101,6 +121,12 @@ func DefaultConfig() Config {
 		JWTExpiry:      24 * time.Hour,
 		MetricsEnabled: true, // Metrics enabled by default
 		MetricsType:    metricsType,
+		TracingEnabled: tracingEnabled,
+		TracingConfig: telemetry.TracingConfig{
+			ExporterType: tracingExporterType,
+			OTLPEndpoint: otlpEndpoint,
+			SampleRatio:  sampleRatio,
+		},
 		PprofEnabled:   pprofEnabled,
 		PprofPort:      pprofPort,
 		Redis: redis.Config{

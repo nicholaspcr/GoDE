@@ -8,6 +8,10 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/sony/gobreaker"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Client wraps the Redis client with application-specific operations and circuit breaker.
@@ -66,37 +70,89 @@ func (c *Client) HealthCheck(ctx context.Context) error {
 
 // Get retrieves a value by key with circuit breaker protection.
 func (c *Client) Get(ctx context.Context, key string) (string, error) {
+	tracer := otel.Tracer("redis")
+	ctx, span := tracer.Start(ctx, "redis.Get",
+		trace.WithAttributes(attribute.String("redis.key", key)),
+		trace.WithSpanKind(trace.SpanKindClient),
+	)
+	defer span.End()
+
 	result, err := c.breaker.Execute(func() (interface{}, error) {
 		return c.rdb.Get(ctx, key).Result()
 	})
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return "", err
 	}
+	span.SetStatus(codes.Ok, "")
 	return result.(string), nil
 }
 
 // Set stores a value with an optional TTL with circuit breaker protection.
 func (c *Client) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
+	tracer := otel.Tracer("redis")
+	ctx, span := tracer.Start(ctx, "redis.Set",
+		trace.WithAttributes(
+			attribute.String("redis.key", key),
+			attribute.String("redis.ttl", ttl.String()),
+		),
+		trace.WithSpanKind(trace.SpanKindClient),
+	)
+	defer span.End()
+
 	_, err := c.breaker.Execute(func() (interface{}, error) {
 		return nil, c.rdb.Set(ctx, key, value, ttl).Err()
 	})
-	return err
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
+	}
+	span.SetStatus(codes.Ok, "")
+	return nil
 }
 
 // Delete removes a key with circuit breaker protection.
 func (c *Client) Delete(ctx context.Context, key string) error {
+	tracer := otel.Tracer("redis")
+	ctx, span := tracer.Start(ctx, "redis.Delete",
+		trace.WithAttributes(attribute.String("redis.key", key)),
+		trace.WithSpanKind(trace.SpanKindClient),
+	)
+	defer span.End()
+
 	_, err := c.breaker.Execute(func() (interface{}, error) {
 		return nil, c.rdb.Del(ctx, key).Err()
 	})
-	return err
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
+	}
+	span.SetStatus(codes.Ok, "")
+	return nil
 }
 
 // Publish publishes a message to a channel with circuit breaker protection.
 func (c *Client) Publish(ctx context.Context, channel string, message interface{}) error {
+	tracer := otel.Tracer("redis")
+	ctx, span := tracer.Start(ctx, "redis.Publish",
+		trace.WithAttributes(attribute.String("redis.channel", channel)),
+		trace.WithSpanKind(trace.SpanKindProducer),
+	)
+	defer span.End()
+
 	_, err := c.breaker.Execute(func() (interface{}, error) {
 		return nil, c.rdb.Publish(ctx, channel, message).Err()
 	})
-	return err
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
+	}
+	span.SetStatus(codes.Ok, "")
+	return nil
 }
 
 // Subscribe subscribes to a channel and returns a PubSub instance.

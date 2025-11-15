@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/nicholaspcr/GoDE/internal/cache/redis"
+	"github.com/nicholaspcr/GoDE/internal/server/middleware"
 	"github.com/nicholaspcr/GoDE/internal/telemetry"
 	"github.com/nicholaspcr/GoDE/pkg/de"
 )
@@ -26,6 +27,7 @@ type Config struct {
 	MetricsType    telemetry.MetricsExporterType
 	PprofEnabled   bool
 	PprofPort      string
+	CORS           middleware.CORSConfig
 }
 
 // ExecutorConfig contains configuration for the background execution executor.
@@ -132,6 +134,7 @@ func DefaultConfig() Config {
 			MaxChannelLimiter:    100,
 			ResultLimiter:        1000,
 		},
+		CORS: middleware.DefaultCORSConfig(),
 	}
 }
 

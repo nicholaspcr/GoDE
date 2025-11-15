@@ -272,9 +272,18 @@ func (l *lifecycle) setupHTTPGateway(ctx context.Context) error {
 		slog.Info("Prometheus metrics endpoint will be available at /metrics via Prometheus client")
 	}
 
+	// Wrap mux with CORS middleware
+	corsMiddleware := middleware.CORSMiddleware(l.cfg.CORS)
+	handler := corsMiddleware(mux)
+
+	slog.Info("CORS middleware enabled",
+		slog.Any("allowed_origins", l.cfg.CORS.AllowedOrigins),
+		slog.Bool("allow_credentials", l.cfg.CORS.AllowCredentials),
+	)
+
 	l.httpServer = &http.Server{
 		Addr:              l.cfg.HTTPPort,
-		Handler:           mux,
+		Handler:           handler,
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 

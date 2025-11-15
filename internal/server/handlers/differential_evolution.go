@@ -414,11 +414,23 @@ func (deh *deHandler) ListExecutions(
 		statusFilter = &storeStatus
 	}
 
-	// List executions
-	executions, err := deh.Store.ListExecutions(ctx, userID, statusFilter)
+	// Extract pagination parameters
+	limit := int(req.Limit)
+	offset := int(req.Offset)
+
+	// List executions with pagination
+	executions, totalCount, err := deh.Store.ListExecutions(ctx, userID, statusFilter, limit, offset)
 	if err != nil {
 		span.RecordError(err)
 		return nil, status.Errorf(codes.Internal, "failed to list executions: %v", err)
+	}
+
+	// Apply defaults for response
+	if limit <= 0 || limit > 100 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
 	}
 
 	// Convert to API format
@@ -427,8 +439,15 @@ func (deh *deHandler) ListExecutions(
 		apiExecutions[i] = executionToProto(exec)
 	}
 
+	// Calculate if there are more results
+	hasMore := (offset + limit) < totalCount
+
 	return &api.ListExecutionsResponse{
 		Executions: apiExecutions,
+		TotalCount: int32(totalCount),
+		Limit:      int32(limit),
+		Offset:     int32(offset),
+		HasMore:    hasMore,
 	}, nil
 }
 

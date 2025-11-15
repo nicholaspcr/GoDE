@@ -85,8 +85,8 @@ func (s *ExecutionStore) UpdateExecutionResult(ctx context.Context, executionID 
 }
 
 // ListExecutions queries the database (source of truth for listing).
-func (s *ExecutionStore) ListExecutions(ctx context.Context, userID string, status *store.ExecutionStatus) ([]*store.Execution, error) {
-	return s.db.ListExecutions(ctx, userID, status)
+func (s *ExecutionStore) ListExecutions(ctx context.Context, userID string, status *store.ExecutionStatus, limit, offset int) ([]*store.Execution, int, error) {
+	return s.db.ListExecutions(ctx, userID, status, limit, offset)
 }
 
 // DeleteExecution removes from both stores.

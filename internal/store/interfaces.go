@@ -46,7 +46,7 @@ type ExecutionOperations interface {
 	GetExecution(ctx context.Context, executionID, userID string) (*Execution, error)
 	UpdateExecutionStatus(ctx context.Context, executionID string, status ExecutionStatus, errorMsg string) error
 	UpdateExecutionResult(ctx context.Context, executionID string, paretoID uint64) error
-	ListExecutions(ctx context.Context, userID string, status *ExecutionStatus) ([]*Execution, error)
+	ListExecutions(ctx context.Context, userID string, status *ExecutionStatus, limit, offset int) ([]*Execution, int, error)
 	DeleteExecution(ctx context.Context, executionID, userID string) error
 
 	// Progress tracking

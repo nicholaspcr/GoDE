@@ -36,7 +36,7 @@ type MockStore struct {
 	GetExecutionFn                 func(ctx context.Context, executionID, userID string) (*store.Execution, error)
 	UpdateExecutionStatusFn        func(ctx context.Context, executionID string, status store.ExecutionStatus, errorMsg string) error
 	UpdateExecutionResultFn        func(ctx context.Context, executionID string, paretoID uint64) error
-	ListExecutionsFn               func(ctx context.Context, userID string, status *store.ExecutionStatus) ([]*store.Execution, error)
+	ListExecutionsFn               func(ctx context.Context, userID string, status *store.ExecutionStatus, limit, offset int) ([]*store.Execution, int, error)
 	DeleteExecutionFn              func(ctx context.Context, executionID, userID string) error
 	SaveProgressFn                 func(ctx context.Context, progress *store.ExecutionProgress) error
 	GetProgressFn                  func(ctx context.Context, executionID string) (*store.ExecutionProgress, error)
@@ -220,11 +220,11 @@ func (m *MockStore) UpdateExecutionResult(ctx context.Context, executionID strin
 }
 
 // ListExecutions implements store.Store
-func (m *MockStore) ListExecutions(ctx context.Context, userID string, status *store.ExecutionStatus) ([]*store.Execution, error) {
+func (m *MockStore) ListExecutions(ctx context.Context, userID string, status *store.ExecutionStatus, limit, offset int) ([]*store.Execution, int, error) {
 	if m.ListExecutionsFn != nil {
-		return m.ListExecutionsFn(ctx, userID, status)
+		return m.ListExecutionsFn(ctx, userID, status, limit, offset)
 	}
-	return nil, nil
+	return nil, 0, nil
 }
 
 // DeleteExecution implements store.Store

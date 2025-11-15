@@ -89,8 +89,8 @@ func (s *Store) UpdateExecutionResult(ctx context.Context, executionID string, p
 	return s.execStore.UpdateExecutionResult(ctx, executionID, paretoID)
 }
 
-func (s *Store) ListExecutions(ctx context.Context, userID string, status *store.ExecutionStatus) ([]*store.Execution, error) {
-	return s.execStore.ListExecutions(ctx, userID, status)
+func (s *Store) ListExecutions(ctx context.Context, userID string, status *store.ExecutionStatus, limit, offset int) ([]*store.Execution, int, error) {
+	return s.execStore.ListExecutions(ctx, userID, status, limit, offset)
 }
 
 func (s *Store) DeleteExecution(ctx context.Context, executionID, userID string) error {

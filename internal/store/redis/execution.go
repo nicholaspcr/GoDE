@@ -169,15 +169,16 @@ func (s *ExecutionStore) UpdateExecutionResult(ctx context.Context, executionID 
 }
 
 // ListExecutions retrieves all executions for a user, optionally filtered by status.
-func (s *ExecutionStore) ListExecutions(ctx context.Context, userID string, status *store.ExecutionStatus) ([]*store.Execution, error) {
+func (s *ExecutionStore) ListExecutions(ctx context.Context, userID string, status *store.ExecutionStatus, limit, offset int) ([]*store.Execution, int, error) {
 	userKey := s.userExecutionsKey(userID)
 
 	data, err := s.client.HGetAll(ctx, userKey)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user executions: %w", err)
+		return nil, 0, fmt.Errorf("failed to get user executions: %w", err)
 	}
 
-	executions := make([]*store.Execution, 0, len(data))
+	// First, collect all matching executions
+	allExecutions := make([]*store.Execution, 0, len(data))
 	for _, executionData := range data {
 		var execution store.Execution
 		if err := json.Unmarshal([]byte(executionData), &execution); err != nil {
@@ -189,10 +190,31 @@ func (s *ExecutionStore) ListExecutions(ctx context.Context, userID string, stat
 			continue
 		}
 
-		executions = append(executions, &execution)
+		allExecutions = append(allExecutions, &execution)
 	}
 
-	return executions, nil
+	// Apply defaults
+	if limit <= 0 || limit > 100 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	totalCount := len(allExecutions)
+
+	// Apply in-memory pagination
+	start := offset
+	if start > totalCount {
+		return []*store.Execution{}, totalCount, nil
+	}
+
+	end := start + limit
+	if end > totalCount {
+		end = totalCount
+	}
+
+	return allExecutions[start:end], totalCount, nil
 }
 
 // DeleteExecution removes an execution from Redis.

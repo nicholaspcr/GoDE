@@ -97,17 +97,34 @@ func (s *executionStore) UpdateExecutionResult(ctx context.Context, executionID 
 	}).Error
 }
 
-// ListExecutions retrieves all executions for a user, optionally filtered by status.
-func (s *executionStore) ListExecutions(ctx context.Context, userID string, status *store.ExecutionStatus) ([]*store.Execution, error) {
-	query := s.db.WithContext(ctx).Where("user_id = ?", userID).Order("created_at DESC")
+// ListExecutions retrieves executions for a user with pagination, optionally filtered by status.
+func (s *executionStore) ListExecutions(ctx context.Context, userID string, status *store.ExecutionStatus, limit, offset int) ([]*store.Execution, int, error) {
+	// Apply defaults and max limits
+	if limit <= 0 || limit > 100 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	query := s.db.WithContext(ctx).Where("user_id = ?", userID)
 
 	if status != nil {
 		query = query.Where("status = ?", string(*status))
 	}
 
+	// Get total count
+	var totalCount int64
+	if err := query.Model(&executionModel{}).Count(&totalCount).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Apply pagination and ordering
+	query = query.Order("created_at DESC").Limit(limit).Offset(offset)
+
 	var models []executionModel
 	if err := query.Find(&models).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	executions := make([]*store.Execution, 0, len(models))
@@ -119,7 +136,7 @@ func (s *executionStore) ListExecutions(ctx context.Context, userID string, stat
 		executions = append(executions, execution)
 	}
 
-	return executions, nil
+	return executions, int(totalCount), nil
 }
 
 // DeleteExecution removes an execution from the database.

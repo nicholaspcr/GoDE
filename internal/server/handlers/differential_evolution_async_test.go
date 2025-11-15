@@ -87,16 +87,37 @@ func (ts *testStore) UpdateExecutionResult(ctx context.Context, executionID stri
 	return nil
 }
 
-func (ts *testStore) ListExecutions(ctx context.Context, userID string, statusFilter *store.ExecutionStatus) ([]*store.Execution, error) {
-	var result []*store.Execution
+func (ts *testStore) ListExecutions(ctx context.Context, userID string, statusFilter *store.ExecutionStatus, limit, offset int) ([]*store.Execution, int, error) {
+	var allMatching []*store.Execution
 	for _, exec := range ts.executions {
 		if exec.UserID == userID {
 			if statusFilter == nil || exec.Status == *statusFilter {
-				result = append(result, exec)
+				allMatching = append(allMatching, exec)
 			}
 		}
 	}
-	return result, nil
+
+	// Apply defaults
+	if limit <= 0 || limit > 100 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	totalCount := len(allMatching)
+
+	// Apply pagination
+	start := offset
+	if start > totalCount {
+		return []*store.Execution{}, totalCount, nil
+	}
+	end := start + limit
+	if end > totalCount {
+		end = totalCount
+	}
+
+	return allMatching[start:end], totalCount, nil
 }
 
 func (ts *testStore) DeleteExecution(ctx context.Context, executionID, userID string) error {
@@ -360,6 +381,10 @@ func TestListExecutions_Success(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, resp)
 	assert.Len(t, resp.Executions, 2)
+	assert.Equal(t, int32(2), resp.TotalCount)
+	assert.Equal(t, int32(50), resp.Limit)  // Default limit
+	assert.Equal(t, int32(0), resp.Offset)  // Default offset
+	assert.False(t, resp.HasMore)
 }
 
 func TestListExecutions_WithStatusFilter(t *testing.T) {
@@ -395,6 +420,10 @@ func TestListExecutions_WithStatusFilter(t *testing.T) {
 	assert.NotNil(t, resp)
 	assert.Len(t, resp.Executions, 1)
 	assert.Equal(t, "exec-1", resp.Executions[0].Id)
+	assert.Equal(t, int32(1), resp.TotalCount)
+	assert.Equal(t, int32(50), resp.Limit)
+	assert.Equal(t, int32(0), resp.Offset)
+	assert.False(t, resp.HasMore)
 }
 
 func TestCancelExecution_Success(t *testing.T) {

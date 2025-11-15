@@ -88,18 +88,39 @@ func (m *mockStore) UpdateExecutionResult(ctx context.Context, executionID strin
 	return nil
 }
 
-func (m *mockStore) ListExecutions(ctx context.Context, userID string, status *store.ExecutionStatus) ([]*store.Execution, error) {
+func (m *mockStore) ListExecutions(ctx context.Context, userID string, status *store.ExecutionStatus, limit, offset int) ([]*store.Execution, int, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	var result []*store.Execution
+	var allMatching []*store.Execution
 	for _, exec := range m.executions {
 		if exec.UserID == userID {
 			if status == nil || exec.Status == *status {
-				result = append(result, exec)
+				allMatching = append(allMatching, exec)
 			}
 		}
 	}
-	return result, nil
+
+	// Apply defaults
+	if limit <= 0 || limit > 100 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	totalCount := len(allMatching)
+
+	// Apply pagination
+	start := offset
+	if start > totalCount {
+		return []*store.Execution{}, totalCount, nil
+	}
+	end := start + limit
+	if end > totalCount {
+		end = totalCount
+	}
+
+	return allMatching[start:end], totalCount, nil
 }
 
 func (m *mockStore) DeleteExecution(ctx context.Context, executionID, userID string) error {

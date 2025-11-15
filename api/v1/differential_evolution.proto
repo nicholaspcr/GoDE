@@ -148,10 +148,16 @@ message GetExecutionResultsRequest {
 
 message ListExecutionsRequest {
   ExecutionStatus status = 1; // Optional filter
+  int32 limit = 2;            // Page size (default: 50, max: 100)
+  int32 offset = 3;           // Starting position (default: 0)
 }
 
 message ListExecutionsResponse {
   repeated Execution executions = 1;
+  int32 total_count = 2;      // Total number of executions matching filter
+  int32 limit = 3;            // Echoed limit for pagination
+  int32 offset = 4;           // Echoed offset for pagination
+  bool has_more = 5;          // True if more results available
 }
 
 message CancelExecutionRequest {

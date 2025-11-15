@@ -27,6 +27,7 @@ type Config struct {
 	MetricsType    telemetry.MetricsExporterType
 	TracingEnabled bool
 	TracingConfig  telemetry.TracingConfig
+	SLOEnabled     bool
 	PprofEnabled   bool
 	PprofPort      string
 	CORS           middleware.CORSConfig
@@ -114,6 +115,8 @@ func DefaultConfig() Config {
 		}
 	}
 
+	sloEnabled := os.Getenv("SLO_ENABLED") != "false" // Enabled by default
+
 	return Config{
 		LisAddr:        "localhost:3030",
 		HTTPPort:       ":8081",
@@ -127,6 +130,7 @@ func DefaultConfig() Config {
 			OTLPEndpoint: otlpEndpoint,
 			SampleRatio:  sampleRatio,
 		},
+		SLOEnabled:     sloEnabled,
 		PprofEnabled:   pprofEnabled,
 		PprofPort:      pprofPort,
 		Redis: redis.Config{

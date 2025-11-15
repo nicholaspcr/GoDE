@@ -11,6 +11,7 @@ import (
 	"github.com/nicholaspcr/GoDE/internal/executor"
 	"github.com/nicholaspcr/GoDE/internal/server/auth"
 	"github.com/nicholaspcr/GoDE/internal/server/handlers"
+	"github.com/nicholaspcr/GoDE/internal/slo"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/internal/telemetry"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
@@ -89,6 +90,7 @@ type server struct {
 	handlers   []handlers.Handler
 	cfg        Config
 	metrics    *telemetry.Metrics
+	sloTracker *slo.Tracker
 }
 
 // Start starts the server using a lifecycle-based approach.

@@ -14,6 +14,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/nicholaspcr/GoDE/internal/server/middleware"
+	"github.com/nicholaspcr/GoDE/internal/slo"
 	"github.com/nicholaspcr/GoDE/internal/telemetry"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
@@ -123,6 +124,22 @@ func (l *lifecycle) setupTelemetry(ctx context.Context) error {
 		slog.Info("Metrics initialized successfully")
 	}
 
+	// Initialize SLO tracking if enabled
+	if l.cfg.SLOEnabled {
+		slog.Info("Initializing SLO tracking with default objectives")
+
+		l.server.sloTracker, err = slo.NewTracker(ctx, slo.DefaultObjectives())
+		if err != nil {
+			return err
+		}
+
+		slog.Info("SLO tracking initialized successfully",
+			slog.Int("objectives", len(slo.DefaultObjectives())),
+		)
+	} else {
+		slog.Info("SLO tracking is disabled")
+	}
+
 	return nil
 }
 
@@ -187,21 +204,41 @@ func (l *lifecycle) setupGRPCServer() error {
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.MaxRecvMsgSize(l.cfg.RateLimit.MaxMessageSizeBytes),
 		grpc.MaxSendMsgSize(l.cfg.RateLimit.MaxMessageSizeBytes),
-		grpc.ChainUnaryInterceptor(
-			middleware.UnaryPanicRecoveryMiddleware(),
+	}
+
+	// Build unary interceptor chain
+	unaryInterceptors := []grpc.UnaryServerInterceptor{
+		middleware.UnaryPanicRecoveryMiddleware(),
+	}
+
+	// Add metrics and SLO middleware
+	if l.cfg.SLOEnabled && l.server.sloTracker != nil {
+		unaryInterceptors = append(unaryInterceptors,
+			middleware.UnaryMetricsAndSLOMiddleware(l.server.metrics, l.server.sloTracker),
+		)
+	} else {
+		unaryInterceptors = append(unaryInterceptors,
 			middleware.UnaryMetricsMiddleware(l.server.metrics),
-			l.rateLimiter.UnaryGlobalRateLimitMiddleware(),
-			l.rateLimiter.UnaryAuthRateLimitMiddleware(),
-			l.rateLimiter.UnaryDERateLimitMiddleware(),
-			middleware.UnaryAuthMiddleware(l.server.jwtService),
-			logging.UnaryServerInterceptor(InterceptorLogger(logger)),
-		),
+		)
+	}
+
+	// Add remaining interceptors
+	unaryInterceptors = append(unaryInterceptors,
+		l.rateLimiter.UnaryGlobalRateLimitMiddleware(),
+		l.rateLimiter.UnaryAuthRateLimitMiddleware(),
+		l.rateLimiter.UnaryDERateLimitMiddleware(),
+		middleware.UnaryAuthMiddleware(l.server.jwtService),
+		logging.UnaryServerInterceptor(InterceptorLogger(logger)),
+	)
+
+	grpcOpts = append(grpcOpts,
+		grpc.ChainUnaryInterceptor(unaryInterceptors...),
 		grpc.ChainStreamInterceptor(
 			middleware.StreamPanicRecoveryMiddleware(),
 			middleware.StreamMetricsMiddleware(l.server.metrics),
 			logging.StreamServerInterceptor(InterceptorLogger(logger)),
 		),
-	}
+	)
 
 	// Add TLS credentials if enabled
 	if l.cfg.TLS.Enabled {

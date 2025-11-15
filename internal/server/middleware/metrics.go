@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/nicholaspcr/GoDE/internal/slo"
 	"github.com/nicholaspcr/GoDE/internal/telemetry"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -154,4 +155,67 @@ func RecordPanic(ctx context.Context, metrics *telemetry.Metrics, location strin
 			attribute.String("location", location),
 		),
 	)
+}
+
+// UnaryMetricsAndSLOMiddleware records both metrics and SLO data for unary RPC calls.
+func UnaryMetricsAndSLOMiddleware(metrics *telemetry.Metrics, sloTracker *slo.Tracker) grpc.UnaryServerInterceptor {
+	return func(
+		ctx context.Context,
+		req interface{},
+		info *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler,
+	) (interface{}, error) {
+		start := time.Now()
+
+		// Track in-flight requests (metrics only)
+		if metrics != nil {
+			metrics.APIRequestsInFlight.Add(ctx, 1,
+				metric.WithAttributes(
+					attribute.String("method", info.FullMethod),
+				),
+			)
+			defer metrics.APIRequestsInFlight.Add(ctx, -1,
+				metric.WithAttributes(
+					attribute.String("method", info.FullMethod),
+				),
+			)
+		}
+
+		// Call the handler
+		resp, err := handler(ctx, req)
+
+		// Record duration
+		duration := time.Since(start).Seconds()
+		st, _ := status.FromError(err)
+		code := st.Code()
+		success := (err == nil && code == codes.OK)
+
+		// Record metrics
+		if metrics != nil {
+			attrs := []attribute.KeyValue{
+				attribute.String("method", info.FullMethod),
+				attribute.String("status", code.String()),
+			}
+
+			metrics.APIRequestDuration.Record(ctx, duration, metric.WithAttributes(attrs...))
+			metrics.APIRequestsTotal.Add(ctx, 1, metric.WithAttributes(attrs...))
+
+			// Record errors
+			if err != nil && code != codes.OK {
+				metrics.APIErrorsTotal.Add(ctx, 1,
+					metric.WithAttributes(
+						attribute.String("method", info.FullMethod),
+						attribute.String("code", code.String()),
+					),
+				)
+			}
+		}
+
+		// Record SLO
+		if sloTracker != nil {
+			sloTracker.RecordRequest(ctx, "deserver", success, duration)
+		}
+
+		return resp, err
+	}
 }

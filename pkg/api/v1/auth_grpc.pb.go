@@ -20,9 +20,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthService_Register_FullMethodName = "/api.v1.AuthService/Register"
-	AuthService_Login_FullMethodName    = "/api.v1.AuthService/Login"
-	AuthService_Logout_FullMethodName   = "/api.v1.AuthService/Logout"
+	AuthService_Register_FullMethodName     = "/api.v1.AuthService/Register"
+	AuthService_Login_FullMethodName        = "/api.v1.AuthService/Login"
+	AuthService_Logout_FullMethodName       = "/api.v1.AuthService/Logout"
+	AuthService_RefreshToken_FullMethodName = "/api.v1.AuthService/RefreshToken"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -34,6 +35,7 @@ type AuthServiceClient interface {
 	Register(ctx context.Context, in *AuthServiceRegisterRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Login(ctx context.Context, in *AuthServiceLoginRequest, opts ...grpc.CallOption) (*AuthServiceLoginResponse, error)
 	Logout(ctx context.Context, in *AuthServiceLogoutRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RefreshToken(ctx context.Context, in *AuthServiceRefreshTokenRequest, opts ...grpc.CallOption) (*AuthServiceRefreshTokenResponse, error)
 }
 
 type authServiceClient struct {
@@ -74,6 +76,16 @@ func (c *authServiceClient) Logout(ctx context.Context, in *AuthServiceLogoutReq
 	return out, nil
 }
 
+func (c *authServiceClient) RefreshToken(ctx context.Context, in *AuthServiceRefreshTokenRequest, opts ...grpc.CallOption) (*AuthServiceRefreshTokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AuthServiceRefreshTokenResponse)
+	err := c.cc.Invoke(ctx, AuthService_RefreshToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility.
@@ -83,6 +95,7 @@ type AuthServiceServer interface {
 	Register(context.Context, *AuthServiceRegisterRequest) (*emptypb.Empty, error)
 	Login(context.Context, *AuthServiceLoginRequest) (*AuthServiceLoginResponse, error)
 	Logout(context.Context, *AuthServiceLogoutRequest) (*emptypb.Empty, error)
+	RefreshToken(context.Context, *AuthServiceRefreshTokenRequest) (*AuthServiceRefreshTokenResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -101,6 +114,9 @@ func (UnimplementedAuthServiceServer) Login(context.Context, *AuthServiceLoginRe
 }
 func (UnimplementedAuthServiceServer) Logout(context.Context, *AuthServiceLogoutRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Logout not implemented")
+}
+func (UnimplementedAuthServiceServer) RefreshToken(context.Context, *AuthServiceRefreshTokenRequest) (*AuthServiceRefreshTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RefreshToken not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 func (UnimplementedAuthServiceServer) testEmbeddedByValue()                     {}
@@ -177,6 +193,24 @@ func _AuthService_Logout_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_RefreshToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AuthServiceRefreshTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).RefreshToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_RefreshToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).RefreshToken(ctx, req.(*AuthServiceRefreshTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -195,6 +229,10 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Logout",
 			Handler:    _AuthService_Logout_Handler,
+		},
+		{
+			MethodName: "RefreshToken",
+			Handler:    _AuthService_RefreshToken_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

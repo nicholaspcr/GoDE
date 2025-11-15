@@ -13,41 +13,92 @@ var (
 	ErrInvalidToken = errors.New("invalid token")
 	// ErrExpiredToken indicates a JWT token has passed its expiration time.
 	ErrExpiredToken = errors.New("token has expired")
+	// ErrInvalidTokenType indicates the token type doesn't match what was expected.
+	ErrInvalidTokenType = errors.New("invalid token type")
+)
+
+// TokenType represents the type of JWT token
+type TokenType string
+
+const (
+	// AccessToken is a short-lived token for API access
+	AccessToken TokenType = "access"
+	// RefreshToken is a long-lived token for obtaining new access tokens
+	RefreshToken TokenType = "refresh"
 )
 
 // Claims represents the JWT claims
 type Claims struct {
-	Username string `json:"username"`
+	Username  string    `json:"username"`
+	TokenType TokenType `json:"token_type"`
 	jwt.RegisteredClaims
 }
 
 // JWTService defines methods for JWT token operations
 type JWTService interface {
 	GenerateToken(username string) (string, error)
+	GenerateTokenPair(username string) (accessToken, refreshToken string, err error)
 	ValidateToken(tokenString string) (*Claims, error)
+	ValidateRefreshToken(tokenString string) (*Claims, error)
+	RefreshAccessToken(refreshTokenString string) (accessToken, newRefreshToken string, err error)
 }
 
 type jwtService struct {
-	secretKey []byte
-	expiry    time.Duration
+	secretKey     []byte
+	accessExpiry  time.Duration
+	refreshExpiry time.Duration
 }
 
 // NewJWTService creates a new JWT service instance
-func NewJWTService(secretKey string, expiry time.Duration) JWTService {
+// accessExpiry is the duration for access tokens (typically short-lived, e.g., 15 minutes)
+// refreshExpiry is the duration for refresh tokens (typically long-lived, e.g., 7 days)
+func NewJWTService(secretKey string, accessExpiry time.Duration) JWTService {
 	return &jwtService{
-		secretKey: []byte(secretKey),
-		expiry:    expiry,
+		secretKey:     []byte(secretKey),
+		accessExpiry:  accessExpiry,
+		refreshExpiry: 7 * 24 * time.Hour, // Default: 7 days for refresh tokens
 	}
 }
 
-// GenerateToken creates a new JWT token for a user
+// NewJWTServiceWithRefreshExpiry creates a new JWT service with custom refresh token expiry
+func NewJWTServiceWithRefreshExpiry(secretKey string, accessExpiry, refreshExpiry time.Duration) JWTService {
+	return &jwtService{
+		secretKey:     []byte(secretKey),
+		accessExpiry:  accessExpiry,
+		refreshExpiry: refreshExpiry,
+	}
+}
+
+// GenerateToken creates a new JWT access token for a user (legacy method for backward compatibility)
 func (j *jwtService) GenerateToken(username string) (string, error) {
+	return j.generateToken(username, AccessToken, j.accessExpiry)
+}
+
+// GenerateTokenPair creates both access and refresh tokens for a user
+func (j *jwtService) GenerateTokenPair(username string) (accessToken, refreshToken string, err error) {
+	accessToken, err = j.generateToken(username, AccessToken, j.accessExpiry)
+	if err != nil {
+		return "", "", err
+	}
+
+	refreshToken, err = j.generateToken(username, RefreshToken, j.refreshExpiry)
+	if err != nil {
+		return "", "", err
+	}
+
+	return accessToken, refreshToken, nil
+}
+
+// generateToken is the internal method that creates a token with specific type and expiry
+func (j *jwtService) generateToken(username string, tokenType TokenType, expiry time.Duration) (string, error) {
+	now := time.Now()
 	claims := &Claims{
-		Username: username,
+		Username:  username,
+		TokenType: tokenType,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(j.expiry)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			NotBefore: jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(now.Add(expiry)),
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now),
 		},
 	}
 
@@ -55,8 +106,50 @@ func (j *jwtService) GenerateToken(username string) (string, error) {
 	return token.SignedString(j.secretKey)
 }
 
-// ValidateToken parses and validates a JWT token
+// ValidateToken parses and validates a JWT access token
 func (j *jwtService) ValidateToken(tokenString string) (*Claims, error) {
+	claims, err := j.parseToken(tokenString)
+	if err != nil {
+		return nil, err
+	}
+
+	// Verify it's an access token
+	if claims.TokenType != AccessToken {
+		return nil, ErrInvalidTokenType
+	}
+
+	return claims, nil
+}
+
+// ValidateRefreshToken parses and validates a JWT refresh token
+func (j *jwtService) ValidateRefreshToken(tokenString string) (*Claims, error) {
+	claims, err := j.parseToken(tokenString)
+	if err != nil {
+		return nil, err
+	}
+
+	// Verify it's a refresh token
+	if claims.TokenType != RefreshToken {
+		return nil, ErrInvalidTokenType
+	}
+
+	return claims, nil
+}
+
+// RefreshAccessToken validates a refresh token and generates a new access token and refresh token
+func (j *jwtService) RefreshAccessToken(refreshTokenString string) (accessToken, newRefreshToken string, err error) {
+	// Validate the refresh token
+	claims, err := j.ValidateRefreshToken(refreshTokenString)
+	if err != nil {
+		return "", "", err
+	}
+
+	// Generate new token pair
+	return j.GenerateTokenPair(claims.Username)
+}
+
+// parseToken is the internal method that parses and validates a token
+func (j *jwtService) parseToken(tokenString string) (*Claims, error) {
 	claims := &Claims{}
 
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {

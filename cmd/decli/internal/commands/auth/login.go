@@ -49,8 +49,10 @@ var loginCmd = &cobra.Command{
 			return err
 		}
 
-		slog.Debug("Logged in successfully", slog.String("token", resp.Token))
-		return db.SaveAuthToken(resp.Token)
+		slog.Debug("Logged in successfully", slog.String("access_token", resp.AccessToken))
+		// For now, we only store the access token. In the future, we could store the refresh token
+		// and implement automatic token refresh in the CLI
+		return db.SaveAuthToken(resp.AccessToken)
 	},
 }
 

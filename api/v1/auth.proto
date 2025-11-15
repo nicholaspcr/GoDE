@@ -28,6 +28,12 @@ service AuthService {
       body: "*"
     };
   }
+  rpc RefreshToken(AuthServiceRefreshTokenRequest) returns (AuthServiceRefreshTokenResponse) {
+    option (google.api.http) = {
+      post: "/v1/auth/refresh"
+      body: "*"
+    };
+  }
 }
 
 message AuthServiceRegisterRequest {
@@ -40,9 +46,21 @@ message AuthServiceLoginRequest {
 }
 
 message AuthServiceLoginResponse {
-  string token = 1;
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 expires_in = 3; // Access token expiry in seconds
 }
 
 message AuthServiceLogoutRequest {
   string username = 1;
+}
+
+message AuthServiceRefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+message AuthServiceRefreshTokenResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 expires_in = 3; // Access token expiry in seconds
 }

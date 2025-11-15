@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/nicholaspcr/GoDE/internal/server/auth"
@@ -98,13 +99,17 @@ func (ah authHandler) Login(
 		return nil, status.Error(codes.Unauthenticated, "invalid credentials")
 	}
 
-	// Generate JWT token
-	token, err := ah.jwtService.GenerateToken(usr.Ids.Username)
+	// Generate JWT token pair
+	accessToken, refreshToken, err := ah.jwtService.GenerateTokenPair(usr.Ids.Username)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to generate token")
+		return nil, status.Error(codes.Internal, "failed to generate tokens")
 	}
 
-	return &api.AuthServiceLoginResponse{Token: token}, nil
+	return &api.AuthServiceLoginResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ExpiresIn:    int64((24 * time.Hour).Seconds()), // Access token expiry in seconds
+	}, nil
 }
 
 func (ah authHandler) Logout(
@@ -114,4 +119,35 @@ func (ah authHandler) Logout(
 	// This endpoint exists for API compatibility and future extensions
 	// (e.g., token blacklisting, revocation lists)
 	return api.Empty, nil
+}
+
+func (ah authHandler) RefreshToken(
+	ctx context.Context, req *api.AuthServiceRefreshTokenRequest,
+) (*api.AuthServiceRefreshTokenResponse, error) {
+	// Validate refresh token is provided
+	if req.RefreshToken == "" {
+		return nil, status.Error(codes.InvalidArgument, "refresh token is required")
+	}
+
+	// Use the JWT service to refresh the access token
+	accessToken, newRefreshToken, err := ah.jwtService.RefreshAccessToken(req.RefreshToken)
+	if err != nil {
+		// Map JWT errors to appropriate gRPC status codes
+		switch err {
+		case auth.ErrExpiredToken:
+			return nil, status.Error(codes.Unauthenticated, "refresh token has expired")
+		case auth.ErrInvalidToken:
+			return nil, status.Error(codes.Unauthenticated, "invalid refresh token")
+		case auth.ErrInvalidTokenType:
+			return nil, status.Error(codes.InvalidArgument, "token is not a refresh token")
+		default:
+			return nil, status.Error(codes.Internal, "failed to refresh token")
+		}
+	}
+
+	return &api.AuthServiceRefreshTokenResponse{
+		AccessToken:  accessToken,
+		RefreshToken: newRefreshToken,
+		ExpiresIn:    int64((24 * time.Hour).Seconds()), // Access token expiry in seconds
+	}, nil
 }

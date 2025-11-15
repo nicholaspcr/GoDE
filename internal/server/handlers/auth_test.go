@@ -264,12 +264,19 @@ func TestAuthHandler_Login(t *testing.T) {
 				assert.NoError(t, err)
 				if tt.checkToken {
 					require.NotNil(t, resp)
-					assert.NotEmpty(t, resp.Token)
+					assert.NotEmpty(t, resp.AccessToken)
+					assert.NotEmpty(t, resp.RefreshToken)
+					assert.Greater(t, resp.ExpiresIn, int64(0))
 
-					// Verify token is valid
-					claims, err := jwtService.ValidateToken(resp.Token)
+					// Verify access token is valid
+					accessClaims, err := jwtService.ValidateToken(resp.AccessToken)
 					require.NoError(t, err)
-					assert.Equal(t, "testuser", claims.Username)
+					assert.Equal(t, "testuser", accessClaims.Username)
+
+					// Verify refresh token is valid
+					refreshClaims, err := jwtService.ValidateRefreshToken(resp.RefreshToken)
+					require.NoError(t, err)
+					assert.Equal(t, "testuser", refreshClaims.Username)
 				}
 			}
 		})

@@ -69,7 +69,8 @@ func (st *paretoStore) CreatePareto(
 			return err
 		}
 
-		// Create vectors
+		// Prepare all vectors for batch insert
+		vectorModels := make([]vectorModel, 0, len(pareto.Vectors))
 		for _, vec := range pareto.Vectors {
 			vectorModel := vectorModel{
 				ParetoID:         paretoModel.ID,
@@ -81,7 +82,12 @@ func (st *paretoStore) CreatePareto(
 			if err := vectorModel.SetObjectives(vec.Objectives); err != nil {
 				return err
 			}
-			if err := tx.Create(&vectorModel).Error; err != nil {
+			vectorModels = append(vectorModels, vectorModel)
+		}
+
+		// Batch insert all vectors (100 per batch for optimal performance)
+		if len(vectorModels) > 0 {
+			if err := tx.CreateInBatches(vectorModels, 100).Error; err != nil {
 				return err
 			}
 		}
@@ -272,7 +278,8 @@ func (st *paretoStore) CreateParetoSet(ctx context.Context, paretoSet *store.Par
 		// Set the ID back to the paretoSet
 		paretoSet.ID = uint64(paretoModel.ID)
 
-		// Create vectors
+		// Prepare all vectors for batch insert
+		vectorModels := make([]vectorModel, 0, len(paretoSet.Vectors))
 		for _, vec := range paretoSet.Vectors {
 			vectorModel := vectorModel{
 				ParetoID:         paretoModel.ID,
@@ -284,7 +291,12 @@ func (st *paretoStore) CreateParetoSet(ctx context.Context, paretoSet *store.Par
 			if err := vectorModel.SetObjectives(vec.Objectives); err != nil {
 				return err
 			}
-			if err := tx.Create(&vectorModel).Error; err != nil {
+			vectorModels = append(vectorModels, vectorModel)
+		}
+
+		// Batch insert all vectors (100 per batch for optimal performance)
+		if len(vectorModels) > 0 {
+			if err := tx.CreateInBatches(vectorModels, 100).Error; err != nil {
 				return err
 			}
 		}

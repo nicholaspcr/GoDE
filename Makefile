@@ -72,3 +72,58 @@ test-e2e: ## Runs end-to-end integration tests using testcontainers (requires Do
 .PHONY: lint
 lint: ## Lints the codebase.
 	@golangci-lint run
+
+##@ Kubernetes
+
+.PHONY: k8s-build
+k8s-build: ## Build Docker image for Kubernetes deployment
+	@echo 'Building Docker image for Kubernetes...'
+	@eval $$(minikube docker-env) && docker build -t gode-server:latest .
+
+.PHONY: k8s-deploy
+k8s-deploy: ## Deploy to minikube cluster
+	@echo 'Deploying to Kubernetes...'
+	@kubectl apply -f k8s/configmap.yaml
+	@kubectl apply -f k8s/secret.yaml
+	@kubectl apply -f k8s/postgres.yaml
+	@kubectl apply -f k8s/redis.yaml
+	@echo 'Waiting for databases to be ready...'
+	@kubectl wait --for=condition=ready pod -l app=postgres --timeout=120s || true
+	@kubectl wait --for=condition=ready pod -l app=redis --timeout=60s || true
+	@kubectl apply -f k8s/deserver.yaml
+	@echo 'Waiting for application to be ready...'
+	@kubectl wait --for=condition=ready pod -l app=deserver --timeout=120s || true
+	@echo 'Deployment complete!'
+
+.PHONY: k8s-delete
+k8s-delete: ## Remove all Kubernetes resources
+	@echo 'Deleting Kubernetes resources...'
+	@kubectl delete -f k8s/deserver.yaml --ignore-not-found=true
+	@kubectl delete -f k8s/redis.yaml --ignore-not-found=true
+	@kubectl delete -f k8s/postgres.yaml --ignore-not-found=true
+	@kubectl delete -f k8s/secret.yaml --ignore-not-found=true
+	@kubectl delete -f k8s/configmap.yaml --ignore-not-found=true
+	@kubectl delete pvc postgres-pvc --ignore-not-found=true
+	@echo 'Cleanup complete!'
+
+.PHONY: k8s-logs
+k8s-logs: ## Show logs from deserver pods
+	@kubectl logs -l app=deserver -f --max-log-requests=10
+
+.PHONY: k8s-status
+k8s-status: ## Show status of all deployed resources
+	@echo 'Deployments:'
+	@kubectl get deployments
+	@echo '\nPods:'
+	@kubectl get pods
+	@echo '\nServices:'
+	@kubectl get services
+	@echo '\nConfigMaps:'
+	@kubectl get configmaps
+	@echo '\nSecrets:'
+	@kubectl get secrets
+
+.PHONY: k8s-url
+k8s-url: ## Get the URL to access the application
+	@echo 'HTTP Gateway URL:'
+	@minikube service deserver-http --url

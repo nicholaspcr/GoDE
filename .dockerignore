@@ -48,3 +48,6 @@ Dockerfile*
 
 # Scripts (usually not needed in container)
 scripts/
+
+# Kubernetes manifests
+k8s/

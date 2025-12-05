@@ -232,7 +232,7 @@ func TestExecutor_SubmitExecution(t *testing.T) {
 		Generations:    2,
 		PopulationSize: 10,
 		DimensionsSize: 10,
-		ObjetivesSize:  2,
+		ObjectivesSize:  2,
 		FloorLimiter:   0.0,
 		CeilLimiter:    1.0,
 		AlgorithmConfig: &api.DEConfig_Gde3{
@@ -351,7 +351,7 @@ func TestExecutor_WorkerPoolExhaustion(t *testing.T) {
 		Generations:    5,
 		PopulationSize: 10,
 		DimensionsSize: 10,
-		ObjetivesSize:  2,
+		ObjectivesSize:  2,
 		FloorLimiter:   0.0,
 		CeilLimiter:    1.0,
 		AlgorithmConfig: &api.DEConfig_Gde3{
@@ -422,7 +422,7 @@ func TestExecutor_ConcurrentSubmissions(t *testing.T) {
 		Generations:    2,
 		PopulationSize: 10,
 		DimensionsSize: 10,
-		ObjetivesSize:  2,
+		ObjectivesSize:  2,
 		FloorLimiter:   0.0,
 		CeilLimiter:    1.0,
 		AlgorithmConfig: &api.DEConfig_Gde3{
@@ -501,7 +501,7 @@ func TestExecutor_CompletionTracking(t *testing.T) {
 		Generations:    2,
 		PopulationSize: 10,
 		DimensionsSize: 10,
-		ObjetivesSize:  2,
+		ObjectivesSize:  2,
 		FloorLimiter:   0.0,
 		CeilLimiter:    1.0,
 		AlgorithmConfig: &api.DEConfig_Gde3{
@@ -559,7 +559,7 @@ func TestExecutor_ActiveExecutionTracking(t *testing.T) {
 		Generations:    2,
 		PopulationSize: 10,
 		DimensionsSize: 10,
-		ObjetivesSize:  2,
+		ObjectivesSize:  2,
 		FloorLimiter:   0.0,
 		CeilLimiter:    1.0,
 		AlgorithmConfig: &api.DEConfig_Gde3{
@@ -632,7 +632,7 @@ func TestExecutor_PanicRecovery(t *testing.T) {
 		Generations:    2,
 		PopulationSize: 10,
 		DimensionsSize: 10,
-		ObjetivesSize:  2,
+		ObjectivesSize:  2,
 		FloorLimiter:   0.0,
 		CeilLimiter:    1.0,
 		AlgorithmConfig: &api.DEConfig_Gde3{
@@ -712,7 +712,7 @@ func TestExecutor_CancellationDuringExecution(t *testing.T) {
 		Generations:    100, // Long-running to allow cancellation
 		PopulationSize: 20,
 		DimensionsSize: 10,
-		ObjetivesSize:  2,
+		ObjectivesSize:  2,
 		FloorLimiter:   0.0,
 		CeilLimiter:    1.0,
 		AlgorithmConfig: &api.DEConfig_Gde3{
@@ -785,7 +785,7 @@ func TestExecutor_WorkerSlotReleaseOnError(t *testing.T) {
 		Generations:    2,
 		PopulationSize: 10,
 		DimensionsSize: 10,
-		ObjetivesSize:  2,
+		ObjectivesSize:  2,
 		FloorLimiter:   0.0,
 		CeilLimiter:    1.0,
 		AlgorithmConfig: &api.DEConfig_Gde3{

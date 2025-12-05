@@ -42,7 +42,7 @@ For synchronous operation (submit + wait), use 'run' instead.`,
 				Generations:    runAsync.DeConfig.Generations,
 				PopulationSize: runAsync.DeConfig.PopulationSize,
 				DimensionsSize: runAsync.DeConfig.DimensionsSize,
-				ObjetivesSize:  runAsync.DeConfig.ObjectivesSize,
+				ObjectivesSize:  runAsync.DeConfig.ObjectivesSize,
 				FloorLimiter:   runAsync.DeConfig.FloorLimiter,
 				CeilLimiter:    runAsync.DeConfig.CeilLimiter,
 				AlgorithmConfig: &api.DEConfig_Gde3{Gde3: &api.GDE3Config{

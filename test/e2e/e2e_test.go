@@ -190,7 +190,7 @@ func TestE2E_DEExecution(t *testing.T) {
 	})
 
 	t.Run("04_RunDE", func(t *testing.T) {
-		resp, err := deClient.Run(authCtx, &api.RunRequest{
+		resp, err := deClient.Run(authCtx, &api.RunAsyncRequest{
 			Algorithm: "gde3",
 			Problem:   "zdt1",
 			Variant:   "rand1",
@@ -199,7 +199,7 @@ func TestE2E_DEExecution(t *testing.T) {
 				Generations:    250,
 				PopulationSize: 100,
 				DimensionsSize: 30,
-				ObjetivesSize:  2,
+				ObjectivesSize:  2,
 				FloorLimiter:   0.0,
 				CeilLimiter:    1.0,
 				AlgorithmConfig: &api.DEConfig_Gde3{

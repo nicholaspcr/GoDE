@@ -10,7 +10,7 @@ message DEConfig {
   int64 generations = 2;
   int64 population_size = 3;
   int64 dimensions_size = 4;
-  int64 objetives_size = 5;
+  int64 objectives_size = 5;
   float floor_limiter = 6;
   float ceil_limiter = 7;
 

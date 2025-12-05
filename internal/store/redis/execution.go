@@ -401,7 +401,7 @@ func ConfigToProto(config *api.DEConfig) map[string]interface{} {
 		"generations":     config.Generations,
 		"population_size": config.PopulationSize,
 		"dimensions_size": config.DimensionsSize,
-		"objetives_size":  config.ObjetivesSize,
+		"objectives_size":  config.ObjectivesSize,
 		"floor_limiter":   config.FloorLimiter,
 		"ceil_limiter":    config.CeilLimiter,
 	}

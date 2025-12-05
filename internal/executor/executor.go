@@ -253,7 +253,7 @@ func (e *Executor) runAlgorithm(ctx context.Context, executionID, problemName, v
 	popParams := models.PopulationParams{
 		PopulationSize: int(config.PopulationSize),
 		DimensionSize:  int(config.DimensionsSize),
-		ObjectivesSize: int(config.ObjetivesSize),
+		ObjectivesSize: int(config.ObjectivesSize),
 		FloorRange:     make([]float64, config.DimensionsSize),
 		CeilRange:      make([]float64, config.DimensionsSize),
 	}
@@ -276,7 +276,7 @@ func (e *Executor) runAlgorithm(ctx context.Context, executionID, problemName, v
 			Executions:    int(config.Executions),
 			Generations:   int(config.Generations),
 			Dimensions:    int(config.DimensionsSize),
-			ObjFuncAmount: int(config.ObjetivesSize),
+			ObjFuncAmount: int(config.ObjectivesSize),
 		},
 		CR: float64(config.GetGde3().Cr),
 		F:  float64(config.GetGde3().F),

@@ -33,7 +33,7 @@ func ValidateDEConfig(cfg *api.DEConfig) error {
 	}
 
 	// Validate objectives size
-	if err := ValidateRange(cfg.ObjetivesSize, int64(1), int64(10), "objectives_size"); err != nil {
+	if err := ValidateRange(cfg.ObjectivesSize, int64(1), int64(10), "objectives_size"); err != nil {
 		return err
 	}
 

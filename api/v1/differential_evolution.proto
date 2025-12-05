@@ -22,14 +22,14 @@ service DifferentialEvolutionService {
   }
 
   // Async execution RPCs
-  rpc RunAsync(RunRequest) returns (RunAsyncResponse){
+  rpc RunAsync(RunAsyncRequest) returns (RunAsyncResponse){
     option (google.api.http) = {
       post: "/v1/de/run"
       body: "*"
     };
   }
 
-  rpc StreamProgress(StreamProgressRequest) returns (stream ExecutionProgress){
+  rpc StreamProgress(StreamProgressRequest) returns (stream StreamProgressResponse){
     option (google.api.http) = {get: "/v1/de/executions/{execution_id}/progress"};
   }
 
@@ -37,7 +37,7 @@ service DifferentialEvolutionService {
     option (google.api.http) = {get: "/v1/de/executions/{execution_id}"};
   }
 
-  rpc GetExecutionResults(GetExecutionResultsRequest) returns (RunResponse){
+  rpc GetExecutionResults(GetExecutionResultsRequest) returns (GetExecutionResultsResponse){
     option (google.api.http) = {get: "/v1/de/executions/{execution_id}/results"};
   }
 
@@ -79,14 +79,14 @@ message ListSupportedProblemsResponse {
   repeated Problem problems = 1;
 }
 
-message RunRequest {
+message RunAsyncRequest {
   string algorithm = 1;
   string variant = 2;
   string problem = 3;
   DEConfig de_config = 4;
 }
 
-message RunResponse {
+message GetExecutionResultsResponse {
   Pareto pareto = 1;
 }
 
@@ -114,7 +114,7 @@ message Execution {
 }
 
 // Progress update during execution
-message ExecutionProgress {
+message StreamProgressResponse {
   string execution_id = 1;
   int32 current_generation = 2;
   int32 total_generations = 3;
@@ -139,7 +139,7 @@ message GetExecutionStatusRequest {
 
 message GetExecutionStatusResponse {
   Execution execution = 1;
-  ExecutionProgress progress = 2;
+  StreamProgressResponse progress = 2;
 }
 
 message GetExecutionResultsRequest {

@@ -227,7 +227,7 @@ func TestRunAsync_Success(t *testing.T) {
 	// Create context with authenticated user
 	ctx := middleware.ContextWithUsername(context.Background(), "testuser")
 
-	req := &api.RunRequest{
+	req := &api.RunAsyncRequest{
 		Algorithm: "gde3",
 		Problem:   "zdt1",
 		Variant:   "rand1",
@@ -236,7 +236,7 @@ func TestRunAsync_Success(t *testing.T) {
 			Generations:    2,
 			PopulationSize: 10,
 			DimensionsSize: 10,
-			ObjetivesSize:  2,
+			ObjectivesSize:  2,
 			FloorLimiter:   0.0,
 			CeilLimiter:    1.0,
 			AlgorithmConfig: &api.DEConfig_Gde3{
@@ -258,7 +258,7 @@ func TestRunAsync_Success(t *testing.T) {
 func TestRunAsync_UnauthenticatedUser(t *testing.T) {
 	handler, _ := setupTestHandler()
 
-	req := &api.RunRequest{
+	req := &api.RunAsyncRequest{
 		Algorithm: "gde3",
 		Problem:   "zdt1",
 		Variant:   "rand1",
@@ -278,7 +278,7 @@ func TestRunAsync_ValidationError(t *testing.T) {
 
 	ctx := middleware.ContextWithUsername(context.Background(), "testuser")
 
-	req := &api.RunRequest{
+	req := &api.RunAsyncRequest{
 		Algorithm: "gde3",
 		Problem:   "zdt1",
 		Variant:   "rand1",
@@ -614,7 +614,7 @@ func TestCancellationIntegration(t *testing.T) {
 	ctx := middleware.ContextWithUsername(context.Background(), "testuser")
 
 	// Submit an execution with large parameters to ensure it runs long enough
-	req := &api.RunRequest{
+	req := &api.RunAsyncRequest{
 		Algorithm: "gde3",
 		Problem:   "zdt1",
 		Variant:   "rand1",
@@ -623,7 +623,7 @@ func TestCancellationIntegration(t *testing.T) {
 			Generations:    1000,  // Many generations
 			PopulationSize: 100,   // Large population
 			DimensionsSize: 30,    // More dimensions
-			ObjetivesSize:  2,
+			ObjectivesSize:  2,
 			FloorLimiter:   0.0,
 			CeilLimiter:    1.0,
 			AlgorithmConfig: &api.DEConfig_Gde3{
@@ -662,7 +662,7 @@ func TestCancellationIntegration(t *testing.T) {
 // mockStreamServer is a mock implementation of the gRPC stream server
 type mockStreamServer struct {
 	ctx      context.Context
-	sent     []*api.ExecutionProgress
+	sent     []*api.StreamProgressResponse
 	sendErr  error
 	mu       sync.Mutex
 }
@@ -670,11 +670,11 @@ type mockStreamServer struct {
 func newMockStreamServer(ctx context.Context) *mockStreamServer {
 	return &mockStreamServer{
 		ctx:  ctx,
-		sent: make([]*api.ExecutionProgress, 0),
+		sent: make([]*api.StreamProgressResponse, 0),
 	}
 }
 
-func (m *mockStreamServer) Send(resp *api.ExecutionProgress) error {
+func (m *mockStreamServer) Send(resp *api.StreamProgressResponse) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -692,10 +692,10 @@ func (m *mockStreamServer) Context() context.Context     { return m.ctx }
 func (m *mockStreamServer) SendMsg(interface{}) error    { return nil }
 func (m *mockStreamServer) RecvMsg(interface{}) error    { return nil }
 
-func (m *mockStreamServer) getSentMessages() []*api.ExecutionProgress {
+func (m *mockStreamServer) getSentMessages() []*api.StreamProgressResponse {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return append([]*api.ExecutionProgress{}, m.sent...)
+	return append([]*api.StreamProgressResponse{}, m.sent...)
 }
 
 // testStoreWithStreaming is a testStore that supports streaming progress updates

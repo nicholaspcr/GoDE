@@ -101,7 +101,7 @@ func local_request_DifferentialEvolutionService_ListSupportedProblems_0(ctx cont
 
 func request_DifferentialEvolutionService_RunAsync_0(ctx context.Context, marshaler runtime.Marshaler, client DifferentialEvolutionServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq RunRequest
+		protoReq RunAsyncRequest
 		metadata runtime.ServerMetadata
 	)
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
@@ -116,7 +116,7 @@ func request_DifferentialEvolutionService_RunAsync_0(ctx context.Context, marsha
 
 func local_request_DifferentialEvolutionService_RunAsync_0(ctx context.Context, marshaler runtime.Marshaler, server DifferentialEvolutionServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq RunRequest
+		protoReq RunAsyncRequest
 		metadata runtime.ServerMetadata
 	)
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {

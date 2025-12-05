@@ -104,7 +104,7 @@ func (deh *deHandler) ListSupportedProblems(
 
 // RunAsync submits a DE execution to run in the background.
 func (deh *deHandler) RunAsync(
-	ctx context.Context, req *api.RunRequest,
+	ctx context.Context, req *api.RunAsyncRequest,
 ) (*api.RunAsyncResponse, error) {
 	tracer := otel.Tracer("handlers.de")
 	ctx, span := tracer.Start(ctx, "deHandler.RunAsync")
@@ -262,7 +262,7 @@ func (deh *deHandler) streamProgressToClient(
 				return nil
 			}
 
-			apiProgress := &api.ExecutionProgress{
+			apiProgress := &api.StreamProgressResponse{
 				ExecutionId:         progress.ExecutionID,
 				CurrentGeneration:   progress.CurrentGeneration,
 				TotalGenerations:    progress.TotalGenerations,
@@ -312,11 +312,11 @@ func (deh *deHandler) GetExecutionStatus(
 	apiExecution := executionToProto(execution)
 
 	// Get progress if available
-	var apiProgress *api.ExecutionProgress
+	var apiProgress *api.StreamProgressResponse
 	if execution.Status == store.ExecutionStatusRunning {
 		progress, err := deh.Store.GetProgress(ctx, req.ExecutionId) //nolint:staticcheck // Explicit for clarity
 		if err == nil {
-			apiProgress = &api.ExecutionProgress{
+			apiProgress = &api.StreamProgressResponse{
 				ExecutionId:         progress.ExecutionID,
 				CurrentGeneration:   progress.CurrentGeneration,
 				TotalGenerations:    progress.TotalGenerations,
@@ -336,7 +336,7 @@ func (deh *deHandler) GetExecutionStatus(
 // GetExecutionResults returns the results of a completed execution.
 func (deh *deHandler) GetExecutionResults(
 	ctx context.Context, req *api.GetExecutionResultsRequest,
-) (*api.RunResponse, error) {
+) (*api.GetExecutionResultsResponse, error) {
 	tracer := otel.Tracer("handlers.de")
 	ctx, span := tracer.Start(ctx, "deHandler.GetExecutionResults")
 	defer span.End()

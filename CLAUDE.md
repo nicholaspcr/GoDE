@@ -74,27 +74,74 @@ make clean
    - Configuration in `.dev/cli/` and `.env/cli/`
 
 7. **Storage** (`internal/store/`)
-   - Abstract `Store` interface with implementations: memory, SQLite, PostgreSQL
+   - Abstract `Store` interface with implementations: memory, SQLite, PostgreSQL, Redis, composite
    - GORM-based implementations in `internal/store/gorm/`
-   - Entities: User, Pareto, Vector
+   - Entities: User, Pareto, Vector, Execution
    - Configuration via `store.Config` with type selection
+   - Database migrations in `internal/store/migrations/` (2 migrations: 000001_initial_schema, 000002_add_executions_and_indices)
+   - Batch operations for performance (CreateInBatches for large Pareto sets)
+
+8. **Async Execution Engine** (`internal/executor/`)
+   - Background execution of DE algorithms with worker pool pattern
+   - Semaphore-based concurrency control (configurable max workers)
+   - Real-time progress tracking via callbacks
+   - Execution state: PENDING → RUNNING → COMPLETED/FAILED/CANCELLED
+   - Context-based cancellation support
+   - TTL configuration: Execution (24h), Results (7d), Progress (1h)
+
+9. **Observability & Monitoring** (`internal/telemetry/`, `internal/slo/`)
+   - OpenTelemetry integration: distributed tracing with OTLP exporter
+   - Prometheus metrics: request counts, durations, error rates, rate limits
+   - Service Level Objective (SLO) tracking: latency (p50/p95/p99), error rate, availability
+   - Structured logging with `log/slog`
+   - Metrics endpoint: `/metrics`
+
+10. **Caching & Performance** (`internal/cache/redis/`)
+   - Redis client with circuit breaker (uses `github.com/sony/gobreaker`)
+   - Execution metadata caching
+   - Progress tracking with TTL
+   - Graceful degradation when Redis unavailable
 
 ### Key Design Patterns
 
 - **Interface-driven design**: Problems, Variants, Algorithms, Handlers, and Store all use interfaces for extensibility
 - **Channel-based concurrency**: DE executions communicate via channels for streaming results
-- **Middleware architecture**: Server uses composable middleware for auth, logging, telemetry
+- **Worker pool pattern**: Async executor uses semaphore-based concurrency limiting
+- **Registry pattern**: Problems and variants auto-register via blank imports
+- **Middleware architecture**: Server uses composable middleware stack (panic recovery, tracing, metrics, logging, CORS, auth, session)
+- **Circuit breaker**: Redis operations protected against cascade failures
 - **Multi-tenancy support**: Tenant context propagation through `internal/tenant/`
+- **Factory pattern**: Store creation via `storefactory` based on configuration
 
 ## Protocol Buffers and API
 
-API definitions are in `api/v1/*.proto`. Generated code goes to `pkg/api/v1/`.
+API definitions are in `api/v1/*.proto` (8 proto files). Generated code goes to `pkg/api/v1/`.
 
-Key services:
-- `DifferentialEvolutionService`: List algorithms/variants/problems, run DE
-- `AuthService`: User authentication
-- `UserService`: User management
-- `ParetoSetService`: Access Pareto results
+### Key Services
+
+**DifferentialEvolutionService** (`differential_evolution.proto`):
+- List supported: `ListSupportedAlgorithms`, `ListSupportedVariants`, `ListSupportedProblems`
+- Async execution: `RunAsync`, `StreamProgress`, `GetExecutionStatus`, `GetExecutionResults`
+- Management: `ListExecutions`, `CancelExecution`, `DeleteExecution`
+- HTTP endpoints: `/v1/de/run` (POST), `/v1/de/executions` (GET), `/v1/de/executions/{id}` (GET/DELETE)
+
+**AuthService** (`auth.proto`):
+- Authentication: `Register`, `Login`, `Logout`, `RefreshToken`
+- JWT-based with separate access and refresh tokens
+- HTTP endpoints: `/v1/auth/login`, `/v1/auth/register`, `/v1/auth/refresh`
+
+**UserService** (`user.proto`):
+- User management: `Create`, `Get`, `Update`, `Delete`
+- Uses `UserResponse` message in responses (excludes password for security)
+
+**ParetoService** (`pareto_set.proto`):
+- Access Pareto results: `Get`, `Delete`, `ListByUser`
+
+### API Data Types
+- `definitions.proto` - Core types: Vector, Pareto, PopulationParameters
+- `differential_evolution_config.proto` - DEConfig, GDE3Config
+- `errors.proto` - ErrorDetail, FieldViolation for structured error responses
+- `tenant.proto` - Multi-tenancy support
 
 ## Testing Conventions
 
@@ -122,6 +169,82 @@ Key services:
 - **Pareto filtering**: Uses non-dominated sorting with crowding distance reduction
 - **Concurrent executions**: Multiple DE runs execute in goroutines, results aggregated through channels
 - **OpenTelemetry**: Instrumentation is enabled for gRPC and GORM operations
+- **Field naming**: Use `ObjectivesSize` (not `ObjetivesSize`) - typo was fixed in API and codebase
+- **Password security**: User responses exclude password field via `UserResponse` message
+- **Database compatibility**: Migrations work with both PostgreSQL and SQLite (avoid PostgreSQL-specific syntax)
+- **Async execution**: All long-running DE operations use async pattern (RunAsync → poll status → get results)
+
+## Database Migrations
+
+Location: `internal/store/migrations/`
+
+**Migration files:**
+1. `000001_initial_schema.{up,down}.sql` - Users, Pareto sets, Vectors tables
+2. `000002_add_executions_and_indices.{up,down}.sql` - Executions table, indices for query performance
+
+**Running migrations:**
+```bash
+# Automatic on server startup
+./deserver
+
+# Manual migration commands
+deserver migrate up      # Apply all pending migrations
+deserver migrate down 1  # Rollback last migration
+deserver migrate version # Check current version
+```
+
+**Database compatibility notes:**
+- Migrations must work with both PostgreSQL and SQLite
+- Avoid PostgreSQL-specific syntax: `DO $$` blocks, `ALTER TABLE ADD CONSTRAINT` (use inline `REFERENCES` instead)
+- Use `REFERENCES` in CREATE TABLE for foreign keys, not separate ALTER TABLE statements
+
+## Deployment
+
+**Kubernetes:**
+- Manifests in `k8s/` directory
+- Includes: Deployment, Service, HPA, PostgreSQL StatefulSet, Redis, ConfigMaps, Secrets
+- Minikube commands: `make k8s-build`, `make k8s-deploy`, `make k8s-logs`, `make k8s-status`
+
+**Health checks:**
+- Liveness probe: `/health` (simple ping)
+- Readiness probe: `/readiness` (DB + Redis connectivity)
+
+**Monitoring:**
+- Grafana dashboards in `monitoring/grafana/`
+- Prometheus metrics at `/metrics`
+
+## Troubleshooting
+
+### Common Issues
+
+**1. Test failures in `internal/executor/`**
+- Symptom: Tests timeout or fail with "Condition never satisfied"
+- Cause: Async timing issues, not blocking issues
+- Status: Known issue with async execution tests (TestExecutor_CompletionTracking, etc.)
+
+**2. Migration errors with SQLite**
+- Symptom: `syntax error` during migration
+- Fix: Ensure migrations avoid PostgreSQL-specific syntax (no `DO $$` blocks, use inline `REFERENCES`)
+
+**3. Compilation errors with `ObjetivesSize`**
+- Symptom: `undefined: config.ObjetivesSize`
+- Fix: Field was renamed to `ObjectivesSize` (correct spelling) - regenerate protobuf with `make proto-generate`
+
+**4. Password exposed in API responses**
+- Symptom: User GET endpoint returns password field
+- Fix: Use `UserResponse` message (excludes password), not `User` message in responses
+
+**5. Redis connection failures**
+- Symptom: Execution progress not updating
+- Behavior: Circuit breaker provides graceful degradation
+- Fix: Check Redis connectivity, circuit breaker prevents cascade failures
+
+### Performance Tips
+
+- Use batch operations for large Pareto sets (automatic via CreateInBatches)
+- Monitor SLO metrics for latency violations
+- Check worker pool configuration (maxWorkers) if executions queue up
+- Review TTL settings for execution metadata (default 24h)
 
 ## Commit Message Guidelines
 

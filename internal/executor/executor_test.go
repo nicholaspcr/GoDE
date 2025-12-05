@@ -34,6 +34,105 @@ type mockStore struct {
 	mu         sync.RWMutex
 }
 
+// Deep copy helpers for mockStore
+//
+// These functions create deep copies of store types to prevent data races.
+// This mimics the behavior of real stores (Redis, GORM) which serialize/
+// deserialize data, creating implicit copies. Without deep copying, the mock
+// would share pointers between algorithm goroutines and test goroutines,
+// causing data races when both access the same struct/slice concurrently.
+
+// deepCopyVector creates a deep copy of api.Vector
+func deepCopyVector(src *api.Vector) *api.Vector {
+	if src == nil {
+		return nil
+	}
+
+	dst := &api.Vector{
+		CrowdingDistance: src.CrowdingDistance,
+	}
+
+	// Copy Elements slice
+	if src.Elements != nil {
+		dst.Elements = make([]float64, len(src.Elements))
+		copy(dst.Elements, src.Elements)
+	}
+
+	// Copy Objectives slice
+	if src.Objectives != nil {
+		dst.Objectives = make([]float64, len(src.Objectives))
+		copy(dst.Objectives, src.Objectives)
+	}
+
+	// Copy Ids if present (may be nil)
+	if src.Ids != nil {
+		dst.Ids = &api.VectorIDs{
+			Id: src.Ids.Id,
+		}
+	}
+
+	return dst
+}
+
+// deepCopyProgress creates a deep copy of ExecutionProgress to prevent data races.
+// This mimics the behavior of real stores (Redis, GORM) which serialize/deserialize.
+func deepCopyProgress(src *store.ExecutionProgress) *store.ExecutionProgress {
+	if src == nil {
+		return nil
+	}
+
+	dst := &store.ExecutionProgress{
+		ExecutionID:         src.ExecutionID,
+		CurrentGeneration:   src.CurrentGeneration,
+		TotalGenerations:    src.TotalGenerations,
+		CompletedExecutions: src.CompletedExecutions,
+		TotalExecutions:     src.TotalExecutions,
+		UpdatedAt:           src.UpdatedAt,
+	}
+
+	// Deep copy PartialPareto slice
+	if src.PartialPareto != nil {
+		dst.PartialPareto = make([]*api.Vector, len(src.PartialPareto))
+		for i, vec := range src.PartialPareto {
+			dst.PartialPareto[i] = deepCopyVector(vec)
+		}
+	}
+
+	return dst
+}
+
+// deepCopyExecution creates a deep copy of Execution
+func deepCopyExecution(src *store.Execution) *store.Execution {
+	if src == nil {
+		return nil
+	}
+
+	dst := &store.Execution{
+		ID:        src.ID,
+		UserID:    src.UserID,
+		Status:    src.Status,
+		Error:     src.Error,
+		CreatedAt: src.CreatedAt,
+		UpdatedAt: src.UpdatedAt,
+	}
+
+	// Copy pointer fields
+	if src.ParetoID != nil {
+		paretoID := *src.ParetoID
+		dst.ParetoID = &paretoID
+	}
+
+	if src.CompletedAt != nil {
+		completedAt := *src.CompletedAt
+		dst.CompletedAt = &completedAt
+	}
+
+	// Config is typically read-only after creation, share the pointer
+	dst.Config = src.Config
+
+	return dst
+}
+
 func newMockStore() *mockStore {
 	return &mockStore{
 		executions: make(map[string]*store.Execution),
@@ -46,7 +145,7 @@ func newMockStore() *mockStore {
 func (m *mockStore) CreateExecution(ctx context.Context, execution *store.Execution) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.executions[execution.ID] = execution
+	m.executions[execution.ID] = deepCopyExecution(execution)
 	return nil
 }
 
@@ -57,7 +156,7 @@ func (m *mockStore) GetExecution(ctx context.Context, executionID, userID string
 	if !exists || exec.UserID != userID {
 		return nil, store.ErrExecutionNotFound
 	}
-	return exec, nil
+	return deepCopyExecution(exec), nil
 }
 
 func (m *mockStore) UpdateExecutionStatus(ctx context.Context, executionID string, status store.ExecutionStatus, errorMsg string) error {
@@ -67,13 +166,16 @@ func (m *mockStore) UpdateExecutionStatus(ctx context.Context, executionID strin
 	if !exists {
 		return store.ErrExecutionNotFound
 	}
-	exec.Status = status
-	exec.Error = errorMsg
-	exec.UpdatedAt = time.Now()
+	// Create a copy, modify it, store the copy
+	updated := deepCopyExecution(exec)
+	updated.Status = status
+	updated.Error = errorMsg
+	updated.UpdatedAt = time.Now()
 	if status == store.ExecutionStatusCompleted || status == store.ExecutionStatusFailed || status == store.ExecutionStatusCancelled {
 		now := time.Now()
-		exec.CompletedAt = &now
+		updated.CompletedAt = &now
 	}
+	m.executions[executionID] = updated
 	return nil
 }
 
@@ -84,7 +186,9 @@ func (m *mockStore) UpdateExecutionResult(ctx context.Context, executionID strin
 	if !exists {
 		return store.ErrExecutionNotFound
 	}
-	exec.ParetoID = &paretoID
+	updated := deepCopyExecution(exec)
+	updated.ParetoID = &paretoID
+	m.executions[executionID] = updated
 	return nil
 }
 
@@ -95,7 +199,8 @@ func (m *mockStore) ListExecutions(ctx context.Context, userID string, status *s
 	for _, exec := range m.executions {
 		if exec.UserID == userID {
 			if status == nil || exec.Status == *status {
-				allMatching = append(allMatching, exec)
+				// Deep copy each matching execution
+				allMatching = append(allMatching, deepCopyExecution(exec))
 			}
 		}
 	}
@@ -137,7 +242,8 @@ func (m *mockStore) DeleteExecution(ctx context.Context, executionID, userID str
 func (m *mockStore) SaveProgress(ctx context.Context, progress *store.ExecutionProgress) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.progress[progress.ExecutionID] = progress
+	// Deep copy to prevent data races - mimics Redis/GORM serialization behavior
+	m.progress[progress.ExecutionID] = deepCopyProgress(progress)
 	return nil
 }
 
@@ -148,7 +254,8 @@ func (m *mockStore) GetProgress(ctx context.Context, executionID string) (*store
 	if !exists {
 		return nil, store.ErrExecutionNotFound
 	}
-	return prog, nil
+	// Deep copy to prevent data races - mimics Redis/GORM serialization behavior
+	return deepCopyProgress(prog), nil
 }
 
 func (m *mockStore) MarkExecutionForCancellation(ctx context.Context, executionID, userID string) error {

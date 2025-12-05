@@ -64,7 +64,12 @@ func (uh *userHandler) Get(
 	if err != nil {
 		return nil, err
 	}
-	return &api.UserServiceGetResponse{User: usr}, nil
+	// Convert User to UserResponse (exclude password)
+	userResp := &api.UserResponse{
+		Ids:   usr.Ids,
+		Email: usr.Email,
+	}
+	return &api.UserServiceGetResponse{User: userResp}, nil
 }
 
 func (uh *userHandler) Update(

@@ -13,11 +13,17 @@ message UserIDs {
   string username = 1;
 }
 
-// User is the standard user message.
+// User is the standard user message for requests (includes password).
 message User {
   UserIDs ids = 1;
   string email = 2;
   string password = 3;
+}
+
+// UserResponse is the user message for responses (excludes password).
+message UserResponse {
+  UserIDs ids = 1;
+  string email = 2;
 }
 
 // UserService are all the services that can be performed on a user.
@@ -51,7 +57,7 @@ message UserServiceGetRequest {
 }
 
 message UserServiceGetResponse {
-  User user = 1;
+  UserResponse user = 1;
 }
 
 message UserServiceUpdateRequest {

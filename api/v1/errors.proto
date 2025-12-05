@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package api.v1;
+
+option go_package = "pkg/api";
+
+// ErrorDetail provides structured error information.
+message ErrorDetail {
+  // Machine-readable error code (e.g., "INVALID_ALGORITHM", "EXECUTION_NOT_FOUND")
+  string code = 1;
+
+  // Human-readable error message
+  string message = 2;
+
+  // Additional metadata about the error
+  map<string, string> metadata = 3;
+
+  // Field-level validation errors
+  repeated FieldViolation field_violations = 4;
+}
+
+// FieldViolation describes a validation error for a specific field.
+message FieldViolation {
+  // The field path (e.g., "de_config.population_size")
+  string field = 1;
+
+  // Description of the violation
+  string description = 2;
+}

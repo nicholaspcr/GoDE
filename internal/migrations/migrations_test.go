@@ -56,7 +56,7 @@ func TestMigrationWithSQLite(t *testing.T) {
 	// Check version
 	version, dirty, err := Version(databaseURL)
 	assert.NoError(t, err, "should be able to get version")
-	assert.Equal(t, uint(1), version, "should be at version 1")
+	assert.Equal(t, uint(2), version, "should be at version 2")
 	assert.False(t, dirty, "should not be in dirty state")
 }
 

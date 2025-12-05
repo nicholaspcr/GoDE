@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -241,8 +242,16 @@ func TestRateLimiter_UnaryDERateLimitMiddleware(t *testing.T) {
 			FullMethod: "/api.v1.DifferentialEvolutionService/Run",
 		}
 
+		// Protect handlerCalled with mutex to prevent data race
+		var (
+			concurrentCalled int
+			mu               sync.Mutex
+		)
+
 		slowHandler := func(ctx context.Context, req interface{}) (interface{}, error) {
-			handlerCalled++
+			mu.Lock()
+			concurrentCalled++
+			mu.Unlock()
 			time.Sleep(500 * time.Millisecond) // Simulate long work
 			return "response", nil
 		}
@@ -283,7 +292,12 @@ func TestRateLimiter_UnaryDERateLimitMiddleware(t *testing.T) {
 		err2 := <-done2
 		assert.NoError(t, err1)
 		assert.NoError(t, err2)
-		assert.Equal(t, 2, handlerCalled)
+
+		// Check concurrent handler calls with mutex protection
+		mu.Lock()
+		count := concurrentCalled
+		mu.Unlock()
+		assert.Equal(t, 2, count)
 	})
 }
 

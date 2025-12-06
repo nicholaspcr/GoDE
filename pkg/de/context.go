@@ -10,6 +10,15 @@ func WithContextExecutionNumber(ctx context.Context, n int) context.Context {
 }
 
 // FromContextExecutionNumber returns the execution number from the context.
+// Returns 0 if the execution number is not set.
 func FromContextExecutionNumber(ctx context.Context) int {
-	return ctx.Value(executionNumberKey{}).(int)
+	val := ctx.Value(executionNumberKey{})
+	if val == nil {
+		return 0
+	}
+	n, ok := val.(int)
+	if !ok {
+		return 0
+	}
+	return n
 }

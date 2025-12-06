@@ -1,7 +1,11 @@
 // Package de provides the core Differential Evolution algorithm framework and execution utilities.
 package de
 
-import "github.com/nicholaspcr/GoDE/pkg/models"
+import (
+	"errors"
+
+	"github.com/nicholaspcr/GoDE/pkg/models"
+)
 
 // Config of the DE implementation
 type Config struct {
@@ -28,4 +32,21 @@ type Constants struct {
 
 	// ObjFuncAmount represents the amount of objective functions.
 	ObjFuncAmount int `json:"obj_func_amount" yaml:"obj_func_amount" name:"obj_func_amount"`
+}
+
+// Validate checks that all Constants fields have valid values.
+func (c *Constants) Validate() error {
+	if c.Executions <= 0 {
+		return errors.New("executions must be positive")
+	}
+	if c.Generations <= 0 {
+		return errors.New("generations must be positive")
+	}
+	if c.Dimensions <= 0 {
+		return errors.New("dimensions must be positive")
+	}
+	if c.ObjFuncAmount <= 0 {
+		return errors.New("objective function amount must be positive")
+	}
+	return nil
 }

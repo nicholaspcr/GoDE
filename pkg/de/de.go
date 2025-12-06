@@ -125,19 +125,28 @@ func (mode *de) filterPareto(
 	ctx context.Context, pareto chan []models.Vector,
 ) []models.Vector {
 	finalPareto := make([]models.Vector, 0, 2000)
-	for v := range pareto {
-		finalPareto = append(
-			finalPareto,
-			v...,
-		)
-		// gets non dominated and filters by crowdingDistance
-		_, finalPareto = ReduceByCrowdDistance(
-			ctx, finalPareto, len(finalPareto),
-		)
+	for {
+		select {
+		case <-ctx.Done():
+			// Context cancelled, return what we have so far
+			return finalPareto
+		case v, ok := <-pareto:
+			if !ok {
+				// Channel closed, done processing
+				return finalPareto
+			}
+			finalPareto = append(
+				finalPareto,
+				v...,
+			)
+			// gets non dominated and filters by crowdingDistance
+			_, finalPareto = ReduceByCrowdDistance(
+				ctx, finalPareto, len(finalPareto),
+			)
 
-		if len(finalPareto) > mode.config.ResultLimiter {
-			finalPareto = finalPareto[:mode.config.ResultLimiter]
+			if len(finalPareto) > mode.config.ResultLimiter {
+				finalPareto = finalPareto[:mode.config.ResultLimiter]
+			}
 		}
 	}
-	return finalPareto
 }

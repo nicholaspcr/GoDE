@@ -385,7 +385,7 @@ func (deh *deHandler) GetExecutionResults(
 		flatMaxObjs = append(flatMaxObjs, maxObj.Values...)
 	}
 
-	return &api.RunResponse{
+	return &api.GetExecutionResultsResponse{
 		Pareto: &api.Pareto{
 			Vectors: paretoSet.Vectors,
 			MaxObjs: flatMaxObjs,

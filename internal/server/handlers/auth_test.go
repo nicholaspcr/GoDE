@@ -222,7 +222,7 @@ func TestAuthHandler_Login(t *testing.T) {
 				}
 			},
 			wantErr:  true,
-			wantCode: codes.NotFound,
+			wantCode: codes.Unauthenticated, // Changed from NotFound to prevent user enumeration
 		},
 		{
 			name: "wrong password",

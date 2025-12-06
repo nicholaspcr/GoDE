@@ -90,9 +90,15 @@ func (ah authHandler) Login(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	// Pre-computed bcrypt hash of "dummy" to ensure constant-time comparison
+	// even when user doesn't exist (mitigates timing attacks)
+	dummyHash := []byte("$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy")
+
 	usr, err := ah.db.GetUser(ctx, &api.UserIDs{Username: req.Username})
 	if err != nil {
-		return nil, status.Error(codes.NotFound, "invalid credentials")
+		// Always perform bcrypt comparison to prevent timing-based user enumeration
+		_ = bcrypt.CompareHashAndPassword(dummyHash, []byte(req.Password))
+		return nil, status.Error(codes.Unauthenticated, "invalid credentials")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(usr.Password), []byte(req.Password)); err != nil {

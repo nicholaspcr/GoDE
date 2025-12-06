@@ -86,7 +86,11 @@ func (c *Client) Get(ctx context.Context, key string) (string, error) {
 		return "", err
 	}
 	span.SetStatus(codes.Ok, "")
-	return result.(string), nil
+	str, ok := result.(string)
+	if !ok {
+		return "", fmt.Errorf("unexpected type from Redis Get: %T", result)
+	}
+	return str, nil
 }
 
 // Set stores a value with an optional TTL with circuit breaker protection.
@@ -176,7 +180,11 @@ func (c *Client) HGetAll(ctx context.Context, key string) (map[string]string, er
 	if err != nil {
 		return nil, err
 	}
-	return result.(map[string]string), nil
+	m, ok := result.(map[string]string)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type from Redis HGetAll: %T", result)
+	}
+	return m, nil
 }
 
 // HGet retrieves a specific field from a hash with circuit breaker protection.
@@ -187,7 +195,11 @@ func (c *Client) HGet(ctx context.Context, key, field string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return result.(string), nil
+	str, ok := result.(string)
+	if !ok {
+		return "", fmt.Errorf("unexpected type from Redis HGet: %T", result)
+	}
+	return str, nil
 }
 
 // Expire sets a TTL on a key with circuit breaker protection.

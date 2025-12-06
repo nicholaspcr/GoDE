@@ -23,6 +23,9 @@ func (c *currToBest1) Mutate(
 	elems, rankZero []models.Vector,
 	p variants.Parameters,
 ) (models.Vector, error) {
+	if len(rankZero) == 0 {
+		return models.Vector{}, variants.ErrEmptyRankZero
+	}
 	// random element from rankZero
 	bestIdx := p.Random.Intn(len(rankZero))
 	// indices of the elements to be used in the mutation
@@ -33,17 +36,21 @@ func (c *currToBest1) Mutate(
 		return models.Vector{}, variants.ErrInsufficientPopulation
 	}
 
-	// Validate vectors have non-nil elements
-	for _, idx := range []int{p.CurrPos, bestIdx, ind[1], ind[2], ind[3]} {
+	// Validate elems vectors have non-nil elements
+	for _, idx := range []int{p.CurrPos, ind[1], ind[2], ind[3]} {
 		if elems[idx].Elements == nil || len(elems[idx].Elements) != p.DIM {
 			return models.Vector{}, variants.ErrInvalidVector
 		}
+	}
+	// Validate rankZero best vector
+	if rankZero[bestIdx].Elements == nil || len(rankZero[bestIdx].Elements) != p.DIM {
+		return models.Vector{}, variants.ErrInvalidVector
 	}
 
 	arr := make([]float64, p.DIM)
 	for i := 0; i < p.DIM; i++ {
 		arr[i] = elems[p.CurrPos].Elements[i] +
-			p.F*(elems[bestIdx].Elements[i]-elems[ind[1]].Elements[i]) +
+			p.F*(rankZero[bestIdx].Elements[i]-elems[ind[1]].Elements[i]) +
 			p.F*(elems[ind[2]].Elements[i]-elems[ind[3]].Elements[i])
 	}
 

@@ -184,7 +184,7 @@ func TestCurrToBest1_Mutate_WithDifferentCurrPos(t *testing.T) {
 }
 
 func TestCurrToBest1_Mutate_EmptyRankZero(t *testing.T) {
-	// Test with empty rankZero should cause a panic or error in bestIdx selection
+	// Test with empty rankZero should return ErrEmptyRankZero
 	elems := make([]models.Vector, 10)
 	for i := range elems {
 		elems[i] = models.Vector{
@@ -203,10 +203,9 @@ func TestCurrToBest1_Mutate_EmptyRankZero(t *testing.T) {
 
 	c := CurrToBest1()
 
-	// This should panic due to empty rankZero when trying to select bestIdx
-	assert.Panics(t, func() {
-		_, _ = c.Mutate(elems, rankZero, params)
-	})
+	// This should return ErrEmptyRankZero
+	_, err := c.Mutate(elems, rankZero, params)
+	assert.ErrorIs(t, err, variants.ErrEmptyRankZero)
 }
 
 func TestCurrToBest1_Mutate_VariousFValues(t *testing.T) {

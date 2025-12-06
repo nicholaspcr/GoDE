@@ -7,5 +7,7 @@ var (
 	// ErrInsufficientPopulation indicates the population is too small for the requested mutation operation.
 	ErrInsufficientPopulation = errors.New("insufficient population size")
 	// ErrInvalidVector indicates a vector has nil or empty elements.
-	ErrInvalidVector          = errors.New("vector has nil or empty elements")
+	ErrInvalidVector = errors.New("vector has nil or empty elements")
+	// ErrEmptyRankZero indicates the rank-zero population is empty when a best individual is required.
+	ErrEmptyRankZero = errors.New("rank-zero population is empty")
 )

@@ -22,6 +22,9 @@ func (b *best2) Mutate(
 	elems, rankZero []models.Vector,
 	p variants.Parameters,
 ) (models.Vector, error) {
+	if len(rankZero) == 0 {
+		return models.Vector{}, variants.ErrEmptyRankZero
+	}
 	// random element from rankZero
 	bestIdx := p.Random.Intn(len(rankZero))
 	// indices of the elements to be used in the mutation

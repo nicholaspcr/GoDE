@@ -34,7 +34,7 @@ For async operations, use 'run-async' instead.`,
 
 		// Submit async execution
 		slog.Info("Submitting execution request...")
-		asyncResp, err := client.RunAsync(ctx, &api.RunRequest{
+		asyncResp, err := client.RunAsync(ctx, &api.RunAsyncRequest{
 			Algorithm: run.Algorithm,
 			Variant:   run.Variant,
 			Problem:   run.Problem,
@@ -115,9 +115,13 @@ func init() {
 	deCmd.AddCommand(runCmd)
 	fs := runCmd.Flags()
 
-	fs.StringVar(&run.Algorithm, "algorithm", "", "algorithm name")
-	fs.StringVar(&run.Variant, "variant", "", "variant name")
-	fs.StringVar(&run.Problem, "problem", "", "problem name")
+	fs.StringVar(&run.Algorithm, "algorithm", "", "algorithm name (required)")
+	fs.StringVar(&run.Variant, "variant", "", "variant name (required)")
+	fs.StringVar(&run.Problem, "problem", "", "problem name (required)")
+
+	_ = runCmd.MarkFlagRequired("algorithm")
+	_ = runCmd.MarkFlagRequired("variant")
+	_ = runCmd.MarkFlagRequired("problem")
 
 	fs.Int64Var(&run.DeConfig.Executions, "executions", 1, "amount of executions")
 	fs.Int64Var(&run.DeConfig.Generations, "generations", 100, "amount of generations")

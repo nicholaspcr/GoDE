@@ -33,7 +33,7 @@ For synchronous operation (submit + wait), use 'run' instead.`,
 
 		// Submit async execution
 		slog.Info("Submitting async execution request...")
-		resp, err := client.RunAsync(ctx, &api.RunRequest{
+		resp, err := client.RunAsync(ctx, &api.RunAsyncRequest{
 			Algorithm: runAsync.Algorithm,
 			Variant:   runAsync.Variant,
 			Problem:   runAsync.Problem,
@@ -71,9 +71,13 @@ func init() {
 	deCmd.AddCommand(runAsyncCmd)
 	fs := runAsyncCmd.Flags()
 
-	fs.StringVar(&runAsync.Algorithm, "algorithm", "", "algorithm name")
-	fs.StringVar(&runAsync.Variant, "variant", "", "variant name")
-	fs.StringVar(&runAsync.Problem, "problem", "", "problem name")
+	fs.StringVar(&runAsync.Algorithm, "algorithm", "", "algorithm name (required)")
+	fs.StringVar(&runAsync.Variant, "variant", "", "variant name (required)")
+	fs.StringVar(&runAsync.Problem, "problem", "", "problem name (required)")
+
+	_ = runAsyncCmd.MarkFlagRequired("algorithm")
+	_ = runAsyncCmd.MarkFlagRequired("variant")
+	_ = runAsyncCmd.MarkFlagRequired("problem")
 
 	fs.Int64Var(&runAsync.DeConfig.Executions, "executions", 1, "amount of executions")
 	fs.Int64Var(&runAsync.DeConfig.Generations, "generations", 100, "amount of generations")

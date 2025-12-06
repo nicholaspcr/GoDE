@@ -68,16 +68,16 @@ Updates will be displayed as they are received until the execution completes or 
 	},
 }
 
-func displayProgress(progress *api.ExecutionProgress) {
+func displayProgress(progress *api.StreamProgressResponse) {
 	fmt.Printf("\r[Generation %d/%d] [Execution %d/%d]",
-		progress.CurrentGeneration,
-		progress.TotalGenerations,
-		progress.CompletedExecutions,
-		progress.TotalExecutions)
+		progress.GetCurrentGeneration(),
+		progress.GetTotalGenerations(),
+		progress.GetCompletedExecutions(),
+		progress.GetTotalExecutions())
 
 	// Add newline if execution is complete
-	if progress.CompletedExecutions == progress.TotalExecutions &&
-		progress.CurrentGeneration == progress.TotalGenerations {
+	if progress.GetCompletedExecutions() == progress.GetTotalExecutions() &&
+		progress.GetCurrentGeneration() == progress.GetTotalGenerations() {
 		fmt.Println()
 		fmt.Println("\nExecution completed!")
 	}

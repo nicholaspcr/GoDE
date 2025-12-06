@@ -23,7 +23,7 @@ func getClientAndContext(
 		return nil, nil, nil, err
 	}
 	ctx = metadata.NewOutgoingContext(ctx, metadata.MD{
-		"authorization": []string{fmt.Sprintf("Basic %s", authToken)},
+		"authorization": []string{fmt.Sprintf("Bearer %s", authToken)},
 	})
 
 	conn, err := grpc.NewClient(

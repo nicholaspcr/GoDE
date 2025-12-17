@@ -17,12 +17,12 @@ import (
 // RateLimiter manages rate limiting for different types of requests.
 type RateLimiter struct {
 	// Per-IP rate limiters for login endpoints
-	loginLimiters     map[string]*rate.Limiter
+	loginLimiters     map[string]*limiterWithTimestamp
 	loginLimiterMutex sync.RWMutex
 	loginLimit        rate.Limit
 
 	// Per-IP rate limiters for registration endpoints (stricter)
-	registerLimiters     map[string]*rate.Limiter
+	registerLimiters     map[string]*limiterWithTimestamp
 	registerLimiterMutex sync.RWMutex
 	registerLimit        rate.Limit
 
@@ -36,20 +36,28 @@ type RateLimiter struct {
 	globalLimiter *rate.Limiter
 }
 
+// limiterWithTimestamp wraps a rate.Limiter with last access tracking for LRU eviction.
+type limiterWithTimestamp struct {
+	limiter    *rate.Limiter
+	lastAccess time.Time
+	mu         sync.Mutex
+}
+
 // rateLimiterWithConcurrency combines rate limiting with concurrency control.
 type rateLimiterWithConcurrency struct {
 	limiter     *rate.Limiter
 	concurrent  int
 	maxConcur   int
 	concurMutex sync.Mutex
+	lastAccess  time.Time
 }
 
 // NewRateLimiter creates a new rate limiter with the specified limits.
 func NewRateLimiter(loginRequestsPerMinute, registerRequestsPerMinute, deExecutionsPerUser, maxConcurrentDE, maxRequestsPerSecond int) *RateLimiter {
 	return &RateLimiter{
-		loginLimiters:    make(map[string]*rate.Limiter),
+		loginLimiters:    make(map[string]*limiterWithTimestamp),
 		loginLimit:       rate.Limit(float64(loginRequestsPerMinute) / 60.0), // Convert to per-second
-		registerLimiters: make(map[string]*rate.Limiter),
+		registerLimiters: make(map[string]*limiterWithTimestamp),
 		registerLimit:    rate.Limit(float64(registerRequestsPerMinute) / 60.0), // Convert to per-second
 		userDELimiters:   make(map[string]*rateLimiterWithConcurrency),
 		deLimit:          rate.Limit(float64(deExecutionsPerUser) / 60.0), // Convert to per-second
@@ -83,53 +91,71 @@ func getUsernameFromContext(ctx context.Context) string {
 // getLoginLimiter gets or creates a rate limiter for login requests from the given IP.
 func (rl *RateLimiter) getLoginLimiter(ip string) *rate.Limiter {
 	rl.loginLimiterMutex.RLock()
-	limiter, exists := rl.loginLimiters[ip]
+	lwt, exists := rl.loginLimiters[ip]
 	rl.loginLimiterMutex.RUnlock()
 
 	if exists {
-		return limiter
+		lwt.mu.Lock()
+		lwt.lastAccess = time.Now()
+		lwt.mu.Unlock()
+		return lwt.limiter
 	}
 
 	rl.loginLimiterMutex.Lock()
 	defer rl.loginLimiterMutex.Unlock()
 
 	// Double-check after acquiring write lock
-	limiter, exists = rl.loginLimiters[ip]
+	lwt, exists = rl.loginLimiters[ip]
 	if exists {
-		return limiter
+		lwt.mu.Lock()
+		lwt.lastAccess = time.Now()
+		lwt.mu.Unlock()
+		return lwt.limiter
 	}
 
 	// Create new limiter with burst of 2 to allow occasional bursts
-	limiter = rate.NewLimiter(rl.loginLimit, 2)
-	rl.loginLimiters[ip] = limiter
+	lwt = &limiterWithTimestamp{
+		limiter:    rate.NewLimiter(rl.loginLimit, 2),
+		lastAccess: time.Now(),
+	}
+	rl.loginLimiters[ip] = lwt
 
-	return limiter
+	return lwt.limiter
 }
 
 // getRegisterLimiter gets or creates a rate limiter for registration requests from the given IP.
 func (rl *RateLimiter) getRegisterLimiter(ip string) *rate.Limiter {
 	rl.registerLimiterMutex.RLock()
-	limiter, exists := rl.registerLimiters[ip]
+	lwt, exists := rl.registerLimiters[ip]
 	rl.registerLimiterMutex.RUnlock()
 
 	if exists {
-		return limiter
+		lwt.mu.Lock()
+		lwt.lastAccess = time.Now()
+		lwt.mu.Unlock()
+		return lwt.limiter
 	}
 
 	rl.registerLimiterMutex.Lock()
 	defer rl.registerLimiterMutex.Unlock()
 
 	// Double-check after acquiring write lock
-	limiter, exists = rl.registerLimiters[ip]
+	lwt, exists = rl.registerLimiters[ip]
 	if exists {
-		return limiter
+		lwt.mu.Lock()
+		lwt.lastAccess = time.Now()
+		lwt.mu.Unlock()
+		return lwt.limiter
 	}
 
 	// Create new limiter with burst of 1 (stricter for registration)
-	limiter = rate.NewLimiter(rl.registerLimit, 1)
-	rl.registerLimiters[ip] = limiter
+	lwt = &limiterWithTimestamp{
+		limiter:    rate.NewLimiter(rl.registerLimit, 1),
+		lastAccess: time.Now(),
+	}
+	rl.registerLimiters[ip] = lwt
 
-	return limiter
+	return lwt.limiter
 }
 
 // getUserDELimiter gets or creates a rate limiter for the given username.
@@ -139,6 +165,9 @@ func (rl *RateLimiter) getUserDELimiter(username string) *rateLimiterWithConcurr
 	rl.userDELimiterMutex.RUnlock()
 
 	if exists {
+		limiter.concurMutex.Lock()
+		limiter.lastAccess = time.Now()
+		limiter.concurMutex.Unlock()
 		return limiter
 	}
 
@@ -148,6 +177,9 @@ func (rl *RateLimiter) getUserDELimiter(username string) *rateLimiterWithConcurr
 	// Double-check after acquiring write lock
 	limiter, exists = rl.userDELimiters[username]
 	if exists {
+		limiter.concurMutex.Lock()
+		limiter.lastAccess = time.Now()
+		limiter.concurMutex.Unlock()
 		return limiter
 	}
 
@@ -156,6 +188,7 @@ func (rl *RateLimiter) getUserDELimiter(username string) *rateLimiterWithConcurr
 		limiter:    rate.NewLimiter(rl.deLimit, rl.maxConcurrentDE),
 		concurrent: 0,
 		maxConcur:  rl.maxConcurrentDE,
+		lastAccess: time.Now(),
 	}
 	rl.userDELimiters[username] = limiter
 
@@ -282,18 +315,60 @@ func (rl *RateLimiter) UnaryDERateLimitMiddleware() grpc.UnaryServerInterceptor 
 
 // Cleanup removes old limiters that haven't been used recently.
 // Should be called periodically (e.g., every hour) to prevent memory leaks.
+// Only entries older than maxAge will be removed.
 func (rl *RateLimiter) Cleanup(maxAge time.Duration) {
-	// For simplicity, we'll clear all limiters.
-	// In a production system, you'd track last access time and only remove old ones.
+	now := time.Now()
+	cutoff := now.Add(-maxAge)
+
+	// Cleanup login limiters
 	rl.loginLimiterMutex.Lock()
-	rl.loginLimiters = make(map[string]*rate.Limiter)
+	for ip, lwt := range rl.loginLimiters {
+		lwt.mu.Lock()
+		if lwt.lastAccess.Before(cutoff) {
+			delete(rl.loginLimiters, ip)
+		}
+		lwt.mu.Unlock()
+	}
 	rl.loginLimiterMutex.Unlock()
 
+	// Cleanup register limiters
 	rl.registerLimiterMutex.Lock()
-	rl.registerLimiters = make(map[string]*rate.Limiter)
+	for ip, lwt := range rl.registerLimiters {
+		lwt.mu.Lock()
+		if lwt.lastAccess.Before(cutoff) {
+			delete(rl.registerLimiters, ip)
+		}
+		lwt.mu.Unlock()
+	}
 	rl.registerLimiterMutex.Unlock()
 
+	// Cleanup DE limiters (only if no active concurrent executions)
 	rl.userDELimiterMutex.Lock()
-	rl.userDELimiters = make(map[string]*rateLimiterWithConcurrency)
+	for username, limiter := range rl.userDELimiters {
+		limiter.concurMutex.Lock()
+		// Only remove if no active executions and entry is old enough
+		if limiter.concurrent == 0 && limiter.lastAccess.Before(cutoff) {
+			delete(rl.userDELimiters, username)
+		}
+		limiter.concurMutex.Unlock()
+	}
 	rl.userDELimiterMutex.Unlock()
+}
+
+// StartCleanupRoutine starts a background goroutine that periodically cleans up stale limiters.
+// Returns a cancel function to stop the cleanup routine.
+func (rl *RateLimiter) StartCleanupRoutine(ctx context.Context, interval, maxAge time.Duration) {
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				rl.Cleanup(maxAge)
+			}
+		}
+	}()
 }

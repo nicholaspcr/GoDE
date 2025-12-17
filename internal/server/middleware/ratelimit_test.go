@@ -302,25 +302,97 @@ func TestRateLimiter_UnaryDERateLimitMiddleware(t *testing.T) {
 }
 
 func TestRateLimiter_Cleanup(t *testing.T) {
-	rl := NewRateLimiter(5, 3, 10, 3, 100)
+	t.Run("recent entries are not cleaned up", func(t *testing.T) {
+		rl := NewRateLimiter(5, 3, 10, 3, 100)
 
-	// Create some limiters
-	rl.getLoginLimiter("ip1")
-	rl.getLoginLimiter("ip2")
-	rl.getRegisterLimiter("ip3")
-	rl.getUserDELimiter("user1")
-	rl.getUserDELimiter("user2")
+		// Create some limiters
+		rl.getLoginLimiter("ip1")
+		rl.getLoginLimiter("ip2")
+		rl.getRegisterLimiter("ip3")
+		rl.getUserDELimiter("user1")
+		rl.getUserDELimiter("user2")
 
-	assert.Len(t, rl.loginLimiters, 2)
-	assert.Len(t, rl.registerLimiters, 1)
-	assert.Len(t, rl.userDELimiters, 2)
+		assert.Len(t, rl.loginLimiters, 2)
+		assert.Len(t, rl.registerLimiters, 1)
+		assert.Len(t, rl.userDELimiters, 2)
 
-	// Cleanup
-	rl.Cleanup(time.Hour)
+		// Cleanup with maxAge of 1 hour - recent entries should not be removed
+		rl.Cleanup(time.Hour)
 
-	assert.Len(t, rl.loginLimiters, 0)
-	assert.Len(t, rl.registerLimiters, 0)
-	assert.Len(t, rl.userDELimiters, 0)
+		// All entries should still exist since they were created recently
+		assert.Len(t, rl.loginLimiters, 2)
+		assert.Len(t, rl.registerLimiters, 1)
+		assert.Len(t, rl.userDELimiters, 2)
+	})
+
+	t.Run("old entries are cleaned up", func(t *testing.T) {
+		rl := NewRateLimiter(5, 3, 10, 3, 100)
+
+		// Create some limiters
+		rl.getLoginLimiter("ip1")
+		rl.getLoginLimiter("ip2")
+		rl.getRegisterLimiter("ip3")
+		rl.getUserDELimiter("user1")
+		rl.getUserDELimiter("user2")
+
+		assert.Len(t, rl.loginLimiters, 2)
+		assert.Len(t, rl.registerLimiters, 1)
+		assert.Len(t, rl.userDELimiters, 2)
+
+		// Set last access to a time in the past to simulate old entries
+		pastTime := time.Now().Add(-2 * time.Hour)
+		for _, lwt := range rl.loginLimiters {
+			lwt.mu.Lock()
+			lwt.lastAccess = pastTime
+			lwt.mu.Unlock()
+		}
+		for _, lwt := range rl.registerLimiters {
+			lwt.mu.Lock()
+			lwt.lastAccess = pastTime
+			lwt.mu.Unlock()
+		}
+		for _, limiter := range rl.userDELimiters {
+			limiter.concurMutex.Lock()
+			limiter.lastAccess = pastTime
+			limiter.concurMutex.Unlock()
+		}
+
+		// Cleanup with maxAge of 1 hour - old entries should be removed
+		rl.Cleanup(time.Hour)
+
+		assert.Len(t, rl.loginLimiters, 0)
+		assert.Len(t, rl.registerLimiters, 0)
+		assert.Len(t, rl.userDELimiters, 0)
+	})
+
+	t.Run("DE limiters with active concurrent executions are not cleaned up", func(t *testing.T) {
+		rl := NewRateLimiter(5, 3, 10, 3, 100)
+
+		// Create and access a DE limiter
+		limiter := rl.getUserDELimiter("user1")
+
+		// Simulate an active execution
+		err := limiter.acquireConcurrent()
+		assert.NoError(t, err)
+
+		// Set last access to a time in the past
+		limiter.concurMutex.Lock()
+		limiter.lastAccess = time.Now().Add(-2 * time.Hour)
+		limiter.concurMutex.Unlock()
+
+		// Cleanup - entry should NOT be removed because of active execution
+		rl.Cleanup(time.Hour)
+
+		assert.Len(t, rl.userDELimiters, 1)
+
+		// Release the execution
+		limiter.releaseConcurrent()
+
+		// Now cleanup should remove the entry
+		rl.Cleanup(time.Hour)
+
+		assert.Len(t, rl.userDELimiters, 0)
+	})
 }
 
 func TestGetIPFromContext(t *testing.T) {

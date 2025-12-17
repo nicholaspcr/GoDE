@@ -217,12 +217,7 @@ deserver migrate version # Check current version
 
 ### Common Issues
 
-**1. Test failures in `internal/executor/`**
-- Symptom: Tests timeout or fail with "Condition never satisfied"
-- Cause: Async timing issues, not blocking issues
-- Status: Known issue with async execution tests (TestExecutor_CompletionTracking, etc.)
-
-**2. Migration errors with SQLite**
+**1. Migration errors with SQLite**
 - Symptom: `syntax error` during migration
 - Fix: Ensure migrations avoid PostgreSQL-specific syntax (no `DO $$` blocks, use inline `REFERENCES`)
 

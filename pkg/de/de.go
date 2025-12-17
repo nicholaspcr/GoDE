@@ -3,6 +3,7 @@ package de
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"sync"
 	"time"
@@ -57,6 +58,10 @@ func (mode *de) Execute(ctx context.Context) ([]models.Vector, [][]float64, erro
 	allMaxObjs := make([][]float64, 0, mode.constants.Executions)
 	var maxObjsMu sync.Mutex
 
+	// Collect errors from executions
+	var execErrors []error
+	var execErrorsMu sync.Mutex
+
 	// Goroutine to consume max objectives (prevents deadlock)
 	wgMaxObjs := &sync.WaitGroup{}
 	wgMaxObjs.Add(1)
@@ -81,6 +86,9 @@ func (mode *de) Execute(ctx context.Context) ([]models.Vector, [][]float64, erro
 						slog.Int("execution_id", idx),
 						slog.Any("panic", r),
 					)
+					execErrorsMu.Lock()
+					execErrors = append(execErrors, fmt.Errorf("panic in execution %d: %v", idx, r))
+					execErrorsMu.Unlock()
 				}
 			}()
 			// running the algorithm execution.
@@ -89,6 +97,10 @@ func (mode *de) Execute(ctx context.Context) ([]models.Vector, [][]float64, erro
 				paretoCh,
 				maxObjsCh,
 			); err != nil {
+				execErrorsMu.Lock()
+				execErrors = append(execErrors, fmt.Errorf("execution %d: %w", idx, err))
+				execErrorsMu.Unlock()
+
 				// Check if error is due to cancellation
 				if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 					slog.Info("Execution cancelled",
@@ -108,6 +120,11 @@ func (mode *de) Execute(ctx context.Context) ([]models.Vector, [][]float64, erro
 	close(paretoCh)
 	close(maxObjsCh)
 	wgMaxObjs.Wait()
+
+	// If all executions failed, return the combined error
+	if len(execErrors) == mode.constants.Executions {
+		return nil, nil, errors.Join(execErrors...)
+	}
 
 	// Check if cancelled before filtering
 	if err := ctx.Err(); err != nil {

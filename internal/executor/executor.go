@@ -347,7 +347,13 @@ func (e *Executor) runAlgorithm(ctx context.Context, executionID, problemName, v
 		ResultLimiter:        1000,
 	}
 
-	mode, err := de.New(deConfig, de.WithAlgorithm(algorithm))
+	mode, err := de.New(deConfig,
+		de.WithAlgorithm(algorithm),
+		de.WithExecutions(int(config.Executions)),
+		de.WithGenerations(int(config.Generations)),
+		de.WithDimensions(int(config.DimensionsSize)),
+		de.WithObjFuncAmount(int(config.ObjectivesSize)),
+	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create DE mode: %w", err)
 	}

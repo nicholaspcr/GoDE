@@ -47,25 +47,53 @@ type jwtService struct {
 	secretKey     []byte
 	accessExpiry  time.Duration
 	refreshExpiry time.Duration
+	issuer        string
+	audience      string
+}
+
+// JWTConfig holds configuration for JWT service.
+type JWTConfig struct {
+	SecretKey     string
+	AccessExpiry  time.Duration
+	RefreshExpiry time.Duration
+	Issuer        string // Token issuer (e.g., "gode-server")
+	Audience      string // Intended audience (e.g., "gode-api")
+}
+
+// DefaultJWTConfig returns a JWTConfig with sensible defaults.
+func DefaultJWTConfig(secretKey string, accessExpiry time.Duration) JWTConfig {
+	return JWTConfig{
+		SecretKey:     secretKey,
+		AccessExpiry:  accessExpiry,
+		RefreshExpiry: 7 * 24 * time.Hour,
+		Issuer:        "gode-server",
+		Audience:      "gode-api",
+	}
 }
 
 // NewJWTService creates a new JWT service instance
 // accessExpiry is the duration for access tokens (typically short-lived, e.g., 15 minutes)
 // refreshExpiry is the duration for refresh tokens (typically long-lived, e.g., 7 days)
 func NewJWTService(secretKey string, accessExpiry time.Duration) JWTService {
-	return &jwtService{
-		secretKey:     []byte(secretKey),
-		accessExpiry:  accessExpiry,
-		refreshExpiry: 7 * 24 * time.Hour, // Default: 7 days for refresh tokens
-	}
+	cfg := DefaultJWTConfig(secretKey, accessExpiry)
+	return NewJWTServiceWithConfig(cfg)
 }
 
 // NewJWTServiceWithRefreshExpiry creates a new JWT service with custom refresh token expiry
 func NewJWTServiceWithRefreshExpiry(secretKey string, accessExpiry, refreshExpiry time.Duration) JWTService {
+	cfg := DefaultJWTConfig(secretKey, accessExpiry)
+	cfg.RefreshExpiry = refreshExpiry
+	return NewJWTServiceWithConfig(cfg)
+}
+
+// NewJWTServiceWithConfig creates a new JWT service with full configuration.
+func NewJWTServiceWithConfig(cfg JWTConfig) JWTService {
 	return &jwtService{
-		secretKey:     []byte(secretKey),
-		accessExpiry:  accessExpiry,
-		refreshExpiry: refreshExpiry,
+		secretKey:     []byte(cfg.SecretKey),
+		accessExpiry:  cfg.AccessExpiry,
+		refreshExpiry: cfg.RefreshExpiry,
+		issuer:        cfg.Issuer,
+		audience:      cfg.Audience,
 	}
 }
 
@@ -99,6 +127,8 @@ func (j *jwtService) generateToken(username string, tokenType TokenType, expiry 
 			ExpiresAt: jwt.NewNumericDate(now.Add(expiry)),
 			IssuedAt:  jwt.NewNumericDate(now),
 			NotBefore: jwt.NewNumericDate(now),
+			Issuer:    j.issuer,
+			Audience:  jwt.ClaimStrings{j.audience},
 		},
 	}
 
@@ -152,13 +182,28 @@ func (j *jwtService) RefreshAccessToken(refreshTokenString string) (accessToken,
 func (j *jwtService) parseToken(tokenString string) (*Claims, error) {
 	claims := &Claims{}
 
+	// Build parser options for validation
+	parserOpts := []jwt.ParserOption{
+		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Name}),
+	}
+
+	// Add issuer validation if configured
+	if j.issuer != "" {
+		parserOpts = append(parserOpts, jwt.WithIssuer(j.issuer))
+	}
+
+	// Add audience validation if configured
+	if j.audience != "" {
+		parserOpts = append(parserOpts, jwt.WithAudience(j.audience))
+	}
+
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-		// Verify signing method
+		// Verify signing method (additional check beyond WithValidMethods)
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, ErrInvalidToken
 		}
 		return j.secretKey, nil
-	})
+	}, parserOpts...)
 
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {

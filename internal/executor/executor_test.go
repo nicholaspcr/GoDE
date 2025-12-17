@@ -661,12 +661,13 @@ func TestExecutor_ActiveExecutionTracking(t *testing.T) {
 	ctx := context.Background()
 	userID := "test-user"
 
+	// Use more generations to ensure execution takes long enough to observe
 	config := &api.DEConfig{
 		Executions:     1,
-		Generations:    2,
-		PopulationSize: 10,
+		Generations:    50, // Increased from 2 to ensure execution is observable
+		PopulationSize: 20,
 		DimensionsSize: 10,
-		ObjectivesSize:  2,
+		ObjectivesSize: 2,
 		FloorLimiter:   0.0,
 		CeilLimiter:    1.0,
 		AlgorithmConfig: &api.DEConfig_Gde3{
@@ -687,7 +688,7 @@ func TestExecutor_ActiveExecutionTracking(t *testing.T) {
 		defer exec.activeExecsMu.RUnlock()
 		_, exists := exec.activeExecs[executionID]
 		return exists
-	}, 2*time.Second, 50*time.Millisecond, "Execution should appear in activeExecs")
+	}, 2*time.Second, 10*time.Millisecond, "Execution should appear in activeExecs")
 
 	// Wait for completion
 	assert.Eventually(t, func() bool {
@@ -816,10 +817,10 @@ func TestExecutor_CancellationDuringExecution(t *testing.T) {
 
 	config := &api.DEConfig{
 		Executions:     1,
-		Generations:    100, // Long-running to allow cancellation
-		PopulationSize: 20,
-		DimensionsSize: 10,
-		ObjectivesSize:  2,
+		Generations:    500, // Long-running to allow cancellation
+		PopulationSize: 50,
+		DimensionsSize: 30,
+		ObjectivesSize: 2,
 		FloorLimiter:   0.0,
 		CeilLimiter:    1.0,
 		AlgorithmConfig: &api.DEConfig_Gde3{
@@ -834,8 +835,15 @@ func TestExecutor_CancellationDuringExecution(t *testing.T) {
 	executionID, err := exec.SubmitExecution(ctx, userID, "gde3", "zdt1", "rand1", config)
 	require.NoError(t, err)
 
-	// Wait a bit then cancel
-	time.Sleep(100 * time.Millisecond)
+	// Wait for execution to start
+	assert.Eventually(t, func() bool {
+		exec.activeExecsMu.RLock()
+		defer exec.activeExecsMu.RUnlock()
+		_, exists := exec.activeExecs[executionID]
+		return exists
+	}, 2*time.Second, 10*time.Millisecond, "Execution should start")
+
+	// Now cancel it
 	err = exec.CancelExecution(ctx, executionID, userID)
 	require.NoError(t, err)
 
@@ -845,7 +853,7 @@ func TestExecutor_CancellationDuringExecution(t *testing.T) {
 		if err != nil {
 			return false
 		}
-		return execution.Status == store.ExecutionStatusCancelled || execution.Status == store.ExecutionStatusFailed
+		return execution.Status == store.ExecutionStatusCancelled
 	}, 5*time.Second, 100*time.Millisecond, "Execution should be cancelled")
 
 	// Worker slot should be released

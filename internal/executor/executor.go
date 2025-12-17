@@ -92,8 +92,13 @@ func (e *Executor) SubmitExecution(ctx context.Context, userID, algorithm, probl
 		return "", fmt.Errorf("failed to create execution: %w", err)
 	}
 
+	// Extract trace context values from parent context before spawning goroutine.
+	// This allows background execution to propagate parent context values (e.g., tracing spans)
+	// while still being cancellable independently.
+	parentCtx := context.WithoutCancel(ctx)
+
 	// Submit to worker pool (non-blocking)
-	go e.executeInBackground(executionID, userID, algorithm, problem, variant, config)
+	go e.executeInBackground(parentCtx, executionID, userID, algorithm, problem, variant, config)
 
 	return executionID, nil
 }
@@ -116,13 +121,14 @@ func (e *Executor) CancelExecution(ctx context.Context, executionID, userID stri
 	return nil
 }
 
-func (e *Executor) executeInBackground(executionID, userID, algorithm, problem, variant string, config *api.DEConfig) {
+func (e *Executor) executeInBackground(parentCtx context.Context, executionID, userID, algorithm, problem, variant string, config *api.DEConfig) {
 	// Acquire worker slot
 	e.workerPool <- struct{}{}
 	defer func() { <-e.workerPool }()
 
-	// Create cancellable context
-	ctx, cancel := context.WithCancel(context.Background())
+	// Create cancellable context derived from parent (preserves trace context).
+	// The parent context is already detached from request cancellation via WithoutCancel.
+	ctx, cancel := context.WithCancel(parentCtx)
 	defer cancel()
 
 	// Register active execution

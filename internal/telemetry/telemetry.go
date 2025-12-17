@@ -2,7 +2,10 @@ package telemetry
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"os"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -10,6 +13,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
+	"google.golang.org/grpc/credentials"
 )
 
 // TracingExporterType defines the type of tracing exporter to use.
@@ -22,11 +26,21 @@ const (
 	TracingExporterOTLP TracingExporterType = "otlp"
 )
 
+// TLSConfig holds TLS configuration for secure connections.
+type TLSConfig struct {
+	Enabled    bool   // Enable TLS
+	CertFile   string // Path to client certificate file (PEM)
+	KeyFile    string // Path to client key file (PEM)
+	CAFile     string // Path to CA certificate file (PEM) for server verification
+	SkipVerify bool   // Skip server certificate verification (not recommended for production)
+}
+
 // TracingConfig holds configuration for tracing.
 type TracingConfig struct {
 	ExporterType TracingExporterType
-	OTLPEndpoint string // e.g., "localhost:4317" for gRPC
+	OTLPEndpoint string  // e.g., "localhost:4317" for gRPC
 	SampleRatio  float64 // 0.0 to 1.0, where 1.0 = sample everything
+	TLS          TLSConfig
 }
 
 // NewTracerProvider creates a new tracer provider with the specified configuration.
@@ -47,12 +61,23 @@ func NewTracerProvider(ctx context.Context, appName string, cfg TracingConfig) (
 		}
 
 	case TracingExporterOTLP:
-		opts := []otlptracegrpc.Option{
-			otlptracegrpc.WithInsecure(), // TODO: Add TLS support in production
-		}
+		opts := []otlptracegrpc.Option{}
+
 		if cfg.OTLPEndpoint != "" {
 			opts = append(opts, otlptracegrpc.WithEndpoint(cfg.OTLPEndpoint))
 		}
+
+		// Configure TLS or insecure connection
+		if cfg.TLS.Enabled {
+			tlsCreds, tlsErr := buildTLSCredentials(cfg.TLS)
+			if tlsErr != nil {
+				return nil, fmt.Errorf("failed to build TLS credentials: %w", tlsErr)
+			}
+			opts = append(opts, otlptracegrpc.WithTLSCredentials(tlsCreds))
+		} else {
+			opts = append(opts, otlptracegrpc.WithInsecure())
+		}
+
 		exporter, err = otlptracegrpc.New(ctx, opts...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create OTLP trace exporter: %w", err)
@@ -78,4 +103,36 @@ func NewTracerProvider(ctx context.Context, appName string, cfg TracingConfig) (
 	otel.SetTracerProvider(tp)
 
 	return tp, nil
+}
+
+// buildTLSCredentials creates gRPC transport credentials from TLS configuration.
+func buildTLSCredentials(cfg TLSConfig) (credentials.TransportCredentials, error) {
+	tlsConfig := &tls.Config{
+		MinVersion:         tls.VersionTLS12,
+		InsecureSkipVerify: cfg.SkipVerify, //nolint:gosec // Configurable for testing environments
+	}
+
+	// Load client certificate if provided
+	if cfg.CertFile != "" && cfg.KeyFile != "" {
+		cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load client certificate: %w", err)
+		}
+		tlsConfig.Certificates = []tls.Certificate{cert}
+	}
+
+	// Load CA certificate for server verification if provided
+	if cfg.CAFile != "" {
+		caCert, err := os.ReadFile(cfg.CAFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read CA certificate: %w", err)
+		}
+		caCertPool := x509.NewCertPool()
+		if !caCertPool.AppendCertsFromPEM(caCert) {
+			return nil, fmt.Errorf("failed to parse CA certificate")
+		}
+		tlsConfig.RootCAs = caCertPool
+	}
+
+	return credentials.NewTLS(tlsConfig), nil
 }

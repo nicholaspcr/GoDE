@@ -139,7 +139,7 @@ func RegisterUserServiceServer(s grpc.ServiceRegistrar, srv UserServiceServer) {
 	s.RegisterService(&UserService_ServiceDesc, srv)
 }
 
-func _UserService_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _UserService_Create_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(UserServiceCreateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -151,13 +151,13 @@ func _UserService_Create_Handler(srv interface{}, ctx context.Context, dec func(
 		Server:     srv,
 		FullMethod: UserService_Create_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(UserServiceServer).Create(ctx, req.(*UserServiceCreateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UserService_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _UserService_Get_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(UserServiceGetRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -169,13 +169,13 @@ func _UserService_Get_Handler(srv interface{}, ctx context.Context, dec func(int
 		Server:     srv,
 		FullMethod: UserService_Get_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(UserServiceServer).Get(ctx, req.(*UserServiceGetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UserService_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _UserService_Update_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(UserServiceUpdateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -187,13 +187,13 @@ func _UserService_Update_Handler(srv interface{}, ctx context.Context, dec func(
 		Server:     srv,
 		FullMethod: UserService_Update_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(UserServiceServer).Update(ctx, req.(*UserServiceUpdateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UserService_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _UserService_Delete_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(UserServiceDeleteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -205,7 +205,7 @@ func _UserService_Delete_Handler(srv interface{}, ctx context.Context, dec func(
 		Server:     srv,
 		FullMethod: UserService_Delete_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(UserServiceServer).Delete(ctx, req.(*UserServiceDeleteRequest))
 	}
 	return interceptor(ctx, in, info, handler)

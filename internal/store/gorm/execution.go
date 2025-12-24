@@ -73,7 +73,7 @@ func (s *executionStore) GetExecution(ctx context.Context, executionID, userID s
 
 // UpdateExecutionStatus updates the status of an execution.
 func (s *executionStore) UpdateExecutionStatus(ctx context.Context, executionID string, status store.ExecutionStatus, errorMsg string) error {
-	updates := map[string]interface{}{
+	updates := map[string]any{
 		"status":     string(status),
 		"updated_at": time.Now(),
 	}
@@ -91,7 +91,7 @@ func (s *executionStore) UpdateExecutionStatus(ctx context.Context, executionID 
 
 // UpdateExecutionResult updates the pareto ID for a completed execution.
 func (s *executionStore) UpdateExecutionResult(ctx context.Context, executionID string, paretoID uint64) error {
-	return s.db.WithContext(ctx).Model(&executionModel{}).Where("id = ?", executionID).Updates(map[string]interface{}{
+	return s.db.WithContext(ctx).Model(&executionModel{}).Where("id = ?", executionID).Updates(map[string]any{
 		"pareto_id":  paretoID,
 		"updated_at": time.Now(),
 	}).Error

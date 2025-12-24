@@ -689,8 +689,8 @@ func (m *mockStreamServer) SetHeader(metadata.MD) error  { return nil }
 func (m *mockStreamServer) SendHeader(metadata.MD) error { return nil }
 func (m *mockStreamServer) SetTrailer(metadata.MD)       {}
 func (m *mockStreamServer) Context() context.Context     { return m.ctx }
-func (m *mockStreamServer) SendMsg(interface{}) error    { return nil }
-func (m *mockStreamServer) RecvMsg(interface{}) error    { return nil }
+func (m *mockStreamServer) SendMsg(any) error    { return nil }
+func (m *mockStreamServer) RecvMsg(any) error    { return nil }
 
 func (m *mockStreamServer) getSentMessages() []*api.StreamProgressResponse {
 	m.mu.Lock()

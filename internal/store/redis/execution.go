@@ -398,8 +398,8 @@ func (s *ExecutionStore) Subscribe(ctx context.Context, channel string) (<-chan 
 }
 
 // ConfigToProto converts a DEConfig proto to a store-compatible format for JSON marshaling.
-func ConfigToProto(config *api.DEConfig) map[string]interface{} {
-	result := map[string]interface{}{
+func ConfigToProto(config *api.DEConfig) map[string]any {
+	result := map[string]any{
 		"executions":      config.Executions,
 		"generations":     config.Generations,
 		"population_size": config.PopulationSize,
@@ -411,7 +411,7 @@ func ConfigToProto(config *api.DEConfig) map[string]interface{} {
 
 	if config.AlgorithmConfig != nil {
 		if algConfig, ok := config.AlgorithmConfig.(*api.DEConfig_Gde3); ok && algConfig.Gde3 != nil {
-			result["gde3_config"] = map[string]interface{}{
+			result["gde3_config"] = map[string]any{
 				"cr": algConfig.Gde3.Cr,
 				"f":  algConfig.Gde3.F,
 				"p":  algConfig.Gde3.P,

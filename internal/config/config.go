@@ -10,7 +10,7 @@ import (
 )
 
 // Load loads the configuration from a file and the environment.
-func Load(appName string, cfg interface{}) error {
+func Load(appName string, cfg any) error {
 	// Create a new Viper instance to avoid global state issues
 	v := viper.New()
 

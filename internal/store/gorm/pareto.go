@@ -156,7 +156,7 @@ func (st *paretoStore) UpdatePareto(
 	}
 
 	// Update fields
-	updates := make(map[string]interface{})
+	updates := make(map[string]any)
 
 	for _, field := range fields {
 		if field == "max_objs" {

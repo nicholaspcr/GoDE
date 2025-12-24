@@ -105,10 +105,10 @@ func TestClient_MethodSignatures(t *testing.T) {
 			_ func() error                                                         = c.Close
 			_ func(context.Context) error                                          = c.HealthCheck
 			_ func(context.Context, string) (string, error)                        = c.Get
-			_ func(context.Context, string, interface{}, time.Duration) error      = c.Set
+			_ func(context.Context, string, any, time.Duration) error      = c.Set
 			_ func(context.Context, string) error                                  = c.Delete
-			_ func(context.Context, string, interface{}) error                     = c.Publish
-			_ func(context.Context, string, ...interface{}) error                  = c.HSet
+			_ func(context.Context, string, any) error                     = c.Publish
+			_ func(context.Context, string, ...any) error                  = c.HSet
 			_ func(context.Context, string) (map[string]string, error)             = c.HGetAll
 			_ func(context.Context, string, string) (string, error)                = c.HGet
 			_ func(context.Context, string, time.Duration) error                   = c.Expire
@@ -251,7 +251,7 @@ func TestClient_HashOperations(t *testing.T) {
 	t.Run("HSet with multiple fields", func(t *testing.T) {
 		// Validate parameters for multiple fields
 		key := "user:123"
-		values := []interface{}{
+		values := []any{
 			"name", "John",
 			"email", "john@example.com",
 			"age", "30",
@@ -317,7 +317,7 @@ func TestClient_ErrorHandling(t *testing.T) {
 	})
 
 	t.Run("Nil value handling", func(t *testing.T) {
-		var value interface{}
+		var value any
 		value = nil
 		// Verify nil values are handled
 		assert.Nil(t, value)

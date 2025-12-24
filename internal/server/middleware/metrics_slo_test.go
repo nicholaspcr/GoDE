@@ -37,7 +37,7 @@ func TestUnaryMetricsAndSLOMiddleware_Success(t *testing.T) {
 	middleware := UnaryMetricsAndSLOMiddleware(metrics, tracker)
 
 	// Handler that succeeds
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return "success", nil
 	}
 
@@ -75,7 +75,7 @@ func TestUnaryMetricsAndSLOMiddleware_Error(t *testing.T) {
 	middleware := UnaryMetricsAndSLOMiddleware(metrics, tracker)
 
 	// Handler that fails
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
@@ -110,7 +110,7 @@ func TestUnaryMetricsAndSLOMiddleware_NilMetrics(t *testing.T) {
 	// Nil metrics should not cause panic
 	middleware := UnaryMetricsAndSLOMiddleware(nil, tracker)
 
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return "success", nil
 	}
 
@@ -133,7 +133,7 @@ func TestUnaryMetricsAndSLOMiddleware_NilSLOTracker(t *testing.T) {
 	// Nil SLO tracker should not cause panic
 	middleware := UnaryMetricsAndSLOMiddleware(metrics, nil)
 
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return "success", nil
 	}
 
@@ -171,7 +171,7 @@ func TestUnaryMetricsAndSLOMiddleware_MultipleRequests(t *testing.T) {
 	}
 
 	// Simulate 10 successful requests
-	successHandler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	successHandler := func(ctx context.Context, req any) (any, error) {
 		return "success", nil
 	}
 
@@ -181,7 +181,7 @@ func TestUnaryMetricsAndSLOMiddleware_MultipleRequests(t *testing.T) {
 	}
 
 	// Simulate 1 failed request
-	failHandler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	failHandler := func(ctx context.Context, req any) (any, error) {
 		return nil, status.Error(codes.Internal, "error")
 	}
 
@@ -223,28 +223,28 @@ func TestUnaryMetricsAndSLOMiddleware_DifferentStatusCodes(t *testing.T) {
 	}{
 		{
 			name: "OK",
-			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
+			handler: func(ctx context.Context, req any) (any, error) {
 				return "ok", nil
 			},
 			expectSuccess: true,
 		},
 		{
 			name: "NotFound",
-			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
+			handler: func(ctx context.Context, req any) (any, error) {
 				return nil, status.Error(codes.NotFound, "not found")
 			},
 			expectSuccess: false,
 		},
 		{
 			name: "InvalidArgument",
-			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
+			handler: func(ctx context.Context, req any) (any, error) {
 				return nil, status.Error(codes.InvalidArgument, "invalid")
 			},
 			expectSuccess: false,
 		},
 		{
 			name: "Internal",
-			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
+			handler: func(ctx context.Context, req any) (any, error) {
 				return nil, status.Error(codes.Internal, "internal")
 			},
 			expectSuccess: false,
@@ -283,7 +283,7 @@ func TestUnaryMetricsAndSLOMiddleware_RecordsDuration(t *testing.T) {
 	middleware := UnaryMetricsAndSLOMiddleware(metrics, tracker)
 
 	// Handler with deliberate delay
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		time.Sleep(10 * time.Millisecond)
 		return "success", nil
 	}

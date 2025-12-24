@@ -193,11 +193,11 @@ func (m *mockParetoStream) Context() context.Context {
 	return m.ctx
 }
 
-func (m *mockParetoStream) SendMsg(msg interface{}) error {
+func (m *mockParetoStream) SendMsg(msg any) error {
 	return nil
 }
 
-func (m *mockParetoStream) RecvMsg(msg interface{}) error {
+func (m *mockParetoStream) RecvMsg(msg any) error {
 	return nil
 }
 

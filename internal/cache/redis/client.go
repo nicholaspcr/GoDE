@@ -77,7 +77,7 @@ func (c *Client) Get(ctx context.Context, key string) (string, error) {
 	)
 	defer span.End()
 
-	result, err := c.breaker.Execute(func() (interface{}, error) {
+	result, err := c.breaker.Execute(func() (any, error) {
 		return c.rdb.Get(ctx, key).Result()
 	})
 	if err != nil {
@@ -94,7 +94,7 @@ func (c *Client) Get(ctx context.Context, key string) (string, error) {
 }
 
 // Set stores a value with an optional TTL with circuit breaker protection.
-func (c *Client) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
+func (c *Client) Set(ctx context.Context, key string, value any, ttl time.Duration) error {
 	tracer := otel.Tracer("redis")
 	ctx, span := tracer.Start(ctx, "redis.Set",
 		trace.WithAttributes(
@@ -105,7 +105,7 @@ func (c *Client) Set(ctx context.Context, key string, value interface{}, ttl tim
 	)
 	defer span.End()
 
-	_, err := c.breaker.Execute(func() (interface{}, error) {
+	_, err := c.breaker.Execute(func() (any, error) {
 		return nil, c.rdb.Set(ctx, key, value, ttl).Err()
 	})
 	if err != nil {
@@ -126,7 +126,7 @@ func (c *Client) Delete(ctx context.Context, key string) error {
 	)
 	defer span.End()
 
-	_, err := c.breaker.Execute(func() (interface{}, error) {
+	_, err := c.breaker.Execute(func() (any, error) {
 		return nil, c.rdb.Del(ctx, key).Err()
 	})
 	if err != nil {
@@ -139,7 +139,7 @@ func (c *Client) Delete(ctx context.Context, key string) error {
 }
 
 // Publish publishes a message to a channel with circuit breaker protection.
-func (c *Client) Publish(ctx context.Context, channel string, message interface{}) error {
+func (c *Client) Publish(ctx context.Context, channel string, message any) error {
 	tracer := otel.Tracer("redis")
 	ctx, span := tracer.Start(ctx, "redis.Publish",
 		trace.WithAttributes(attribute.String("redis.channel", channel)),
@@ -147,7 +147,7 @@ func (c *Client) Publish(ctx context.Context, channel string, message interface{
 	)
 	defer span.End()
 
-	_, err := c.breaker.Execute(func() (interface{}, error) {
+	_, err := c.breaker.Execute(func() (any, error) {
 		return nil, c.rdb.Publish(ctx, channel, message).Err()
 	})
 	if err != nil {
@@ -165,8 +165,8 @@ func (c *Client) Subscribe(ctx context.Context, channel string) *redis.PubSub {
 }
 
 // HSet sets a hash field with circuit breaker protection.
-func (c *Client) HSet(ctx context.Context, key string, values ...interface{}) error {
-	_, err := c.breaker.Execute(func() (interface{}, error) {
+func (c *Client) HSet(ctx context.Context, key string, values ...any) error {
+	_, err := c.breaker.Execute(func() (any, error) {
 		return nil, c.rdb.HSet(ctx, key, values...).Err()
 	})
 	return err
@@ -174,7 +174,7 @@ func (c *Client) HSet(ctx context.Context, key string, values ...interface{}) er
 
 // HGetAll retrieves all fields and values from a hash with circuit breaker protection.
 func (c *Client) HGetAll(ctx context.Context, key string) (map[string]string, error) {
-	result, err := c.breaker.Execute(func() (interface{}, error) {
+	result, err := c.breaker.Execute(func() (any, error) {
 		return c.rdb.HGetAll(ctx, key).Result()
 	})
 	if err != nil {
@@ -189,7 +189,7 @@ func (c *Client) HGetAll(ctx context.Context, key string) (map[string]string, er
 
 // HGet retrieves a specific field from a hash with circuit breaker protection.
 func (c *Client) HGet(ctx context.Context, key, field string) (string, error) {
-	result, err := c.breaker.Execute(func() (interface{}, error) {
+	result, err := c.breaker.Execute(func() (any, error) {
 		return c.rdb.HGet(ctx, key, field).Result()
 	})
 	if err != nil {
@@ -204,7 +204,7 @@ func (c *Client) HGet(ctx context.Context, key, field string) (string, error) {
 
 // HDel removes one or more fields from a hash with circuit breaker protection.
 func (c *Client) HDel(ctx context.Context, key string, fields ...string) error {
-	_, err := c.breaker.Execute(func() (interface{}, error) {
+	_, err := c.breaker.Execute(func() (any, error) {
 		return nil, c.rdb.HDel(ctx, key, fields...).Err()
 	})
 	return err
@@ -228,7 +228,7 @@ func (c *Client) HScan(ctx context.Context, key string, cursor uint64, match str
 		cursor uint64
 	}
 
-	result, err := c.breaker.Execute(func() (interface{}, error) {
+	result, err := c.breaker.Execute(func() (any, error) {
 		keys, nextCursor, err := c.rdb.HScan(ctx, key, cursor, match, count).Result()
 		if err != nil {
 			return nil, err
@@ -247,7 +247,7 @@ func (c *Client) HScan(ctx context.Context, key string, cursor uint64, match str
 
 // Expire sets a TTL on a key with circuit breaker protection.
 func (c *Client) Expire(ctx context.Context, key string, ttl time.Duration) error {
-	_, err := c.breaker.Execute(func() (interface{}, error) {
+	_, err := c.breaker.Execute(func() (any, error) {
 		return nil, c.rdb.Expire(ctx, key, ttl).Err()
 	})
 	return err
@@ -255,7 +255,7 @@ func (c *Client) Expire(ctx context.Context, key string, ttl time.Duration) erro
 
 // Keys returns all keys matching a pattern with circuit breaker protection.
 func (c *Client) Keys(ctx context.Context, pattern string) ([]string, error) {
-	result, err := c.breaker.Execute(func() (interface{}, error) {
+	result, err := c.breaker.Execute(func() (any, error) {
 		return c.rdb.Keys(ctx, pattern).Result()
 	})
 	if err != nil {

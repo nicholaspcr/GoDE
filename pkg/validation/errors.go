@@ -25,7 +25,7 @@ var (
 // ValidationError represents a validation error with context.
 //nolint:revive // Name is intentionally descriptive despite stuttering
 type ValidationError struct {
-	Value   interface{}
+	Value   any
 	Err     error
 	Field   string
 	Message string
@@ -40,7 +40,7 @@ func (e *ValidationError) Unwrap() error {
 }
 
 // NewValidationError creates a new validation error.
-func NewValidationError(field string, value interface{}, err error, message string) *ValidationError {
+func NewValidationError(field string, value any, err error, message string) *ValidationError {
 	return &ValidationError{
 		Field:   field,
 		Value:   value,

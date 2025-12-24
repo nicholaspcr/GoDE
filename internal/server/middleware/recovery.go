@@ -15,10 +15,10 @@ import (
 func UnaryPanicRecoveryMiddleware() grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
-		req interface{},
+		req any,
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
-	) (resp interface{}, err error) {
+	) (resp any, err error) {
 		defer func() {
 			if r := recover(); r != nil {
 				// Log the panic with stack trace
@@ -43,7 +43,7 @@ func UnaryPanicRecoveryMiddleware() grpc.UnaryServerInterceptor {
 // StreamPanicRecoveryMiddleware recovers from panics in stream handlers.
 func StreamPanicRecoveryMiddleware() grpc.StreamServerInterceptor {
 	return func(
-		srv interface{},
+		srv any,
 		ss grpc.ServerStream,
 		info *grpc.StreamServerInfo,
 		handler grpc.StreamHandler,

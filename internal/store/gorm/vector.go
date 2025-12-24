@@ -121,7 +121,7 @@ func (st *vectorStore) UpdateVector(
 	}
 
 	// Update fields
-	updates := make(map[string]interface{})
+	updates := make(map[string]any)
 
 	for _, field := range fields {
 		switch field {

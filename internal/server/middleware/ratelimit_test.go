@@ -36,7 +36,7 @@ func TestRateLimiter_UnaryGlobalRateLimitMiddleware(t *testing.T) {
 	}
 
 	handlerCalled := 0
-	mockHandler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	mockHandler := func(ctx context.Context, req any) (any, error) {
 		handlerCalled++
 		return "response", nil
 	}
@@ -77,7 +77,7 @@ func TestRateLimiter_UnaryAuthRateLimitMiddleware(t *testing.T) {
 	middleware := rl.UnaryAuthRateLimitMiddleware()
 
 	handlerCalled := 0
-	mockHandler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	mockHandler := func(ctx context.Context, req any) (any, error) {
 		handlerCalled++
 		return "response", nil
 	}
@@ -160,7 +160,7 @@ func TestRateLimiter_UnaryDERateLimitMiddleware(t *testing.T) {
 	middleware := rl.UnaryDERateLimitMiddleware()
 
 	handlerCalled := 0
-	mockHandler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	mockHandler := func(ctx context.Context, req any) (any, error) {
 		handlerCalled++
 		time.Sleep(100 * time.Millisecond) // Simulate work
 		return "response", nil
@@ -249,7 +249,7 @@ func TestRateLimiter_UnaryDERateLimitMiddleware(t *testing.T) {
 			mu               sync.Mutex
 		)
 
-		slowHandler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		slowHandler := func(ctx context.Context, req any) (any, error) {
 			mu.Lock()
 			concurrentCalled++
 			mu.Unlock()

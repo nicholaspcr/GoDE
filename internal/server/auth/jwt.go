@@ -197,7 +197,7 @@ func (j *jwtService) parseToken(tokenString string) (*Claims, error) {
 		parserOpts = append(parserOpts, jwt.WithAudience(j.audience))
 	}
 
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
 		// Verify signing method (additional check beyond WithValidMethods)
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, ErrInvalidToken

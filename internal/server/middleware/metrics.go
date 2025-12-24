@@ -17,10 +17,10 @@ import (
 func UnaryMetricsMiddleware(metrics *telemetry.Metrics) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
-		req interface{},
+		req any,
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
-	) (interface{}, error) {
+	) (any, error) {
 		if metrics == nil {
 			return handler(ctx, req)
 		}
@@ -72,7 +72,7 @@ func UnaryMetricsMiddleware(metrics *telemetry.Metrics) grpc.UnaryServerIntercep
 // StreamMetricsMiddleware records metrics for stream RPC calls.
 func StreamMetricsMiddleware(metrics *telemetry.Metrics) grpc.StreamServerInterceptor {
 	return func(
-		srv interface{},
+		srv any,
 		ss grpc.ServerStream,
 		info *grpc.StreamServerInfo,
 		handler grpc.StreamHandler,
@@ -161,10 +161,10 @@ func RecordPanic(ctx context.Context, metrics *telemetry.Metrics, location strin
 func UnaryMetricsAndSLOMiddleware(metrics *telemetry.Metrics, sloTracker *slo.Tracker) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
-		req interface{},
+		req any,
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
-	) (interface{}, error) {
+	) (any, error) {
 		start := time.Now()
 
 		// Track in-flight requests (metrics only)

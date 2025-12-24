@@ -42,7 +42,7 @@ func TestCircuitBreaker_OpensAfterFailures(t *testing.T) {
 	breaker := newCircuitBreaker("test-breaker", cfg)
 
 	// Execute successful request
-	_, err := breaker.Execute(func() (interface{}, error) {
+	_, err := breaker.Execute(func() (any, error) {
 		return "success", nil
 	})
 	assert.NoError(t, err)
@@ -51,7 +51,7 @@ func TestCircuitBreaker_OpensAfterFailures(t *testing.T) {
 	// Execute 3 failing requests to trigger circuit breaker
 	// Need 3 requests with >= 60% failure ratio
 	for i := 0; i < 3; i++ {
-		_, _ = breaker.Execute(func() (interface{}, error) {
+		_, _ = breaker.Execute(func() (any, error) {
 			return nil, assert.AnError
 		})
 	}
@@ -71,7 +71,7 @@ func TestCircuitBreaker_HalfOpenAfterTimeout(t *testing.T) {
 
 	// Trigger circuit to open (3 failures)
 	for i := 0; i < 3; i++ {
-		_, _ = breaker.Execute(func() (interface{}, error) {
+		_, _ = breaker.Execute(func() (any, error) {
 			return nil, assert.AnError
 		})
 	}
@@ -82,7 +82,7 @@ func TestCircuitBreaker_HalfOpenAfterTimeout(t *testing.T) {
 	time.Sleep(150 * time.Millisecond)
 
 	// Next request should transition to half-open
-	_, _ = breaker.Execute(func() (interface{}, error) {
+	_, _ = breaker.Execute(func() (any, error) {
 		return "success", nil
 	})
 
@@ -103,13 +103,13 @@ func TestCircuitBreaker_FailureRatioThreshold(t *testing.T) {
 	// Execute 3 requests: 1 success, 2 failures
 	// Failure ratio: 2/3 = 66.6% > 60% threshold
 	// Should trigger circuit breaker
-	_, _ = breaker.Execute(func() (interface{}, error) {
+	_, _ = breaker.Execute(func() (any, error) {
 		return "success", nil
 	})
-	_, _ = breaker.Execute(func() (interface{}, error) {
+	_, _ = breaker.Execute(func() (any, error) {
 		return nil, assert.AnError
 	})
-	_, _ = breaker.Execute(func() (interface{}, error) {
+	_, _ = breaker.Execute(func() (any, error) {
 		return nil, assert.AnError
 	})
 
@@ -128,10 +128,10 @@ func TestCircuitBreaker_MinimumRequestsThreshold(t *testing.T) {
 
 	// Execute only 2 failing requests (less than minimum of 3)
 	// Should NOT open circuit
-	_, _ = breaker.Execute(func() (interface{}, error) {
+	_, _ = breaker.Execute(func() (any, error) {
 		return nil, assert.AnError
 	})
-	_, _ = breaker.Execute(func() (interface{}, error) {
+	_, _ = breaker.Execute(func() (any, error) {
 		return nil, assert.AnError
 	})
 
@@ -150,7 +150,7 @@ func TestCircuitBreaker_SuccessfulRecovery(t *testing.T) {
 
 	// Open the circuit
 	for i := 0; i < 3; i++ {
-		_, _ = breaker.Execute(func() (interface{}, error) {
+		_, _ = breaker.Execute(func() (any, error) {
 			return nil, assert.AnError
 		})
 	}
@@ -161,7 +161,7 @@ func TestCircuitBreaker_SuccessfulRecovery(t *testing.T) {
 
 	// Execute successful requests to close circuit
 	for i := 0; i < 3; i++ {
-		_, err := breaker.Execute(func() (interface{}, error) {
+		_, err := breaker.Execute(func() (any, error) {
 			return "success", nil
 		})
 		assert.NoError(t, err)

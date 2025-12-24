@@ -222,10 +222,10 @@ func (rlc *rateLimiterWithConcurrency) releaseConcurrent() {
 func (rl *RateLimiter) UnaryGlobalRateLimitMiddleware() grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
-		req interface{},
+		req any,
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
-	) (interface{}, error) {
+	) (any, error) {
 		// Check global rate limit
 		if !rl.globalLimiter.Allow() {
 			return nil, status.Errorf(codes.ResourceExhausted,
@@ -240,10 +240,10 @@ func (rl *RateLimiter) UnaryGlobalRateLimitMiddleware() grpc.UnaryServerIntercep
 func (rl *RateLimiter) UnaryAuthRateLimitMiddleware() grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
-		req interface{},
+		req any,
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
-	) (interface{}, error) {
+	) (any, error) {
 		// Only apply to auth endpoints
 		if info.FullMethod != "/api.v1.AuthService/Login" &&
 			info.FullMethod != "/api.v1.AuthService/Register" {
@@ -275,10 +275,10 @@ func (rl *RateLimiter) UnaryAuthRateLimitMiddleware() grpc.UnaryServerIntercepto
 func (rl *RateLimiter) UnaryDERateLimitMiddleware() grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
-		req interface{},
+		req any,
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
-	) (interface{}, error) {
+	) (any, error) {
 		// Only apply to DE execution endpoint
 		if info.FullMethod != "/api.v1.DifferentialEvolutionService/Run" {
 			return handler(ctx, req)

@@ -20,7 +20,7 @@ func TestUnaryPanicRecoveryMiddleware(t *testing.T) {
 			FullMethod: "/api.v1.TestService/TestMethod",
 		}
 
-		mockHandler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		mockHandler := func(ctx context.Context, req any) (any, error) {
 			return "response", nil
 		}
 
@@ -35,7 +35,7 @@ func TestUnaryPanicRecoveryMiddleware(t *testing.T) {
 			FullMethod: "/api.v1.TestService/TestMethod",
 		}
 
-		mockHandler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		mockHandler := func(ctx context.Context, req any) (any, error) {
 			panic("something went wrong")
 		}
 
@@ -55,7 +55,7 @@ func TestUnaryPanicRecoveryMiddleware(t *testing.T) {
 			FullMethod: "/api.v1.TestService/TestMethod",
 		}
 
-		mockHandler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		mockHandler := func(ctx context.Context, req any) (any, error) {
 			panic(nil)
 		}
 
@@ -74,7 +74,7 @@ func TestUnaryPanicRecoveryMiddleware(t *testing.T) {
 			FullMethod: "/api.v1.TestService/TestMethod",
 		}
 
-		mockHandler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		mockHandler := func(ctx context.Context, req any) (any, error) {
 			panic(assert.AnError)
 		}
 
@@ -93,7 +93,7 @@ func TestUnaryPanicRecoveryMiddleware(t *testing.T) {
 			FullMethod: "/api.v1.TestService/TestMethod",
 		}
 
-		mockHandler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		mockHandler := func(ctx context.Context, req any) (any, error) {
 			return nil, assert.AnError
 		}
 
@@ -115,7 +115,7 @@ func TestStreamPanicRecoveryMiddleware(t *testing.T) {
 			FullMethod: "/api.v1.TestService/TestStream",
 		}
 
-		mockHandler := func(srv interface{}, ss grpc.ServerStream) error {
+		mockHandler := func(srv any, ss grpc.ServerStream) error {
 			return nil
 		}
 
@@ -128,7 +128,7 @@ func TestStreamPanicRecoveryMiddleware(t *testing.T) {
 			FullMethod: "/api.v1.TestService/TestStream",
 		}
 
-		mockHandler := func(srv interface{}, ss grpc.ServerStream) error {
+		mockHandler := func(srv any, ss grpc.ServerStream) error {
 			panic("stream panic")
 		}
 
@@ -146,7 +146,7 @@ func TestStreamPanicRecoveryMiddleware(t *testing.T) {
 			FullMethod: "/api.v1.TestService/TestStream",
 		}
 
-		mockHandler := func(srv interface{}, ss grpc.ServerStream) error {
+		mockHandler := func(srv any, ss grpc.ServerStream) error {
 			return assert.AnError
 		}
 

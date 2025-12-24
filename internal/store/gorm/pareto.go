@@ -3,6 +3,7 @@ package gorm
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
@@ -52,14 +53,18 @@ func (st *paretoStore) CreatePareto(
 		return err
 	}
 
-	// Set user ID if provided
+	// Set user ID if provided - return error if user not found
 	if pareto.Ids != nil && pareto.Ids.UserId != "" {
 		// Look up user by username/ID
 		var user userModel
 		tx := st.DB.WithContext(ctx).Where("username = ?", pareto.Ids.UserId).First(&user)
-		if tx.Error == nil {
-			paretoModel.UserID = user.ID
+		if tx.Error != nil {
+			if tx.Error == gorm.ErrRecordNotFound {
+				return fmt.Errorf("user not found: %s", pareto.Ids.UserId)
+			}
+			return fmt.Errorf("failed to lookup user: %w", tx.Error)
 		}
+		paretoModel.UserID = user.ID
 	}
 
 	// Start transaction
@@ -261,12 +266,16 @@ func (st *paretoStore) CreateParetoSet(ctx context.Context, paretoSet *store.Par
 		return err
 	}
 
-	// Look up user
+	// Look up user - return error if not found to prevent orphaned pareto records
 	var user userModel
 	tx := st.DB.WithContext(ctx).Where("username = ?", paretoSet.UserID).First(&user)
-	if tx.Error == nil {
-		paretoModel.UserID = user.ID
+	if tx.Error != nil {
+		if tx.Error == gorm.ErrRecordNotFound {
+			return fmt.Errorf("user not found: %s", paretoSet.UserID)
+		}
+		return fmt.Errorf("failed to lookup user: %w", tx.Error)
 	}
+	paretoModel.UserID = user.ID
 
 	// Start transaction
 	return st.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {

@@ -37,6 +37,9 @@ func (p *pbest) Mutate(
 	}
 
 	indexLimit := int(math.Ceil(float64(len(rankZero)) * params.P))
+	if indexLimit <= 0 {
+		indexLimit = 1 // Ensure at least one candidate to avoid Intn(0) panic
+	}
 	bestIndex := params.Random.Intn(indexLimit)
 
 	// Validate elems vectors have non-nil elements

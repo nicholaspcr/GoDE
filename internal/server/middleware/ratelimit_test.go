@@ -180,18 +180,19 @@ func TestRateLimiter_UnaryDERateLimitMiddleware(t *testing.T) {
 		}
 	})
 
-	t.Run("DE endpoints without username are not rate limited", func(t *testing.T) {
+	t.Run("DE endpoints without username return auth error", func(t *testing.T) {
 		handlerCalled = 0
 		ctx := context.Background()
 		info := &grpc.UnaryServerInfo{
 			FullMethod: "/api.v1.DifferentialEvolutionService/Run",
 		}
 
-		// Should pass through (no username in context)
+		// Should return auth error (no username in context)
 		resp, err := middleware(ctx, nil, info, mockHandler)
-		assert.NoError(t, err)
-		assert.Equal(t, "response", resp)
-		assert.Equal(t, 1, handlerCalled)
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		assert.Equal(t, codes.Unauthenticated, status.Code(err))
+		assert.Equal(t, 0, handlerCalled) // Handler should not be called
 	})
 
 	t.Run("DE endpoints are rate limited per user", func(t *testing.T) {

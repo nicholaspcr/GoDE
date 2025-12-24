@@ -286,8 +286,8 @@ func (rl *RateLimiter) UnaryDERateLimitMiddleware() grpc.UnaryServerInterceptor 
 
 		username := getUsernameFromContext(ctx)
 		if username == "" {
-			// This shouldn't happen if auth middleware is working correctly
-			return handler(ctx, req)
+			// Return auth error instead of bypassing rate limiting
+			return nil, status.Error(codes.Unauthenticated, "username not found in context for DE rate limiting")
 		}
 
 		limiter := rl.getUserDELimiter(username)

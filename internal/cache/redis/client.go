@@ -202,6 +202,49 @@ func (c *Client) HGet(ctx context.Context, key, field string) (string, error) {
 	return str, nil
 }
 
+// HDel removes one or more fields from a hash with circuit breaker protection.
+func (c *Client) HDel(ctx context.Context, key string, fields ...string) error {
+	_, err := c.breaker.Execute(func() (interface{}, error) {
+		return nil, c.rdb.HDel(ctx, key, fields...).Err()
+	})
+	return err
+}
+
+// HScan iterates over hash fields with cursor-based pagination.
+// Returns fields, values (alternating), next cursor, and error.
+func (c *Client) HScan(ctx context.Context, key string, cursor uint64, match string, count int64) ([]string, uint64, error) {
+	tracer := otel.Tracer("redis")
+	ctx, span := tracer.Start(ctx, "redis.HScan",
+		trace.WithAttributes(
+			attribute.String("redis.key", key),
+			attribute.Int64("redis.cursor", int64(cursor)),
+		),
+		trace.WithSpanKind(trace.SpanKindClient),
+	)
+	defer span.End()
+
+	type hscanResult struct {
+		keys   []string
+		cursor uint64
+	}
+
+	result, err := c.breaker.Execute(func() (interface{}, error) {
+		keys, nextCursor, err := c.rdb.HScan(ctx, key, cursor, match, count).Result()
+		if err != nil {
+			return nil, err
+		}
+		return hscanResult{keys: keys, cursor: nextCursor}, nil
+	})
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, 0, err
+	}
+	span.SetStatus(codes.Ok, "")
+	res := result.(hscanResult)
+	return res.keys, res.cursor, nil
+}
+
 // Expire sets a TTL on a key with circuit breaker protection.
 func (c *Client) Expire(ctx context.Context, key string, ttl time.Duration) error {
 	_, err := c.breaker.Execute(func() (interface{}, error) {

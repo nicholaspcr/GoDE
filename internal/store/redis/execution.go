@@ -169,31 +169,9 @@ func (s *ExecutionStore) UpdateExecutionResult(ctx context.Context, executionID 
 }
 
 // ListExecutions retrieves all executions for a user, optionally filtered by status.
+// Uses HSCAN for memory-efficient pagination to avoid OOM with large datasets.
 func (s *ExecutionStore) ListExecutions(ctx context.Context, userID string, status *store.ExecutionStatus, limit, offset int) ([]*store.Execution, int, error) {
-	userKey := s.userExecutionsKey(userID)
-
-	data, err := s.client.HGetAll(ctx, userKey)
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to get user executions: %w", err)
-	}
-
-	// First, collect all matching executions
-	allExecutions := make([]*store.Execution, 0, len(data))
-	for _, executionData := range data {
-		var execution store.Execution
-		if err := json.Unmarshal([]byte(executionData), &execution); err != nil {
-			continue // Skip invalid entries
-		}
-
-		// Filter by status if provided
-		if status != nil && execution.Status != *status {
-			continue
-		}
-
-		allExecutions = append(allExecutions, &execution)
-	}
-
-	// Apply defaults
+	// Apply defaults first
 	if limit <= 0 || limit > 100 {
 		limit = 50
 	}
@@ -201,20 +179,53 @@ func (s *ExecutionStore) ListExecutions(ctx context.Context, userID string, stat
 		offset = 0
 	}
 
-	totalCount := len(allExecutions)
+	userKey := s.userExecutionsKey(userID)
 
-	// Apply in-memory pagination
-	start := offset
-	if start > totalCount {
-		return []*store.Execution{}, totalCount, nil
+	// Use HSCAN to iterate without loading all into memory
+	var cursor uint64
+	var executions []*store.Execution
+	seen := 0
+	collected := 0
+
+	for {
+		// HScan returns alternating field/value pairs
+		pairs, nextCursor, err := s.client.HScan(ctx, userKey, cursor, "*", 100)
+		if err != nil {
+			return nil, 0, fmt.Errorf("failed to scan user executions: %w", err)
+		}
+
+		// Process pairs (alternating key, value)
+		for i := 1; i < len(pairs); i += 2 {
+			executionData := pairs[i]
+
+			var execution store.Execution
+			if err := json.Unmarshal([]byte(executionData), &execution); err != nil {
+				continue // Skip invalid entries
+			}
+
+			// Filter by status if provided
+			if status != nil && execution.Status != *status {
+				continue
+			}
+
+			seen++
+			// Only collect items within our pagination window
+			if seen > offset && collected < limit {
+				executions = append(executions, &execution)
+				collected++
+			}
+		}
+
+		cursor = nextCursor
+		if cursor == 0 {
+			break
+		}
+
+		// Optimization: stop scanning if we've collected enough and passed the offset
+		// Note: we still need full count for totalCount, so we continue scanning
 	}
 
-	end := start + limit
-	if end > totalCount {
-		end = totalCount
-	}
-
-	return allExecutions[start:end], totalCount, nil
+	return executions, seen, nil
 }
 
 // DeleteExecution removes an execution from Redis.
@@ -231,23 +242,15 @@ func (s *ExecutionStore) DeleteExecution(ctx context.Context, executionID, userI
 		return fmt.Errorf("failed to delete execution: %w", err)
 	}
 
-	// Remove from user's execution set
+	// Remove from user's execution set using atomic HDel
 	userKey := s.userExecutionsKey(execution.UserID)
-	fields, err := s.client.HGetAll(ctx, userKey)
-	if err == nil {
-		delete(fields, executionID)
-		// Clear and repopulate
-		if err := s.client.Delete(ctx, userKey); err == nil {
-			for id, data := range fields {
-				if hsetErr := s.client.HSet(ctx, userKey, id, data); hsetErr != nil {
-					slog.Error("failed to repopulate user execution set",
-						slog.String("user_id", execution.UserID),
-						slog.String("execution_id", id),
-						slog.Any("error", hsetErr),
-					)
-				}
-			}
-		}
+	if err := s.client.HDel(ctx, userKey, executionID); err != nil {
+		slog.Error("failed to remove execution from user set",
+			slog.String("user_id", execution.UserID),
+			slog.String("execution_id", executionID),
+			slog.Any("error", err),
+		)
+		// Continue cleanup even if this fails
 	}
 
 	// Delete progress

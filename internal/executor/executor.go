@@ -121,6 +121,67 @@ func (e *Executor) CancelExecution(ctx context.Context, executionID, userID stri
 	return nil
 }
 
+// Shutdown gracefully stops all active executions and waits for workers to finish.
+// It cancels all running executions and waits up to 30 seconds for them to complete.
+func (e *Executor) Shutdown(ctx context.Context) error {
+	slog.Info("shutting down executor",
+		slog.Int("active_executions", len(e.activeExecs)),
+		slog.Int("max_workers", e.maxWorkers),
+	)
+
+	// Copy cancel functions to avoid holding lock during cancellation
+	e.activeExecsMu.Lock()
+	cancelFuncs := make([]context.CancelFunc, 0, len(e.activeExecs))
+	executionIDs := make([]string, 0, len(e.activeExecs))
+	for id, cancel := range e.activeExecs {
+		cancelFuncs = append(cancelFuncs, cancel)
+		executionIDs = append(executionIDs, id)
+	}
+	e.activeExecsMu.Unlock()
+
+	// Cancel all active executions
+	for i, cancel := range cancelFuncs {
+		slog.Info("cancelling execution during shutdown",
+			slog.String("execution_id", executionIDs[i]),
+		)
+		cancel()
+	}
+
+	// Wait for all workers to finish by acquiring all slots
+	// This ensures all executeInBackground goroutines have completed
+	shutdownTimeout := 30 * time.Second
+	deadline := time.Now().Add(shutdownTimeout)
+
+	acquired := 0
+	for acquired < e.maxWorkers {
+		remainingTime := time.Until(deadline)
+		if remainingTime <= 0 {
+			slog.Warn("shutdown timeout - some workers still active",
+				slog.Int("workers_remaining", e.maxWorkers-acquired),
+			)
+			return fmt.Errorf("shutdown timeout: %d workers still active", e.maxWorkers-acquired)
+		}
+
+		select {
+		case e.workerPool <- struct{}{}:
+			acquired++
+		case <-ctx.Done():
+			slog.Warn("shutdown context cancelled",
+				slog.Int("workers_remaining", e.maxWorkers-acquired),
+			)
+			return ctx.Err()
+		case <-time.After(remainingTime):
+			slog.Warn("shutdown timeout - some workers still active",
+				slog.Int("workers_remaining", e.maxWorkers-acquired),
+			)
+			return fmt.Errorf("shutdown timeout: %d workers still active", e.maxWorkers-acquired)
+		}
+	}
+
+	slog.Info("executor shutdown complete")
+	return nil
+}
+
 func (e *Executor) executeInBackground(parentCtx context.Context, executionID, userID, algorithm, problem, variant string, config *api.DEConfig) {
 	// Acquire worker slot
 	e.workerPool <- struct{}{}

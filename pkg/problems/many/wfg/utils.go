@@ -9,7 +9,8 @@ import (
 // ----------------------------------------------------------------------------
 
 func arange(start, end, steps int) []float64 {
-	s := make([]float64, 0)
+	size := (end - start + steps - 1) / steps
+	s := make([]float64, 0, size)
 	for i := start; i < end; i += steps {
 		s = append(s, float64(i))
 	}
@@ -17,15 +18,15 @@ func arange(start, end, steps int) []float64 {
 }
 
 func _ones(n int) []float64 {
-	a := make([]float64, 0)
+	a := make([]float64, n)
 	for i := 0; i < n; i++ {
-		a = append(a, 1)
+		a[i] = 1
 	}
 	return a
 }
 
 func _post(t, a []float64) []float64 {
-	var x []float64
+	x := make([]float64, 0, len(t))
 	lastIndex := len(t) - 1
 	for i := 0; i < lastIndex; i++ {
 		x = append(x, math.Max(t[lastIndex], a[i])*(t[i]-0.5)+0.5)
@@ -35,7 +36,7 @@ func _post(t, a []float64) []float64 {
 }
 
 func _calculate(xVec, s, h []float64) []float64 {
-	var x []float64
+	x := make([]float64, 0, len(h))
 
 	// debug printing
 	// fmt.Println("xVec -> ", xVec)

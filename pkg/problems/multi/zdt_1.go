@@ -44,13 +44,7 @@ func (v *zdt1) Evaluate(e *models.Vector, M int) error {
 		return errors.New("sqrt of a negative number")
 	}
 
-	newObjs := make([]float64, 0, 2)
-	newObjs = append(newObjs, e.Elements[0])
-	newObjs = append(newObjs, g*h)
-
-	// puts new objectives into the elem
-	e.Objectives = make([]float64, len(newObjs))
-	copy(e.Objectives, newObjs)
+	e.Objectives = []float64{e.Elements[0], g*h}
 
 	return nil
 }

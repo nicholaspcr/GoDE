@@ -47,13 +47,7 @@ func (v *zdt6) Evaluate(e *models.Vector, M int) error {
 	G := evalG(e.Elements)
 	H := evalH(F, G)
 
-	newObjs := make([]float64, 0, 2)
-	newObjs = append(newObjs, F)
-	newObjs = append(newObjs, G*H)
-
-	// puts new objectives into the elem
-	e.Objectives = make([]float64, len(newObjs))
-	copy(e.Objectives, newObjs)
+	e.Objectives = []float64{F, G*H}
 
 	return nil
 }

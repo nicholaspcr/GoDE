@@ -57,7 +57,6 @@ type window struct {
 	total     int64
 	success   int64
 	errors    int64
-	latencies []float64
 	mu        sync.Mutex
 }
 
@@ -76,7 +75,6 @@ func NewTracker(ctx context.Context, objectives []Objective) (*Tracker, error) {
 		t.windows[objectives[i].Name] = &window{
 			startTime: time.Now(),
 			duration:  objectives[i].Window,
-			latencies: make([]float64, 0, 1000),
 		}
 	}
 
@@ -171,7 +169,6 @@ func (t *Tracker) RecordRequest(ctx context.Context, service string, success boo
 			w.total = 0
 			w.success = 0
 			w.errors = 0
-			w.latencies = w.latencies[:0]
 		}
 
 		w.total++
@@ -180,7 +177,6 @@ func (t *Tracker) RecordRequest(ctx context.Context, service string, success boo
 		} else {
 			w.errors++
 		}
-		w.latencies = append(w.latencies, durationSeconds)
 
 		// Calculate compliance (window already locked, use internal method)
 		objective := t.objectives[name]

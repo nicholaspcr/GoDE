@@ -3,21 +3,24 @@ package composite
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/nicholaspcr/GoDE/internal/store"
 )
 
 // ExecutionStore combines Redis and database stores for execution operations.
 type ExecutionStore struct {
-	redis store.ExecutionOperations
-	db    store.ExecutionOperations
+	redis  store.ExecutionOperations
+	db     store.ExecutionOperations
+	logger *slog.Logger
 }
 
 // NewExecutionStore creates a new composite execution store.
 func NewExecutionStore(redis, db store.ExecutionOperations) *ExecutionStore {
 	return &ExecutionStore{
-		redis: redis,
-		db:    db,
+		redis:  redis,
+		db:     db,
+		logger: slog.Default(),
 	}
 }
 
@@ -30,6 +33,9 @@ func (s *ExecutionStore) CreateExecution(ctx context.Context, execution *store.E
 
 	// Store in Redis for fast access
 	if err := s.redis.CreateExecution(ctx, execution); err != nil {
+		s.logger.Warn("failed to populate cache on create",
+			slog.String("execution_id", execution.ID),
+			slog.Any("error", err))
 		// Database write succeeded but Redis failed - log but don't fail the request
 		// The execution will still work, just slower queries
 		return nil
@@ -38,48 +44,62 @@ func (s *ExecutionStore) CreateExecution(ctx context.Context, execution *store.E
 	return nil
 }
 
-// GetExecution tries Redis first, falls back to database.
+// GetExecution tries Redis first, validates freshness against database.
 func (s *ExecutionStore) GetExecution(ctx context.Context, executionID, userID string) (*store.Execution, error) {
-	// Try Redis first (fast path)
-	execution, err := s.redis.GetExecution(ctx, executionID, userID)
-	if err == nil {
-		return execution, nil
+	// Try Redis first
+	cachedExec, cacheErr := s.redis.GetExecution(ctx, executionID, userID)
+
+	// Fetch from DB for comparison
+	dbExec, dbErr := s.db.GetExecution(ctx, executionID, userID)
+	if dbErr != nil {
+		if cacheErr == nil {
+			s.logger.Warn("database unavailable, using cached execution",
+				slog.String("execution_id", executionID))
+			return cachedExec, nil
+		}
+		return nil, dbErr
 	}
 
-	// Fall back to database
-	execution, err = s.db.GetExecution(ctx, executionID, userID)
-	if err != nil {
-		return nil, err
+	// If cache is fresh, use it
+	if cacheErr == nil && !cachedExec.UpdatedAt.Before(dbExec.UpdatedAt) {
+		return cachedExec, nil
 	}
 
-	// Re-populate Redis cache
-	_ = s.redis.CreateExecution(ctx, execution)
-
-	return execution, nil
+	// Refresh stale cache
+	_ = s.redis.CreateExecution(ctx, dbExec)
+	return dbExec, nil
 }
 
-// UpdateExecutionStatus updates status in both stores.
+// UpdateExecutionStatus updates status in database and invalidates cache.
 func (s *ExecutionStore) UpdateExecutionStatus(ctx context.Context, executionID string, status store.ExecutionStatus, errorMsg string) error {
 	// Update database first (source of truth)
 	if err := s.db.UpdateExecutionStatus(ctx, executionID, status, errorMsg); err != nil {
 		return err
 	}
 
-	// Update Redis cache (best effort)
-	_ = s.redis.UpdateExecutionStatus(ctx, executionID, status, errorMsg)
+	// Invalidate cache instead of updating to avoid stale data
+	if err := s.redis.DeleteExecution(ctx, executionID, ""); err != nil {
+		s.logger.Warn("failed to invalidate cache on status update",
+			slog.String("execution_id", executionID),
+			slog.Any("error", err))
+	}
 
 	return nil
 }
 
-// UpdateExecutionResult updates the pareto ID in both stores.
+// UpdateExecutionResult updates the pareto ID in database and invalidates cache.
 func (s *ExecutionStore) UpdateExecutionResult(ctx context.Context, executionID string, paretoID uint64) error {
 	// Update database first (source of truth)
 	if err := s.db.UpdateExecutionResult(ctx, executionID, paretoID); err != nil {
 		return err
 	}
 
-	// Update Redis cache (best effort)
-	_ = s.redis.UpdateExecutionResult(ctx, executionID, paretoID)
+	// Invalidate cache instead of updating to avoid stale data
+	if err := s.redis.DeleteExecution(ctx, executionID, ""); err != nil {
+		s.logger.Warn("failed to invalidate cache on result update",
+			slog.String("execution_id", executionID),
+			slog.Any("error", err))
+	}
 
 	return nil
 }

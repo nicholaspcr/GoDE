@@ -214,3 +214,68 @@ func CalculateCrwdDist(elems []models.Vector) {
 		}
 	}
 }
+
+// IncrementalParetoUpdate efficiently integrates new vectors into existing Pareto front.
+// More efficient than re-ranking entire set from scratch.
+func IncrementalParetoUpdate(
+	ctx context.Context,
+	currentPareto []models.Vector,
+	newVectors []models.Vector,
+	maxSize int,
+) ([]models.Vector, []models.Vector) {
+	// Merge current + new
+	merged := make([]models.Vector, 0, len(currentPareto)+len(newVectors))
+	merged = append(merged, currentPareto...)
+	merged = append(merged, newVectors...)
+
+	// Quick filter for obviously dominated vectors
+	filtered := quickDominanceFilter(merged)
+
+	// Full ranking only if needed
+	if len(filtered) > maxSize*2 {
+		return ReduceByCrowdDistance(ctx, filtered, maxSize)
+	}
+
+	// For smaller sets, optimize crowding distance calculation
+	ranks := FastNonDominatedRanking(ctx, filtered)
+	CalculateCrwdDist(ranks[0])
+	sort.SliceStable(ranks[0], func(i, j int) bool {
+		return ranks[0][i].CrowdingDistance > ranks[0][j].CrowdingDistance
+	})
+
+	result := ranks[0]
+	if len(result) > maxSize {
+		result = result[:maxSize]
+	}
+
+	rankZero := make([]models.Vector, len(ranks[0]))
+	for idx, v := range ranks[0] {
+		rankZero[idx] = v.Copy()
+	}
+
+	return result, rankZero
+}
+
+// quickDominanceFilter removes obviously dominated vectors in O(n²).
+// More efficient than full ranking when we just need basic filtering.
+func quickDominanceFilter(vectors []models.Vector) []models.Vector {
+	result := make([]models.Vector, 0, len(vectors))
+
+	for i := range vectors {
+		dominated := false
+		for j := range vectors {
+			if i == j {
+				continue
+			}
+			if DominanceTest(vectors[i].Objectives, vectors[j].Objectives) == 1 {
+				dominated = true
+				break
+			}
+		}
+		if !dominated {
+			result = append(result, vectors[i])
+		}
+	}
+
+	return result
+}

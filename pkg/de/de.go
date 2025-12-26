@@ -152,18 +152,13 @@ func (mode *de) filterPareto(
 				// Channel closed, done processing
 				return finalPareto
 			}
-			finalPareto = append(
-				finalPareto,
-				v...,
-			)
-			// gets non dominated and filters by crowdingDistance
-			_, finalPareto = ReduceByCrowdDistance(
-				ctx, finalPareto, len(finalPareto),
-			)
 
-			if len(finalPareto) > mode.config.ResultLimiter {
-				finalPareto = finalPareto[:mode.config.ResultLimiter]
-			}
+			// Use incremental update instead of full re-ranking
+			var rankZero []models.Vector
+			finalPareto, rankZero = IncrementalParetoUpdate(
+				ctx, finalPareto, v, mode.config.ResultLimiter,
+			)
+			_ = rankZero // Available for future features
 		}
 	}
 }

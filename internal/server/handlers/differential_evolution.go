@@ -380,7 +380,9 @@ func (deh *deHandler) GetExecutionResults(
 	// Flatten max objectives from store.MaxObjectives
 	flatMaxObjs := make([]float64, 0)
 	for _, maxObj := range paretoSet.MaxObjectives {
-		flatMaxObjs = append(flatMaxObjs, maxObj.Values...)
+		if maxObj != nil && maxObj.Values != nil {
+			flatMaxObjs = append(flatMaxObjs, maxObj.Values...)
+		}
 	}
 
 	return &api.GetExecutionResultsResponse{

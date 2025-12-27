@@ -277,7 +277,9 @@ func (st *paretoStore) CreateParetoSet(ctx context.Context, paretoSet *store.Par
 	// Convert max objectives
 	flatMaxObjs := make([]float64, 0)
 	for _, maxObj := range paretoSet.MaxObjectives {
-		flatMaxObjs = append(flatMaxObjs, maxObj.Values...)
+		if maxObj != nil && maxObj.Values != nil {
+			flatMaxObjs = append(flatMaxObjs, maxObj.Values...)
+		}
 	}
 
 	if err := paretoModel.SetMaxObjs(flatMaxObjs); err != nil {

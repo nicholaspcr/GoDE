@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"context"
+	"errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/nicholaspcr/GoDE/internal/store"
+	storerrors "github.com/nicholaspcr/GoDE/internal/store/errors"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/nicholaspcr/GoDE/pkg/validation"
 	"google.golang.org/grpc"
@@ -52,7 +54,7 @@ func (uh *userHandler) Create(
 	}
 
 	if err := uh.CreateUser(ctx, req.User); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "failed to create user: %v", err)
 	}
 	return api.Empty, nil
 }
@@ -62,7 +64,9 @@ func (uh *userHandler) Get(
 ) (*api.UserServiceGetResponse, error) {
 	usr, err := uh.GetUser(ctx, req.UserIds)
 	if err != nil {
-		return nil, err
+		// Note: GetUser typically returns gorm.ErrRecordNotFound for missing users,
+		// which should be handled by the caller with appropriate status codes
+		return nil, status.Errorf(codes.Internal, "failed to get user: %v", err)
 	}
 	// Convert User to UserResponse (exclude password)
 	userResp := &api.UserResponse{
@@ -77,16 +81,19 @@ func (uh *userHandler) Update(
 ) (*emptypb.Empty, error) {
 	err := uh.UpdateUser(ctx, req.User, req.FieldMask.GetPaths()...)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, storerrors.ErrUnsupportedFieldMask) {
+			return nil, status.Error(codes.InvalidArgument, "unsupported field mask")
+		}
+		return nil, status.Errorf(codes.Internal, "failed to update user: %v", err)
 	}
-	return api.Empty, err
+	return api.Empty, nil
 }
 
 func (uh *userHandler) Delete(
 	ctx context.Context, req *api.UserServiceDeleteRequest,
 ) (*emptypb.Empty, error) {
 	if err := uh.DeleteUser(ctx, req.UserIds); err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.Internal, "failed to delete user: %v", err)
 	}
 	return api.Empty, nil
 }

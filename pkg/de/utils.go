@@ -20,7 +20,11 @@ func ReduceByCrowdDistance(
 	elems = make([]models.Vector, 0, np)
 
 	for i := 0; i < len(ranks); i++ {
-		CalculateCrwdDist(ranks[i])
+		// Check for cancellation and calculate crowding distance
+		if err := CalculateCrwdDist(ctx, ranks[i]); err != nil {
+			// Return what we have so far on cancellation
+			return elems, nil
+		}
 		sort.SliceStable(ranks[i], func(l, r int) bool {
 			return ranks[i][l].CrowdingDistance > ranks[i][r].CrowdingDistance
 		})
@@ -168,13 +172,18 @@ func FilterDominated(
 }
 
 // CalculateCrwdDist - assumes that the slice is composed of non dominated
-// api.elements
-func CalculateCrwdDist(elems []models.Vector) {
+// api.elements. Supports context cancellation for long-running calculations.
+func CalculateCrwdDist(ctx context.Context, elems []models.Vector) error {
 	if len(elems) <= 2 {
 		for i := range elems {
 			elems[i].CrowdingDistance = math.MaxFloat64
 		}
-		return
+		return nil
+	}
+
+	// Check for cancellation before starting
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 
 	// resets the crwdst
@@ -185,6 +194,11 @@ func CalculateCrwdDist(elems []models.Vector) {
 	szObjectives := len(elems[0].Objectives)
 
 	for m := range szObjectives {
+		// Check for cancellation between objectives
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
 		// sort by current objective
 		sort.SliceStable(elems, func(i, j int) bool {
 			return elems[i].Objectives[m] < elems[j].Objectives[m]
@@ -213,6 +227,7 @@ func CalculateCrwdDist(elems []models.Vector) {
 			}
 		}
 	}
+	return nil
 }
 
 // IncrementalParetoUpdate efficiently integrates new vectors into existing Pareto front.
@@ -238,7 +253,10 @@ func IncrementalParetoUpdate(
 
 	// For smaller sets, optimize crowding distance calculation
 	ranks := FastNonDominatedRanking(ctx, filtered)
-	CalculateCrwdDist(ranks[0])
+	if err := CalculateCrwdDist(ctx, ranks[0]); err != nil {
+		// Return current pareto on cancellation
+		return currentPareto, nil
+	}
 	sort.SliceStable(ranks[0], func(i, j int) bool {
 		return ranks[0][i].CrowdingDistance > ranks[0][j].CrowdingDistance
 	})

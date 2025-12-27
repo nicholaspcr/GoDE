@@ -164,9 +164,10 @@ func BenchmarkCalculateCrwdDist(b *testing.B) {
 				}
 			}
 
+			ctx := context.Background()
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				CalculateCrwdDist(elems)
+				_ = CalculateCrwdDist(ctx, elems)
 			}
 		})
 	}

@@ -72,7 +72,8 @@ func TestCalculateCrwdDist(t *testing.T) {
 		{Objectives: []float64{5, 1}},
 	}
 
-	CalculateCrwdDist(elems)
+	err := CalculateCrwdDist(context.Background(), elems)
+	assert.NoError(t, err)
 
 	// Extremes should have max crowding distance
 	assert.Equal(t, INF, elems[0].CrowdingDistance)
@@ -82,6 +83,20 @@ func TestCalculateCrwdDist(t *testing.T) {
 	assert.InDelta(t, 1.0, elems[1].CrowdingDistance, 0.01)
 	assert.InDelta(t, 1.0, elems[2].CrowdingDistance, 0.01)
 	assert.InDelta(t, 1.0, elems[3].CrowdingDistance, 0.01)
+}
+
+func TestCalculateCrwdDist_Cancellation(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel immediately
+
+	elems := []models.Vector{
+		{Objectives: []float64{1, 5}},
+		{Objectives: []float64{2, 4}},
+		{Objectives: []float64{3, 3}},
+	}
+
+	err := CalculateCrwdDist(ctx, elems)
+	assert.ErrorIs(t, err, context.Canceled)
 }
 
 func TestReduceByCrowdDistance(t *testing.T) {

@@ -3,6 +3,7 @@ package gde3
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"math/rand"
 
@@ -90,8 +91,9 @@ func (g *gde3) Execute(
 	for gen := range g.constants.DE.Generations {
 		// Check for cancellation at the start of each generation
 		if err := ctx.Err(); err != nil {
-			span.RecordError(err)
-			return err
+			wrappedErr := fmt.Errorf("gde3 cancelled at generation %d: %w", gen, err)
+			span.RecordError(wrappedErr)
+			return wrappedErr
 		}
 
 		logger.Debug("Running generation",

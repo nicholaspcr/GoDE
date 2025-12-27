@@ -125,7 +125,7 @@ func (deh *deHandler) RunAsync(
 	// Validate DE configuration
 	if err := validation.ValidateDEConfig(req.DeConfig); err != nil {
 		span.RecordError(err)
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, ValidationErrorToStatus(err)
 	}
 
 	span.SetAttributes(

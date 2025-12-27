@@ -20,6 +20,7 @@ import (
 	"github.com/nicholaspcr/GoDE/pkg/variants"
 
 	"github.com/nicholaspcr/GoDE/internal/store"
+	"github.com/nicholaspcr/GoDE/internal/telemetry"
 )
 
 // Executor manages background execution of DE algorithms.
@@ -36,6 +37,7 @@ type Executor struct {
 	variantRegistry    map[string]variants.Interface
 	completionCounters map[string]*atomic.Int32
 	countersMu         sync.RWMutex
+	metrics            *telemetry.Metrics
 }
 
 // Config holds configuration for the Executor.
@@ -45,11 +47,12 @@ type Config struct {
 	ExecutionTTL time.Duration
 	ResultTTL    time.Duration
 	ProgressTTL  time.Duration
+	Metrics      *telemetry.Metrics
 }
 
 // New creates a new Executor instance.
 func New(cfg Config) *Executor {
-	return &Executor{
+	e := &Executor{
 		store:              cfg.Store,
 		maxWorkers:         cfg.MaxWorkers,
 		executionTTL:       cfg.ExecutionTTL,
@@ -60,7 +63,15 @@ func New(cfg Config) *Executor {
 		problemRegistry:    make(map[string]problems.Interface),
 		variantRegistry:    make(map[string]variants.Interface),
 		completionCounters: make(map[string]*atomic.Int32),
+		metrics:            cfg.Metrics,
 	}
+
+	// Initialize total workers metric
+	if e.metrics != nil && e.metrics.ExecutorWorkersTotal != nil {
+		e.metrics.ExecutorWorkersTotal.Add(context.Background(), int64(cfg.MaxWorkers))
+	}
+
+	return e
 }
 
 // RegisterProblem registers a problem implementation.
@@ -183,9 +194,43 @@ func (e *Executor) Shutdown(ctx context.Context) error {
 }
 
 func (e *Executor) executeInBackground(parentCtx context.Context, executionID, userID, algorithm, problem, variant string, config *api.DEConfig) {
+	// Measure queue wait time
+	queueStart := time.Now()
+
 	// Acquire worker slot
 	e.workerPool <- struct{}{}
-	defer func() { <-e.workerPool }()
+	queueWait := time.Since(queueStart)
+
+	// Record metrics
+	ctx := context.Background()
+	if e.metrics != nil {
+		// Record queue wait time
+		if e.metrics.ExecutorQueueWaitDuration != nil {
+			e.metrics.ExecutorQueueWaitDuration.Record(ctx, queueWait.Seconds())
+		}
+
+		// Increment active workers
+		if e.metrics.ExecutorWorkersActive != nil {
+			e.metrics.ExecutorWorkersActive.Add(ctx, 1)
+		}
+
+		// Record utilization percentage
+		if e.metrics.ExecutorUtilizationPercent != nil {
+			activeWorkers := len(e.workerPool) // Current number of occupied slots
+			utilization := float64(activeWorkers) / float64(e.maxWorkers) * 100
+			e.metrics.ExecutorUtilizationPercent.Record(ctx, utilization)
+		}
+	}
+
+	defer func() {
+		// Release worker slot
+		<-e.workerPool
+
+		// Decrement active workers
+		if e.metrics != nil && e.metrics.ExecutorWorkersActive != nil {
+			e.metrics.ExecutorWorkersActive.Add(ctx, -1)
+		}
+	}()
 
 	// Create cancellable context derived from parent (preserves trace context).
 	// The parent context is already detached from request cancellation via WithoutCancel.

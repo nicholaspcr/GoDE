@@ -1,16 +1,22 @@
 package variants
 
 import (
-	"errors"
+	"fmt"
 	"math/rand"
 )
+
+// ErrMaxRetriesExceeded is returned when the random index generation
+// exceeds the maximum number of retries.
+var ErrMaxRetriesExceeded = fmt.Errorf("exceeded maximum retries while generating unique indices")
+
+// maxRetries is the maximum number of attempts to find a unique random index.
+// This prevents excessive spinning when most values are already used.
+const maxRetries = 1000
 
 // GenerateIndices returns random indices into the r slice.
 func GenerateIndices(startInd, np int, r []int, random *rand.Rand) error {
 	if len(r) > np {
-		return errors.New(
-			"insufficient elements in population to generate random indices",
-		)
+		return ErrInsufficientPopulation
 	}
 	used := make(map[int]bool, len(r))
 	for i := 0; i < startInd; i++ {
@@ -18,13 +24,18 @@ func GenerateIndices(startInd, np int, r []int, random *rand.Rand) error {
 	}
 
 	for i := startInd; i < len(r); i++ {
+		retries := 0
 		for {
+			if retries >= maxRetries {
+				return fmt.Errorf("%w: slot %d after %d attempts", ErrMaxRetriesExceeded, i, retries)
+			}
 			val := random.Intn(np)
 			if !used[val] {
 				r[i] = val
 				used[val] = true
 				break
 			}
+			retries++
 		}
 	}
 	return nil

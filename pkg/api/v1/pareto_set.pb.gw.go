@@ -88,7 +88,7 @@ func local_request_ParetoService_Get_0(ctx context.Context, marshaler runtime.Ma
 	return msg, metadata, err
 }
 
-var filter_ParetoService_Delete_0 = &utilities.DoubleArray{Encoding: map[string]int{"pareto_ids": 0, "user_id": 1}, Base: []int{1, 1, 1, 0}, Check: []int{0, 1, 2, 3}}
+var filter_ParetoService_Delete_0 = &utilities.DoubleArray{Encoding: map[string]int{"pareto_ids": 0, "id": 1}, Base: []int{1, 1, 1, 0}, Check: []int{0, 1, 2, 3}}
 
 func request_ParetoService_Delete_0(ctx context.Context, marshaler runtime.Marshaler, client ParetoServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
@@ -99,13 +99,13 @@ func request_ParetoService_Delete_0(ctx context.Context, marshaler runtime.Marsh
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
-	val, ok := pathParams["pareto_ids.user_id"]
+	val, ok := pathParams["pareto_ids.id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "pareto_ids.user_id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "pareto_ids.id")
 	}
-	err = runtime.PopulateFieldFromPath(&protoReq, "pareto_ids.user_id", val)
+	err = runtime.PopulateFieldFromPath(&protoReq, "pareto_ids.id", val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "pareto_ids.user_id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "pareto_ids.id", err)
 	}
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
@@ -123,13 +123,13 @@ func local_request_ParetoService_Delete_0(ctx context.Context, marshaler runtime
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	val, ok := pathParams["pareto_ids.user_id"]
+	val, ok := pathParams["pareto_ids.id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "pareto_ids.user_id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "pareto_ids.id")
 	}
-	err = runtime.PopulateFieldFromPath(&protoReq, "pareto_ids.user_id", val)
+	err = runtime.PopulateFieldFromPath(&protoReq, "pareto_ids.id", val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "pareto_ids.user_id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "pareto_ids.id", err)
 	}
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
@@ -210,7 +210,7 @@ func RegisterParetoServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/api.v1.ParetoService/Delete", runtime.WithHTTPPathPattern("/v1/pareto/{pareto_ids.user_id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/api.v1.ParetoService/Delete", runtime.WithHTTPPathPattern("/v1/pareto/{pareto_ids.id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -292,7 +292,7 @@ func RegisterParetoServiceHandlerClient(ctx context.Context, mux *runtime.ServeM
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/api.v1.ParetoService/Delete", runtime.WithHTTPPathPattern("/v1/pareto/{pareto_ids.user_id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/api.v1.ParetoService/Delete", runtime.WithHTTPPathPattern("/v1/pareto/{pareto_ids.id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -327,7 +327,7 @@ func RegisterParetoServiceHandlerClient(ctx context.Context, mux *runtime.ServeM
 
 var (
 	pattern_ParetoService_Get_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "pareto", "pareto_ids.id"}, ""))
-	pattern_ParetoService_Delete_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "pareto", "pareto_ids.user_id"}, ""))
+	pattern_ParetoService_Delete_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "pareto", "pareto_ids.id"}, ""))
 	pattern_ParetoService_ListByUser_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "paretos", "user_ids.username"}, ""))
 )
 

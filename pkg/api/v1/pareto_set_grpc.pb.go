@@ -128,7 +128,7 @@ func RegisterParetoServiceServer(s grpc.ServiceRegistrar, srv ParetoServiceServe
 	s.RegisterService(&ParetoService_ServiceDesc, srv)
 }
 
-func _ParetoService_Get_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ParetoService_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ParetoServiceGetRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -140,13 +140,13 @@ func _ParetoService_Get_Handler(srv any, ctx context.Context, dec func(any) erro
 		Server:     srv,
 		FullMethod: ParetoService_Get_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ParetoServiceServer).Get(ctx, req.(*ParetoServiceGetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ParetoService_Delete_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ParetoService_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ParetoServiceDeleteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -158,13 +158,13 @@ func _ParetoService_Delete_Handler(srv any, ctx context.Context, dec func(any) e
 		Server:     srv,
 		FullMethod: ParetoService_Delete_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ParetoServiceServer).Delete(ctx, req.(*ParetoServiceDeleteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ParetoService_ListByUser_Handler(srv any, stream grpc.ServerStream) error {
+func _ParetoService_ListByUser_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ParetoServiceListByUserRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err

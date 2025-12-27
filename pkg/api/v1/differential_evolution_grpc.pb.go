@@ -243,7 +243,7 @@ func RegisterDifferentialEvolutionServiceServer(s grpc.ServiceRegistrar, srv Dif
 	s.RegisterService(&DifferentialEvolutionService_ServiceDesc, srv)
 }
 
-func _DifferentialEvolutionService_ListSupportedAlgorithms_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DifferentialEvolutionService_ListSupportedAlgorithms_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -255,13 +255,13 @@ func _DifferentialEvolutionService_ListSupportedAlgorithms_Handler(srv any, ctx 
 		Server:     srv,
 		FullMethod: DifferentialEvolutionService_ListSupportedAlgorithms_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DifferentialEvolutionServiceServer).ListSupportedAlgorithms(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DifferentialEvolutionService_ListSupportedVariants_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DifferentialEvolutionService_ListSupportedVariants_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -273,13 +273,13 @@ func _DifferentialEvolutionService_ListSupportedVariants_Handler(srv any, ctx co
 		Server:     srv,
 		FullMethod: DifferentialEvolutionService_ListSupportedVariants_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DifferentialEvolutionServiceServer).ListSupportedVariants(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DifferentialEvolutionService_ListSupportedProblems_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DifferentialEvolutionService_ListSupportedProblems_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -291,13 +291,13 @@ func _DifferentialEvolutionService_ListSupportedProblems_Handler(srv any, ctx co
 		Server:     srv,
 		FullMethod: DifferentialEvolutionService_ListSupportedProblems_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DifferentialEvolutionServiceServer).ListSupportedProblems(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DifferentialEvolutionService_RunAsync_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DifferentialEvolutionService_RunAsync_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RunAsyncRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -309,13 +309,13 @@ func _DifferentialEvolutionService_RunAsync_Handler(srv any, ctx context.Context
 		Server:     srv,
 		FullMethod: DifferentialEvolutionService_RunAsync_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DifferentialEvolutionServiceServer).RunAsync(ctx, req.(*RunAsyncRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DifferentialEvolutionService_StreamProgress_Handler(srv any, stream grpc.ServerStream) error {
+func _DifferentialEvolutionService_StreamProgress_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(StreamProgressRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
@@ -326,7 +326,7 @@ func _DifferentialEvolutionService_StreamProgress_Handler(srv any, stream grpc.S
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type DifferentialEvolutionService_StreamProgressServer = grpc.ServerStreamingServer[StreamProgressResponse]
 
-func _DifferentialEvolutionService_GetExecutionStatus_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DifferentialEvolutionService_GetExecutionStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetExecutionStatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -338,13 +338,13 @@ func _DifferentialEvolutionService_GetExecutionStatus_Handler(srv any, ctx conte
 		Server:     srv,
 		FullMethod: DifferentialEvolutionService_GetExecutionStatus_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DifferentialEvolutionServiceServer).GetExecutionStatus(ctx, req.(*GetExecutionStatusRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DifferentialEvolutionService_GetExecutionResults_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DifferentialEvolutionService_GetExecutionResults_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetExecutionResultsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -356,13 +356,13 @@ func _DifferentialEvolutionService_GetExecutionResults_Handler(srv any, ctx cont
 		Server:     srv,
 		FullMethod: DifferentialEvolutionService_GetExecutionResults_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DifferentialEvolutionServiceServer).GetExecutionResults(ctx, req.(*GetExecutionResultsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DifferentialEvolutionService_ListExecutions_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DifferentialEvolutionService_ListExecutions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListExecutionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -374,13 +374,13 @@ func _DifferentialEvolutionService_ListExecutions_Handler(srv any, ctx context.C
 		Server:     srv,
 		FullMethod: DifferentialEvolutionService_ListExecutions_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DifferentialEvolutionServiceServer).ListExecutions(ctx, req.(*ListExecutionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DifferentialEvolutionService_CancelExecution_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DifferentialEvolutionService_CancelExecution_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CancelExecutionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -392,13 +392,13 @@ func _DifferentialEvolutionService_CancelExecution_Handler(srv any, ctx context.
 		Server:     srv,
 		FullMethod: DifferentialEvolutionService_CancelExecution_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DifferentialEvolutionServiceServer).CancelExecution(ctx, req.(*CancelExecutionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DifferentialEvolutionService_DeleteExecution_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DifferentialEvolutionService_DeleteExecution_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteExecutionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -410,7 +410,7 @@ func _DifferentialEvolutionService_DeleteExecution_Handler(srv any, ctx context.
 		Server:     srv,
 		FullMethod: DifferentialEvolutionService_DeleteExecution_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DifferentialEvolutionServiceServer).DeleteExecution(ctx, req.(*DeleteExecutionRequest))
 	}
 	return interceptor(ctx, in, info, handler)

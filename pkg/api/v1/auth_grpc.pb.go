@@ -139,7 +139,7 @@ func RegisterAuthServiceServer(s grpc.ServiceRegistrar, srv AuthServiceServer) {
 	s.RegisterService(&AuthService_ServiceDesc, srv)
 }
 
-func _AuthService_Register_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _AuthService_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AuthServiceRegisterRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -151,13 +151,13 @@ func _AuthService_Register_Handler(srv any, ctx context.Context, dec func(any) e
 		Server:     srv,
 		FullMethod: AuthService_Register_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AuthServiceServer).Register(ctx, req.(*AuthServiceRegisterRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_Login_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _AuthService_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AuthServiceLoginRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -169,13 +169,13 @@ func _AuthService_Login_Handler(srv any, ctx context.Context, dec func(any) erro
 		Server:     srv,
 		FullMethod: AuthService_Login_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AuthServiceServer).Login(ctx, req.(*AuthServiceLoginRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_Logout_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _AuthService_Logout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AuthServiceLogoutRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -187,13 +187,13 @@ func _AuthService_Logout_Handler(srv any, ctx context.Context, dec func(any) err
 		Server:     srv,
 		FullMethod: AuthService_Logout_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AuthServiceServer).Logout(ctx, req.(*AuthServiceLogoutRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_RefreshToken_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _AuthService_RefreshToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AuthServiceRefreshTokenRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -205,7 +205,7 @@ func _AuthService_RefreshToken_Handler(srv any, ctx context.Context, dec func(an
 		Server:     srv,
 		FullMethod: AuthService_RefreshToken_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AuthServiceServer).RefreshToken(ctx, req.(*AuthServiceRefreshTokenRequest))
 	}
 	return interceptor(ctx, in, info, handler)

@@ -4,6 +4,7 @@ package redis
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -217,7 +218,7 @@ func (c *Client) HScan(ctx context.Context, key string, cursor uint64, match str
 	ctx, span := tracer.Start(ctx, "redis.HScan",
 		trace.WithAttributes(
 			attribute.String("redis.key", key),
-			attribute.Int64("redis.cursor", int64(cursor)),
+			attribute.String("redis.cursor", strconv.FormatUint(cursor, 10)),
 		),
 		trace.WithSpanKind(trace.SpanKindClient),
 	)

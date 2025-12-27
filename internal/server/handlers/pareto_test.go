@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/nicholaspcr/GoDE/internal/store/mock"
+	storerrors "github.com/nicholaspcr/GoDE/internal/store/errors"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -64,7 +64,7 @@ func TestParetoHandler_Get(t *testing.T) {
 
 	t.Run("pareto not found", func(t *testing.T) {
 		mockStore.GetParetoFn = func(ctx context.Context, ids *api.ParetoIDs) (*api.Pareto, error) {
-			return nil, errors.New("pareto not found")
+			return nil, storerrors.ErrParetoSetNotFound
 		}
 
 		req := &api.ParetoServiceGetRequest{

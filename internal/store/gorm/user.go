@@ -34,6 +34,10 @@ func (st *userStore) CreateUser(
 func (st *userStore) GetUser(
 	ctx context.Context, usrIDs *api.UserIDs,
 ) (*api.User, error) {
+	if usrIDs == nil {
+		return nil, errors.ErrUserNotFound
+	}
+
 	var usr userModel
 
 	tx := st.DB.WithContext(ctx).First(&usr, "username = ?", usrIDs.Username)

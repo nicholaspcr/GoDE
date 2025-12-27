@@ -33,6 +33,7 @@ type Executor struct {
 	resultTTL            time.Duration
 	progressTTL          time.Duration
 	workerPool           chan struct{}
+	activeWorkerCount    atomic.Int64 // Tracks active workers for metrics (safe to read)
 	activeExecs          map[string]context.CancelFunc
 	activeExecsMu        sync.RWMutex
 	problemRegistry      map[string]problems.Interface
@@ -223,6 +224,9 @@ func (e *Executor) executeInBackground(parentCtx context.Context, executionID, u
 	e.workerPool <- struct{}{}
 	queueWait := time.Since(queueStart)
 
+	// Track active workers atomically (safe to read from other goroutines)
+	activeWorkers := e.activeWorkerCount.Add(1)
+
 	// Record metrics
 	ctx := context.Background()
 	if e.metrics != nil {
@@ -238,17 +242,19 @@ func (e *Executor) executeInBackground(parentCtx context.Context, executionID, u
 
 		// Record utilization percentage
 		if e.metrics.ExecutorUtilizationPercent != nil {
-			activeWorkers := len(e.workerPool) // Current number of occupied slots
 			utilization := float64(activeWorkers) / float64(e.maxWorkers) * 100
 			e.metrics.ExecutorUtilizationPercent.Record(ctx, utilization)
 		}
 	}
 
 	defer func() {
+		// Decrement active worker count
+		e.activeWorkerCount.Add(-1)
+
 		// Release worker slot
 		<-e.workerPool
 
-		// Decrement active workers
+		// Decrement active workers metric
 		if e.metrics != nil && e.metrics.ExecutorWorkersActive != nil {
 			e.metrics.ExecutorWorkersActive.Add(ctx, -1)
 		}

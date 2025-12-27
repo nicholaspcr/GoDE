@@ -929,3 +929,203 @@ func TestExecutor_WorkerSlotReleaseOnError(t *testing.T) {
 	_, err = exec.SubmitExecution(ctx, userID, "gde3", "error-problem", "rand1", config)
 	require.NoError(t, err, "Should be able to submit new execution after worker slot released")
 }
+
+// slowProblem is a test problem that sleeps for a configurable duration
+type slowProblem struct {
+	duration time.Duration
+}
+
+func (s *slowProblem) Name() string {
+	return "slow-problem"
+}
+
+func (s *slowProblem) Evaluate(vector *models.Vector, executionNumber int) error {
+	time.Sleep(s.duration)
+	// Set dummy objectives
+	for i := range vector.Objectives {
+		vector.Objectives[i] = float64(i)
+	}
+	return nil
+}
+
+// TestExecutor_Shutdown_HappyPath tests successful shutdown when workers finish quickly
+func TestExecutor_Shutdown_HappyPath(t *testing.T) {
+	mockSt := newMockStore()
+	exec := New(Config{
+		Store:        mockSt,
+		MaxWorkers:   2,
+		ExecutionTTL: time.Hour,
+		ResultTTL:    time.Hour,
+		ProgressTTL:  time.Minute,
+	})
+
+	// Register a fast problem
+	exec.RegisterProblem("slow-problem", &slowProblem{duration: 100 * time.Millisecond})
+
+	variant, err := variants.DefaultRegistry.Create("rand1")
+	require.NoError(t, err)
+	exec.RegisterVariant("rand1", variant)
+
+	ctx := context.Background()
+	userID := "test-user"
+
+	config := &api.DEConfig{
+		Executions:     2,
+		Generations:    5,
+		PopulationSize: 10,
+		DimensionsSize: 5,
+		ObjectivesSize: 2,
+		FloorLimiter:   0.0,
+		CeilLimiter:    1.0,
+		AlgorithmConfig: &api.DEConfig_Gde3{
+			Gde3: &api.GDE3Config{
+				Cr: 0.9,
+				F:  0.5,
+				P:  0.1,
+			},
+		},
+	}
+
+	// Submit multiple executions
+	executionID1, err := exec.SubmitExecution(ctx, userID, "gde3", "slow-problem", "rand1", config)
+	require.NoError(t, err)
+	executionID2, err := exec.SubmitExecution(ctx, userID, "gde3", "slow-problem", "rand1", config)
+	require.NoError(t, err)
+
+	// Wait a bit for executions to start
+	time.Sleep(200 * time.Millisecond)
+
+	// Shutdown should succeed
+	shutdownCtx := context.Background()
+	err = exec.Shutdown(shutdownCtx)
+	assert.NoError(t, err, "Shutdown should succeed when workers finish quickly")
+
+	// Verify executions were cancelled
+	for _, execID := range []string{executionID1, executionID2} {
+		execution, err := mockSt.GetExecution(ctx, execID, userID)
+		if err == nil {
+			assert.Equal(t, store.ExecutionStatusCancelled, execution.Status,
+				"Execution should be cancelled after shutdown")
+		}
+	}
+}
+
+// TestExecutor_Shutdown_Timeout tests that shutdown returns error when workers don't finish
+func TestExecutor_Shutdown_Timeout(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping timeout test in short mode")
+	}
+
+	mockSt := newMockStore()
+	exec := New(Config{
+		Store:        mockSt,
+		MaxWorkers:   1,
+		ExecutionTTL: time.Hour,
+		ResultTTL:    time.Hour,
+		ProgressTTL:  time.Minute,
+	})
+
+	// Register a very slow problem that will outlast shutdown timeout (30s)
+	exec.RegisterProblem("slow-problem", &slowProblem{duration: 60 * time.Second})
+
+	variant, err := variants.DefaultRegistry.Create("rand1")
+	require.NoError(t, err)
+	exec.RegisterVariant("rand1", variant)
+
+	ctx := context.Background()
+	userID := "test-user"
+
+	config := &api.DEConfig{
+		Executions:     1,
+		Generations:    100, // Many generations to keep it running
+		PopulationSize: 10,
+		DimensionsSize: 5,
+		ObjectivesSize: 2,
+		FloorLimiter:   0.0,
+		CeilLimiter:    1.0,
+		AlgorithmConfig: &api.DEConfig_Gde3{
+			Gde3: &api.GDE3Config{
+				Cr: 0.9,
+				F:  0.5,
+				P:  0.1,
+			},
+		},
+	}
+
+	// Submit execution
+	_, err = exec.SubmitExecution(ctx, userID, "gde3", "slow-problem", "rand1", config)
+	require.NoError(t, err)
+
+	// Wait for execution to start
+	time.Sleep(200 * time.Millisecond)
+
+	// Shutdown with short timeout context (5 seconds) to avoid waiting 30s
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err = exec.Shutdown(shutdownCtx)
+	assert.Error(t, err, "Shutdown should fail when workers don't finish in time")
+	assert.ErrorIs(t, err, context.DeadlineExceeded, "Should return context deadline exceeded error")
+}
+
+// TestExecutor_Shutdown_ContextCancellation tests that shutdown aborts when context is cancelled
+func TestExecutor_Shutdown_ContextCancellation(t *testing.T) {
+	mockSt := newMockStore()
+	exec := New(Config{
+		Store:        mockSt,
+		MaxWorkers:   2,
+		ExecutionTTL: time.Hour,
+		ResultTTL:    time.Hour,
+		ProgressTTL:  time.Minute,
+	})
+
+	// Register a slow problem
+	exec.RegisterProblem("slow-problem", &slowProblem{duration: 5 * time.Second})
+
+	variant, err := variants.DefaultRegistry.Create("rand1")
+	require.NoError(t, err)
+	exec.RegisterVariant("rand1", variant)
+
+	ctx := context.Background()
+	userID := "test-user"
+
+	config := &api.DEConfig{
+		Executions:     2,
+		Generations:    20,
+		PopulationSize: 10,
+		DimensionsSize: 5,
+		ObjectivesSize: 2,
+		FloorLimiter:   0.0,
+		CeilLimiter:    1.0,
+		AlgorithmConfig: &api.DEConfig_Gde3{
+			Gde3: &api.GDE3Config{
+				Cr: 0.9,
+				F:  0.5,
+				P:  0.1,
+			},
+		},
+	}
+
+	// Submit executions
+	_, err = exec.SubmitExecution(ctx, userID, "gde3", "slow-problem", "rand1", config)
+	require.NoError(t, err)
+	_, err = exec.SubmitExecution(ctx, userID, "gde3", "slow-problem", "rand1", config)
+	require.NoError(t, err)
+
+	// Wait for executions to start
+	time.Sleep(200 * time.Millisecond)
+
+	// Create cancellable context for shutdown
+	shutdownCtx, cancel := context.WithCancel(context.Background())
+
+	// Cancel the shutdown context after a short delay
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+		cancel()
+	}()
+
+	// Shutdown should abort when context is cancelled
+	err = exec.Shutdown(shutdownCtx)
+	assert.Error(t, err, "Shutdown should fail when context is cancelled")
+	assert.ErrorIs(t, err, context.Canceled, "Should return context cancelled error")
+}

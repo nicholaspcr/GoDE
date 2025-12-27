@@ -14,7 +14,7 @@ service ParetoService {
     option (google.api.http) = {get: "/v1/pareto/{pareto_ids.id}"};
   }
   rpc Delete(ParetoServiceDeleteRequest) returns (google.protobuf.Empty) {
-    option (google.api.http) = {delete: "/v1/pareto/{pareto_ids.user_id}"};
+    option (google.api.http) = {delete: "/v1/pareto/{pareto_ids.id}"};
   }
   rpc ListByUser(ParetoServiceListByUserRequest) returns (
       stream ParetoServiceListByUserResponse
@@ -45,8 +45,15 @@ message ParetoServiceDeleteRequest {
 
 message ParetoServiceListByUserRequest {
   UserIDs user_ids = 1;
+  int32 limit = 2;   // Page size (default: 50, max: 100)
+  int32 offset = 3;  // Starting position (default: 0)
 }
 
 message ParetoServiceListByUserResponse {
   Pareto pareto = 1;
+  // Pagination metadata (sent with first response in stream)
+  int32 total_count = 2;  // Total number of pareto sets for user
+  int32 limit = 3;        // Echoed limit for pagination
+  int32 offset = 4;       // Echoed offset for pagination
+  bool has_more = 5;      // True if more results available
 }

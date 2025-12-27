@@ -81,7 +81,7 @@ func (ph *paretoHandler) Delete(
 	return &emptypb.Empty{}, nil
 }
 
-// ListByUser streams all pareto sets for a given user.
+// ListByUser streams pareto sets for a given user with pagination.
 func (ph *paretoHandler) ListByUser(
 	req *api.ParetoServiceListByUserRequest,
 	stream api.ParetoService_ListByUserServer,
@@ -90,16 +90,36 @@ func (ph *paretoHandler) ListByUser(
 		return status.Error(codes.InvalidArgument, "user_ids.username is required")
 	}
 
-	paretos, err := ph.ListParetos(stream.Context(), req.UserIds)
+	// Apply defaults if not provided
+	limit := int(req.Limit)
+	offset := int(req.Offset)
+	if limit <= 0 || limit > 100 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	paretos, totalCount, err := ph.ListParetos(stream.Context(), req.UserIds, limit, offset)
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed to list pareto sets: %v", err)
 	}
 
+	hasMore := offset+len(paretos) < totalCount
+
 	// Stream each pareto set to the client
-	for _, pareto := range paretos {
-		if err := stream.Send(&api.ParetoServiceListByUserResponse{
+	for i, pareto := range paretos {
+		resp := &api.ParetoServiceListByUserResponse{
 			Pareto: pareto,
-		}); err != nil {
+		}
+		// Include pagination metadata in first response
+		if i == 0 {
+			resp.TotalCount = int32(totalCount)
+			resp.Limit = int32(limit)
+			resp.Offset = int32(offset)
+			resp.HasMore = hasMore
+		}
+		if err := stream.Send(resp); err != nil {
 			return status.Errorf(codes.Internal, "failed to send pareto set: %v", err)
 		}
 	}

@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"gorm.io/gorm"
 )
 
 // userHandler is responsible for the user service operations.
@@ -64,8 +65,9 @@ func (uh *userHandler) Get(
 ) (*api.UserServiceGetResponse, error) {
 	usr, err := uh.GetUser(ctx, req.UserIds)
 	if err != nil {
-		// Note: GetUser typically returns gorm.ErrRecordNotFound for missing users,
-		// which should be handled by the caller with appropriate status codes
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, status.Error(codes.NotFound, "user not found")
+		}
 		return nil, status.Errorf(codes.Internal, "failed to get user: %v", err)
 	}
 	// Convert User to UserResponse (exclude password)

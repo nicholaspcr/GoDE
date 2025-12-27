@@ -1,10 +1,9 @@
 package dtlz
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/problems/testutil"
 )
 
 func TestDTLZ1FN(t *testing.T) {
@@ -27,33 +26,7 @@ func TestDTLZ1FN(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.ProblemName, func(t *testing.T) {
-			e := &models.Vector{Elements: tt.x}
-			err := Dtlz1().Evaluate(e, len(tt.expected))
-			if err != nil {
-				t.Errorf("failed to run the DTLZ1 func")
-			}
-
-			// string representation of the array
-			received, want := "", ""
-
-			// rounds up to the 7th decimal case
-			for _, obj := range e.Objectives {
-				received += fmt.Sprintf("%.7f ", obj)
-			}
-
-			// rounds up to the 7th decimal case
-			for _, obj := range tt.expected {
-				want += fmt.Sprintf("%.7f ", obj)
-			}
-
-			// checks the strings
-			if received != want {
-				t.Errorf(
-					"DTLZ1 wrong objs. received %v, expected %v",
-					received,
-					want,
-				)
-			}
+			testutil.AssertObjectivesEqual(t, Dtlz1(), tt.x, tt.expected, "DTLZ1")
 		})
 	}
 }

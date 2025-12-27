@@ -316,112 +316,65 @@ func (rl *RateLimiter) UnaryDERateLimitMiddleware() grpc.UnaryServerInterceptor 
 // Cleanup removes old limiters that haven't been used recently.
 // Should be called periodically (e.g., every hour) to prevent memory leaks.
 // Only entries older than maxAge will be removed.
-// Uses a snapshot-based approach to avoid race conditions with concurrent access.
 func (rl *RateLimiter) Cleanup(maxAge time.Duration) {
 	now := time.Now()
 	cutoff := now.Add(-maxAge)
 
-	// Cleanup login limiters using snapshot approach
 	rl.cleanupLoginLimiters(cutoff)
-
-	// Cleanup register limiters using snapshot approach
 	rl.cleanupRegisterLimiters(cutoff)
-
-	// Cleanup DE limiters using snapshot approach
 	rl.cleanupDELimiters(cutoff)
 }
 
-// cleanupLoginLimiters removes stale login limiters using a two-phase approach.
+// cleanupLoginLimiters removes stale login limiters.
+// Uses a write lock throughout to avoid TOCTOU race conditions.
+// This is acceptable since cleanup runs infrequently.
 func (rl *RateLimiter) cleanupLoginLimiters(cutoff time.Time) {
-	// Phase 1: Collect keys to delete while holding read lock
-	rl.loginLimiterMutex.RLock()
-	toDelete := make([]string, 0)
+	rl.loginLimiterMutex.Lock()
+	defer rl.loginLimiterMutex.Unlock()
+
 	for ip, lwt := range rl.loginLimiters {
 		lwt.mu.Lock()
-		if lwt.lastAccess.Before(cutoff) {
-			toDelete = append(toDelete, ip)
-		}
+		isStale := lwt.lastAccess.Before(cutoff)
 		lwt.mu.Unlock()
-	}
-	rl.loginLimiterMutex.RUnlock()
 
-	// Phase 2: Delete collected keys while holding write lock
-	if len(toDelete) > 0 {
-		rl.loginLimiterMutex.Lock()
-		for _, ip := range toDelete {
-			// Re-check before deleting in case it was accessed between phases
-			if lwt, exists := rl.loginLimiters[ip]; exists {
-				lwt.mu.Lock()
-				if lwt.lastAccess.Before(cutoff) {
-					delete(rl.loginLimiters, ip)
-				}
-				lwt.mu.Unlock()
-			}
+		if isStale {
+			delete(rl.loginLimiters, ip)
 		}
-		rl.loginLimiterMutex.Unlock()
 	}
 }
 
-// cleanupRegisterLimiters removes stale register limiters using a two-phase approach.
+// cleanupRegisterLimiters removes stale register limiters.
+// Uses a write lock throughout to avoid TOCTOU race conditions.
 func (rl *RateLimiter) cleanupRegisterLimiters(cutoff time.Time) {
-	// Phase 1: Collect keys to delete while holding read lock
-	rl.registerLimiterMutex.RLock()
-	toDelete := make([]string, 0)
+	rl.registerLimiterMutex.Lock()
+	defer rl.registerLimiterMutex.Unlock()
+
 	for ip, lwt := range rl.registerLimiters {
 		lwt.mu.Lock()
-		if lwt.lastAccess.Before(cutoff) {
-			toDelete = append(toDelete, ip)
-		}
+		isStale := lwt.lastAccess.Before(cutoff)
 		lwt.mu.Unlock()
-	}
-	rl.registerLimiterMutex.RUnlock()
 
-	// Phase 2: Delete collected keys while holding write lock
-	if len(toDelete) > 0 {
-		rl.registerLimiterMutex.Lock()
-		for _, ip := range toDelete {
-			// Re-check before deleting in case it was accessed between phases
-			if lwt, exists := rl.registerLimiters[ip]; exists {
-				lwt.mu.Lock()
-				if lwt.lastAccess.Before(cutoff) {
-					delete(rl.registerLimiters, ip)
-				}
-				lwt.mu.Unlock()
-			}
+		if isStale {
+			delete(rl.registerLimiters, ip)
 		}
-		rl.registerLimiterMutex.Unlock()
 	}
 }
 
-// cleanupDELimiters removes stale DE limiters using a two-phase approach.
+// cleanupDELimiters removes stale DE limiters.
+// Uses a write lock throughout to avoid TOCTOU race conditions.
 func (rl *RateLimiter) cleanupDELimiters(cutoff time.Time) {
-	// Phase 1: Collect keys to delete while holding read lock
-	rl.userDELimiterMutex.RLock()
-	toDelete := make([]string, 0)
+	rl.userDELimiterMutex.Lock()
+	defer rl.userDELimiterMutex.Unlock()
+
 	for username, limiter := range rl.userDELimiters {
 		limiter.concurMutex.Lock()
-		// Only mark for deletion if no active executions and entry is old enough
-		if limiter.concurrent == 0 && limiter.lastAccess.Before(cutoff) {
-			toDelete = append(toDelete, username)
-		}
+		// Only delete if no active executions and entry is old enough
+		isStale := limiter.concurrent == 0 && limiter.lastAccess.Before(cutoff)
 		limiter.concurMutex.Unlock()
-	}
-	rl.userDELimiterMutex.RUnlock()
 
-	// Phase 2: Delete collected keys while holding write lock
-	if len(toDelete) > 0 {
-		rl.userDELimiterMutex.Lock()
-		for _, username := range toDelete {
-			// Re-check before deleting in case it was accessed between phases
-			if limiter, exists := rl.userDELimiters[username]; exists {
-				limiter.concurMutex.Lock()
-				if limiter.concurrent == 0 && limiter.lastAccess.Before(cutoff) {
-					delete(rl.userDELimiters, username)
-				}
-				limiter.concurMutex.Unlock()
-			}
+		if isStale {
+			delete(rl.userDELimiters, username)
 		}
-		rl.userDELimiterMutex.Unlock()
 	}
 }
 

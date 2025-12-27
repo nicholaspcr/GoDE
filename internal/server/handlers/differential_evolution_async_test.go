@@ -35,6 +35,7 @@ type testStore struct {
 	paretoSets     map[uint64]*store.ParetoSet
 	cancelledExecs map[string]bool // Track cancellation requests
 	nextID         uint64
+	mu             sync.RWMutex
 }
 
 func newTestStore() *testStore {
@@ -47,12 +48,82 @@ func newTestStore() *testStore {
 	}
 }
 
+// Deep copy helpers to prevent data races (mimics serialization/deserialization in real stores)
+
+func deepCopyVector(src *api.Vector) *api.Vector {
+	if src == nil {
+		return nil
+	}
+	dst := &api.Vector{CrowdingDistance: src.CrowdingDistance}
+	if src.Elements != nil {
+		dst.Elements = make([]float64, len(src.Elements))
+		copy(dst.Elements, src.Elements)
+	}
+	if src.Objectives != nil {
+		dst.Objectives = make([]float64, len(src.Objectives))
+		copy(dst.Objectives, src.Objectives)
+	}
+	if src.Ids != nil {
+		dst.Ids = &api.VectorIDs{Id: src.Ids.Id}
+	}
+	return dst
+}
+
+func deepCopyProgress(src *store.ExecutionProgress) *store.ExecutionProgress {
+	if src == nil {
+		return nil
+	}
+	dst := &store.ExecutionProgress{
+		ExecutionID:         src.ExecutionID,
+		CurrentGeneration:   src.CurrentGeneration,
+		TotalGenerations:    src.TotalGenerations,
+		CompletedExecutions: src.CompletedExecutions,
+		TotalExecutions:     src.TotalExecutions,
+		UpdatedAt:           src.UpdatedAt,
+	}
+	if src.PartialPareto != nil {
+		dst.PartialPareto = make([]*api.Vector, len(src.PartialPareto))
+		for i, vec := range src.PartialPareto {
+			dst.PartialPareto[i] = deepCopyVector(vec)
+		}
+	}
+	return dst
+}
+
+func deepCopyExecution(src *store.Execution) *store.Execution {
+	if src == nil {
+		return nil
+	}
+	dst := &store.Execution{
+		ID:        src.ID,
+		UserID:    src.UserID,
+		Status:    src.Status,
+		Error:     src.Error,
+		CreatedAt: src.CreatedAt,
+		UpdatedAt: src.UpdatedAt,
+	}
+	if src.ParetoID != nil {
+		paretoID := *src.ParetoID
+		dst.ParetoID = &paretoID
+	}
+	if src.CompletedAt != nil {
+		completedAt := *src.CompletedAt
+		dst.CompletedAt = &completedAt
+	}
+	dst.Config = src.Config // Config is typically read-only
+	return dst
+}
+
 func (ts *testStore) CreateExecution(ctx context.Context, execution *store.Execution) error {
-	ts.executions[execution.ID] = execution
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
+	ts.executions[execution.ID] = deepCopyExecution(execution)
 	return nil
 }
 
 func (ts *testStore) GetExecution(ctx context.Context, executionID, userID string) (*store.Execution, error) {
+	ts.mu.RLock()
+	defer ts.mu.RUnlock()
 	exec, exists := ts.executions[executionID]
 	if !exists {
 		return nil, store.ErrExecutionNotFound
@@ -60,39 +131,51 @@ func (ts *testStore) GetExecution(ctx context.Context, executionID, userID strin
 	if exec.UserID != userID {
 		return nil, store.ErrExecutionNotFound
 	}
-	return exec, nil
+	return deepCopyExecution(exec), nil
 }
 
 func (ts *testStore) UpdateExecutionStatus(ctx context.Context, executionID string, status store.ExecutionStatus, errorMsg string) error {
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
 	exec, exists := ts.executions[executionID]
 	if !exists {
 		return store.ErrExecutionNotFound
 	}
-	exec.Status = status
-	exec.Error = errorMsg
-	exec.UpdatedAt = time.Now()
+	// Create copy, modify it, store the copy
+	updated := deepCopyExecution(exec)
+	updated.Status = status
+	updated.Error = errorMsg
+	updated.UpdatedAt = time.Now()
 	if status == store.ExecutionStatusCompleted || status == store.ExecutionStatusFailed || status == store.ExecutionStatusCancelled {
 		now := time.Now()
-		exec.CompletedAt = &now
+		updated.CompletedAt = &now
 	}
+	ts.executions[executionID] = updated
 	return nil
 }
 
 func (ts *testStore) UpdateExecutionResult(ctx context.Context, executionID string, paretoID uint64) error {
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
 	exec, exists := ts.executions[executionID]
 	if !exists {
 		return store.ErrExecutionNotFound
 	}
-	exec.ParetoID = &paretoID
+	updated := deepCopyExecution(exec)
+	updated.ParetoID = &paretoID
+	ts.executions[executionID] = updated
 	return nil
 }
 
 func (ts *testStore) ListExecutions(ctx context.Context, userID string, statusFilter *store.ExecutionStatus, limit, offset int) ([]*store.Execution, int, error) {
+	ts.mu.RLock()
+	defer ts.mu.RUnlock()
+
 	var allMatching []*store.Execution
 	for _, exec := range ts.executions {
 		if exec.UserID == userID {
 			if statusFilter == nil || exec.Status == *statusFilter {
-				allMatching = append(allMatching, exec)
+				allMatching = append(allMatching, deepCopyExecution(exec))
 			}
 		}
 	}
@@ -121,6 +204,9 @@ func (ts *testStore) ListExecutions(ctx context.Context, userID string, statusFi
 }
 
 func (ts *testStore) DeleteExecution(ctx context.Context, executionID, userID string) error {
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
+
 	exec, exists := ts.executions[executionID]
 	if !exists || exec.UserID != userID {
 		return store.ErrExecutionNotFound
@@ -130,19 +216,27 @@ func (ts *testStore) DeleteExecution(ctx context.Context, executionID, userID st
 }
 
 func (ts *testStore) SaveProgress(ctx context.Context, progress *store.ExecutionProgress) error {
-	ts.progress[progress.ExecutionID] = progress
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
+	ts.progress[progress.ExecutionID] = deepCopyProgress(progress)
 	return nil
 }
 
 func (ts *testStore) GetProgress(ctx context.Context, executionID string) (*store.ExecutionProgress, error) {
+	ts.mu.RLock()
+	defer ts.mu.RUnlock()
+
 	prog, exists := ts.progress[executionID]
 	if !exists {
 		return nil, store.ErrExecutionNotFound
 	}
-	return prog, nil
+	return deepCopyProgress(prog), nil
 }
 
 func (ts *testStore) MarkExecutionForCancellation(ctx context.Context, executionID, userID string) error {
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
+
 	exec, exists := ts.executions[executionID]
 	if !exists || exec.UserID != userID {
 		return store.ErrExecutionNotFound
@@ -152,6 +246,9 @@ func (ts *testStore) MarkExecutionForCancellation(ctx context.Context, execution
 }
 
 func (ts *testStore) IsExecutionCancelled(ctx context.Context, executionID string) (bool, error) {
+	ts.mu.RLock()
+	defer ts.mu.RUnlock()
+
 	cancelled, exists := ts.cancelledExecs[executionID]
 	return exists && cancelled, nil
 }
@@ -171,6 +268,9 @@ func (ts *testStore) Subscribe(ctx context.Context, channel string) (<-chan []by
 }
 
 func (ts *testStore) CreateParetoSet(ctx context.Context, paretoSet *store.ParetoSet) error {
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
+
 	paretoSet.ID = ts.nextID
 	ts.paretoSets[ts.nextID] = paretoSet
 	ts.nextID++
@@ -178,6 +278,9 @@ func (ts *testStore) CreateParetoSet(ctx context.Context, paretoSet *store.Paret
 }
 
 func (ts *testStore) GetParetoSetByID(ctx context.Context, id uint64) (*store.ParetoSet, error) {
+	ts.mu.RLock()
+	defer ts.mu.RUnlock()
+
 	ps, exists := ts.paretoSets[id]
 	if !exists {
 		return nil, store.ErrParetoSetNotFound

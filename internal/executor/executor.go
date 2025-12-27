@@ -151,20 +151,21 @@ func (e *Executor) CancelExecution(ctx context.Context, executionID, userID stri
 // Shutdown gracefully stops all active executions and waits for workers to finish.
 // It cancels all running executions and waits up to 30 seconds for them to complete.
 func (e *Executor) Shutdown(ctx context.Context) error {
-	slog.Info("shutting down executor",
-		slog.Int("active_executions", len(e.activeExecs)),
-		slog.Int("max_workers", e.maxWorkers),
-	)
-
 	// Copy cancel functions to avoid holding lock during cancellation
 	e.activeExecsMu.Lock()
-	cancelFuncs := make([]context.CancelFunc, 0, len(e.activeExecs))
-	executionIDs := make([]string, 0, len(e.activeExecs))
+	activeCount := len(e.activeExecs)
+	cancelFuncs := make([]context.CancelFunc, 0, activeCount)
+	executionIDs := make([]string, 0, activeCount)
 	for id, cancel := range e.activeExecs {
 		cancelFuncs = append(cancelFuncs, cancel)
 		executionIDs = append(executionIDs, id)
 	}
 	e.activeExecsMu.Unlock()
+
+	slog.Info("shutting down executor",
+		slog.Int("active_executions", activeCount),
+		slog.Int("max_workers", e.maxWorkers),
+	)
 
 	// Cancel all active executions
 	for i, cancel := range cancelFuncs {

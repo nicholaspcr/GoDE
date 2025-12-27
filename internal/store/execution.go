@@ -2,16 +2,17 @@ package store
 
 import (
 	"encoding/json"
-	"errors"
 	"time"
 
+	"github.com/nicholaspcr/GoDE/internal/store/errors"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 )
 
-// Errors for execution operations.
+// Re-export errors from the errors package for backward compatibility.
+// All error definitions are centralized in internal/store/errors/errors.go.
 var (
-	ErrExecutionNotFound = errors.New("execution not found")
-	ErrParetoSetNotFound = errors.New("pareto set not found")
+	ErrExecutionNotFound = errors.ErrExecutionNotFound
+	ErrParetoSetNotFound = errors.ErrParetoSetNotFound
 )
 
 // ExecutionStatus represents the state of an execution.

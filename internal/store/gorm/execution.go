@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/nicholaspcr/GoDE/internal/store"
+	storeerrors "github.com/nicholaspcr/GoDE/internal/store/errors"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"gorm.io/gorm"
 )
@@ -153,27 +154,27 @@ func (s *executionStore) DeleteExecution(ctx context.Context, executionID, userI
 
 // SaveProgress is not implemented for GORM store (handled by Redis).
 func (s *executionStore) SaveProgress(ctx context.Context, progress *store.ExecutionProgress) error {
-	return errors.New("progress tracking not supported in database store")
+	return storeerrors.ErrProgressNotSupported
 }
 
 // GetProgress is not implemented for GORM store (handled by Redis).
 func (s *executionStore) GetProgress(ctx context.Context, executionID string) (*store.ExecutionProgress, error) {
-	return nil, errors.New("progress tracking not supported in database store")
+	return nil, storeerrors.ErrProgressNotSupported
 }
 
 // MarkExecutionForCancellation is not implemented for GORM store (handled by Redis).
 func (s *executionStore) MarkExecutionForCancellation(ctx context.Context, executionID, userID string) error {
-	return errors.New("cancellation not supported in database store")
+	return storeerrors.ErrCancellationNotSupported
 }
 
 // IsExecutionCancelled is not implemented for GORM store (handled by Redis).
 func (s *executionStore) IsExecutionCancelled(ctx context.Context, executionID string) (bool, error) {
-	return false, errors.New("cancellation not supported in database store")
+	return false, storeerrors.ErrCancellationNotSupported
 }
 
 // Subscribe is not implemented for GORM store (handled by Redis).
 func (s *executionStore) Subscribe(ctx context.Context, channel string) (<-chan []byte, error) {
-	return nil, errors.New("pub/sub not supported in database store")
+	return nil, storeerrors.ErrPubSubNotSupported
 }
 
 // modelToExecution converts a database model to a store.Execution.

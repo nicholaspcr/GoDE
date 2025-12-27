@@ -25,13 +25,8 @@ type authHandler struct {
 }
 
 // NewAuthHandler returns a handle that implements api's authServiceServer.
-func NewAuthHandler(jwtService auth.JWTService) Handler {
-	return &authHandler{jwtService: jwtService}
-}
-
-// setStore assings the implementation of the store to the auth handler.
-func (ah *authHandler) SetStore(st store.Store) {
-	ah.db = st
+func NewAuthHandler(st store.Store, jwtService auth.JWTService) Handler {
+	return &authHandler{db: st, jwtService: jwtService}
 }
 
 // RegisterService adds authService to the RPC server.

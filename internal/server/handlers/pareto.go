@@ -21,10 +21,8 @@ type paretoHandler struct {
 }
 
 // NewParetoHandler returns a handle that implements api's ParetoServiceServer.
-func NewParetoHandler() Handler { return &paretoHandler{} }
-
-func (ph *paretoHandler) SetStore(st store.Store) {
-	ph.Store = st
+func NewParetoHandler(st store.Store) Handler {
+	return &paretoHandler{Store: st}
 }
 
 // RegisterService adds ParetoService to the RPC server.

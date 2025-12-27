@@ -318,8 +318,7 @@ func setupTestHandler() (*deHandler, *testStore) {
 	variant, _ := variants.DefaultRegistry.Create("rand1")
 	exec.RegisterVariant("rand1", variant)
 
-	handler := NewDEHandler(exec).(*deHandler)
-	handler.SetStore(ts)
+	handler := NewDEHandler(ts, exec).(*deHandler)
 
 	return handler, ts
 }
@@ -862,8 +861,7 @@ func TestStreamProgress_Success(t *testing.T) {
 		ResultTTL:    time.Hour,
 		ProgressTTL:  time.Minute,
 	})
-	handler := NewDEHandler(exec).(*deHandler)
-	handler.SetStore(ts)
+	handler := NewDEHandler(ts, exec).(*deHandler)
 
 	// Create test context with authentication
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)

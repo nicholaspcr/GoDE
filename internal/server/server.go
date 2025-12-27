@@ -71,15 +71,10 @@ func New(ctx context.Context, cfg Config, opts ...serverOpts) (Server, error) {
 
 	// Create handlers with dependencies
 	srv.handlers = []handlers.Handler{
-		handlers.NewAuthHandler(jwtService),
-		handlers.NewUserHandler(),
-		handlers.NewParetoHandler(),
-		handlers.NewDEHandler(exec),
-	}
-
-	// Setup handlers' store
-	for _, handler := range srv.handlers {
-		handler.SetStore(srv.st)
+		handlers.NewAuthHandler(srv.st, jwtService),
+		handlers.NewUserHandler(srv.st),
+		handlers.NewParetoHandler(srv.st),
+		handlers.NewDEHandler(srv.st, exec),
 	}
 
 	return srv, nil

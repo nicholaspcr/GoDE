@@ -23,10 +23,8 @@ type userHandler struct {
 }
 
 // NewUserHandler returns a handle that implements api's UserServiceServer.
-func NewUserHandler() Handler { return &userHandler{} }
-
-func (uh *userHandler) SetStore(st store.Store) {
-	uh.Store = st
+func NewUserHandler(st store.Store) Handler {
+	return &userHandler{Store: st}
 }
 
 // RegisterService adds UserService to the RPC server.

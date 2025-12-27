@@ -15,9 +15,8 @@ import (
 )
 
 func TestParetoHandler_Get(t *testing.T) {
-	handler := NewParetoHandler()
 	mockStore := &mock.MockStore{}
-	handler.SetStore(mockStore)
+	handler := NewParetoHandler(mockStore)
 
 	ctx := context.Background()
 
@@ -82,9 +81,8 @@ func TestParetoHandler_Get(t *testing.T) {
 }
 
 func TestParetoHandler_Delete(t *testing.T) {
-	handler := NewParetoHandler()
 	mockStore := &mock.MockStore{}
-	handler.SetStore(mockStore)
+	handler := NewParetoHandler(mockStore)
 
 	ctx := context.Background()
 
@@ -116,9 +114,8 @@ func TestParetoHandler_Delete(t *testing.T) {
 }
 
 func TestParetoHandler_ListByUser(t *testing.T) {
-	handler := NewParetoHandler()
 	mockStore := &mock.MockStore{}
-	handler.SetStore(mockStore)
+	handler := NewParetoHandler(mockStore)
 
 	ctx := context.Background()
 

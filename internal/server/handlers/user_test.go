@@ -107,8 +107,7 @@ func TestUserHandler_Create(t *testing.T) {
 			mockStore := &mock.MockStore{}
 			tt.setupMock(mockStore)
 
-			handler := NewUserHandler()
-			handler.SetStore(mockStore)
+			handler := NewUserHandler(mockStore)
 
 			_, err := handler.(*userHandler).Create(context.Background(), tt.req)
 
@@ -174,8 +173,7 @@ func TestUserHandler_Get(t *testing.T) {
 			mockStore := &mock.MockStore{}
 			tt.setupMock(mockStore)
 
-			handler := NewUserHandler()
-			handler.SetStore(mockStore)
+			handler := NewUserHandler(mockStore)
 
 			resp, err := handler.(*userHandler).Get(context.Background(), tt.req)
 
@@ -242,8 +240,7 @@ func TestUserHandler_Update(t *testing.T) {
 			mockStore := &mock.MockStore{}
 			tt.setupMock(mockStore)
 
-			handler := NewUserHandler()
-			handler.SetStore(mockStore)
+			handler := NewUserHandler(mockStore)
 
 			_, err := handler.(*userHandler).Update(context.Background(), tt.req)
 
@@ -294,8 +291,7 @@ func TestUserHandler_Delete(t *testing.T) {
 			mockStore := &mock.MockStore{}
 			tt.setupMock(mockStore)
 
-			handler := NewUserHandler()
-			handler.SetStore(mockStore)
+			handler := NewUserHandler(mockStore)
 
 			_, err := handler.(*userHandler).Delete(context.Background(), tt.req)
 

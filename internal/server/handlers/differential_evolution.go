@@ -12,6 +12,8 @@ import (
 	"github.com/nicholaspcr/GoDE/internal/server/middleware"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
+	"github.com/nicholaspcr/GoDE/pkg/de"
+	_ "github.com/nicholaspcr/GoDE/pkg/de/gde3"               // Register GDE3 algorithm
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 	_ "github.com/nicholaspcr/GoDE/pkg/problems/many/dtlz" // Register DTLZ problems
 	_ "github.com/nicholaspcr/GoDE/pkg/problems/many/wfg"  // Register WFG problems
@@ -41,8 +43,8 @@ type deHandler struct {
 
 // NewDEHandler returns a handler that implements
 // DifferentialEvolutionServiceServer.
-func NewDEHandler(exec *executor.Executor) Handler {
-	return &deHandler{executor: exec}
+func NewDEHandler(st store.Store, exec *executor.Executor) Handler {
+	return &deHandler{Store: st, executor: exec}
 }
 
 // RegisterService adds DifferentialEvolutionService to the RPC server.
@@ -62,15 +64,11 @@ func (deh *deHandler) RegisterHTTPHandler(
 	)
 }
 
-func (deh *deHandler) SetStore(st store.Store) {
-	deh.Store = st
-}
-
 func (deh *deHandler) ListSupportedAlgorithms(
 	ctx context.Context, _ *emptypb.Empty,
 ) (*api.ListSupportedAlgorithmsResponse, error) {
 	return &api.ListSupportedAlgorithmsResponse{
-		Algorithms: []string{"gde3"},
+		Algorithms: de.DefaultRegistry.List(),
 	}, nil
 }
 
@@ -135,8 +133,8 @@ func (deh *deHandler) RunAsync(
 	)
 
 	// Validate algorithm is supported
-	if req.Algorithm != "gde3" {
-		err := errors.New("unsupported algorithm")
+	if !de.DefaultRegistry.IsSupported(req.Algorithm) {
+		err := fmt.Errorf("unsupported algorithm: %s", req.Algorithm)
 		span.RecordError(err)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

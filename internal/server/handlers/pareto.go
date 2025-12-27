@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"context"
+	"errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/nicholaspcr/GoDE/internal/store"
+	storerrors "github.com/nicholaspcr/GoDE/internal/store/errors"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -52,7 +54,10 @@ func (ph *paretoHandler) Get(
 
 	pareto, err := ph.GetPareto(ctx, req.ParetoIds)
 	if err != nil {
-		return nil, status.Error(codes.NotFound, "pareto set not found")
+		if errors.Is(err, storerrors.ErrParetoSetNotFound) {
+			return nil, status.Error(codes.NotFound, "pareto set not found")
+		}
+		return nil, status.Errorf(codes.Internal, "failed to get pareto set: %v", err)
 	}
 
 	return &api.ParetoServiceGetResponse{Pareto: pareto}, nil
@@ -67,7 +72,10 @@ func (ph *paretoHandler) Delete(
 	}
 
 	if err := ph.DeletePareto(ctx, req.ParetoIds); err != nil {
-		return nil, status.Error(codes.Internal, "failed to delete pareto set")
+		if errors.Is(err, storerrors.ErrParetoSetNotFound) {
+			return nil, status.Error(codes.NotFound, "pareto set not found")
+		}
+		return nil, status.Errorf(codes.Internal, "failed to delete pareto set: %v", err)
 	}
 
 	return &emptypb.Empty{}, nil
@@ -84,7 +92,7 @@ func (ph *paretoHandler) ListByUser(
 
 	paretos, err := ph.ListParetos(stream.Context(), req.UserIds)
 	if err != nil {
-		return status.Error(codes.Internal, "failed to list pareto sets")
+		return status.Errorf(codes.Internal, "failed to list pareto sets: %v", err)
 	}
 
 	// Stream each pareto set to the client
@@ -92,7 +100,7 @@ func (ph *paretoHandler) ListByUser(
 		if err := stream.Send(&api.ParetoServiceListByUserResponse{
 			Pareto: pareto,
 		}); err != nil {
-			return status.Error(codes.Internal, "failed to send pareto set")
+			return status.Errorf(codes.Internal, "failed to send pareto set: %v", err)
 		}
 	}
 

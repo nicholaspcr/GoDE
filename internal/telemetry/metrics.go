@@ -39,6 +39,12 @@ type Metrics struct {
 	DEGenerationsTotal    metric.Int64Counter
 	ParetoSetSize         metric.Int64Histogram
 
+	// Executor worker pool metrics
+	ExecutorWorkersActive     metric.Int64UpDownCounter
+	ExecutorWorkersTotal      metric.Int64UpDownCounter
+	ExecutorQueueWaitDuration metric.Float64Histogram
+	ExecutorUtilizationPercent metric.Float64Histogram
+
 	// Auth metrics
 	AuthAttemptsTotal     metric.Int64Counter
 	AuthSuccessTotal      metric.Int64Counter
@@ -177,6 +183,43 @@ func InitMetrics(ctx context.Context, appName string) (*Metrics, error) {
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pareto_set_size histogram: %w", err)
+	}
+
+	// Executor worker pool metrics
+	m.ExecutorWorkersActive, err = meter.Int64UpDownCounter(
+		"executor_workers_active",
+		metric.WithDescription("Number of executor workers currently processing tasks"),
+		metric.WithUnit("{worker}"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create executor_workers_active gauge: %w", err)
+	}
+
+	m.ExecutorWorkersTotal, err = meter.Int64UpDownCounter(
+		"executor_workers_total",
+		metric.WithDescription("Total number of executor workers available"),
+		metric.WithUnit("{worker}"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create executor_workers_total gauge: %w", err)
+	}
+
+	m.ExecutorQueueWaitDuration, err = meter.Float64Histogram(
+		"executor_queue_wait_duration_seconds",
+		metric.WithDescription("Time spent waiting in executor queue before worker assignment"),
+		metric.WithUnit("s"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create executor_queue_wait_duration_seconds histogram: %w", err)
+	}
+
+	m.ExecutorUtilizationPercent, err = meter.Float64Histogram(
+		"executor_utilization_percent",
+		metric.WithDescription("Executor worker pool utilization percentage"),
+		metric.WithUnit("%"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create executor_utilization_percent histogram: %w", err)
 	}
 
 	// Auth metrics

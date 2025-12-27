@@ -190,15 +190,19 @@ func (e *Executor) Shutdown(ctx context.Context) error {
 			return fmt.Errorf("shutdown timeout: %d workers still active", e.maxWorkers-acquired)
 		}
 
+		// Use NewTimer instead of time.After to avoid timer leaks
+		timer := time.NewTimer(remainingTime)
 		select {
 		case e.workerPool <- struct{}{}:
+			timer.Stop()
 			acquired++
 		case <-ctx.Done():
+			timer.Stop()
 			slog.Warn("shutdown context cancelled",
 				slog.Int("workers_remaining", e.maxWorkers-acquired),
 			)
 			return ctx.Err()
-		case <-time.After(remainingTime):
+		case <-timer.C:
 			slog.Warn("shutdown timeout - some workers still active",
 				slog.Int("workers_remaining", e.maxWorkers-acquired),
 			)

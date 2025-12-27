@@ -59,8 +59,8 @@ func (s *Store) DeletePareto(ctx context.Context, paretoIDs *api.ParetoIDs) erro
 	return s.db.DeletePareto(ctx, paretoIDs)
 }
 
-func (s *Store) ListParetos(ctx context.Context, userIDs *api.UserIDs) ([]*api.Pareto, error) {
-	return s.db.ListParetos(ctx, userIDs)
+func (s *Store) ListParetos(ctx context.Context, userIDs *api.UserIDs, limit, offset int) ([]*api.Pareto, int, error) {
+	return s.db.ListParetos(ctx, userIDs, limit, offset)
 }
 
 // ParetoSet operations delegate to database

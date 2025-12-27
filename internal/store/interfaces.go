@@ -35,7 +35,7 @@ type ParetoOperations interface {
 	GetPareto(context.Context, *api.ParetoIDs) (*api.Pareto, error)
 	UpdatePareto(context.Context, *api.Pareto, ...string) error
 	DeletePareto(context.Context, *api.ParetoIDs) error
-	ListParetos(context.Context, *api.UserIDs) ([]*api.Pareto, error)
+	ListParetos(ctx context.Context, userIDs *api.UserIDs, limit, offset int) ([]*api.Pareto, int, error)
 	CreateParetoSet(context.Context, *ParetoSet) error
 	GetParetoSetByID(context.Context, uint64) (*ParetoSet, error)
 }

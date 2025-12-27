@@ -198,39 +198,57 @@ func (st *paretoStore) DeletePareto(
 	})
 }
 
-// ListParetos returns all paretos for a given user
+// ListParetos returns paretos for a given user with pagination.
 func (st *paretoStore) ListParetos(
-	ctx context.Context, userIDs *api.UserIDs,
-) ([]*api.Pareto, error) {
+	ctx context.Context, userIDs *api.UserIDs, limit, offset int,
+) ([]*api.Pareto, int, error) {
+	// Apply defaults and max limits
+	if limit <= 0 || limit > 100 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
 	// Look up user by username
 	var user userModel
 	tx := st.DB.WithContext(ctx).Where("username = ?", userIDs.Username).First(&user)
 	if tx.Error != nil {
-		return nil, tx.Error
+		return nil, 0, tx.Error
 	}
 
+	query := st.DB.WithContext(ctx).Where("user_id = ?", user.ID)
+
+	// Get total count
+	var totalCount int64
+	if err := query.Model(&paretoModel{}).Count(&totalCount).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Apply pagination and ordering
+	query = query.Order("created_at DESC").Limit(limit).Offset(offset)
+
 	var paretos []paretoModel
-	tx = st.DB.WithContext(ctx).Where("user_id = ?", user.ID).Preload("Vectors").Find(&paretos)
-	if tx.Error != nil {
-		return nil, tx.Error
+	if err := query.Preload("Vectors").Find(&paretos).Error; err != nil {
+		return nil, 0, err
 	}
 
 	result := make([]*api.Pareto, len(paretos))
 	for i, p := range paretos {
 		maxObjs, err := p.GetMaxObjs()
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		vectors := make([]*api.Vector, len(p.Vectors))
 		for j, vec := range p.Vectors {
 			elements, err := vec.GetElements()
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 			objectives, err := vec.GetObjectives()
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 
 			vectors[j] = &api.Vector{
@@ -248,7 +266,7 @@ func (st *paretoStore) ListParetos(
 		}
 	}
 
-	return result, nil
+	return result, int(totalCount), nil
 }
 
 // CreateParetoSet creates a pareto set with vectors and max objectives.

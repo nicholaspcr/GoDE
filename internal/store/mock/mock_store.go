@@ -21,7 +21,7 @@ type MockStore struct {
 	GetParetoFn       func(ctx context.Context, ids *api.ParetoIDs) (*api.Pareto, error)
 	UpdateParetoFn    func(ctx context.Context, pareto *api.Pareto, fields ...string) error
 	DeleteParetoFn    func(ctx context.Context, ids *api.ParetoIDs) error
-	ListParetosFn     func(ctx context.Context, userIDs *api.UserIDs) ([]*api.Pareto, error)
+	ListParetosFn     func(ctx context.Context, userIDs *api.UserIDs, limit, offset int) ([]*api.Pareto, int, error)
 	CreateParetoSetFn func(ctx context.Context, paretoSet *store.ParetoSet) error
 	GetParetoSetByIDFn func(ctx context.Context, id uint64) (*store.ParetoSet, error)
 
@@ -116,11 +116,11 @@ func (m *MockStore) DeletePareto(ctx context.Context, ids *api.ParetoIDs) error 
 }
 
 // ListParetos implements store.Store
-func (m *MockStore) ListParetos(ctx context.Context, userIDs *api.UserIDs) ([]*api.Pareto, error) {
+func (m *MockStore) ListParetos(ctx context.Context, userIDs *api.UserIDs, limit, offset int) ([]*api.Pareto, int, error) {
 	if m.ListParetosFn != nil {
-		return m.ListParetosFn(ctx, userIDs)
+		return m.ListParetosFn(ctx, userIDs, limit, offset)
 	}
-	return nil, nil
+	return nil, 0, nil
 }
 
 // CreateParetoSet implements store.Store

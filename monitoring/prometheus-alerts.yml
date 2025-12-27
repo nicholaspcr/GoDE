@@ -1,0 +1,190 @@
+groups:
+  - name: gode_slo_alerts
+    interval: 30s
+    rules:
+      # Error Rate SLO - Alert when error rate exceeds 1%
+      - alert: GoDEHighErrorRate
+        expr: |
+          (
+            sum(rate(grpc_server_handled_total{grpc_code!="OK"}[5m]))
+            /
+            sum(rate(grpc_server_handled_total[5m]))
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          service: gode
+        annotations:
+          summary: "GoDE API error rate above 1%"
+          description: "The API error rate is {{ $value | humanizePercentage }} over the last 5 minutes."
+
+      # Error Rate Critical - Alert when error rate exceeds 5%
+      - alert: GoDECriticalErrorRate
+        expr: |
+          (
+            sum(rate(grpc_server_handled_total{grpc_code!="OK"}[5m]))
+            /
+            sum(rate(grpc_server_handled_total[5m]))
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          service: gode
+        annotations:
+          summary: "GoDE API error rate above 5%"
+          description: "The API error rate is {{ $value | humanizePercentage }} over the last 5 minutes. Immediate investigation required."
+
+      # Latency SLO - P95 latency above 2 seconds
+      - alert: GoDEHighP95Latency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(grpc_server_handling_seconds_bucket[5m])) by (le)
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: gode
+        annotations:
+          summary: "GoDE API P95 latency above 2s"
+          description: "The P95 latency is {{ $value | humanizeDuration }} over the last 5 minutes."
+
+      # Latency SLO - P99 latency above 5 seconds
+      - alert: GoDEHighP99Latency
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(grpc_server_handling_seconds_bucket[5m])) by (le)
+          ) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: gode
+        annotations:
+          summary: "GoDE API P99 latency above 5s"
+          description: "The P99 latency is {{ $value | humanizeDuration }} over the last 5 minutes."
+
+      # DE Execution SLOs
+      - alert: GoDEExecutionHighFailureRate
+        expr: |
+          (
+            sum(rate(de_executions_total{status="failed"}[15m]))
+            /
+            sum(rate(de_executions_total[15m]))
+          ) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          service: gode
+        annotations:
+          summary: "DE execution failure rate above 10%"
+          description: "{{ $value | humanizePercentage }} of DE executions are failing over the last 15 minutes."
+
+      # Worker Pool Utilization - High utilization warning
+      - alert: GoDEWorkerPoolHighUtilization
+        expr: |
+          (
+            sum(executor_active_workers)
+            /
+            sum(executor_max_workers)
+          ) > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          service: gode
+        annotations:
+          summary: "Executor worker pool above 90% utilization"
+          description: "Worker pool is {{ $value | humanizePercentage }} utilized. Consider scaling up or investigating long-running executions."
+
+      # Authentication failures - Possible brute force attack
+      - alert: GoDEHighAuthFailures
+        expr: |
+          sum(rate(auth_attempts_total{status="failed"}[5m])) > 10
+        for: 2m
+        labels:
+          severity: warning
+          service: gode
+        annotations:
+          summary: "High rate of authentication failures"
+          description: "{{ $value }} failed auth attempts per second. Possible brute force attack."
+
+      # Rate limiting triggered frequently
+      - alert: GoDERateLimitExceeded
+        expr: |
+          sum(rate(rate_limit_exceeded_total[5m])) > 5
+        for: 5m
+        labels:
+          severity: info
+          service: gode
+        annotations:
+          summary: "Rate limiting being triggered frequently"
+          description: "Rate limits are being exceeded at {{ $value }} per second."
+
+      # Database connectivity
+      - alert: GoDEDatabaseUnhealthy
+        expr: |
+          gode_health_check_status{component="database"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: gode
+        annotations:
+          summary: "Database health check failing"
+          description: "The database health check has been failing for more than 1 minute."
+
+      # Redis connectivity
+      - alert: GoDERedisUnhealthy
+        expr: |
+          gode_health_check_status{component="redis"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: gode
+        annotations:
+          summary: "Redis health check failing"
+          description: "The Redis health check has been failing for more than 2 minutes. Progress tracking may be affected."
+
+      # Service availability - No requests received
+      - alert: GoDENoTraffic
+        expr: |
+          sum(rate(grpc_server_handled_total[5m])) == 0
+        for: 10m
+        labels:
+          severity: warning
+          service: gode
+        annotations:
+          summary: "No traffic to GoDE service"
+          description: "No gRPC requests received in the last 10 minutes. Service may be unreachable."
+
+  - name: gode_slo_burn_rate
+    interval: 1m
+    rules:
+      # Error budget burn rate - fast burn (consumes 2% budget in 1 hour)
+      - alert: GoDEErrorBudgetFastBurn
+        expr: |
+          (
+            sum(rate(grpc_server_handled_total{grpc_code!="OK"}[1h]))
+            /
+            sum(rate(grpc_server_handled_total[1h]))
+          ) > 0.02
+        for: 2m
+        labels:
+          severity: critical
+          service: gode
+        annotations:
+          summary: "Error budget burning fast"
+          description: "Error rate {{ $value | humanizePercentage }} will exhaust monthly error budget in less than 2 days."
+
+      # Error budget burn rate - slow burn (consumes 5% budget in 6 hours)
+      - alert: GoDEErrorBudgetSlowBurn
+        expr: |
+          (
+            sum(rate(grpc_server_handled_total{grpc_code!="OK"}[6h]))
+            /
+            sum(rate(grpc_server_handled_total[6h]))
+          ) > 0.008
+        for: 30m
+        labels:
+          severity: warning
+          service: gode
+        annotations:
+          summary: "Error budget burning slowly"
+          description: "Error rate {{ $value | humanizePercentage }} indicates gradual degradation."

@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"log/slog"
 	"time"
 
 	"github.com/sony/gobreaker"
@@ -37,9 +38,10 @@ func newCircuitBreaker(name string, cfg BreakerConfig) *gobreaker.CircuitBreaker
 			return counts.Requests >= 3 && failureRatio >= 0.6
 		},
 		OnStateChange: func(name string, from gobreaker.State, to gobreaker.State) {
-			// Log state changes for observability
-			// Note: using fmt.Printf here for simplicity, could use slog
-			// fmt.Printf("Circuit breaker %s: %s -> %s\n", name, from, to)
+			slog.Info("circuit breaker state change",
+				slog.String("breaker", name),
+				slog.String("from", from.String()),
+				slog.String("to", to.String()))
 		},
 	}
 

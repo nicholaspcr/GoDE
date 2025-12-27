@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"time"
 
 	"github.com/nicholaspcr/GoDE/internal/store"
@@ -132,7 +133,11 @@ func (s *executionStore) ListExecutions(ctx context.Context, userID string, stat
 	for _, model := range models {
 		execution, err := s.modelToExecution(&model)
 		if err != nil {
-			continue // Skip invalid entries
+			slog.Warn("skipping invalid execution record",
+				slog.String("execution_id", model.ID),
+				slog.String("error", err.Error()),
+			)
+			continue
 		}
 		executions = append(executions, execution)
 	}

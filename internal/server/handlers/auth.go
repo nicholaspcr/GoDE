@@ -68,11 +68,19 @@ func (ah authHandler) Register(
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to hash password")
 	}
-	req.User.Password = string(hashedPassword)
+
+	// Create a new user object for storage to avoid modifying the request
+	// and to prevent potential password exposure in error logs.
+	userToCreate := &api.User{
+		Ids:      req.User.Ids,
+		Email:    req.User.Email,
+		Password: string(hashedPassword),
+	}
 
 	// Create user
-	if err := ah.db.CreateUser(ctx, req.User); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+	if err := ah.db.CreateUser(ctx, userToCreate); err != nil {
+		// Return a generic error message to avoid leaking internal details
+		return nil, status.Error(codes.Internal, "failed to create user")
 	}
 	return api.Empty, nil
 }

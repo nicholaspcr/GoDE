@@ -58,19 +58,36 @@ func (mode *de) Execute(ctx context.Context) ([]models.Vector, [][]float64, erro
 	allMaxObjs := make([][]float64, 0, mode.constants.Executions)
 	var maxObjsMu sync.Mutex
 
+	// Collect pareto results from all executions
+	allPareto := make([][]models.Vector, 0, mode.constants.Executions)
+	var paretoMu sync.Mutex
+
 	// Collect errors from executions
 	var execErrors []error
 	var execErrorsMu sync.Mutex
 
+	// WaitGroup for channel consumers
+	wgConsumers := &sync.WaitGroup{}
+
 	// Goroutine to consume max objectives (prevents deadlock)
-	wgMaxObjs := &sync.WaitGroup{}
-	wgMaxObjs.Add(1)
+	wgConsumers.Add(1)
 	go func() {
-		defer wgMaxObjs.Done()
+		defer wgConsumers.Done()
 		for maxObjs := range maxObjsCh {
 			maxObjsMu.Lock()
 			allMaxObjs = append(allMaxObjs, maxObjs)
 			maxObjsMu.Unlock()
+		}
+	}()
+
+	// Goroutine to consume pareto results (prevents deadlock)
+	wgConsumers.Add(1)
+	go func() {
+		defer wgConsumers.Done()
+		for pareto := range paretoCh {
+			paretoMu.Lock()
+			allPareto = append(allPareto, pareto)
+			paretoMu.Unlock()
 		}
 	}()
 
@@ -119,7 +136,7 @@ func (mode *de) Execute(ctx context.Context) ([]models.Vector, [][]float64, erro
 	wgExecs.Wait()
 	close(paretoCh)
 	close(maxObjsCh)
-	wgMaxObjs.Wait()
+	wgConsumers.Wait()
 
 	// If all executions failed, return the combined error
 	if len(execErrors) == mode.constants.Executions {
@@ -132,33 +149,28 @@ func (mode *de) Execute(ctx context.Context) ([]models.Vector, [][]float64, erro
 	}
 
 	now := time.Now()
-	finalPareto := mode.filterPareto(ctx, paretoCh)
+	finalPareto := mode.filterCollectedPareto(ctx, allPareto)
 	slog.Info("Filtering Pareto", slog.Duration("time", time.Since(now)))
 
 	return finalPareto, allMaxObjs, nil
 }
 
-func (mode *de) filterPareto(
-	ctx context.Context, pareto chan []models.Vector,
+func (mode *de) filterCollectedPareto(
+	ctx context.Context, allPareto [][]models.Vector,
 ) []models.Vector {
 	finalPareto := make([]models.Vector, 0, 2000)
-	for {
-		select {
-		case <-ctx.Done():
-			// Context cancelled, return what we have so far
+	for _, pareto := range allPareto {
+		// Check for cancellation between batches
+		if ctx.Err() != nil {
 			return finalPareto
-		case v, ok := <-pareto:
-			if !ok {
-				// Channel closed, done processing
-				return finalPareto
-			}
-
-			// Use incremental update instead of full re-ranking
-			var rankZero []models.Vector
-			finalPareto, rankZero = IncrementalParetoUpdate(
-				ctx, finalPareto, v, mode.config.ResultLimiter,
-			)
-			_ = rankZero // Available for future features
 		}
+
+		// Use incremental update instead of full re-ranking
+		var rankZero []models.Vector
+		finalPareto, rankZero = IncrementalParetoUpdate(
+			ctx, finalPareto, pareto, mode.config.ResultLimiter,
+		)
+		_ = rankZero // Available for future features
 	}
+	return finalPareto
 }

@@ -649,10 +649,8 @@ func TestExecutor_ActiveExecutionTracking(t *testing.T) {
 		ProgressTTL:  time.Minute,
 	})
 
-	// Register problem and variant
-	prob, err := problems.DefaultRegistry.Create("zdt1", 10, 2)
-	require.NoError(t, err)
-	exec.RegisterProblem("zdt1", prob)
+	// Register a slow problem to ensure execution is observable
+	exec.RegisterProblem("slow-problem", &slowProblem{duration: 10 * time.Millisecond})
 
 	variant, err := variants.DefaultRegistry.Create("rand1")
 	require.NoError(t, err)
@@ -661,12 +659,11 @@ func TestExecutor_ActiveExecutionTracking(t *testing.T) {
 	ctx := context.Background()
 	userID := "test-user"
 
-	// Use more generations to ensure execution takes long enough to observe
 	config := &api.DEConfig{
 		Executions:     1,
-		Generations:    50, // Increased from 2 to ensure execution is observable
-		PopulationSize: 20,
-		DimensionsSize: 10,
+		Generations:    3,
+		PopulationSize: 5,
+		DimensionsSize: 5,
 		ObjectivesSize: 2,
 		FloorLimiter:   0.0,
 		CeilLimiter:    1.0,
@@ -679,7 +676,7 @@ func TestExecutor_ActiveExecutionTracking(t *testing.T) {
 		},
 	}
 
-	executionID, err := exec.SubmitExecution(ctx, userID, "gde3", "zdt1", "rand1", config)
+	executionID, err := exec.SubmitExecution(ctx, userID, "gde3", "slow-problem", "rand1", config)
 	require.NoError(t, err)
 
 	// Should appear in activeExecs

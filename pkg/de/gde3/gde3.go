@@ -82,7 +82,10 @@ func (g *gde3) Execute(
 		return err
 	}
 
-	bestElems := make([]models.Vector, 0, popuParams.PopulationSize)
+	// Pre-allocate bestElems with estimated capacity based on generations
+	// Each generation typically produces rank-zero elements up to population size
+	estimatedCapacity := popuParams.PopulationSize * g.constants.DE.Generations
+	bestElems := make([]models.Vector, 0, estimatedCapacity)
 
 	for gen := range g.constants.DE.Generations {
 		// Check for cancellation at the start of each generation

@@ -404,6 +404,11 @@ func (e *Executor) runAlgorithm(ctx context.Context, executionID, problemName, v
 	}
 
 	// Build GDE3 constants
+	gde3Config := config.GetGde3()
+	if gde3Config == nil {
+		return nil, nil, fmt.Errorf("GDE3 configuration is required")
+	}
+
 	gde3Constants := gde3.Constants{
 		DE: de.Constants{
 			Executions:    int(config.Executions),
@@ -411,9 +416,9 @@ func (e *Executor) runAlgorithm(ctx context.Context, executionID, problemName, v
 			Dimensions:    int(config.DimensionsSize),
 			ObjFuncAmount: int(config.ObjectivesSize),
 		},
-		CR: float64(config.GetGde3().Cr),
-		F:  float64(config.GetGde3().F),
-		P:  float64(config.GetGde3().P),
+		CR: float64(gde3Config.Cr),
+		F:  float64(gde3Config.F),
+		P:  float64(gde3Config.P),
 	}
 
 	// Create progress callback that tracks completions

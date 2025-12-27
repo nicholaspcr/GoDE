@@ -17,6 +17,22 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
+// dummyHash is a pre-computed bcrypt hash used to mitigate timing attacks
+// when a user doesn't exist. Generated at init time to ensure it uses
+// the same cost factor as application password hashing.
+var dummyHash []byte
+
+func init() {
+	// Generate dummy hash with the same cost as real password hashes
+	// This ensures constant-time comparison even for non-existent users
+	var err error
+	dummyHash, err = bcrypt.GenerateFromPassword([]byte("dummy-password-for-timing-mitigation"), bcrypt.DefaultCost)
+	if err != nil {
+		// This should never happen with a valid password string
+		panic("failed to generate dummy bcrypt hash: " + err.Error())
+	}
+}
+
 // authHandler is responsible for the auth service operations.
 type authHandler struct {
 	api.UnimplementedAuthServiceServer
@@ -92,10 +108,6 @@ func (ah authHandler) Login(
 	if err := validation.ValidateNonEmpty(req.Password, "password"); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-
-	// Pre-computed bcrypt hash of "dummy" to ensure constant-time comparison
-	// even when user doesn't exist (mitigates timing attacks)
-	dummyHash := []byte("$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy")
 
 	usr, err := ah.db.GetUser(ctx, &api.UserIDs{Username: req.Username})
 	if err != nil {

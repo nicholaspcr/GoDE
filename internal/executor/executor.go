@@ -94,6 +94,14 @@ func (e *Executor) RegisterVariant(name string, v variants.Interface) {
 
 // SubmitExecution submits a new DE execution to run in the background.
 func (e *Executor) SubmitExecution(ctx context.Context, userID, algorithm, problem, variant string, config *api.DEConfig) (string, error) {
+	// Validate problem and variant exist before creating execution record
+	if _, exists := e.problemRegistry[problem]; !exists {
+		return "", fmt.Errorf("unknown problem: %s", problem)
+	}
+	if _, exists := e.variantRegistry[variant]; !exists {
+		return "", fmt.Errorf("unknown variant: %s", variant)
+	}
+
 	// Generate execution ID
 	executionID := uuid.New().String()
 

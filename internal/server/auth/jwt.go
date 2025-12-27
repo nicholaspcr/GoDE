@@ -27,11 +27,57 @@ const (
 	RefreshToken TokenType = "refresh"
 )
 
+// Scope represents a permission scope for authorization
+type Scope string
+
+const (
+	// ScopeUserRead allows reading user information
+	ScopeUserRead Scope = "user:read"
+	// ScopeUserWrite allows modifying user information
+	ScopeUserWrite Scope = "user:write"
+	// ScopeDERun allows running DE executions
+	ScopeDERun Scope = "de:run"
+	// ScopeDERead allows reading DE executions and results
+	ScopeDERead Scope = "de:read"
+	// ScopeParetoRead allows reading Pareto sets
+	ScopeParetoRead Scope = "pareto:read"
+	// ScopeParetoWrite allows modifying Pareto sets
+	ScopeParetoWrite Scope = "pareto:write"
+	// ScopeAdmin allows all operations
+	ScopeAdmin Scope = "admin"
+)
+
+// DefaultUserScopes returns the default scopes for regular users
+func DefaultUserScopes() []Scope {
+	return []Scope{ScopeUserRead, ScopeUserWrite, ScopeDERun, ScopeDERead, ScopeParetoRead, ScopeParetoWrite}
+}
+
 // Claims represents the JWT claims
 type Claims struct {
 	Username  string    `json:"username"`
 	TokenType TokenType `json:"token_type"`
+	Scopes    []Scope   `json:"scopes,omitempty"`
 	jwt.RegisteredClaims
+}
+
+// HasScope checks if the claims include a specific scope
+func (c *Claims) HasScope(scope Scope) bool {
+	for _, s := range c.Scopes {
+		if s == ScopeAdmin || s == scope {
+			return true
+		}
+	}
+	return false
+}
+
+// HasAnyScope checks if the claims include any of the specified scopes
+func (c *Claims) HasAnyScope(scopes ...Scope) bool {
+	for _, scope := range scopes {
+		if c.HasScope(scope) {
+			return true
+		}
+	}
+	return false
 }
 
 // JWTService defines methods for JWT token operations
@@ -119,10 +165,16 @@ func (j *jwtService) GenerateTokenPair(username string) (accessToken, refreshTok
 
 // generateToken is the internal method that creates a token with specific type and expiry
 func (j *jwtService) generateToken(username string, tokenType TokenType, expiry time.Duration) (string, error) {
+	return j.generateTokenWithScopes(username, tokenType, expiry, DefaultUserScopes())
+}
+
+// generateTokenWithScopes creates a token with specific scopes
+func (j *jwtService) generateTokenWithScopes(username string, tokenType TokenType, expiry time.Duration, scopes []Scope) (string, error) {
 	now := time.Now()
 	claims := &Claims{
 		Username:  username,
 		TokenType: tokenType,
+		Scopes:    scopes,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(now.Add(expiry)),
 			IssuedAt:  jwt.NewNumericDate(now),

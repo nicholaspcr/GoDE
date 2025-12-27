@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math/rand"
+	"runtime/debug"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -270,9 +271,11 @@ func (e *Executor) executeInBackground(parentCtx context.Context, executionID, u
 		e.activeExecsMu.Unlock()
 
 		if r := recover(); r != nil {
+			stack := debug.Stack()
 			slog.Error("panic in execution",
 				slog.String("execution_id", executionID),
 				slog.Any("panic", r),
+				slog.String("stack", string(stack)),
 			)
 			if updateErr := e.store.UpdateExecutionStatus(ctx, executionID, store.ExecutionStatusFailed, fmt.Sprintf("panic: %v", r)); updateErr != nil {
 				slog.Error("failed to update execution status after panic",
@@ -525,11 +528,4 @@ func (e *Executor) saveResults(ctx context.Context, userID string, pareto []mode
 	}
 
 	return paretoSet.ID, nil
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

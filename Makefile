@@ -51,6 +51,13 @@ proto-generate: ## Generates golang code from proto definitions.
 .PHONY: proto
 proto: proto-lint proto-remove proto-generate ## Lints and generates proto code
 
+.PHONY: openapi
+openapi: ## Generates OpenAPI/Swagger specification from proto files
+	@echo 'Generating OpenAPI specification...'
+	@mkdir -p docs/openapi
+	@buf generate --template buf.gen.openapi.yaml
+	@echo 'OpenAPI spec generated at docs/openapi/'
+
 .PHONY: dev
 dev: ## Runs the dev environment for all applications.
 	@docker compose -f docker-compose.yml up

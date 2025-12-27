@@ -25,45 +25,53 @@ import (
 
 // Executor manages background execution of DE algorithms.
 type Executor struct {
-	store              store.Store
-	maxWorkers         int
-	executionTTL       time.Duration
-	resultTTL          time.Duration
-	progressTTL        time.Duration
-	workerPool         chan struct{}
-	activeExecs        map[string]context.CancelFunc
-	activeExecsMu      sync.RWMutex
-	problemRegistry    map[string]problems.Interface
-	variantRegistry    map[string]variants.Interface
-	completionCounters map[string]*atomic.Int32
-	countersMu         sync.RWMutex
-	metrics            *telemetry.Metrics
+	store                store.Store
+	maxWorkers           int
+	maxVectorsInProgress int
+	executionTTL         time.Duration
+	resultTTL            time.Duration
+	progressTTL          time.Duration
+	workerPool           chan struct{}
+	activeExecs          map[string]context.CancelFunc
+	activeExecsMu        sync.RWMutex
+	problemRegistry      map[string]problems.Interface
+	variantRegistry      map[string]variants.Interface
+	completionCounters   map[string]*atomic.Int32
+	countersMu           sync.RWMutex
+	metrics              *telemetry.Metrics
 }
 
 // Config holds configuration for the Executor.
 type Config struct {
-	Store        store.Store
-	MaxWorkers   int
-	ExecutionTTL time.Duration
-	ResultTTL    time.Duration
-	ProgressTTL  time.Duration
-	Metrics      *telemetry.Metrics
+	Store                store.Store
+	MaxWorkers           int
+	MaxVectorsInProgress int // Maximum vectors to include in progress updates (default: 100)
+	ExecutionTTL         time.Duration
+	ResultTTL            time.Duration
+	ProgressTTL          time.Duration
+	Metrics              *telemetry.Metrics
 }
 
 // New creates a new Executor instance.
 func New(cfg Config) *Executor {
+	maxVectorsInProgress := cfg.MaxVectorsInProgress
+	if maxVectorsInProgress <= 0 {
+		maxVectorsInProgress = 100 // Default value
+	}
+
 	e := &Executor{
-		store:              cfg.Store,
-		maxWorkers:         cfg.MaxWorkers,
-		executionTTL:       cfg.ExecutionTTL,
-		resultTTL:          cfg.ResultTTL,
-		progressTTL:        cfg.ProgressTTL,
-		workerPool:         make(chan struct{}, cfg.MaxWorkers),
-		activeExecs:        make(map[string]context.CancelFunc),
-		problemRegistry:    make(map[string]problems.Interface),
-		variantRegistry:    make(map[string]variants.Interface),
-		completionCounters: make(map[string]*atomic.Int32),
-		metrics:            cfg.Metrics,
+		store:                cfg.Store,
+		maxWorkers:           cfg.MaxWorkers,
+		maxVectorsInProgress: maxVectorsInProgress,
+		executionTTL:         cfg.ExecutionTTL,
+		resultTTL:            cfg.ResultTTL,
+		progressTTL:          cfg.ProgressTTL,
+		workerPool:           make(chan struct{}, cfg.MaxWorkers),
+		activeExecs:          make(map[string]context.CancelFunc),
+		problemRegistry:      make(map[string]problems.Interface),
+		variantRegistry:      make(map[string]variants.Interface),
+		completionCounters:   make(map[string]*atomic.Int32),
+		metrics:              cfg.Metrics,
 	}
 
 	// Initialize total workers metric
@@ -403,9 +411,9 @@ func (e *Executor) runAlgorithm(ctx context.Context, executionID, problemName, v
 		}
 
 		// Convert to API vectors (limit to avoid excessive data)
-		const maxVectorsInProgress = 100
-		apiVectors := make([]*api.Vector, 0, min(len(currentPareto), maxVectorsInProgress))
-		for i := 0; i < len(currentPareto) && i < maxVectorsInProgress; i++ {
+		maxVectors := e.maxVectorsInProgress
+		apiVectors := make([]*api.Vector, 0, min(len(currentPareto), maxVectors))
+		for i := 0; i < len(currentPareto) && i < maxVectors; i++ {
 			vec := &currentPareto[i]
 			apiVectors = append(apiVectors, &api.Vector{
 				Elements:         vec.Elements,

@@ -162,8 +162,8 @@ func TestParetoHandler_ListByUser(t *testing.T) {
 			},
 		}
 
-		mockStore.ListParetosFn = func(ctx context.Context, userIds *api.UserIDs) ([]*api.Pareto, error) {
-			return testParetos, nil
+		mockStore.ListParetosFn = func(ctx context.Context, userIds *api.UserIDs, limit, offset int) ([]*api.Pareto, int, error) {
+			return testParetos, len(testParetos), nil
 		}
 
 		req := &api.ParetoServiceListByUserRequest{

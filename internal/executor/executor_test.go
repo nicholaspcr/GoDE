@@ -306,7 +306,7 @@ func (m *mockStore) CreatePareto(ctx context.Context, pareto *api.Pareto) error 
 func (m *mockStore) GetPareto(ctx context.Context, ids *api.ParetoIDs) (*api.Pareto, error)      { return nil, nil }
 func (m *mockStore) UpdatePareto(ctx context.Context, pareto *api.Pareto, fields ...string) error { return nil }
 func (m *mockStore) DeletePareto(ctx context.Context, ids *api.ParetoIDs) error                  { return nil }
-func (m *mockStore) ListParetos(ctx context.Context, ids *api.UserIDs) ([]*api.Pareto, error)    { return nil, nil }
+func (m *mockStore) ListParetos(ctx context.Context, ids *api.UserIDs, limit, offset int) ([]*api.Pareto, int, error) { return nil, 0, nil }
 func (m *mockStore) HealthCheck(ctx context.Context) error                                       { return nil }
 
 func TestExecutor_SubmitExecution(t *testing.T) {

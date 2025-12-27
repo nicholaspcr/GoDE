@@ -297,7 +297,7 @@ func (ts *testStore) CreatePareto(ctx context.Context, pareto *api.Pareto) error
 func (ts *testStore) GetPareto(ctx context.Context, ids *api.ParetoIDs) (*api.Pareto, error)       { return nil, nil }
 func (ts *testStore) UpdatePareto(ctx context.Context, pareto *api.Pareto, fields ...string) error { return nil }
 func (ts *testStore) DeletePareto(ctx context.Context, ids *api.ParetoIDs) error                   { return nil }
-func (ts *testStore) ListParetos(ctx context.Context, ids *api.UserIDs) ([]*api.Pareto, error)     { return nil, nil }
+func (ts *testStore) ListParetos(ctx context.Context, ids *api.UserIDs, limit, offset int) ([]*api.Pareto, int, error) { return nil, 0, nil }
 func (ts *testStore) HealthCheck(ctx context.Context) error                                        { return nil }
 
 func setupTestHandler() (*deHandler, *testStore) {

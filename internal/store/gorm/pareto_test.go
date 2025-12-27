@@ -107,7 +107,7 @@ func TestParetoStore_GetPareto(t *testing.T) {
 	require.NoError(t, err)
 
 	// Get the created pareto's ID by listing
-	paretos, err := store.ListParetos(ctx, &api.UserIDs{Username: "getparetouser"})
+	paretos, _, err := store.ListParetos(ctx, &api.UserIDs{Username: "getparetouser"}, 50, 0)
 	require.NoError(t, err)
 	require.Greater(t, len(paretos), 0)
 	paretoID := paretos[0].Ids.Id
@@ -161,7 +161,7 @@ func TestParetoStore_UpdatePareto(t *testing.T) {
 	require.NoError(t, err)
 
 	// Get the created pareto's ID
-	paretos, err := store.ListParetos(ctx, &api.UserIDs{Username: "updateparetouser"})
+	paretos, _, err := store.ListParetos(ctx, &api.UserIDs{Username: "updateparetouser"}, 50, 0)
 	require.NoError(t, err)
 	require.Greater(t, len(paretos), 0)
 	paretoID := paretos[0].Ids.Id
@@ -228,7 +228,7 @@ func TestParetoStore_DeletePareto(t *testing.T) {
 	require.NoError(t, err)
 
 	// Get the created pareto's ID
-	paretos, err := store.ListParetos(ctx, &api.UserIDs{Username: "deleteparetouser"})
+	paretos, _, err := store.ListParetos(ctx, &api.UserIDs{Username: "deleteparetouser"}, 50, 0)
 	require.NoError(t, err)
 	require.Greater(t, len(paretos), 0)
 	paretoID := paretos[0].Ids.Id
@@ -281,15 +281,30 @@ func TestParetoStore_ListParetos(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		// List paretos
-		paretos, err := store.ListParetos(ctx, &api.UserIDs{Username: "listparetouser"})
+		// List paretos with default pagination
+		paretos, totalCount, err := store.ListParetos(ctx, &api.UserIDs{Username: "listparetouser"}, 50, 0)
 		assert.NoError(t, err)
 		assert.Len(t, paretos, 3)
+		assert.Equal(t, 3, totalCount)
 
 		// Verify all paretos have vectors
 		for _, p := range paretos {
 			assert.Len(t, p.Vectors, 1)
 		}
+	})
+
+	t.Run("list paretos with pagination", func(t *testing.T) {
+		// List with limit 2
+		paretos, totalCount, err := store.ListParetos(ctx, &api.UserIDs{Username: "listparetouser"}, 2, 0)
+		assert.NoError(t, err)
+		assert.Len(t, paretos, 2)
+		assert.Equal(t, 3, totalCount)
+
+		// List with offset 2
+		paretos2, totalCount2, err := store.ListParetos(ctx, &api.UserIDs{Username: "listparetouser"}, 50, 2)
+		assert.NoError(t, err)
+		assert.Len(t, paretos2, 1)
+		assert.Equal(t, 3, totalCount2)
 	})
 
 	t.Run("list paretos for user with no paretos", func(t *testing.T) {
@@ -303,13 +318,14 @@ func TestParetoStore_ListParetos(t *testing.T) {
 		require.NoError(t, err)
 
 		// List paretos
-		paretos, err := store.ListParetos(ctx, &api.UserIDs{Username: "emptyuser"})
+		paretos, totalCount, err := store.ListParetos(ctx, &api.UserIDs{Username: "emptyuser"}, 50, 0)
 		assert.NoError(t, err)
 		assert.Len(t, paretos, 0)
+		assert.Equal(t, 0, totalCount)
 	})
 
 	t.Run("list paretos for non-existent user", func(t *testing.T) {
-		_, err := store.ListParetos(ctx, &api.UserIDs{Username: "doesnotexist"})
+		_, _, err := store.ListParetos(ctx, &api.UserIDs{Username: "doesnotexist"}, 50, 0)
 		assert.Error(t, err)
 		assert.Equal(t, gorm.ErrRecordNotFound, err)
 	})
@@ -379,7 +395,7 @@ func TestParetoStore_TransactionRollback(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Verify pareto was created
-		paretos, err := store.ListParetos(ctx, &api.UserIDs{Username: "txuser"})
+		paretos, _, err := store.ListParetos(ctx, &api.UserIDs{Username: "txuser"}, 50, 0)
 		assert.NoError(t, err)
 		assert.Len(t, paretos, 1)
 	})

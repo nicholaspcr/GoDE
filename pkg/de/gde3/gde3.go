@@ -15,6 +15,13 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+func init() {
+	de.DefaultRegistry.Register("gde3", de.AlgorithmMetadata{
+		Name:        "gde3",
+		Description: "GDE3 - Generalized Differential Evolution 3rd version for multi-objective optimization",
+	})
+}
+
 // gde3 type that contains the definition of the GDE3 algorithm.
 type gde3 struct {
 	problem           problems.Interface
@@ -26,7 +33,7 @@ type gde3 struct {
 }
 
 // Option is a functional option for configuring the GDE3 algorithm.
-type Option func(*gde3) *gde3
+type Option func(*gde3)
 
 // New creates a new GDE3 algorithm instance with the given configuration options.
 // GDE3 is a multi-objective Differential Evolution algorithm that uses non-dominated
@@ -114,7 +121,6 @@ func (g *gde3) Execute(
 
 func (g *gde3) initializePopulation(ctx context.Context, population models.Population) ([]float64, error) {
 	tracer := otel.Tracer("gde3")
-	//nolint:ineffassign,staticcheck // Context reassignment is intentional to propagate span context
 	ctx, span := tracer.Start(ctx, "gde3.initializePopulation",
 		trace.WithAttributes(
 			attribute.Int("population_size", len(population)),
@@ -124,6 +130,11 @@ func (g *gde3) initializePopulation(ctx context.Context, population models.Popul
 
 	maxObjs := make([]float64, g.populationParams.ObjectivesSize)
 	for i := range population {
+		// Check for cancellation between evaluations
+		if err := ctx.Err(); err != nil {
+			span.RecordError(err)
+			return nil, err
+		}
 		if err := g.problem.Evaluate(&population[i], g.populationParams.ObjectivesSize); err != nil {
 			span.RecordError(err)
 			return nil, err

@@ -10,6 +10,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+var regPassword string
+
 // registerCmd allows registering an account in the deserver.
 var registerCmd = &cobra.Command{
 	Use:   "register",
@@ -17,13 +19,17 @@ var registerCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		ctx := cmd.Context()
 
-		// Prompt for password securely with confirmation
-		password, err := utils.ReadPasswordWithConfirmation(
-			"Password: ",
-			"Confirm password: ",
-		)
-		if err != nil {
-			return err
+		// Use provided password or prompt for it
+		pwd := regPassword
+		if pwd == "" {
+			var err error
+			pwd, err = utils.ReadPasswordWithConfirmation(
+				"Password: ",
+				"Confirm password: ",
+			)
+			if err != nil {
+				return err
+			}
 		}
 
 		conn, err := grpc.NewClient(
@@ -47,7 +53,7 @@ var registerCmd = &cobra.Command{
 				User: &api.User{
 					Ids:      &api.UserIDs{Username: username},
 					Email:    email,
-					Password: password,
+					Password: pwd,
 				},
 			},
 		)
@@ -64,6 +70,7 @@ func init() {
 	// Flags
 	registerCmd.Flags().StringVar(&username, "username", "", "user's name")
 	registerCmd.Flags().StringVar(&email, "email", "", "user's email")
+	registerCmd.Flags().StringVar(&regPassword, "password", "", "user's password (optional, will prompt if not provided)")
 
 	// Requirements
 	_ = registerCmd.MarkFlagRequired("username")

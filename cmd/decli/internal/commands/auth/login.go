@@ -10,6 +10,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+var password string
+
 // loginCmd encapsulates the login related operations
 var loginCmd = &cobra.Command{
 	Use:   "login",
@@ -17,10 +19,13 @@ var loginCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 
-		// Prompt for password securely
-		password, err := utils.ReadPassword("Password: ")
-		if err != nil {
-			return err
+		// Use provided password or prompt for it
+		if password == "" {
+			var err error
+			password, err = utils.ReadPassword("Password: ")
+			if err != nil {
+				return err
+			}
 		}
 
 		conn, err := grpc.NewClient(
@@ -59,6 +64,7 @@ var loginCmd = &cobra.Command{
 func init() {
 	// Flags
 	loginCmd.Flags().StringVar(&username, "username", "", "user's name")
+	loginCmd.Flags().StringVar(&password, "password", "", "user's password (optional, will prompt if not provided)")
 
 	// Requirements
 	_ = loginCmd.MarkFlagRequired("username")

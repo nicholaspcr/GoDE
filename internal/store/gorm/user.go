@@ -15,6 +15,10 @@ type userModel struct {
 	Password string `gorm:"not null,size:256"`
 }
 
+func (userModel) TableName() string {
+	return "users"
+}
+
 type userStore struct{ *gorm.DB }
 
 func newUserStore(db *gorm.DB) *userStore { return &userStore{db} }
@@ -47,7 +51,7 @@ func (st *userStore) GetUser(
 	return &api.User{
 		Ids:      &api.UserIDs{Username: usr.Username},
 		Email:    usr.Email,
-		Password: "", // Never return password hash to clients
+		Password: usr.Password, // Password hash needed for auth verification
 	}, nil
 }
 

@@ -14,8 +14,15 @@ type paretoModel struct {
 	User userModel `gorm:"foreignKey:UserID"`
 	gorm.Model
 	MaxObjsJSON string        `gorm:"type:text"`
-	Vectors     []vectorModel `gorm:"foreignKey:ParetoID"`
+	Vectors     []vectorModel `gorm:"foreignKey:ParetoSetID"`
 	UserID      uint
+	Algorithm   string `gorm:"type:varchar(100);not null"`
+	Problem     string `gorm:"type:varchar(100);not null"`
+	Variant     string `gorm:"type:varchar(100);not null"`
+}
+
+func (paretoModel) TableName() string {
+	return "pareto_sets"
 }
 
 // SetMaxObjs serializes float64 slice to JSON
@@ -78,7 +85,7 @@ func (st *paretoStore) CreatePareto(
 		vectorModels := make([]vectorModel, 0, len(pareto.Vectors))
 		for _, vec := range pareto.Vectors {
 			vectorModel := vectorModel{
-				ParetoID:         paretoModel.ID,
+				ParetoSetID:      paretoModel.ID,
 				CrowdingDistance: vec.CrowdingDistance,
 			}
 			if err := vectorModel.SetElements(vec.Elements); err != nil {
@@ -185,7 +192,7 @@ func (st *paretoStore) DeletePareto(
 ) error {
 	return st.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// Delete associated vectors first (cascade)
-		if err := tx.Where("pareto_id = ?", paretoIDs.Id).Delete(&vectorModel{}).Error; err != nil {
+		if err := tx.Where("pareto_set_id = ?", paretoIDs.Id).Delete(&vectorModel{}).Error; err != nil {
 			return err
 		}
 
@@ -272,7 +279,11 @@ func (st *paretoStore) ListParetos(
 // CreateParetoSet creates a pareto set with vectors and max objectives.
 func (st *paretoStore) CreateParetoSet(ctx context.Context, paretoSet *store.ParetoSet) error {
 	// Create pareto model
-	paretoModel := paretoModel{}
+	paretoModel := paretoModel{
+		Algorithm: paretoSet.Algorithm,
+		Problem:   paretoSet.Problem,
+		Variant:   paretoSet.Variant,
+	}
 
 	// Convert max objectives
 	flatMaxObjs := make([]float64, 0)
@@ -311,7 +322,7 @@ func (st *paretoStore) CreateParetoSet(ctx context.Context, paretoSet *store.Par
 		vectorModels := make([]vectorModel, 0, len(paretoSet.Vectors))
 		for _, vec := range paretoSet.Vectors {
 			vectorModel := vectorModel{
-				ParetoID:         paretoModel.ID,
+				ParetoSetID:      paretoModel.ID,
 				CrowdingDistance: vec.CrowdingDistance,
 			}
 			if err := vectorModel.SetElements(vec.Elements); err != nil {
@@ -377,6 +388,9 @@ func (st *paretoStore) GetParetoSetByID(ctx context.Context, id uint64) (*store.
 	return &store.ParetoSet{
 		ID:            uint64(paretoModel.ID),
 		UserID:        paretoModel.User.Username,
+		Algorithm:     paretoModel.Algorithm,
+		Problem:       paretoModel.Problem,
+		Variant:       paretoModel.Variant,
 		Vectors:       vectors,
 		MaxObjectives: maxObjectives,
 		CreatedAt:     paretoModel.CreatedAt,

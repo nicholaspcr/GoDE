@@ -10,11 +10,15 @@ import (
 
 type vectorModel struct {
 	gorm.Model
-	ElementsJSON     string      `gorm:"type:text"`
-	ObjectivesJSON   string      `gorm:"type:text"`
-	Pareto           paretoModel `gorm:"foreignKey:ParetoID"`
-	ParetoID         uint
-	CrowdingDistance float64
+	ElementsJSON     string      `gorm:"column:elements;type:text"`
+	ObjectivesJSON   string      `gorm:"column:objectives;type:text"`
+	Pareto           paretoModel `gorm:"foreignKey:ParetoSetID"`
+	ParetoSetID      uint        `gorm:"column:pareto_set_id"`
+	CrowdingDistance float64     `gorm:"column:crowding_distance"`
+}
+
+func (vectorModel) TableName() string {
+	return "vectors"
 }
 
 // SetElements serializes float64 slice to JSON
@@ -65,7 +69,7 @@ func (st *vectorStore) CreateVector(
 	ctx context.Context, vec *api.Vector, paretoID uint,
 ) error {
 	vector := vectorModel{
-		ParetoID:         paretoID,
+		ParetoSetID:      paretoID,
 		CrowdingDistance: vec.CrowdingDistance,
 	}
 

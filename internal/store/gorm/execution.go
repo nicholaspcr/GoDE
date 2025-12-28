@@ -2,7 +2,6 @@ package gorm
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"log/slog"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"github.com/nicholaspcr/GoDE/internal/store"
 	storeerrors "github.com/nicholaspcr/GoDE/internal/store/errors"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
+	"google.golang.org/protobuf/encoding/protojson"
 	"gorm.io/gorm"
 )
 
@@ -41,7 +41,7 @@ func newExecutionStore(db *gorm.DB) *executionStore {
 
 // CreateExecution creates a new execution record in the database.
 func (s *executionStore) CreateExecution(ctx context.Context, execution *store.Execution) error {
-	configJSON, err := json.Marshal(execution.Config)
+	configJSON, err := protojson.Marshal(execution.Config)
 	if err != nil {
 		return err
 	}
@@ -185,7 +185,7 @@ func (s *executionStore) Subscribe(ctx context.Context, channel string) (<-chan 
 // modelToExecution converts a database model to a store.Execution.
 func (s *executionStore) modelToExecution(model *executionModel) (*store.Execution, error) {
 	var config api.DEConfig
-	if err := json.Unmarshal([]byte(model.ConfigJSON), &config); err != nil {
+	if err := protojson.Unmarshal([]byte(model.ConfigJSON), &config); err != nil {
 		return nil, err
 	}
 

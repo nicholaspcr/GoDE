@@ -1,0 +1,36 @@
+services:
+  postgres:
+    container_name: gode-postgres-test
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: gode_test
+      POSTGRES_PASSWORD: gode123
+      POSTGRES_USER: gode
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gode -d gode_test"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    tmpfs:
+      - /var/lib/postgresql/data
+    networks:
+      - test-network
+
+  redis:
+    container_name: gode-redis-test
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge

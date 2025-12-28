@@ -10,7 +10,73 @@ import (
 	"github.com/nicholaspcr/GoDE/internal/cache/redis"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
+	"google.golang.org/protobuf/encoding/protojson"
 )
+
+// executionJSON is a helper struct for JSON serialization that handles protobuf Config field.
+type executionJSON struct {
+	ID          string              `json:"id"`
+	UserID      string              `json:"user_id"`
+	Status      store.ExecutionStatus `json:"status"`
+	ConfigJSON  string              `json:"config_json"` // protojson encoded DEConfig
+	ParetoID    *uint64             `json:"pareto_id,omitempty"`
+	Error       string              `json:"error,omitempty"`
+	CreatedAt   time.Time           `json:"created_at"`
+	UpdatedAt   time.Time           `json:"updated_at"`
+	CompletedAt *time.Time          `json:"completed_at,omitempty"`
+}
+
+func marshalExecution(exec *store.Execution) ([]byte, error) {
+	configJSON := ""
+	if exec.Config != nil {
+		data, err := protojson.Marshal(exec.Config)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal config: %w", err)
+		}
+		configJSON = string(data)
+	}
+
+	helper := executionJSON{
+		ID:          exec.ID,
+		UserID:      exec.UserID,
+		Status:      exec.Status,
+		ConfigJSON:  configJSON,
+		ParetoID:    exec.ParetoID,
+		Error:       exec.Error,
+		CreatedAt:   exec.CreatedAt,
+		UpdatedAt:   exec.UpdatedAt,
+		CompletedAt: exec.CompletedAt,
+	}
+
+	return json.Marshal(helper)
+}
+
+func unmarshalExecution(data []byte) (*store.Execution, error) {
+	var helper executionJSON
+	if err := json.Unmarshal(data, &helper); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal execution: %w", err)
+	}
+
+	var config *api.DEConfig
+	if helper.ConfigJSON != "" {
+		config = &api.DEConfig{}
+		if err := protojson.Unmarshal([]byte(helper.ConfigJSON), config); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal config: %w", err)
+		}
+	}
+
+	return &store.Execution{
+		ID:          helper.ID,
+		UserID:      helper.UserID,
+		Status:      helper.Status,
+		Config:      config,
+		ParetoID:    helper.ParetoID,
+		Error:       helper.Error,
+		CreatedAt:   helper.CreatedAt,
+		UpdatedAt:   helper.UpdatedAt,
+		CompletedAt: helper.CompletedAt,
+	}, nil
+}
 
 // ExecutionStore implements ExecutionOperations using Redis.
 type ExecutionStore struct {
@@ -48,7 +114,7 @@ func (s *ExecutionStore) userExecutionsKey(userID string) string {
 func (s *ExecutionStore) CreateExecution(ctx context.Context, execution *store.Execution) error {
 	key := s.executionKey(execution.ID)
 
-	data, err := json.Marshal(execution)
+	data, err := marshalExecution(execution)
 	if err != nil {
 		return fmt.Errorf("failed to marshal execution: %w", err)
 	}
@@ -78,9 +144,9 @@ func (s *ExecutionStore) GetExecution(ctx context.Context, executionID, userID s
 		return nil, fmt.Errorf("execution not found: %w", err)
 	}
 
-	var execution store.Execution
-	if err := json.Unmarshal([]byte(data), &execution); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal execution: %w", err)
+	execution, err := unmarshalExecution([]byte(data))
+	if err != nil {
+		return nil, err
 	}
 
 	// Verify ownership
@@ -88,7 +154,7 @@ func (s *ExecutionStore) GetExecution(ctx context.Context, executionID, userID s
 		return nil, fmt.Errorf("execution does not belong to user")
 	}
 
-	return &execution, nil
+	return execution, nil
 }
 
 // UpdateExecutionStatus updates the status of an execution.
@@ -100,9 +166,9 @@ func (s *ExecutionStore) UpdateExecutionStatus(ctx context.Context, executionID 
 		return fmt.Errorf("execution not found: %w", err)
 	}
 
-	var execution store.Execution
-	if err := json.Unmarshal([]byte(data), &execution); err != nil {
-		return fmt.Errorf("failed to unmarshal execution: %w", err)
+	execution, err := unmarshalExecution([]byte(data))
+	if err != nil {
+		return err
 	}
 
 	execution.Status = status
@@ -115,7 +181,7 @@ func (s *ExecutionStore) UpdateExecutionStatus(ctx context.Context, executionID 
 		execution.CompletedAt = &now
 	}
 
-	updatedData, err := json.Marshal(execution)
+	updatedData, err := marshalExecution(execution)
 	if err != nil {
 		return fmt.Errorf("failed to marshal execution: %w", err)
 	}
@@ -142,15 +208,15 @@ func (s *ExecutionStore) UpdateExecutionResult(ctx context.Context, executionID 
 		return fmt.Errorf("execution not found: %w", err)
 	}
 
-	var execution store.Execution
-	if err := json.Unmarshal([]byte(data), &execution); err != nil {
-		return fmt.Errorf("failed to unmarshal execution: %w", err)
+	execution, err := unmarshalExecution([]byte(data))
+	if err != nil {
+		return err
 	}
 
 	execution.ParetoID = &paretoID
 	execution.UpdatedAt = time.Now()
 
-	updatedData, err := json.Marshal(execution)
+	updatedData, err := marshalExecution(execution)
 	if err != nil {
 		return fmt.Errorf("failed to marshal execution: %w", err)
 	}
@@ -198,8 +264,8 @@ func (s *ExecutionStore) ListExecutions(ctx context.Context, userID string, stat
 		for i := 1; i < len(pairs); i += 2 {
 			executionData := pairs[i]
 
-			var execution store.Execution
-			if err := json.Unmarshal([]byte(executionData), &execution); err != nil {
+			execution, err := unmarshalExecution([]byte(executionData))
+			if err != nil {
 				continue // Skip invalid entries
 			}
 
@@ -211,7 +277,7 @@ func (s *ExecutionStore) ListExecutions(ctx context.Context, userID string, stat
 			seen++
 			// Only collect items within our pagination window
 			if seen > offset && collected < limit {
-				executions = append(executions, &execution)
+				executions = append(executions, execution)
 				collected++
 			}
 		}
@@ -229,15 +295,26 @@ func (s *ExecutionStore) ListExecutions(ctx context.Context, userID string, stat
 }
 
 // DeleteExecution removes an execution from Redis.
+// If userID is empty, ownership verification is skipped (used for cache invalidation).
 func (s *ExecutionStore) DeleteExecution(ctx context.Context, executionID, userID string) error {
-	// Verify ownership first
-	execution, err := s.GetExecution(ctx, executionID, userID)
+	// Get execution - skip ownership check if userID is empty (cache invalidation)
+	key := s.executionKey(executionID)
+	data, err := s.client.Get(ctx, key)
+	if err != nil {
+		return fmt.Errorf("execution not found: %w", err)
+	}
+
+	execution, err := unmarshalExecution([]byte(data))
 	if err != nil {
 		return err
 	}
 
+	// Verify ownership only if userID is provided
+	if userID != "" && execution.UserID != userID {
+		return fmt.Errorf("execution does not belong to user")
+	}
+
 	// Delete from Redis
-	key := s.executionKey(executionID)
 	if err := s.client.Delete(ctx, key); err != nil {
 		return fmt.Errorf("failed to delete execution: %w", err)
 	}

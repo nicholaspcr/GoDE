@@ -107,6 +107,9 @@ type MaxObjectives struct {
 type ParetoSet struct {
 	ID            uint64
 	UserID        string
+	Algorithm     string
+	Problem       string
+	Variant       string
 	Vectors       []*api.Vector
 	MaxObjectives []*MaxObjectives
 	CreatedAt     time.Time

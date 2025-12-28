@@ -332,7 +332,7 @@ func (e *Executor) executeInBackground(parentCtx context.Context, executionID, u
 	}
 
 	// Save results
-	paretoID, err := e.saveResults(ctx, userID, pareto, maxObjs)
+	paretoID, err := e.saveResults(ctx, userID, algorithm, problem, variant, pareto, maxObjs)
 	if err != nil {
 		if updateErr := e.store.UpdateExecutionStatus(ctx, executionID, store.ExecutionStatusFailed, err.Error()); updateErr != nil {
 			slog.Error("failed to update execution status after save failure",
@@ -503,7 +503,7 @@ func (e *Executor) runAlgorithm(ctx context.Context, executionID, problemName, v
 	return mode.Execute(ctx)
 }
 
-func (e *Executor) saveResults(ctx context.Context, userID string, pareto []models.Vector, maxObjs [][]float64) (uint64, error) {
+func (e *Executor) saveResults(ctx context.Context, userID, algorithm, problem, variant string, pareto []models.Vector, maxObjs [][]float64) (uint64, error) {
 	// Convert to API vectors
 	apiVectors := make([]*api.Vector, len(pareto))
 	for i := range pareto {
@@ -524,6 +524,9 @@ func (e *Executor) saveResults(ctx context.Context, userID string, pareto []mode
 	// Create pareto set
 	paretoSet := &store.ParetoSet{
 		UserID:        userID,
+		Algorithm:     algorithm,
+		Problem:       problem,
+		Variant:       variant,
 		Vectors:       apiVectors,
 		MaxObjectives: storeMaxObjs,
 		CreatedAt:     time.Now(),

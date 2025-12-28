@@ -20,17 +20,17 @@ import (
 
 // Config extends store.Config with Redis and TTL settings.
 type Config struct {
-	store.Config
-	Redis        redis.Config
-	ExecutionTTL time.Duration
-	ResultTTL    time.Duration
-	ProgressTTL  time.Duration
+	store.Config `json:",inline" yaml:",inline" mapstructure:",squash"`
+	Redis        redis.Config  `json:"redis" yaml:"redis" mapstructure:"redis"`
+	ExecutionTTL time.Duration `json:"execution_ttl" yaml:"execution_ttl" mapstructure:"execution_ttl"`
+	ResultTTL    time.Duration `json:"result_ttl" yaml:"result_ttl" mapstructure:"result_ttl"`
+	ProgressTTL  time.Duration `json:"progress_ttl" yaml:"progress_ttl" mapstructure:"progress_ttl"`
 }
 
 // New returns a new Store instance that combines database and Redis.
 func New(ctx context.Context, cfg Config) (store.Store, error) {
-	// Run migrations first (except for memory stores)
-	if cfg.Type != "memory" {
+	// Run SQL migrations for PostgreSQL only (GORM AutoMigrate handles SQLite)
+	if cfg.Type == "postgres" {
 		connStr := cfg.ConnectionString()
 		if connStr != "" {
 			slog.Info("Running database migrations before connecting...")
@@ -59,8 +59,9 @@ func New(ctx context.Context, cfg Config) (store.Store, error) {
 		return nil, err
 	}
 
-	// For memory stores, still use AutoMigrate since migrations don't work with :memory:
-	if cfg.Type == "memory" {
+	// Run AutoMigrate only for SQLite/memory stores
+	// PostgreSQL schema is fully managed by SQL migrations
+	if cfg.Type != "postgres" {
 		if err := dbStore.AutoMigrate(); err != nil {
 			return nil, err
 		}

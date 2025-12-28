@@ -60,8 +60,25 @@ func bindEnvRecursive(v *viper.Viper, t reflect.Type, prefix string) {
 		if tag == "" {
 			tag = field.Tag.Get("json")
 		}
+
+		// Handle embedded structs with squash/inline tags
+		isSquashed := strings.Contains(tag, "squash") || strings.Contains(tag, "inline")
+		if isSquashed {
+			// For squashed/inline embedded structs, use parent's prefix
+			fieldType := field.Type
+			if fieldType.Kind() == reflect.Struct {
+				bindEnvRecursive(v, fieldType, prefix)
+			}
+			continue
+		}
+
 		if tag == "" || tag == "-" {
 			continue
+		}
+
+		// Handle tags with options like ",omitempty"
+		if commaIdx := strings.Index(tag, ","); commaIdx != -1 {
+			tag = tag[:commaIdx]
 		}
 
 		// Build the key path

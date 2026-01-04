@@ -7,3 +7,5 @@ plugins:
       - include_package_in_tags=true
       - openapi_naming_strategy=fqn
       - generate_unbound_methods=true
+      - allow_merge=true
+      - merge_file_name=api

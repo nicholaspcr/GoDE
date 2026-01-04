@@ -3,11 +3,11 @@ import { cn } from '@/lib/utils'
 
 export interface SelectProps
   extends React.SelectHTMLAttributes<HTMLSelectElement> {
-  options: Array<{ value: string; label: string }>
+  options?: Array<{ value: string; label: string }>
 }
 
 const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, options, ...props }, ref) => {
+  ({ className, options, children, ...props }, ref) => {
     return (
       <select
         className={cn(
@@ -17,11 +17,13 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         ref={ref}
         {...props}
       >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
+        {options
+          ? options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))
+          : children}
       </select>
     )
   }

@@ -1,14 +1,48 @@
 # Development Guide
 
-This guide explains how to run `deserver` and `decli` locally for development and testing.
+This guide explains how to run `deserver`, `decli`, and the web frontend locally for development and testing.
 
 ## Prerequisites
 
 - Go 1.21+
+- Node.js 20+
 - Docker and Docker Compose
 - Make
 
-## Quick Start
+## Quick Start (Full Stack)
+
+The easiest way to run everything together:
+
+```bash
+# 1. Build backend binaries
+make build
+
+# 2. Install frontend dependencies
+make web-deps
+
+# 3. Start infrastructure (PostgreSQL + Redis)
+docker compose -f docker-compose.test.yml up -d
+
+# 4. Start backend server (in one terminal)
+JWT_SECRET="development-secret-key-change-in-production-min-32-chars" \
+STORE_TYPE=postgres \
+STORE_POSTGRESQL_DNS="postgres://gode:gode123@localhost:5432/gode_test?sslmode=disable" \
+REDIS_HOST=localhost \
+REDIS_PORT=6379 \
+./.dev/deserver start
+
+# 5. Start frontend dev server (in another terminal)
+make web-dev
+```
+
+The services will be available at:
+- **Frontend**: http://localhost:5173
+- **Backend HTTP API**: http://localhost:8081
+- **Backend gRPC**: localhost:3030
+
+The frontend dev server automatically proxies API requests (`/v1/*`) to the backend.
+
+## Backend Development
 
 ### 1. Build the binaries
 
@@ -215,3 +249,65 @@ If you experience stale data issues:
 ```bash
 docker compose -f docker-compose.test.yml exec redis redis-cli FLUSHALL
 ```
+
+## Frontend Development
+
+### Install dependencies
+
+```bash
+make web-deps
+# or
+cd web && npm install
+```
+
+### Start development server
+
+```bash
+make web-dev
+# or
+cd web && npm run dev
+```
+
+The dev server runs at http://localhost:5173 and proxies `/v1/*` requests to `http://localhost:8081`.
+
+### Build for production
+
+```bash
+make web-build
+```
+
+### Lint code
+
+```bash
+make web-lint
+```
+
+### Regenerate API client
+
+If the backend API changes, regenerate the TypeScript client:
+
+```bash
+make openapi      # Generate OpenAPI spec from protos
+make web-api      # Generate TypeScript client from OpenAPI spec
+```
+
+## Docker Development
+
+Run the full stack with Docker Compose:
+
+```bash
+# Build and start all services
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Stop all services
+docker compose down
+```
+
+Services:
+- **Frontend**: http://localhost:3001
+- **Backend API**: http://localhost:8081
+- **Grafana**: http://localhost:3000 (admin/admin)
+- **Prometheus**: http://localhost:9090

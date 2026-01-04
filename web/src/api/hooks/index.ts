@@ -1,4 +1,5 @@
 export { useLogin, useRegister, useLogout, useRefreshToken } from './useAuth'
+export { useTokenRefresh } from './useTokenRefresh'
 export {
   useAlgorithms,
   useVariants,

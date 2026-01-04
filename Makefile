@@ -134,3 +134,48 @@ k8s-status: ## Show status of all deployed resources
 k8s-url: ## Get the URL to access the application
 	@echo 'HTTP Gateway URL:'
 	@minikube service deserver-http --url
+
+##@ Frontend
+
+.PHONY: web-deps
+web-deps: ## Install frontend dependencies
+	@cd web && npm install
+
+.PHONY: web-dev
+web-dev: ## Run frontend development server
+	@cd web && npm run dev
+
+.PHONY: web-build
+web-build: ## Build frontend for production
+	@cd web && npm run build
+
+.PHONY: web-test
+web-test: ## Run frontend tests
+	@cd web && npm run test
+
+.PHONY: web-lint
+web-lint: ## Lint frontend code
+	@cd web && npm run lint
+
+.PHONY: web-format
+web-format: ## Format frontend code with Prettier
+	@cd web && npx prettier --write "src/**/*.{ts,tsx}"
+
+.PHONY: web-api
+web-api: openapi ## Generate TypeScript API client from OpenAPI spec
+	@cd web && npx @openapitools/openapi-generator-cli generate \
+		-i ../docs/openapi/api.swagger.json \
+		-g typescript-fetch \
+		-o src/api/generated \
+		--additional-properties=typescriptThreePlus=true,supportsES6=true
+
+.PHONY: dev-full
+dev-full: ## Run full stack development (backend + frontend)
+	@echo 'Starting PostgreSQL and Redis...'
+	@docker compose -f docker-compose.test.yml up -d
+	@sleep 3
+	@echo 'Run "make run" in one terminal and "make web-dev" in another'
+
+.PHONY: run
+run: build ## Build and run the server
+	@./.dev/deserver start

@@ -1,3 +1,6 @@
 export { LoginPage } from './LoginPage'
 export { RegisterPage } from './RegisterPage'
 export { DashboardPage } from './DashboardPage'
+export { ExecutionsPage } from './ExecutionsPage'
+export { NewExecutionPage } from './NewExecutionPage'
+export { ExecutionDetailPage } from './ExecutionDetailPage'

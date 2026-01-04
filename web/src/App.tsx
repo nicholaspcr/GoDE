@@ -1,6 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ProtectedRoute, AuthProvider } from '@/components/auth'
-import { LoginPage, RegisterPage, DashboardPage } from '@/pages'
+import {
+  LoginPage,
+  RegisterPage,
+  DashboardPage,
+  ExecutionsPage,
+  NewExecutionPage,
+  ExecutionDetailPage,
+} from '@/pages'
 
 function App() {
   return (
@@ -14,9 +21,9 @@ function App() {
         {/* Protected routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/executions" element={<DashboardPage />} />
-          <Route path="/executions/new" element={<DashboardPage />} />
-          <Route path="/executions/:id" element={<DashboardPage />} />
+          <Route path="/executions" element={<ExecutionsPage />} />
+          <Route path="/executions/new" element={<NewExecutionPage />} />
+          <Route path="/executions/:id" element={<ExecutionDetailPage />} />
         </Route>
 
         {/* Redirect root to dashboard (will redirect to login if not authenticated) */}

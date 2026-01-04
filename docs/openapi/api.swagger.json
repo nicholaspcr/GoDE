@@ -1,0 +1,1274 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/v1/user.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "api.v1.UserService"
+    },
+    {
+      "name": "api.v1.AuthService"
+    },
+    {
+      "name": "api.v1.DifferentialEvolutionService"
+    },
+    {
+      "name": "api.v1.ParetoService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/auth/login": {
+      "post": {
+        "operationId": "AuthService_Login",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api.v1.AuthServiceLoginResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/api.v1.AuthServiceLoginRequest"
+            }
+          }
+        ],
+        "tags": [
+          "api.v1.AuthService"
+        ]
+      }
+    },
+    "/v1/auth/logout": {
+      "post": {
+        "operationId": "AuthService_Logout",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/api.v1.AuthServiceLogoutRequest"
+            }
+          }
+        ],
+        "tags": [
+          "api.v1.AuthService"
+        ]
+      }
+    },
+    "/v1/auth/refresh": {
+      "post": {
+        "operationId": "AuthService_RefreshToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api.v1.AuthServiceRefreshTokenResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/api.v1.AuthServiceRefreshTokenRequest"
+            }
+          }
+        ],
+        "tags": [
+          "api.v1.AuthService"
+        ]
+      }
+    },
+    "/v1/auth/register": {
+      "post": {
+        "operationId": "AuthService_Register",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/api.v1.AuthServiceRegisterRequest"
+            }
+          }
+        ],
+        "tags": [
+          "api.v1.AuthService"
+        ]
+      }
+    },
+    "/v1/de/executions": {
+      "get": {
+        "operationId": "DifferentialEvolutionService_ListExecutions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api.v1.ListExecutionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "status",
+            "description": "Optional filter",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "EXECUTION_STATUS_UNSPECIFIED",
+              "EXECUTION_STATUS_PENDING",
+              "EXECUTION_STATUS_RUNNING",
+              "EXECUTION_STATUS_COMPLETED",
+              "EXECUTION_STATUS_FAILED",
+              "EXECUTION_STATUS_CANCELLED"
+            ],
+            "default": "EXECUTION_STATUS_UNSPECIFIED"
+          },
+          {
+            "name": "limit",
+            "description": "Page size (default: 50, max: 100)",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "offset",
+            "description": "Starting position (default: 0)",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "api.v1.DifferentialEvolutionService"
+        ]
+      }
+    },
+    "/v1/de/executions/{executionId}": {
+      "get": {
+        "operationId": "DifferentialEvolutionService_GetExecutionStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api.v1.GetExecutionStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "executionId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "api.v1.DifferentialEvolutionService"
+        ]
+      },
+      "delete": {
+        "operationId": "DifferentialEvolutionService_DeleteExecution",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "executionId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "api.v1.DifferentialEvolutionService"
+        ]
+      }
+    },
+    "/v1/de/executions/{executionId}/cancel": {
+      "post": {
+        "operationId": "DifferentialEvolutionService_CancelExecution",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "executionId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/api.v1.DifferentialEvolutionService.CancelExecutionBody"
+            }
+          }
+        ],
+        "tags": [
+          "api.v1.DifferentialEvolutionService"
+        ]
+      }
+    },
+    "/v1/de/executions/{executionId}/progress": {
+      "get": {
+        "operationId": "DifferentialEvolutionService_StreamProgress",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/api.v1.StreamProgressResponse"
+                },
+                "error": {
+                  "$ref": "#/definitions/google.rpc.Status"
+                }
+              },
+              "title": "Stream result of api.v1.StreamProgressResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "executionId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "api.v1.DifferentialEvolutionService"
+        ]
+      }
+    },
+    "/v1/de/executions/{executionId}/results": {
+      "get": {
+        "operationId": "DifferentialEvolutionService_GetExecutionResults",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api.v1.GetExecutionResultsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "executionId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "api.v1.DifferentialEvolutionService"
+        ]
+      }
+    },
+    "/v1/de/run": {
+      "post": {
+        "summary": "Async execution RPCs",
+        "operationId": "DifferentialEvolutionService_RunAsync",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api.v1.RunAsyncResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/api.v1.RunAsyncRequest"
+            }
+          }
+        ],
+        "tags": [
+          "api.v1.DifferentialEvolutionService"
+        ]
+      }
+    },
+    "/v1/de/supported/algorithms": {
+      "get": {
+        "operationId": "DifferentialEvolutionService_ListSupportedAlgorithms",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api.v1.ListSupportedAlgorithmsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "tags": [
+          "api.v1.DifferentialEvolutionService"
+        ]
+      }
+    },
+    "/v1/de/supported/problems": {
+      "get": {
+        "operationId": "DifferentialEvolutionService_ListSupportedProblems",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api.v1.ListSupportedProblemsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "tags": [
+          "api.v1.DifferentialEvolutionService"
+        ]
+      }
+    },
+    "/v1/de/supported/variants": {
+      "get": {
+        "operationId": "DifferentialEvolutionService_ListSupportedVariants",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api.v1.ListSupportedVariantsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "tags": [
+          "api.v1.DifferentialEvolutionService"
+        ]
+      }
+    },
+    "/v1/pareto/{paretoIds.id}": {
+      "get": {
+        "operationId": "ParetoService_Get",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api.v1.ParetoServiceGetResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "paretoIds.id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "paretoIds.userId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "api.v1.ParetoService"
+        ]
+      },
+      "delete": {
+        "operationId": "ParetoService_Delete",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "paretoIds.id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "paretoIds.userId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "api.v1.ParetoService"
+        ]
+      }
+    },
+    "/v1/paretos/{userIds.username}": {
+      "get": {
+        "operationId": "ParetoService_ListByUser",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/api.v1.ParetoServiceListByUserResponse"
+                },
+                "error": {
+                  "$ref": "#/definitions/google.rpc.Status"
+                }
+              },
+              "title": "Stream result of api.v1.ParetoServiceListByUserResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "userIds.username",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "description": "Page size (default: 50, max: 100)",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "offset",
+            "description": "Starting position (default: 0)",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "api.v1.ParetoService"
+        ]
+      }
+    },
+    "/v1/user": {
+      "post": {
+        "operationId": "UserService_Create",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/api.v1.UserServiceCreateRequest"
+            }
+          }
+        ],
+        "tags": [
+          "api.v1.UserService"
+        ]
+      },
+      "put": {
+        "operationId": "UserService_Update",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/api.v1.UserServiceUpdateRequest"
+            }
+          }
+        ],
+        "tags": [
+          "api.v1.UserService"
+        ]
+      }
+    },
+    "/v1/user/{userIds.username}": {
+      "get": {
+        "operationId": "UserService_Get",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/api.v1.UserServiceGetResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "userIds.username",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "api.v1.UserService"
+        ]
+      },
+      "delete": {
+        "operationId": "UserService_Delete",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "userIds.username",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "api.v1.UserService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "api.v1.AuthServiceLoginRequest": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "api.v1.AuthServiceLoginResponse": {
+      "type": "object",
+      "properties": {
+        "accessToken": {
+          "type": "string"
+        },
+        "refreshToken": {
+          "type": "string"
+        },
+        "expiresIn": {
+          "type": "string",
+          "format": "int64",
+          "title": "Access token expiry in seconds"
+        }
+      }
+    },
+    "api.v1.AuthServiceLogoutRequest": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string"
+        }
+      }
+    },
+    "api.v1.AuthServiceRefreshTokenRequest": {
+      "type": "object",
+      "properties": {
+        "refreshToken": {
+          "type": "string"
+        }
+      }
+    },
+    "api.v1.AuthServiceRefreshTokenResponse": {
+      "type": "object",
+      "properties": {
+        "accessToken": {
+          "type": "string"
+        },
+        "refreshToken": {
+          "type": "string"
+        },
+        "expiresIn": {
+          "type": "string",
+          "format": "int64",
+          "title": "Access token expiry in seconds"
+        }
+      }
+    },
+    "api.v1.AuthServiceRegisterRequest": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/api.v1.User"
+        }
+      }
+    },
+    "api.v1.DEConfig": {
+      "type": "object",
+      "properties": {
+        "executions": {
+          "type": "string",
+          "format": "int64"
+        },
+        "generations": {
+          "type": "string",
+          "format": "int64"
+        },
+        "populationSize": {
+          "type": "string",
+          "format": "int64"
+        },
+        "dimensionsSize": {
+          "type": "string",
+          "format": "int64"
+        },
+        "objectivesSize": {
+          "type": "string",
+          "format": "int64"
+        },
+        "floorLimiter": {
+          "type": "number",
+          "format": "float"
+        },
+        "ceilLimiter": {
+          "type": "number",
+          "format": "float"
+        },
+        "gde3": {
+          "$ref": "#/definitions/api.v1.GDE3Config"
+        }
+      }
+    },
+    "api.v1.DifferentialEvolutionService.CancelExecutionBody": {
+      "type": "object"
+    },
+    "api.v1.Execution": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/api.v1.ExecutionStatus"
+        },
+        "config": {
+          "$ref": "#/definitions/api.v1.DEConfig"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "error": {
+          "type": "string"
+        },
+        "paretoId": {
+          "type": "string",
+          "format": "uint64"
+        }
+      },
+      "title": "Execution metadata"
+    },
+    "api.v1.ExecutionStatus": {
+      "type": "string",
+      "enum": [
+        "EXECUTION_STATUS_UNSPECIFIED",
+        "EXECUTION_STATUS_PENDING",
+        "EXECUTION_STATUS_RUNNING",
+        "EXECUTION_STATUS_COMPLETED",
+        "EXECUTION_STATUS_FAILED",
+        "EXECUTION_STATUS_CANCELLED"
+      ],
+      "default": "EXECUTION_STATUS_UNSPECIFIED",
+      "title": "Execution status enum"
+    },
+    "api.v1.GDE3Config": {
+      "type": "object",
+      "properties": {
+        "cr": {
+          "type": "number",
+          "format": "float"
+        },
+        "f": {
+          "type": "number",
+          "format": "float"
+        },
+        "p": {
+          "type": "number",
+          "format": "float"
+        }
+      }
+    },
+    "api.v1.GetExecutionResultsResponse": {
+      "type": "object",
+      "properties": {
+        "pareto": {
+          "$ref": "#/definitions/api.v1.Pareto"
+        }
+      }
+    },
+    "api.v1.GetExecutionStatusResponse": {
+      "type": "object",
+      "properties": {
+        "execution": {
+          "$ref": "#/definitions/api.v1.Execution"
+        },
+        "progress": {
+          "$ref": "#/definitions/api.v1.StreamProgressResponse"
+        }
+      }
+    },
+    "api.v1.ListExecutionsResponse": {
+      "type": "object",
+      "properties": {
+        "executions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/api.v1.Execution"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Total number of executions matching filter"
+        },
+        "limit": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Echoed limit for pagination"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Echoed offset for pagination"
+        },
+        "hasMore": {
+          "type": "boolean",
+          "title": "True if more results available"
+        }
+      }
+    },
+    "api.v1.ListSupportedAlgorithmsResponse": {
+      "type": "object",
+      "properties": {
+        "algorithms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "api.v1.ListSupportedProblemsResponse": {
+      "type": "object",
+      "properties": {
+        "problems": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/api.v1.Problem"
+          }
+        }
+      }
+    },
+    "api.v1.ListSupportedVariantsResponse": {
+      "type": "object",
+      "properties": {
+        "variants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/api.v1.Variant"
+          }
+        }
+      }
+    },
+    "api.v1.Pareto": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "$ref": "#/definitions/api.v1.ParetoIDs"
+        },
+        "vectors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/api.v1.Vector"
+          }
+        },
+        "maxObjs": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      }
+    },
+    "api.v1.ParetoIDs": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "userId": {
+          "type": "string"
+        }
+      }
+    },
+    "api.v1.ParetoServiceGetResponse": {
+      "type": "object",
+      "properties": {
+        "pareto": {
+          "$ref": "#/definitions/api.v1.Pareto"
+        }
+      }
+    },
+    "api.v1.ParetoServiceListByUserResponse": {
+      "type": "object",
+      "properties": {
+        "pareto": {
+          "$ref": "#/definitions/api.v1.Pareto"
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Total number of pareto sets for user",
+          "title": "Pagination metadata (sent with first response in stream)"
+        },
+        "limit": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Echoed limit for pagination"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Echoed offset for pagination"
+        },
+        "hasMore": {
+          "type": "boolean",
+          "title": "True if more results available"
+        }
+      }
+    },
+    "api.v1.Problem": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "api.v1.RunAsyncRequest": {
+      "type": "object",
+      "properties": {
+        "algorithm": {
+          "type": "string"
+        },
+        "variant": {
+          "type": "string"
+        },
+        "problem": {
+          "type": "string"
+        },
+        "deConfig": {
+          "$ref": "#/definitions/api.v1.DEConfig"
+        }
+      }
+    },
+    "api.v1.RunAsyncResponse": {
+      "type": "object",
+      "properties": {
+        "executionId": {
+          "type": "string"
+        }
+      },
+      "title": "Async execution responses"
+    },
+    "api.v1.StreamProgressResponse": {
+      "type": "object",
+      "properties": {
+        "executionId": {
+          "type": "string"
+        },
+        "currentGeneration": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalGenerations": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "completedExecutions": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalExecutions": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "partialPareto": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/api.v1.Vector"
+          }
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "title": "Progress update during execution"
+    },
+    "api.v1.User": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "$ref": "#/definitions/api.v1.UserIDs"
+        },
+        "email": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      },
+      "description": "User is the standard user message for requests (includes password)."
+    },
+    "api.v1.UserIDs": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string"
+        }
+      },
+      "description": "UserIDs is the standard user id message."
+    },
+    "api.v1.UserResponse": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "$ref": "#/definitions/api.v1.UserIDs"
+        },
+        "email": {
+          "type": "string"
+        }
+      },
+      "description": "UserResponse is the user message for responses (excludes password)."
+    },
+    "api.v1.UserServiceCreateRequest": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/api.v1.User"
+        }
+      }
+    },
+    "api.v1.UserServiceGetResponse": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/api.v1.UserResponse"
+        }
+      }
+    },
+    "api.v1.UserServiceUpdateRequest": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/api.v1.User"
+        },
+        "fieldMask": {
+          "type": "string"
+        }
+      }
+    },
+    "api.v1.Variant": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "api.v1.Vector": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "$ref": "#/definitions/api.v1.VectorIDs"
+        },
+        "elements": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "objectives": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "crowdingDistance": {
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "description": "Vector is an element used in the Differential Evoluition algorithm."
+    },
+    "api.v1.VectorIDs": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64"
+        }
+      },
+      "description": "VectorIDs contain identifiers for a population."
+    },
+    "google.protobuf.Any": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "google.rpc.Status": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/google.protobuf.Any"
+          }
+        }
+      }
+    }
+  }
+}

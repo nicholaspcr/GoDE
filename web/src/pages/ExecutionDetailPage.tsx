@@ -7,6 +7,7 @@ import {
 } from '@/api/hooks/useExecutions'
 import { useExecutionProgressValue } from '@/api/hooks/useProgress'
 import { Card, Badge, Progress, Button } from '@/components/ui'
+import { ParetoVisualization } from '@/components/visualization'
 import type { ApiV1ExecutionStatus } from '@/api/generated'
 
 const statusConfig: Record<
@@ -229,45 +230,20 @@ export function ExecutionDetailPage() {
       )}
 
       {isCompleted && (
-        <Card className="p-6 mt-6">
+        <div className="mt-6">
           <h2 className="text-lg font-semibold mb-4">Results</h2>
           {resultsLoading ? (
-            <div className="text-muted-foreground">Loading results...</div>
+            <Card className="p-6">
+              <div className="text-muted-foreground">Loading results...</div>
+            </Card>
           ) : resultsData?.pareto?.vectors?.length ? (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Found {resultsData.pareto.vectors.length} Pareto-optimal solutions
-              </p>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2 px-2">#</th>
-                      <th className="text-left py-2 px-2">Objectives</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {resultsData.pareto.vectors.slice(0, 20).map((vector, idx) => (
-                      <tr key={idx} className="border-b">
-                        <td className="py-2 px-2">{idx + 1}</td>
-                        <td className="py-2 px-2 font-mono text-xs">
-                          [{vector.objectives?.map((o) => o.toFixed(4)).join(', ')}]
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {resultsData.pareto.vectors.length > 20 && (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Showing 20 of {resultsData.pareto.vectors.length} solutions
-                  </p>
-                )}
-              </div>
-            </div>
+            <ParetoVisualization vectors={resultsData.pareto.vectors} />
           ) : (
-            <p className="text-muted-foreground">No results available</p>
+            <Card className="p-6">
+              <p className="text-muted-foreground">No results available</p>
+            </Card>
           )}
-        </Card>
+        </div>
       )}
     </div>
   )

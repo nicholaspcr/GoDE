@@ -177,5 +177,5 @@ dev-full: ## Run full stack development (backend + frontend)
 	@echo 'Run "make run" in one terminal and "make web-dev" in another'
 
 .PHONY: run
-run: build ## Build and run the server
-	@./.dev/deserver start
+run: build ## Build and run the server (sources .dev/server/.env)
+	@set -a && . ./.dev/server/.env && set +a && ./.dev/deserver start

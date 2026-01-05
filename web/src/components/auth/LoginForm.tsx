@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useToast } from '@/components/ui/toast'
 import { Link } from 'react-router-dom'
 
 const loginSchema = z.object({
@@ -21,6 +22,7 @@ interface LoginFormProps {
 
 export function LoginForm({ onSuccess }: LoginFormProps) {
   const login = useLogin()
+  const { addToast } = useToast()
 
   const {
     register,
@@ -33,9 +35,10 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   const onSubmit = async (data: LoginFormData) => {
     try {
       await login.mutateAsync(data)
+      addToast('Successfully logged in!', 'success')
       onSuccess?.()
     } catch {
-      // Error is handled by the mutation
+      addToast('Invalid username or password', 'error')
     }
   }
 

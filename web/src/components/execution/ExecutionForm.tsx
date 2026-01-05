@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { useNavigate } from 'react-router-dom'
 import { useSupportedOptions } from '@/api/hooks/useSupportedOptions'
 import { useRunAsync } from '@/api/hooks/useExecutions'
-import { Button, Input, Label, Card, Select } from '@/components/ui'
+import { Button, Input, Label, Card, Select, useToast } from '@/components/ui'
 
 const deConfigSchema = z.object({
   algorithm: z.string().min(1, 'Algorithm is required'),
@@ -32,6 +32,7 @@ export function ExecutionForm({ onSuccess }: ExecutionFormProps) {
   const navigate = useNavigate()
   const { algorithms, variants, problems, isLoading: optionsLoading } = useSupportedOptions()
   const runAsync = useRunAsync()
+  const { addToast } = useToast()
 
   const {
     register,
@@ -75,11 +76,12 @@ export function ExecutionForm({ onSuccess }: ExecutionFormProps) {
         },
       })
       if (response.executionId) {
+        addToast('Execution started successfully!', 'success')
         onSuccess?.(response.executionId)
         navigate(`/executions/${response.executionId}`)
       }
     } catch {
-      // Error is handled by the mutation
+      addToast('Failed to start execution', 'error')
     }
   }
 

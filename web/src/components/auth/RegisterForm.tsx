@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useToast } from '@/components/ui/toast'
 import { Link } from 'react-router-dom'
 
 const registerSchema = z.object({
@@ -32,6 +33,7 @@ interface RegisterFormProps {
 
 export function RegisterForm({ onSuccess }: RegisterFormProps) {
   const registerMutation = useRegister()
+  const { addToast } = useToast()
 
   const {
     register,
@@ -48,9 +50,10 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
         email: data.email,
         password: data.password,
       })
+      addToast('Account created successfully!', 'success')
       onSuccess?.()
     } catch {
-      // Error is handled by the mutation
+      addToast('Registration failed. Username or email may already be taken.', 'error')
     }
   }
 

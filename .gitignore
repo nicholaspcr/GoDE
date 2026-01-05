@@ -50,3 +50,11 @@ vendor/
 *.css.map
 *.sass.map
 *.scss.map
+
+# Node.js (root level - web/ has its own)
+/node_modules/
+/package.json
+/package-lock.json
+
+# Claude Code
+.claude/settings.json

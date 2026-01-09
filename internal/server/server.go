@@ -42,7 +42,7 @@ func New(ctx context.Context, cfg Config, opts ...serverOpts) (Server, error) {
 		return nil, fmt.Errorf("store must be provided via WithStore option")
 	}
 
-	exec := executor.New(executor.Config{
+	srv.executor = executor.New(executor.Config{
 		Store:        srv.st,
 		MaxWorkers:   cfg.Executor.MaxWorkers,
 		ExecutionTTL: cfg.Executor.ExecutionTTL,
@@ -57,7 +57,7 @@ func New(ctx context.Context, cfg Config, opts ...serverOpts) (Server, error) {
 		// Create problem instance with default dimensions (will be overridden per execution)
 		prob, err := problems.DefaultRegistry.Create(meta.Name, 10, 2)
 		if err == nil {
-			exec.RegisterProblem(meta.Name, prob)
+			srv.executor.RegisterProblem(meta.Name, prob)
 		}
 	}
 
@@ -65,7 +65,7 @@ func New(ctx context.Context, cfg Config, opts ...serverOpts) (Server, error) {
 	for _, meta := range variantMetas {
 		variant, err := variants.DefaultRegistry.Create(meta.Name)
 		if err == nil {
-			exec.RegisterVariant(meta.Name, variant)
+			srv.executor.RegisterVariant(meta.Name, variant)
 		}
 	}
 
@@ -74,7 +74,7 @@ func New(ctx context.Context, cfg Config, opts ...serverOpts) (Server, error) {
 		handlers.NewAuthHandler(srv.st, jwtService),
 		handlers.NewUserHandler(srv.st),
 		handlers.NewParetoHandler(srv.st),
-		handlers.NewDEHandler(srv.st, exec),
+		handlers.NewDEHandler(srv.st, srv.executor),
 	}
 
 	return srv, nil
@@ -87,23 +87,27 @@ type server struct {
 	cfg        Config
 	metrics    *telemetry.Metrics
 	sloTracker *slo.Tracker
+	executor   *executor.Executor
 }
 
 // Start starts the server using a lifecycle-based approach.
 func (s *server) Start(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 
-	lifecycle := newLifecycle(s.cfg, s)
+	lifecycle := newLifecycle(s.cfg, s, s.executor)
 
 	if err := lifecycle.setup(ctx); err != nil {
+		cancel()
 		return err
 	}
 
 	if err := lifecycle.run(ctx); err != nil {
+		cancel()
 		return err
 	}
 
+	// Cancel context to signal cleanup goroutine before waiting for it in shutdown
+	cancel()
 	return lifecycle.shutdown(ctx)
 }
 

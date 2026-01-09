@@ -25,6 +25,11 @@ import (
 	"google.golang.org/grpc/health"
 )
 
+// ExecutorShutdowner is an interface for shutting down the executor.
+type ExecutorShutdowner interface {
+	Shutdown(ctx context.Context) error
+}
+
 // lifecycle manages the complete server lifecycle: setup, runtime, and shutdown
 type lifecycle struct {
 	cfg    Config
@@ -40,14 +45,16 @@ type lifecycle struct {
 	pprofServer *http.Server
 	rateLimiter *middleware.RateLimiter
 	cleanupDone chan struct{}
-	healthSrv *health.Server
+	healthSrv   *health.Server
+	executor    ExecutorShutdowner
 }
 
 // newLifecycle creates a new lifecycle manager
-func newLifecycle(cfg Config, srv *server) *lifecycle {
+func newLifecycle(cfg Config, srv *server, exec ExecutorShutdowner) *lifecycle {
 	return &lifecycle{
-		cfg:    cfg,
-		server: srv,
+		cfg:      cfg,
+		server:   srv,
+		executor: exec,
 	}
 }
 
@@ -447,9 +454,23 @@ func (l *lifecycle) shutdown(ctx context.Context) error {
 		}
 	}
 
-	// Wait for cleanup goroutine
+	// Shutdown executor (cancels active DE executions and waits for workers)
+	if l.executor != nil {
+		if err := l.executor.Shutdown(shutdownCtx); err != nil {
+			slog.Error("Error shutting down executor", slog.String("error", err.Error()))
+		} else {
+			slog.Info("Executor shut down gracefully")
+		}
+	}
+
+	// Wait for cleanup goroutine with timeout
 	if l.cleanupDone != nil {
-		<-l.cleanupDone
+		select {
+		case <-l.cleanupDone:
+			slog.Info("Rate limiter cleanup goroutine stopped")
+		case <-shutdownCtx.Done():
+			slog.Warn("Timeout waiting for cleanup goroutine, continuing shutdown")
+		}
 	}
 
 	// Shutdown pprof server
@@ -463,13 +484,13 @@ func (l *lifecycle) shutdown(ctx context.Context) error {
 
 	// Shutdown telemetry
 	if l.meterProvider != nil {
-		if err := l.meterProvider.Shutdown(ctx); err != nil {
+		if err := l.meterProvider.Shutdown(shutdownCtx); err != nil {
 			slog.Error("failed to shutdown meter provider", slog.String("error", err.Error()))
 		}
 	}
 
 	if l.tracerProvider != nil {
-		if err := l.tracerProvider.Shutdown(ctx); err != nil {
+		if err := l.tracerProvider.Shutdown(shutdownCtx); err != nil {
 			slog.Error("failed to shutdown tracer provider", slog.String("error", err.Error()))
 		}
 	}

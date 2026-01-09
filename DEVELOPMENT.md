@@ -307,6 +307,8 @@ Ports:
 JWT_SECRET="development-secret-key-change-in-production-min-32-chars" \
 STORE_TYPE=postgres \
 STORE_POSTGRESQL_DNS="postgres://gode:gode123@localhost:5432/gode_test?sslmode=disable" \
+REDIS_HOST=localhost \
+REDIS_PORT=6379 \
 TRACING_EXPORTER=otlp \
 OTLP_ENDPOINT=localhost:4317 \
 go run ./cmd/deserver start

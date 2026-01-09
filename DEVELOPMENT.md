@@ -14,16 +14,13 @@ This guide explains how to run `deserver`, `decli`, and the web frontend locally
 The easiest way to run everything together:
 
 ```bash
-# 1. Build backend binaries
-make build
-
-# 2. Install frontend dependencies
+# 1. Install frontend dependencies
 make web-deps
 
-# 3. Start infrastructure (PostgreSQL + Redis)
+# 2. Start infrastructure (PostgreSQL + Redis)
 docker compose -f docker-compose.test.yml up -d
 
-# 4. Start backend server (in one terminal)
+# 3. Start backend server (in one terminal)
 JWT_SECRET="development-secret-key-change-in-production-min-32-chars" \
 STORE_TYPE=postgres \
 STORE_POSTGRESQL_DNS="postgres://gode:gode123@localhost:5432/gode_test?sslmode=disable" \
@@ -31,7 +28,7 @@ REDIS_HOST=localhost \
 REDIS_PORT=6379 \
 go run ./cmd/deserver start
 
-# 5. Start frontend dev server (in another terminal)
+# 4. Start frontend dev server (in another terminal)
 make web-dev
 ```
 
@@ -44,15 +41,7 @@ The frontend dev server automatically proxies API requests (`/v1/*`) to the back
 
 ## Backend Development
 
-### 1. Build the binaries
-
-```bash
-make build
-```
-
-This creates `go run ./cmd/deserver` and `go run ./cmd/decli`.
-
-### 2. Start the infrastructure
+### 1. Start the infrastructure
 
 ```bash
 docker compose -f docker-compose.test.yml up -d
@@ -62,7 +51,7 @@ This starts:
 - PostgreSQL on port 5432
 - Redis on port 6379
 
-### 3. Start the server
+### 2. Start the server
 
 ```bash
 JWT_SECRET="development-secret-key-change-in-production-min-32-chars" \
@@ -77,7 +66,7 @@ The server will be available at:
 - gRPC: `localhost:3030`
 - HTTP: `localhost:8081`
 
-### 4. Verify the server is running
+### 3. Verify the server is running
 
 ```bash
 curl http://localhost:8081/health

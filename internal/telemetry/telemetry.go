@@ -24,6 +24,10 @@ const (
 	TracingExporterStdout TracingExporterType = "stdout"
 	// TracingExporterOTLP exports traces via OTLP (for Jaeger, Tempo, etc.).
 	TracingExporterOTLP TracingExporterType = "otlp"
+	// TracingExporterFile exports traces to a file.
+	TracingExporterFile TracingExporterType = "file"
+	// TracingExporterNone disables trace export (traces still recorded but not exported).
+	TracingExporterNone TracingExporterType = "none"
 )
 
 // TLSConfig holds TLS configuration for secure connections.
@@ -41,6 +45,7 @@ type TracingConfig struct {
 	OTLPEndpoint string  // e.g., "localhost:4317" for gRPC
 	SampleRatio  float64 // 0.0 to 1.0, where 1.0 = sample everything
 	TLS          TLSConfig
+	FilePath     string // Path to trace output file (for file exporter)
 }
 
 // NewTracerProvider creates a new tracer provider with the specified configuration.
@@ -82,6 +87,36 @@ func NewTracerProvider(ctx context.Context, appName string, cfg TracingConfig) (
 		if err != nil {
 			return nil, fmt.Errorf("failed to create OTLP trace exporter: %w", err)
 		}
+
+	case TracingExporterFile:
+		if cfg.FilePath == "" {
+			cfg.FilePath = "traces.json"
+		}
+		file, fileErr := os.OpenFile(cfg.FilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+		if fileErr != nil {
+			return nil, fmt.Errorf("failed to open trace file %s: %w", cfg.FilePath, fileErr)
+		}
+		exporter, err = stdouttrace.New(stdouttrace.WithWriter(file), stdouttrace.WithPrettyPrint())
+		if err != nil {
+			file.Close()
+			return nil, fmt.Errorf("failed to create file trace exporter: %w", err)
+		}
+
+	case TracingExporterNone:
+		// No exporter - create a minimal tracer provider without batcher
+		sampler := trace.ParentBased(trace.TraceIDRatioBased(cfg.SampleRatio))
+		if cfg.SampleRatio >= 1.0 {
+			sampler = trace.AlwaysSample()
+		} else if cfg.SampleRatio <= 0.0 {
+			sampler = trace.NeverSample()
+		}
+
+		tp := trace.NewTracerProvider(
+			trace.WithResource(res),
+			trace.WithSampler(sampler),
+		)
+		otel.SetTracerProvider(tp)
+		return tp, nil
 
 	default:
 		return nil, fmt.Errorf("unknown tracing exporter type: %s", cfg.ExporterType)

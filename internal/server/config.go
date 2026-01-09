@@ -73,9 +73,19 @@ func DefaultConfig() Config {
 	}
 
 	tracingEnabled := os.Getenv("TRACING_ENABLED") != "false" // Enabled by default
-	tracingExporterType := telemetry.TracingExporterStdout
-	if os.Getenv("TRACING_EXPORTER") == "otlp" {
+	tracingExporterType := telemetry.TracingExporterNone      // Default to none to avoid stdout noise
+	switch os.Getenv("TRACING_EXPORTER") {
+	case "stdout":
+		tracingExporterType = telemetry.TracingExporterStdout
+	case "otlp":
 		tracingExporterType = telemetry.TracingExporterOTLP
+	case "file":
+		tracingExporterType = telemetry.TracingExporterFile
+	}
+
+	traceFilePath := os.Getenv("TRACE_FILE_PATH")
+	if traceFilePath == "" {
+		traceFilePath = "traces.json"
 	}
 
 	otlpEndpoint := os.Getenv("OTLP_ENDPOINT")
@@ -129,6 +139,7 @@ func DefaultConfig() Config {
 			ExporterType: tracingExporterType,
 			OTLPEndpoint: otlpEndpoint,
 			SampleRatio:  sampleRatio,
+			FilePath:     traceFilePath,
 		},
 		SLOEnabled:     sloEnabled,
 		PprofEnabled:   pprofEnabled,

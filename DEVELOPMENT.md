@@ -29,7 +29,7 @@ STORE_TYPE=postgres \
 STORE_POSTGRESQL_DNS="postgres://gode:gode123@localhost:5432/gode_test?sslmode=disable" \
 REDIS_HOST=localhost \
 REDIS_PORT=6379 \
-./.dev/deserver start
+go run ./cmd/deserver start
 
 # 5. Start frontend dev server (in another terminal)
 make web-dev
@@ -50,7 +50,7 @@ The frontend dev server automatically proxies API requests (`/v1/*`) to the back
 make build
 ```
 
-This creates `./.dev/deserver` and `./.dev/decli`.
+This creates `go run ./cmd/deserver` and `go run ./cmd/decli`.
 
 ### 2. Start the infrastructure
 
@@ -70,7 +70,7 @@ STORE_TYPE=postgres \
 STORE_POSTGRESQL_DNS="postgres://gode:gode123@localhost:5432/gode_test?sslmode=disable" \
 REDIS_HOST=localhost \
 REDIS_PORT=6379 \
-./.dev/deserver start
+go run ./cmd/deserver start
 ```
 
 The server will be available at:
@@ -89,27 +89,27 @@ curl http://localhost:8081/health
 ### Register a user
 
 ```bash
-./.dev/decli auth register --username myuser --email myuser@example.com --password mypassword
+go run ./cmd/decli auth register --username myuser --email myuser@example.com --password mypassword
 ```
 
 ### Login
 
 ```bash
-./.dev/decli auth login --username myuser --password mypassword
+go run ./cmd/decli auth login --username myuser --password mypassword
 ```
 
 ### List available algorithms, variants, and problems
 
 ```bash
-./.dev/decli de list-algorithms
-./.dev/decli de list-variants
-./.dev/decli de list-problems
+go run ./cmd/decli de list-algorithms
+go run ./cmd/decli de list-variants
+go run ./cmd/decli de list-problems
 ```
 
 ### Run a DE execution (synchronous)
 
 ```bash
-./.dev/decli de run \
+go run ./cmd/decli de run \
   --algorithm gde3 \
   --problem zdt1 \
   --variant rand1 \
@@ -121,7 +121,7 @@ curl http://localhost:8081/health
 
 ```bash
 # Submit execution
-./.dev/decli de run-async \
+go run ./cmd/decli de run-async \
   --algorithm gde3 \
   --problem zdt1 \
   --variant rand1 \
@@ -129,22 +129,22 @@ curl http://localhost:8081/health
   --population-size 100
 
 # Check status
-./.dev/decli de status --execution-id <execution-id>
+go run ./cmd/decli de status --execution-id <execution-id>
 
 # Get results when completed
-./.dev/decli de results --execution-id <execution-id>
+go run ./cmd/decli de results --execution-id <execution-id>
 ```
 
 ### List your executions
 
 ```bash
-./.dev/decli de list
+go run ./cmd/decli de list
 ```
 
 ### Delete an execution
 
 ```bash
-./.dev/decli de delete --execution-id <execution-id>
+go run ./cmd/decli de delete --execution-id <execution-id>
 ```
 
 ## HTTP API Examples
@@ -289,6 +289,56 @@ If the backend API changes, regenerate the TypeScript client:
 ```bash
 make openapi      # Generate OpenAPI spec from protos
 make web-api      # Generate TypeScript client from OpenAPI spec
+```
+
+## Distributed Tracing with Jaeger
+
+For visualizing distributed traces during development, you can run Jaeger locally.
+
+### Start Jaeger
+
+```bash
+docker run -d --name jaeger \
+  -p 16686:16686 \
+  -p 4317:4317 \
+  -p 4318:4318 \
+  jaegertracing/all-in-one:latest
+```
+
+Ports:
+- **16686**: Jaeger UI
+- **4317**: OTLP gRPC receiver
+- **4318**: OTLP HTTP receiver
+
+### Configure the Server for Jaeger
+
+```bash
+JWT_SECRET="development-secret-key-change-in-production-min-32-chars" \
+STORE_TYPE=postgres \
+STORE_POSTGRESQL_DNS="postgres://gode:gode123@localhost:5432/gode_test?sslmode=disable" \
+TRACING_EXPORTER=otlp \
+OTLP_ENDPOINT=localhost:4317 \
+go run ./cmd/deserver start
+```
+
+### View Traces
+
+Open http://localhost:16686 to access the Jaeger UI. Select "deserver" from the Service dropdown to view traces.
+
+### Tracing Configuration
+
+| Variable | Values | Description |
+|----------|--------|-------------|
+| `TRACING_ENABLED` | `true`/`false` | Enable/disable tracing (default: `true`) |
+| `TRACING_EXPORTER` | `none`, `file`, `stdout`, `otlp` | Exporter type (default: `none`) |
+| `TRACE_FILE_PATH` | path | Output file for `file` exporter (default: `traces.json`) |
+| `OTLP_ENDPOINT` | host:port | OTLP endpoint for `otlp` exporter (default: `localhost:4317`) |
+| `TRACE_SAMPLE_RATIO` | 0.0-1.0 | Sampling ratio (default: `1.0` = all traces) |
+
+### Stop Jaeger
+
+```bash
+docker stop jaeger && docker rm jaeger
 ```
 
 ## Docker Development

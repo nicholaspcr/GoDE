@@ -291,8 +291,10 @@ docker run -d --name jaeger \
   -p 16686:16686 \
   -p 4317:4317 \
   -p 4318:4318 \
-  jaegertracing/all-in-one:latest
+  jaegertracing/jaeger:latest
 ```
+
+> **Note**: Jaeger v2 uses the `jaegertracing/jaeger` image. The previous `jaegertracing/all-in-one` image is v1 (end-of-life).
 
 Ports:
 - **16686**: Jaeger UI

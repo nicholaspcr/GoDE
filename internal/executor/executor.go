@@ -113,6 +113,9 @@ func (e *Executor) SubmitExecution(ctx context.Context, userID, algorithm, probl
 		UserID:    userID,
 		Status:    store.ExecutionStatusPending,
 		Config:    config,
+		Algorithm: algorithm,
+		Variant:   variant,
+		Problem:   problem,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}

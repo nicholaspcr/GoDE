@@ -121,7 +121,11 @@ export function ExecutionCard({ execution }: ExecutionCardProps) {
       )}
 
       {execution.config && (
-        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+        <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
+          <div>
+            <span className="text-muted-foreground">Problem:</span>{' '}
+            {execution.problem || '-'}
+          </div>
           <div>
             <span className="text-muted-foreground">Generations:</span>{' '}
             {execution.config.generations}

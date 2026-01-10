@@ -158,19 +158,14 @@ func (mode *de) Execute(ctx context.Context) ([]models.Vector, [][]float64, erro
 func (mode *de) filterCollectedPareto(
 	ctx context.Context, allPareto [][]models.Vector,
 ) []models.Vector {
-	finalPareto := make([]models.Vector, 0, 2000)
+	// Merge all pareto sets from all executions
+	merged := make([]models.Vector, 0, len(allPareto)*100)
 	for _, pareto := range allPareto {
-		// Check for cancellation between batches
-		if ctx.Err() != nil {
-			return finalPareto
-		}
-
-		// Use incremental update instead of full re-ranking
-		var rankZero []models.Vector
-		finalPareto, rankZero = IncrementalParetoUpdate(
-			ctx, finalPareto, pareto, mode.config.ResultLimiter,
-		)
-		_ = rankZero // Available for future features
+		merged = append(merged, pareto...)
 	}
+
+	// Apply full non-dominated ranking and crowding distance reduction
+	// This ensures proper filtering of the combined results
+	finalPareto, _ := ReduceByCrowdDistance(ctx, merged, mode.config.ResultLimiter)
 	return finalPareto
 }

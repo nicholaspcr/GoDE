@@ -126,6 +126,18 @@ export function ExecutionDetailPage() {
               <dd>{label}</dd>
             </div>
             <div className="flex justify-between">
+              <dt className="text-muted-foreground">Problem</dt>
+              <dd>{execution.problem || '-'}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Algorithm</dt>
+              <dd>{execution.algorithm || '-'}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Variant</dt>
+              <dd>{execution.variant || '-'}</dd>
+            </div>
+            <div className="flex justify-between">
               <dt className="text-muted-foreground">Created</dt>
               <dd>{formatDate(execution.createdAt)}</dd>
             </div>

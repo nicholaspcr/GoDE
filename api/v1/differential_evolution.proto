@@ -111,6 +111,9 @@ message Execution {
   google.protobuf.Timestamp completed_at = 7;
   string error = 8;
   uint64 pareto_id = 9;
+  string algorithm = 10;
+  string variant = 11;
+  string problem = 12;
 }
 
 // Progress update during execution

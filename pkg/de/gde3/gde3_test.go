@@ -243,48 +243,11 @@ func TestGDE3_RunGeneration(t *testing.T) {
 	})
 }
 
-func TestGDE3_Selection(t *testing.T) {
-	problem := multi.Zdt1()
-	population, params := createTestPopulation(5, 3, 2)
-
-	algorithm := New(
-		WithProblem(problem),
-		WithPopulationParams(params),
-	).(*gde3)
-
-	t.Run("trial dominates current, trial replaces current", func(t *testing.T) {
-		testPop := population.Copy()
-		// Initialize
-		_, _ = algorithm.initializePopulation(context.Background(), testPop)
-
-		// Create a trial that is better
-		trial := testPop[0].Copy()
-		for i := range trial.Objectives {
-			trial.Objectives[i] *= 0.5
-		}
-
-		originalObj := testPop[0].Objectives[0]
-		newPop := algorithm.selection(testPop, trial, 0)
-
-		// Trial should have replaced the current or population grew
-		assert.True(t, newPop[0].Objectives[0] != originalObj || len(newPop) > len(testPop))
-	})
-
-	t.Run("population can grow when non-dominating", func(t *testing.T) {
-		testPop := population.Copy()
-		_, _ = algorithm.initializePopulation(context.Background(), testPop)
-
-		trial := testPop[0].Copy()
-		trial.Objectives[0] *= 0.8
-		trial.Objectives[1] *= 1.2
-
-		originalLen := len(testPop)
-		newPop := algorithm.selection(testPop, trial, 0)
-
-		// Population may grow if there's space
-		assert.GreaterOrEqual(t, len(newPop), originalLen)
-	})
-}
+// Note: Selection logic is now integrated into runGeneration following pymoode's pattern:
+// 1. Create all offspring first
+// 2. Compare each offspring with its parent
+// 3. Build survivors list based on dominance
+// 4. Reduce via RankAndCrowding
 
 func TestGDE3_EdgeCases(t *testing.T) {
 	t.Run("single generation", func(t *testing.T) {

@@ -75,7 +75,6 @@ func (g *gde3) Execute(
 	span.SetAttributes(attribute.Int("execution_number", execNum))
 
 	population := g.initialPopulation.Copy()
-	popuParams := g.populationParams
 
 	maxObjs, err := g.initializePopulation(ctx, population)
 	if err != nil {
@@ -83,10 +82,8 @@ func (g *gde3) Execute(
 		return err
 	}
 
-	// Pre-allocate bestElems with estimated capacity based on generations
-	// Each generation typically produces rank-zero elements up to population size
-	estimatedCapacity := popuParams.PopulationSize * g.constants.DE.Generations
-	bestElems := make([]models.Vector, 0, estimatedCapacity)
+	// Track current generation's rank-zero for progress reporting
+	var currentRankZero []models.Vector
 
 	for gen := range g.constants.DE.Generations {
 		// Check for cancellation at the start of each generation
@@ -101,26 +98,25 @@ func (g *gde3) Execute(
 			slog.Int("generation_n", gen),
 		)
 
-		newPopulation, bestInGen, err := g.runGeneration(ctx, population, random)
+		newPopulation, rankZero, err := g.runGeneration(ctx, population, random)
 		if err != nil {
 			span.RecordError(err)
 			return err
 		}
 		population = newPopulation
+		currentRankZero = rankZero
 
-		// NOTE: It probably would be a good idea to send the elements into the
-		// channel directly instead of appending.
-		bestElems = append(bestElems, bestInGen...)
-
-		// Call progress callback if set
+		// Call progress callback with current generation's rank-zero elements
 		if g.progressCallback != nil {
-			g.progressCallback(gen+1, g.constants.DE.Generations, len(bestElems), bestElems)
+			g.progressCallback(gen+1, g.constants.DE.Generations, len(currentRankZero), currentRankZero)
 		}
 	}
 
-	span.SetAttributes(attribute.Int("pareto_size", len(bestElems)))
+	// Return the final population's rank-zero elements (non-dominated solutions)
+	// This is the Pareto front after all generations have completed
+	span.SetAttributes(attribute.Int("pareto_size", len(currentRankZero)))
 	maxObjCh <- maxObjs
-	paretoCh <- bestElems
+	paretoCh <- currentRankZero
 	return nil
 }
 
@@ -166,9 +162,13 @@ func (g *gde3) runGeneration(
 	)
 	defer span.End()
 
+	popSize := len(population)
 	genRankZero, _ := de.FilterDominated(population)
 
-	for i := range len(population) {
+	// Phase 1: Create and evaluate ALL offspring first (like pymoode)
+	// This ensures all mutations use the same population state
+	offspring := make([]models.Vector, popSize)
+	for i := range popSize {
 		trial, err := g.mutateAndCrossover(ctx, population, genRankZero, i, random)
 		if err != nil {
 			span.RecordError(err)
@@ -180,11 +180,31 @@ func (g *gde3) runGeneration(
 			return nil, nil, err
 		}
 
-		population = g.selection(population, trial, i)
+		offspring[i] = trial
 	}
 
+	// Phase 2: Selection - compare each offspring with its parent
+	// Build survivors list (like pymoode's _advance)
+	survivors := make([]models.Vector, 0, popSize*2)
+	for i := range popSize {
+		parent := population[i]
+		off := offspring[i]
+
+		comp := de.DominanceTest(parent.Objectives, off.Objectives)
+
+		switch comp {
+		case 0: // Neither dominates - keep both
+			survivors = append(survivors, parent.Copy(), off.Copy())
+		case 1: // Offspring dominates parent - keep offspring
+			survivors = append(survivors, off.Copy())
+		case -1: // Parent dominates offspring - keep parent
+			survivors = append(survivors, parent.Copy())
+		}
+	}
+
+	// Phase 3: Reduce survivors to population size via RankAndCrowding
 	reducedPop, rankZero := de.ReduceByCrowdDistance(
-		ctx, population, g.populationParams.PopulationSize,
+		ctx, survivors, g.populationParams.PopulationSize,
 	)
 	span.SetAttributes(
 		attribute.Int("rank_zero_size", len(rankZero)),
@@ -242,16 +262,4 @@ func (g *gde3) mutateAndCrossover(
 	}
 
 	return trial, nil
-}
-
-func (g *gde3) selection(population []models.Vector, trial models.Vector, currentIdx int) models.Population {
-	comp := de.DominanceTest(
-		population[currentIdx].Objectives, trial.Objectives,
-	)
-	if comp == 1 {
-		population[currentIdx] = trial
-	} else if comp == 0 && len(population) <= 2*g.populationParams.PopulationSize {
-		population = append(population, trial)
-	}
-	return population
 }

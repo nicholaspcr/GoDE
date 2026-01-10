@@ -19,6 +19,9 @@ type executionModel struct {
 	UserID      string    `gorm:"type:varchar(255);not null;index"`
 	Status      string    `gorm:"type:varchar(20);not null;index"`
 	ConfigJSON  string    `gorm:"type:text;not null"`
+	Algorithm   string    `gorm:"type:varchar(50);not null;default:''"`
+	Variant     string    `gorm:"type:varchar(50);not null;default:''"`
+	Problem     string    `gorm:"type:varchar(50);not null;default:''"`
 	ParetoID    *uint64   `gorm:"type:bigint;index"`
 	Error       string    `gorm:"type:text"`
 	CreatedAt   time.Time `gorm:"not null;index"`
@@ -51,6 +54,9 @@ func (s *executionStore) CreateExecution(ctx context.Context, execution *store.E
 		UserID:     execution.UserID,
 		Status:     string(execution.Status),
 		ConfigJSON: string(configJSON),
+		Algorithm:  execution.Algorithm,
+		Variant:    execution.Variant,
+		Problem:    execution.Problem,
 		ParetoID:   execution.ParetoID,
 		Error:      execution.Error,
 		CreatedAt:  execution.CreatedAt,
@@ -194,6 +200,9 @@ func (s *executionStore) modelToExecution(model *executionModel) (*store.Executi
 		UserID:      model.UserID,
 		Status:      store.ExecutionStatus(model.Status),
 		Config:      &config,
+		Algorithm:   model.Algorithm,
+		Variant:     model.Variant,
+		Problem:     model.Problem,
 		ParetoID:    model.ParetoID,
 		Error:       model.Error,
 		CreatedAt:   model.CreatedAt,

@@ -32,6 +32,9 @@ type Execution struct {
 	UserID      string
 	Status      ExecutionStatus
 	Config      *api.DEConfig
+	Algorithm   string
+	Variant     string
+	Problem     string
 	ParetoID    *uint64
 	Error       string
 	CreatedAt   time.Time

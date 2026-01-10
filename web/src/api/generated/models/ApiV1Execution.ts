@@ -88,6 +88,24 @@ export interface ApiV1Execution {
      * @memberof ApiV1Execution
      */
     paretoId?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1Execution
+     */
+    algorithm?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1Execution
+     */
+    variant?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiV1Execution
+     */
+    problem?: string;
 }
 
 
@@ -118,6 +136,9 @@ export function ApiV1ExecutionFromJSONTyped(json: any, ignoreDiscriminator: bool
         'completedAt': json['completedAt'] == null ? undefined : (new Date(json['completedAt'])),
         'error': json['error'] == null ? undefined : json['error'],
         'paretoId': json['paretoId'] == null ? undefined : json['paretoId'],
+        'algorithm': json['algorithm'] == null ? undefined : json['algorithm'],
+        'variant': json['variant'] == null ? undefined : json['variant'],
+        'problem': json['problem'] == null ? undefined : json['problem'],
     };
 }
 
@@ -141,6 +162,9 @@ export function ApiV1ExecutionToJSONTyped(value?: ApiV1Execution | null, ignoreD
         'completedAt': value['completedAt'] == null ? value['completedAt'] : value['completedAt'].toISOString(),
         'error': value['error'],
         'paretoId': value['paretoId'],
+        'algorithm': value['algorithm'],
+        'variant': value['variant'],
+        'problem': value['problem'],
     };
 }
 

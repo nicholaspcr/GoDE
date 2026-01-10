@@ -15,6 +15,9 @@ Name | Type
 `completedAt` | Date
 `error` | string
 `paretoId` | string
+`algorithm` | string
+`variant` | string
+`problem` | string
 
 ## Example
 
@@ -32,6 +35,9 @@ const example = {
   "completedAt": null,
   "error": null,
   "paretoId": null,
+  "algorithm": null,
+  "variant": null,
+  "problem": null,
 } satisfies ApiV1Execution
 
 console.log(example)

@@ -869,6 +869,15 @@
         "paretoId": {
           "type": "string",
           "format": "uint64"
+        },
+        "algorithm": {
+          "type": "string"
+        },
+        "variant": {
+          "type": "string"
+        },
+        "problem": {
+          "type": "string"
         }
       },
       "title": "Execution metadata"

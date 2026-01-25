@@ -38,13 +38,11 @@ func (b *best1) Mutate(
 	}
 
 	// Validate vectors have non-nil elements
-	if rankZero[bestIdx].Elements == nil || len(rankZero[bestIdx].Elements) != p.DIM {
-		return models.Vector{}, variants.ErrInvalidVector
+	if err := variants.ValidateVectors(rankZero, []int{bestIdx}, p.DIM); err != nil {
+		return models.Vector{}, err
 	}
-	for _, idx := range []int{index[1], index[2]} {
-		if elems[idx].Elements == nil || len(elems[idx].Elements) != p.DIM {
-			return models.Vector{}, variants.ErrInvalidVector
-		}
+	if err := variants.ValidateVectors(elems, []int{index[1], index[2]}, p.DIM); err != nil {
+		return models.Vector{}, err
 	}
 
 	arr := make([]float64, p.DIM)

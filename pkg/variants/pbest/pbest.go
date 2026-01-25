@@ -43,14 +43,12 @@ func (p *pbest) Mutate(
 	bestIndex := params.Random.Intn(indexLimit)
 
 	// Validate elems vectors have non-nil elements
-	for _, idx := range []int{params.CurrPos, ind[1], ind[2]} {
-		if elems[idx].Elements == nil || len(elems[idx].Elements) != params.DIM {
-			return models.Vector{}, variants.ErrInvalidVector
-		}
+	if err := variants.ValidateVectors(elems, []int{params.CurrPos, ind[1], ind[2]}, params.DIM); err != nil {
+		return models.Vector{}, err
 	}
 	// Validate rankZero best vector
-	if rankZero[bestIndex].Elements == nil || len(rankZero[bestIndex].Elements) != params.DIM {
-		return models.Vector{}, variants.ErrInvalidVector
+	if err := variants.ValidateVectors(rankZero, []int{bestIndex}, params.DIM); err != nil {
+		return models.Vector{}, err
 	}
 
 	arr := make([]float64, params.DIM)

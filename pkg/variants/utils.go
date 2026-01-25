@@ -3,6 +3,8 @@ package variants
 import (
 	"fmt"
 	"math/rand"
+
+	"github.com/nicholaspcr/GoDE/pkg/models"
 )
 
 // ErrMaxRetriesExceeded is returned when the random index generation
@@ -49,4 +51,18 @@ func GetStandardPValues() []float64 {
 		0.15,
 		0.20,
 	}
+}
+
+// ValidateVectors validates that vectors at specified indices have non-nil elements
+// with the correct dimensions. This reduces duplication across variant implementations.
+func ValidateVectors(vectors []models.Vector, indices []int, expectedDim int) error {
+	for _, idx := range indices {
+		if idx < 0 || idx >= len(vectors) {
+			return ErrInvalidVector
+		}
+		if vectors[idx].Elements == nil || len(vectors[idx].Elements) != expectedDim {
+			return ErrInvalidVector
+		}
+	}
+	return nil
 }

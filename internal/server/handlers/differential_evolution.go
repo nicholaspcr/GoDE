@@ -9,11 +9,12 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/nicholaspcr/GoDE/internal/executor"
+	"github.com/nicholaspcr/GoDE/internal/server/auth"
 	"github.com/nicholaspcr/GoDE/internal/server/middleware"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/nicholaspcr/GoDE/pkg/de"
-	_ "github.com/nicholaspcr/GoDE/pkg/de/gde3"               // Register GDE3 algorithm
+	_ "github.com/nicholaspcr/GoDE/pkg/de/gde3" // Register GDE3 algorithm
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 	_ "github.com/nicholaspcr/GoDE/pkg/problems/many/dtlz" // Register DTLZ problems
 	_ "github.com/nicholaspcr/GoDE/pkg/problems/many/wfg"  // Register WFG problems
@@ -120,8 +121,14 @@ func (deh *deHandler) RunAsync(
 		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
 	}
 
-	// Validate DE configuration
-	if err := validation.ValidateDEConfig(req.DeConfig); err != nil {
+	// Check authorization - requires de:run scope
+	if err := middleware.RequireScope(ctx, auth.ScopeDERun); err != nil {
+		span.RecordError(err)
+		return nil, err
+	}
+
+	// Validate DE configuration and variant-specific constraints
+	if err := validation.ValidateRunAsyncRequest(req.Algorithm, req.Variant, req.Problem, req.DeConfig); err != nil {
 		span.RecordError(err)
 		return nil, ValidationErrorToStatus(err)
 	}
@@ -296,6 +303,12 @@ func (deh *deHandler) GetExecutionStatus(
 		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
 	}
 
+	// Check authorization - requires de:read scope
+	if err := middleware.RequireScope(ctx, auth.ScopeDERead); err != nil {
+		span.RecordError(err)
+		return nil, err
+	}
+
 	// Get execution
 	execution, err := deh.Store.GetExecution(ctx, req.ExecutionId, userID) //nolint:staticcheck // Explicit for clarity
 	if err != nil {
@@ -345,6 +358,12 @@ func (deh *deHandler) GetExecutionResults(
 	userID := middleware.UsernameFromContext(ctx)
 	if userID == "" {
 		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
+	}
+
+	// Check authorization - requires de:read scope
+	if err := middleware.RequireScope(ctx, auth.ScopeDERead); err != nil {
+		span.RecordError(err)
+		return nil, err
 	}
 
 	// Get execution
@@ -467,6 +486,12 @@ func (deh *deHandler) CancelExecution(
 		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
 	}
 
+	// Check authorization - requires de:run scope to cancel executions
+	if err := middleware.RequireScope(ctx, auth.ScopeDERun); err != nil {
+		span.RecordError(err)
+		return nil, err
+	}
+
 	// Cancel execution
 	if err := deh.executor.CancelExecution(ctx, req.ExecutionId, userID); err != nil {
 		if errors.Is(err, store.ErrExecutionNotFound) {
@@ -493,6 +518,12 @@ func (deh *deHandler) DeleteExecution(
 	userID := middleware.UsernameFromContext(ctx)
 	if userID == "" {
 		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
+	}
+
+	// Check authorization - requires de:run scope to delete executions
+	if err := middleware.RequireScope(ctx, auth.ScopeDERun); err != nil {
+		span.RecordError(err)
+		return nil, err
 	}
 
 	// Delete execution

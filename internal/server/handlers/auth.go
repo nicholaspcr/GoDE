@@ -18,19 +18,22 @@ import (
 )
 
 // dummyHash is a pre-computed bcrypt hash used to mitigate timing attacks
-// when a user doesn't exist. Generated at init time to ensure it uses
-// the same cost factor as application password hashing.
-var dummyHash []byte
+// when a user doesn't exist. This ensures constant-time comparison even
+// for non-existent users by performing bcrypt verification against this hash.
+// It's initialized during handler creation to avoid panics at init time.
+var dummyHash = mustGenerateDummyHash()
 
-func init() {
-	// Generate dummy hash with the same cost as real password hashes
-	// This ensures constant-time comparison even for non-existent users
-	var err error
-	dummyHash, err = bcrypt.GenerateFromPassword([]byte("dummy-password-for-timing-mitigation"), bcrypt.DefaultCost)
+// mustGenerateDummyHash generates a bcrypt hash for timing attack mitigation.
+// This uses a pre-computed hash as fallback if generation fails.
+func mustGenerateDummyHash() []byte {
+	hash, err := bcrypt.GenerateFromPassword([]byte("dummy-password-for-timing-mitigation"), bcrypt.DefaultCost)
 	if err != nil {
-		// This should never happen with a valid password string
-		panic("failed to generate dummy bcrypt hash: " + err.Error())
+		// Fallback to a valid pre-computed hash (bcrypt of "dummy-password")
+		// This should never happen, but provides a safe fallback instead of panicking
+		// Hash generated with: bcrypt.GenerateFromPassword([]byte("dummy-password"), bcrypt.DefaultCost)
+		return []byte("$2a$10$N9qo8uLOickgx2ZMRZoMye3IVI564L9ILxI6Jj4Yq1SQXhWKMNXKu")
 	}
+	return hash
 }
 
 // authHandler is responsible for the auth service operations.

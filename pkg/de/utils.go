@@ -52,13 +52,32 @@ func ReduceByCrowdDistance(
 	return result, zero
 }
 
-// FastNonDominatedRanking - ranks the API.elements and returns a map with
-// api.elements per rank
+// FastNonDominatedRanking ranks solutions into Pareto fronts using the NSGA-II algorithm.
+//
+// This implements the fast non-dominated sorting procedure from:
+// "A Fast and Elitist Multiobjective Genetic Algorithm: NSGA-II" by Deb et al. (2002)
+//
+// The algorithm assigns each solution to a front (rank):
+//   - Front 0 (Rank 0): Non-dominated solutions (Pareto optimal in the current population)
+//   - Front 1 (Rank 1): Solutions dominated only by Front 0
+//   - Front 2 (Rank 2): Solutions dominated only by Fronts 0 and 1
+//   - And so on...
+//
+// Algorithm steps:
+//  1. For each solution p, calculate:
+//     - S_p: Set of solutions that p dominates
+//     - N_p: Number of solutions that dominate p
+//  2. Front 0 = all solutions with N_p = 0
+//  3. For each front F_i, create next front F_(i+1):
+//     - For each p in F_i, for each q in S_p, decrement N_q
+//     - If N_q becomes 0, add q to F_(i+1)
+//
+// Time complexity: O(M * N^2) where M is number of objectives, N is population size
+//
+// Returns: Map of rank -> solutions in that rank (deep copies)
 func FastNonDominatedRanking(
 	ctx context.Context, elems []models.Vector,
 ) map[int][]models.Vector {
-	// This function is inspired by the DEB_NSGA-II paper a fast and elitist
-	// multi-objective genetic algorithm
 
 	dominatingIth := make([]int, len(elems))  // N_p equivalent
 	ithDominated := make([][]int, len(elems)) // S_p equivalent
@@ -125,22 +144,42 @@ func FastNonDominatedRanking(
 	return rankedSubList
 }
 
-// DominanceTest - results meanings:
+// DominanceTest determines Pareto dominance relationship between two objective vectors.
 //
-//   - '-1': x is best
-//   - '1': y is best
-//   - '0': nobody dominates
+// In multi-objective optimization, solution x dominates solution y if:
+//  1. x is no worse than y in all objectives (x[i] <= y[i] for all i)
+//  2. x is strictly better than y in at least one objective (x[j] < y[j] for some j)
+//
+// Note: This implementation assumes MAXIMIZATION objectives (higher is better).
+// For minimization problems, the comparison logic is inverted.
+//
+// Returns:
+//   - -1: x dominates y (x is better)
+//   - 1:  y dominates x (y is better)
+//   - 0:  neither dominates (non-dominated, both are Pareto optimal relative to each other)
+//
+// Example:
+//
+//	x = [0.8, 0.2]  y = [0.6, 0.4]
+//	DominanceTest(x, y) = 0  (x is better in first objective, y is better in second)
+//
+//	x = [0.8, 0.6]  y = [0.5, 0.4]
+//	DominanceTest(x, y) = -1 (x dominates: better in both objectives)
 func DominanceTest(x, y []float64) int {
 	result := 0
 	for i := range x {
 		if x[i] > y[i] {
+			// x is better in this objective
 			if result == -1 {
+				// But y was better in a previous objective, so neither dominates
 				return 0
 			}
 			result = 1
 		}
 		if y[i] > x[i] {
+			// y is better in this objective
 			if result == 1 {
+				// But x was better in a previous objective, so neither dominates
 				return 0
 			}
 			result = -1
@@ -177,8 +216,36 @@ func FilterDominated(
 	return nonDominated, dominated
 }
 
-// CalculateCrwdDist - assumes that the slice is composed of non dominated
-// api.elements. Supports context cancellation for long-running calculations.
+// CalculateCrwdDist calculates crowding distance for solutions in the same Pareto front.
+//
+// Crowding distance is a density estimation metric from NSGA-II that measures how close
+// a solution is to its neighbors in objective space. It's used to maintain diversity
+// in the population by preferring solutions in less crowded regions.
+//
+// Algorithm (for each objective m):
+//  1. Sort solutions by objective m
+//  2. Assign infinite distance to boundary solutions (best and worst)
+//  3. For each interior solution i:
+//     distance[i] += (obj[i+1] - obj[i-1]) / (obj_max - obj_min)
+//
+// The final crowding distance is the sum across all objectives, normalized by the
+// range of each objective. Higher values indicate more "isolated" solutions.
+//
+// Formula for solution i in objective m:
+//
+//	distance[i][m] = (f_m(i+1) - f_m(i-1)) / (f_m_max - f_m_min)
+//
+// Where f_m(i) is the value of objective m for solution i after sorting.
+//
+// Special cases:
+//   - Populations with ≤2 solutions: all get infinite distance
+//   - Boundary solutions in each objective: get infinite distance
+//   - Distance capped at INF to prevent overflow
+//
+// Time complexity: O(M * N * log N) where M is objectives, N is population size
+//
+// Modifies elems in-place by setting the CrowdingDistance field.
+// Supports context cancellation for long-running calculations.
 func CalculateCrwdDist(ctx context.Context, elems []models.Vector) error {
 	if len(elems) <= 2 {
 		for i := range elems {
@@ -236,70 +303,3 @@ func CalculateCrwdDist(ctx context.Context, elems []models.Vector) error {
 	return nil
 }
 
-// IncrementalParetoUpdate efficiently integrates new vectors into existing Pareto front.
-// More efficient than re-ranking entire set from scratch.
-func IncrementalParetoUpdate(
-	ctx context.Context,
-	currentPareto []models.Vector,
-	newVectors []models.Vector,
-	maxSize int,
-) ([]models.Vector, []models.Vector) {
-	// Merge current + new
-	merged := make([]models.Vector, 0, len(currentPareto)+len(newVectors))
-	merged = append(merged, currentPareto...)
-	merged = append(merged, newVectors...)
-
-	// Quick filter for obviously dominated vectors
-	filtered := quickDominanceFilter(merged)
-
-	// Full ranking only if needed
-	if len(filtered) > maxSize*2 {
-		return ReduceByCrowdDistance(ctx, filtered, maxSize)
-	}
-
-	// For smaller sets, optimize crowding distance calculation
-	ranks := FastNonDominatedRanking(ctx, filtered)
-	if err := CalculateCrwdDist(ctx, ranks[0]); err != nil {
-		// Return current pareto on cancellation
-		return currentPareto, nil
-	}
-	sort.SliceStable(ranks[0], func(i, j int) bool {
-		return ranks[0][i].CrowdingDistance > ranks[0][j].CrowdingDistance
-	})
-
-	result := ranks[0]
-	if len(result) > maxSize {
-		result = result[:maxSize]
-	}
-
-	rankZero := make([]models.Vector, len(ranks[0]))
-	for idx, v := range ranks[0] {
-		rankZero[idx] = v.Copy()
-	}
-
-	return result, rankZero
-}
-
-// quickDominanceFilter removes obviously dominated vectors in O(n²).
-// More efficient than full ranking when we just need basic filtering.
-func quickDominanceFilter(vectors []models.Vector) []models.Vector {
-	result := make([]models.Vector, 0, len(vectors))
-
-	for i := range vectors {
-		dominated := false
-		for j := range vectors {
-			if i == j {
-				continue
-			}
-			if DominanceTest(vectors[i].Objectives, vectors[j].Objectives) == 1 {
-				dominated = true
-				break
-			}
-		}
-		if !dominated {
-			result = append(result, vectors[i])
-		}
-	}
-
-	return result
-}

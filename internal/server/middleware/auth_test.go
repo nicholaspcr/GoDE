@@ -7,6 +7,7 @@ import (
 
 	"github.com/nicholaspcr/GoDE/internal/server/auth"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -273,4 +274,249 @@ func TestUnaryAuthMiddleware_MultipleAuthorizationHeaders(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "success", resp)
 	assert.True(t, handlerCalled)
+}
+func TestClaimsFromContext(t *testing.T) {
+	t.Run("returns nil when no claims in context", func(t *testing.T) {
+		ctx := context.Background()
+		claims := ClaimsFromContext(ctx)
+		assert.Nil(t, claims)
+	})
+
+	t.Run("returns claims when present in context", func(t *testing.T) {
+		ctx := context.Background()
+		expectedClaims := &auth.Claims{
+			Username: "testuser",
+			Scopes:   []auth.Scope{auth.ScopeDERun, auth.ScopeDERead},
+		}
+		ctx = ContextWithClaims(ctx, expectedClaims)
+
+		claims := ClaimsFromContext(ctx)
+		require.NotNil(t, claims)
+		assert.Equal(t, "testuser", claims.Username)
+		assert.Contains(t, claims.Scopes, auth.ScopeDERun)
+		assert.Contains(t, claims.Scopes, auth.ScopeDERead)
+	})
+}
+
+func TestContextWithClaims(t *testing.T) {
+	t.Run("stores claims in context", func(t *testing.T) {
+		ctx := context.Background()
+		claims := &auth.Claims{
+			Username: "testuser",
+			Scopes:   []auth.Scope{auth.ScopeDERun},
+		}
+
+		ctx = ContextWithClaims(ctx, claims)
+
+		retrievedClaims := ClaimsFromContext(ctx)
+		require.NotNil(t, retrievedClaims)
+		assert.Equal(t, claims.Username, retrievedClaims.Username)
+		assert.Equal(t, claims.Scopes, retrievedClaims.Scopes)
+
+		// Should also set username in context
+		username := UsernameFromContext(ctx)
+		assert.Equal(t, "testuser", username)
+	})
+
+	t.Run("handles nil claims", func(t *testing.T) {
+		ctx := context.Background()
+		ctx = ContextWithClaims(ctx, nil)
+
+		claims := ClaimsFromContext(ctx)
+		assert.Nil(t, claims)
+	})
+}
+
+func TestRequireScope(t *testing.T) {
+	tests := []struct {
+		name        string
+		scopes      []auth.Scope
+		required    auth.Scope
+		expectError bool
+		errorCode   codes.Code
+	}{
+		{
+			name:        "user has required scope",
+			scopes:      []auth.Scope{auth.ScopeDERun, auth.ScopeDERead},
+			required:    auth.ScopeDERun,
+			expectError: false,
+		},
+		{
+			name:        "user has admin scope (grants all)",
+			scopes:      []auth.Scope{auth.ScopeAdmin},
+			required:    auth.ScopeDERun,
+			expectError: false,
+		},
+		{
+			name:        "user missing required scope",
+			scopes:      []auth.Scope{auth.ScopeDERead},
+			required:    auth.ScopeDERun,
+			expectError: true,
+			errorCode:   codes.PermissionDenied,
+		},
+		{
+			name:        "user has no scopes",
+			scopes:      []auth.Scope{},
+			required:    auth.ScopeDERun,
+			expectError: true,
+			errorCode:   codes.PermissionDenied,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			claims := &auth.Claims{
+				Username: "testuser",
+				Scopes:   tt.scopes,
+			}
+			ctx = ContextWithClaims(ctx, claims)
+
+			err := RequireScope(ctx, tt.required)
+
+			if tt.expectError {
+				assert.Error(t, err)
+				st, ok := status.FromError(err)
+				assert.True(t, ok)
+				assert.Equal(t, tt.errorCode, st.Code())
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+
+	t.Run("not authenticated", func(t *testing.T) {
+		ctx := context.Background() // No claims
+
+		err := RequireScope(ctx, auth.ScopeDERun)
+
+		assert.Error(t, err)
+		st, ok := status.FromError(err)
+		assert.True(t, ok)
+		assert.Equal(t, codes.Unauthenticated, st.Code())
+	})
+}
+
+func TestRequireAnyScope(t *testing.T) {
+	tests := []struct {
+		name        string
+		scopes      []auth.Scope
+		required    []auth.Scope
+		expectError bool
+		errorCode   codes.Code
+	}{
+		{
+			name:        "user has one of required scopes",
+			scopes:      []auth.Scope{auth.ScopeDERun},
+			required:    []auth.Scope{auth.ScopeDERun, auth.ScopeDERead},
+			expectError: false,
+		},
+		{
+			name:        "user has all required scopes",
+			scopes:      []auth.Scope{auth.ScopeDERun, auth.ScopeDERead},
+			required:    []auth.Scope{auth.ScopeDERun, auth.ScopeDERead},
+			expectError: false,
+		},
+		{
+			name:        "user has admin scope",
+			scopes:      []auth.Scope{auth.ScopeAdmin},
+			required:    []auth.Scope{auth.ScopeDERun, auth.ScopeDERead},
+			expectError: false,
+		},
+		{
+			name:        "user has none of required scopes",
+			scopes:      []auth.Scope{auth.ScopeUserRead},
+			required:    []auth.Scope{auth.ScopeDERun, auth.ScopeDERead},
+			expectError: true,
+			errorCode:   codes.PermissionDenied,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			claims := &auth.Claims{
+				Username: "testuser",
+				Scopes:   tt.scopes,
+			}
+			ctx = ContextWithClaims(ctx, claims)
+
+			err := RequireAnyScope(ctx, tt.required...)
+
+			if tt.expectError {
+				assert.Error(t, err)
+				st, ok := status.FromError(err)
+				assert.True(t, ok)
+				assert.Equal(t, tt.errorCode, st.Code())
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+
+	t.Run("not authenticated", func(t *testing.T) {
+		ctx := context.Background() // No claims
+
+		err := RequireAnyScope(ctx, auth.ScopeDERun, auth.ScopeDERead)
+
+		assert.Error(t, err)
+		st, ok := status.FromError(err)
+		assert.True(t, ok)
+		assert.Equal(t, codes.Unauthenticated, st.Code())
+	})
+}
+
+func TestHasScope(t *testing.T) {
+	tests := []struct {
+		name     string
+		scopes   []auth.Scope
+		check    auth.Scope
+		expected bool
+	}{
+		{
+			name:     "user has scope",
+			scopes:   []auth.Scope{auth.ScopeDERun, auth.ScopeDERead},
+			check:    auth.ScopeDERun,
+			expected: true,
+		},
+		{
+			name:     "user has admin scope (grants all)",
+			scopes:   []auth.Scope{auth.ScopeAdmin},
+			check:    auth.ScopeDERun,
+			expected: true,
+		},
+		{
+			name:     "user missing scope",
+			scopes:   []auth.Scope{auth.ScopeDERead},
+			check:    auth.ScopeDERun,
+			expected: false,
+		},
+		{
+			name:     "user has no scopes",
+			scopes:   []auth.Scope{},
+			check:    auth.ScopeDERun,
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			claims := &auth.Claims{
+				Username: "testuser",
+				Scopes:   tt.scopes,
+			}
+			ctx = ContextWithClaims(ctx, claims)
+
+			result := HasScope(ctx, tt.check)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+
+	t.Run("not authenticated returns false", func(t *testing.T) {
+		ctx := context.Background() // No claims
+
+		result := HasScope(ctx, auth.ScopeDERun)
+		assert.False(t, result)
+	})
 }

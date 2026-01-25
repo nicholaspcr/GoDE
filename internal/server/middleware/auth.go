@@ -11,6 +11,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// contextKey is a value for use with context.WithValue. It's used as
+// a pointer so it fits in an interface{} without allocation.
+type contextKey struct {
+	name string
+}
+
 var (
 	errMetadataNotFound = status.Errorf(
 		codes.Unauthenticated, "metadata is not provided",
@@ -24,7 +30,8 @@ var (
 		"authorization token is invalid",
 	)
 
-	usernameCtxKey struct{} = struct{}{}
+	usernameCtxKey = &contextKey{"username"}
+	claimsCtxKey   = &contextKey{"claims"}
 )
 
 // UnaryAuthMiddleware checks for Bearer authentication and validates JWT tokens.
@@ -68,9 +75,9 @@ func UnaryAuthMiddleware(
 				return nil, errTokenInvalid
 			}
 
-			// Add user info to context for downstream handlers
-			//nolint:staticcheck // SA1029: Using empty struct as context key is intentional and safe in this case
+			// Add user info and claims to context for downstream handlers
 			ctx = context.WithValue(ctx, usernameCtxKey, claims.Username)
+			ctx = context.WithValue(ctx, claimsCtxKey, claims)
 		}
 
 		return handler(ctx, req)
@@ -90,6 +97,65 @@ func UsernameFromContext(ctx context.Context) string {
 // ContextWithUsername creates a context with the given username.
 // This is primarily for testing purposes.
 func ContextWithUsername(ctx context.Context, username string) context.Context {
-	//nolint:staticcheck // SA1029: Using empty struct as context key is intentional and safe in this case
 	return context.WithValue(ctx, usernameCtxKey, username)
+}
+
+// ClaimsFromContext extracts the JWT claims from the context.
+// Returns nil if no claims are found.
+func ClaimsFromContext(ctx context.Context) *auth.Claims {
+	claims, ok := ctx.Value(claimsCtxKey).(*auth.Claims)
+	if !ok {
+		return nil
+	}
+	return claims
+}
+
+// ContextWithClaims creates a context with the given claims.
+// This is primarily for testing purposes.
+func ContextWithClaims(ctx context.Context, claims *auth.Claims) context.Context {
+	ctx = context.WithValue(ctx, claimsCtxKey, claims)
+	if claims != nil {
+		ctx = context.WithValue(ctx, usernameCtxKey, claims.Username)
+	}
+	return ctx
+}
+
+// RequireScope checks if the current user has the required scope.
+// Returns a permission denied error if the scope is missing.
+func RequireScope(ctx context.Context, scope auth.Scope) error {
+	claims := ClaimsFromContext(ctx)
+	if claims == nil {
+		return status.Error(codes.Unauthenticated, "not authenticated")
+	}
+
+	if !claims.HasScope(scope) {
+		return status.Errorf(codes.PermissionDenied, "insufficient permissions: requires scope %s", scope)
+	}
+
+	return nil
+}
+
+// RequireAnyScope checks if the current user has any of the required scopes.
+// Returns a permission denied error if none of the scopes are present.
+func RequireAnyScope(ctx context.Context, scopes ...auth.Scope) error {
+	claims := ClaimsFromContext(ctx)
+	if claims == nil {
+		return status.Error(codes.Unauthenticated, "not authenticated")
+	}
+
+	if !claims.HasAnyScope(scopes...) {
+		return status.Errorf(codes.PermissionDenied, "insufficient permissions: requires one of %v", scopes)
+	}
+
+	return nil
+}
+
+// HasScope checks if the current user has the specified scope.
+// Returns false if not authenticated or scope is missing.
+func HasScope(ctx context.Context, scope auth.Scope) bool {
+	claims := ClaimsFromContext(ctx)
+	if claims == nil {
+		return false
+	}
+	return claims.HasScope(scope)
 }

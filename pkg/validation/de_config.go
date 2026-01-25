@@ -22,8 +22,9 @@ func ValidateDEConfig(cfg *api.DEConfig) error {
 		return err
 	}
 
-	// Validate population size (minimum 4 for mutation operations)
-	if err := ValidateRange(cfg.PopulationSize, int64(4), int64(10000), "population_size"); err != nil {
+	// Validate population size (minimum 3 - required by best/1 and pbest variants)
+	// Variant-specific validation (e.g., rand/2 needs 6) is done in ValidateRunAsyncRequest
+	if err := ValidateRange(cfg.PopulationSize, int64(3), int64(10000), "population_size"); err != nil {
 		return err
 	}
 
@@ -45,6 +46,20 @@ func ValidateDEConfig(cfg *api.DEConfig) error {
 			ErrOutOfRange,
 			fmt.Sprintf("floor_limiter (%v) must be less than ceil_limiter (%v)",
 				cfg.FloorLimiter, cfg.CeilLimiter),
+		)
+	}
+
+	// Validate total memory allocation (dimensions × population)
+	// Prevent memory bombs from excessively large configurations
+	const maxTotalElements = int64(10_000_000) // 10 million elements max
+	totalElements := cfg.DimensionsSize * cfg.PopulationSize
+	if totalElements > maxTotalElements {
+		return NewValidationError(
+			"population_size",
+			cfg.PopulationSize,
+			ErrOutOfRange,
+			fmt.Sprintf("dimensions_size (%d) × population_size (%d) = %d exceeds maximum allowed (%d)",
+				cfg.DimensionsSize, cfg.PopulationSize, totalElements, maxTotalElements),
 		)
 	}
 
@@ -80,4 +95,52 @@ func ValidateGDE3Config(cfg *api.GDE3Config) error {
 	}
 
 	return nil
+}
+
+// ValidateRunAsyncRequest validates a DE run request including variant-specific constraints.
+func ValidateRunAsyncRequest(algorithm, variant, problem string, cfg *api.DEConfig) error {
+	// Validate DE config first
+	if err := ValidateDEConfig(cfg); err != nil {
+		return err
+	}
+
+	// Validate variant-specific population size requirements
+	minPopulation := getMinPopulationForVariant(variant)
+	if cfg.PopulationSize < int64(minPopulation) {
+		return NewValidationError(
+			"population_size",
+			cfg.PopulationSize,
+			ErrOutOfRange,
+			fmt.Sprintf("variant %s requires minimum population size of %d, got %d",
+				variant, minPopulation, cfg.PopulationSize),
+		)
+	}
+
+	return nil
+}
+
+// getMinPopulationForVariant returns the minimum population size required for a given variant.
+//
+// Different DE variants have different minimum population requirements based on the number
+// of random vectors they need to select during mutation:
+//   - rand/1: needs CurrPos + 3 random vectors = 4 minimum
+//   - rand/2: needs CurrPos + 5 random vectors = 6 minimum
+//   - best/1: needs CurrPos + 2 random vectors = 3 minimum
+//   - best/2: needs CurrPos + 4 random vectors = 5 minimum
+//   - pbest: needs CurrPos + 2 random vectors = 3 minimum
+//   - current-to-best/1: needs CurrPos + 3 random vectors = 4 minimum
+func getMinPopulationForVariant(variant string) int {
+	switch variant {
+	case "rand/1", "current-to-best/1":
+		return 4
+	case "rand/2":
+		return 6
+	case "best/1", "pbest":
+		return 3
+	case "best/2":
+		return 5
+	default:
+		// Conservative fallback for unknown variants
+		return 4
+	}
 }

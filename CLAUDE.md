@@ -161,6 +161,7 @@ API definitions are in `api/v1/*.proto` (8 proto files). Generated code goes to 
 - Server config: `internal/server/config.go` - default ports and DE limiters
 - Store config: `internal/store/config.go` - database type and connection details
 - DE config: `pkg/de/config.go` - channel limiters and result limits
+- Executor config: `internal/server/config.go` - ExecutorConfig with MaxWorkers (10), MaxVectorsInProgress (100), TTLs (execution: 24h, results: 7d, progress: 1h)
 - CLI state stored in SQLite at `.dev/cli/`
 
 ## Important Context

@@ -35,11 +35,12 @@ type Config struct {
 
 // ExecutorConfig contains configuration for the background execution executor.
 type ExecutorConfig struct {
-	MaxWorkers    int
-	QueueSize     int
-	ExecutionTTL  time.Duration
-	ResultTTL     time.Duration
-	ProgressTTL   time.Duration
+	MaxWorkers           int
+	QueueSize            int
+	MaxVectorsInProgress int // Maximum vectors to include in progress updates (default: 100)
+	ExecutionTTL         time.Duration
+	ResultTTL            time.Duration
+	ProgressTTL          time.Duration
 }
 
 // TLSConfig contains TLS/HTTPS configuration.
@@ -141,9 +142,9 @@ func DefaultConfig() Config {
 			SampleRatio:  sampleRatio,
 			FilePath:     traceFilePath,
 		},
-		SLOEnabled:     sloEnabled,
-		PprofEnabled:   pprofEnabled,
-		PprofPort:      pprofPort,
+		SLOEnabled:   sloEnabled,
+		PprofEnabled: pprofEnabled,
+		PprofPort:    pprofPort,
 		Redis: redis.Config{
 			Host:     redisHost,
 			Port:     redisPort,
@@ -151,11 +152,12 @@ func DefaultConfig() Config {
 			DB:       redisDB,
 		},
 		Executor: ExecutorConfig{
-			MaxWorkers:    10,
-			QueueSize:     100,
-			ExecutionTTL:  24 * time.Hour,
-			ResultTTL:     7 * 24 * time.Hour,
-			ProgressTTL:   1 * time.Hour,
+			MaxWorkers:           10,
+			QueueSize:            100,
+			MaxVectorsInProgress: 100,
+			ExecutionTTL:         24 * time.Hour,
+			ResultTTL:            7 * 24 * time.Hour,
+			ProgressTTL:          1 * time.Hour,
 		},
 		TLS: TLSConfig{
 			Enabled:  false, // TLS disabled by default for development
@@ -163,8 +165,8 @@ func DefaultConfig() Config {
 			KeyFile:  "",
 		},
 		RateLimit: RateLimitConfig{
-			LoginRequestsPerMinute:    5,  // 5 login attempts per minute per IP
-			RegisterRequestsPerMinute: 3,  // 3 registrations per minute per IP (stricter)
+			LoginRequestsPerMinute:    5, // 5 login attempts per minute per IP
+			RegisterRequestsPerMinute: 3, // 3 registrations per minute per IP (stricter)
 			DEExecutionsPerUser:       10,
 			MaxConcurrentDEPerUser:    3,
 			MaxRequestsPerSecond:      100,
@@ -256,6 +258,9 @@ func (c *Config) Validate() error {
 	}
 	if c.Executor.QueueSize < 1 {
 		return fmt.Errorf("executor queue_size must be at least 1")
+	}
+	if c.Executor.MaxVectorsInProgress < 1 {
+		return fmt.Errorf("executor max_vectors_in_progress must be at least 1")
 	}
 	if c.Executor.ExecutionTTL < time.Minute {
 		return fmt.Errorf("executor execution_ttl must be at least 1 minute")

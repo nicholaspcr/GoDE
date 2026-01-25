@@ -43,12 +43,13 @@ func New(ctx context.Context, cfg Config, opts ...serverOpts) (Server, error) {
 	}
 
 	srv.executor = executor.New(executor.Config{
-		Store:        srv.st,
-		MaxWorkers:   cfg.Executor.MaxWorkers,
-		ExecutionTTL: cfg.Executor.ExecutionTTL,
-		ResultTTL:    cfg.Executor.ResultTTL,
-		ProgressTTL:  cfg.Executor.ProgressTTL,
-		Metrics:      srv.metrics,
+		Store:                srv.st,
+		MaxWorkers:           cfg.Executor.MaxWorkers,
+		MaxVectorsInProgress: cfg.Executor.MaxVectorsInProgress,
+		ExecutionTTL:         cfg.Executor.ExecutionTTL,
+		ResultTTL:            cfg.Executor.ResultTTL,
+		ProgressTTL:          cfg.Executor.ProgressTTL,
+		Metrics:              srv.metrics,
 	})
 
 	// Register all problems and variants

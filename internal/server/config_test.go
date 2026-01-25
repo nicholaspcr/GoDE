@@ -40,11 +40,12 @@ func TestConfig_Validate(t *testing.T) {
 					Port: 6379,
 				},
 				Executor: ExecutorConfig{
-					MaxWorkers:   10,
-					QueueSize:    100,
-					ExecutionTTL: 24 * time.Hour,
-					ResultTTL:    7 * 24 * time.Hour,
-					ProgressTTL:  time.Hour,
+					MaxWorkers:           10,
+					QueueSize:            100,
+					MaxVectorsInProgress: 100,
+					ExecutionTTL:         24 * time.Hour,
+					ResultTTL:            7 * 24 * time.Hour,
+					ProgressTTL:          time.Hour,
 				},
 				DE: de.Config{},
 			},
@@ -163,10 +164,10 @@ func TestConfig_Validate(t *testing.T) {
 				RateLimit: RateLimitConfig{
 					LoginRequestsPerMinute:    0,
 					RegisterRequestsPerMinute: 0,
-					DEExecutionsPerUser:    10,
-					MaxConcurrentDEPerUser: 3,
-					MaxRequestsPerSecond:   100,
-					MaxMessageSizeBytes:    4 * 1024 * 1024,
+					DEExecutionsPerUser:       10,
+					MaxConcurrentDEPerUser:    3,
+					MaxRequestsPerSecond:      100,
+					MaxMessageSizeBytes:       4 * 1024 * 1024,
 				},
 			},
 			wantErr: "login_requests_per_minute must be at least 1",
@@ -183,11 +184,11 @@ func TestConfig_Validate(t *testing.T) {
 				},
 				RateLimit: RateLimitConfig{
 					LoginRequestsPerMinute:    5,
-				RegisterRequestsPerMinute: 3,
-					DEExecutionsPerUser:    0,
-					MaxConcurrentDEPerUser: 3,
-					MaxRequestsPerSecond:   100,
-					MaxMessageSizeBytes:    4 * 1024 * 1024,
+					RegisterRequestsPerMinute: 3,
+					DEExecutionsPerUser:       0,
+					MaxConcurrentDEPerUser:    3,
+					MaxRequestsPerSecond:      100,
+					MaxMessageSizeBytes:       4 * 1024 * 1024,
 				},
 			},
 			wantErr: "de_executions_per_user must be at least 1",
@@ -204,11 +205,11 @@ func TestConfig_Validate(t *testing.T) {
 				},
 				RateLimit: RateLimitConfig{
 					LoginRequestsPerMinute:    5,
-				RegisterRequestsPerMinute: 3,
-					DEExecutionsPerUser:    10,
-					MaxConcurrentDEPerUser: 0,
-					MaxRequestsPerSecond:   100,
-					MaxMessageSizeBytes:    4 * 1024 * 1024,
+					RegisterRequestsPerMinute: 3,
+					DEExecutionsPerUser:       10,
+					MaxConcurrentDEPerUser:    0,
+					MaxRequestsPerSecond:      100,
+					MaxMessageSizeBytes:       4 * 1024 * 1024,
 				},
 			},
 			wantErr: "max_concurrent_de_per_user must be at least 1",
@@ -225,11 +226,11 @@ func TestConfig_Validate(t *testing.T) {
 				},
 				RateLimit: RateLimitConfig{
 					LoginRequestsPerMinute:    5,
-				RegisterRequestsPerMinute: 3,
-					DEExecutionsPerUser:    10,
-					MaxConcurrentDEPerUser: 3,
-					MaxRequestsPerSecond:   0,
-					MaxMessageSizeBytes:    4 * 1024 * 1024,
+					RegisterRequestsPerMinute: 3,
+					DEExecutionsPerUser:       10,
+					MaxConcurrentDEPerUser:    3,
+					MaxRequestsPerSecond:      0,
+					MaxMessageSizeBytes:       4 * 1024 * 1024,
 				},
 			},
 			wantErr: "max_requests_per_second must be at least 1",
@@ -246,11 +247,11 @@ func TestConfig_Validate(t *testing.T) {
 				},
 				RateLimit: RateLimitConfig{
 					LoginRequestsPerMinute:    5,
-				RegisterRequestsPerMinute: 3,
-					DEExecutionsPerUser:    10,
-					MaxConcurrentDEPerUser: 3,
-					MaxRequestsPerSecond:   100,
-					MaxMessageSizeBytes:    512,
+					RegisterRequestsPerMinute: 3,
+					DEExecutionsPerUser:       10,
+					MaxConcurrentDEPerUser:    3,
+					MaxRequestsPerSecond:      100,
+					MaxMessageSizeBytes:       512,
 				},
 			},
 			wantErr: "max_message_size_bytes must be at least 1024 bytes",
@@ -318,6 +319,204 @@ func TestConfig_Validate(t *testing.T) {
 			},
 			wantErr: "JWT expiry must be at least 1 minute",
 		},
+		{
+			name: "invalid executor max workers",
+			config: Config{
+				LisAddr:   "localhost:3030",
+				HTTPPort:  ":8081",
+				JWTSecret: "this-is-a-very-secure-secret-with-more-than-32-characters",
+				JWTExpiry: 24 * time.Hour,
+				TLS: TLSConfig{
+					Enabled: false,
+				},
+				RateLimit: RateLimitConfig{
+					LoginRequestsPerMinute:    5,
+					RegisterRequestsPerMinute: 3,
+					DEExecutionsPerUser:       10,
+					MaxConcurrentDEPerUser:    3,
+					MaxRequestsPerSecond:      100,
+					MaxMessageSizeBytes:       4 * 1024 * 1024,
+				},
+				Redis: redis.Config{
+					Host: "localhost",
+					Port: 6379,
+				},
+				Executor: ExecutorConfig{
+					MaxWorkers:           0,
+					QueueSize:            100,
+					MaxVectorsInProgress: 100,
+					ExecutionTTL:         24 * time.Hour,
+					ResultTTL:            7 * 24 * time.Hour,
+					ProgressTTL:          time.Hour,
+				},
+			},
+			wantErr: "executor max_workers must be at least 1",
+		},
+		{
+			name: "invalid executor queue size",
+			config: Config{
+				LisAddr:   "localhost:3030",
+				HTTPPort:  ":8081",
+				JWTSecret: "this-is-a-very-secure-secret-with-more-than-32-characters",
+				JWTExpiry: 24 * time.Hour,
+				TLS: TLSConfig{
+					Enabled: false,
+				},
+				RateLimit: RateLimitConfig{
+					LoginRequestsPerMinute:    5,
+					RegisterRequestsPerMinute: 3,
+					DEExecutionsPerUser:       10,
+					MaxConcurrentDEPerUser:    3,
+					MaxRequestsPerSecond:      100,
+					MaxMessageSizeBytes:       4 * 1024 * 1024,
+				},
+				Redis: redis.Config{
+					Host: "localhost",
+					Port: 6379,
+				},
+				Executor: ExecutorConfig{
+					MaxWorkers:           10,
+					QueueSize:            0,
+					MaxVectorsInProgress: 100,
+					ExecutionTTL:         24 * time.Hour,
+					ResultTTL:            7 * 24 * time.Hour,
+					ProgressTTL:          time.Hour,
+				},
+			},
+			wantErr: "executor queue_size must be at least 1",
+		},
+		{
+			name: "invalid executor max vectors in progress",
+			config: Config{
+				LisAddr:   "localhost:3030",
+				HTTPPort:  ":8081",
+				JWTSecret: "this-is-a-very-secure-secret-with-more-than-32-characters",
+				JWTExpiry: 24 * time.Hour,
+				TLS: TLSConfig{
+					Enabled: false,
+				},
+				RateLimit: RateLimitConfig{
+					LoginRequestsPerMinute:    5,
+					RegisterRequestsPerMinute: 3,
+					DEExecutionsPerUser:       10,
+					MaxConcurrentDEPerUser:    3,
+					MaxRequestsPerSecond:      100,
+					MaxMessageSizeBytes:       4 * 1024 * 1024,
+				},
+				Redis: redis.Config{
+					Host: "localhost",
+					Port: 6379,
+				},
+				Executor: ExecutorConfig{
+					MaxWorkers:           10,
+					QueueSize:            100,
+					MaxVectorsInProgress: 0,
+					ExecutionTTL:         24 * time.Hour,
+					ResultTTL:            7 * 24 * time.Hour,
+					ProgressTTL:          time.Hour,
+				},
+			},
+			wantErr: "executor max_vectors_in_progress must be at least 1",
+		},
+		{
+			name: "invalid executor execution TTL",
+			config: Config{
+				LisAddr:   "localhost:3030",
+				HTTPPort:  ":8081",
+				JWTSecret: "this-is-a-very-secure-secret-with-more-than-32-characters",
+				JWTExpiry: 24 * time.Hour,
+				TLS: TLSConfig{
+					Enabled: false,
+				},
+				RateLimit: RateLimitConfig{
+					LoginRequestsPerMinute:    5,
+					RegisterRequestsPerMinute: 3,
+					DEExecutionsPerUser:       10,
+					MaxConcurrentDEPerUser:    3,
+					MaxRequestsPerSecond:      100,
+					MaxMessageSizeBytes:       4 * 1024 * 1024,
+				},
+				Redis: redis.Config{
+					Host: "localhost",
+					Port: 6379,
+				},
+				Executor: ExecutorConfig{
+					MaxWorkers:           10,
+					QueueSize:            100,
+					MaxVectorsInProgress: 100,
+					ExecutionTTL:         30 * time.Second,
+					ResultTTL:            7 * 24 * time.Hour,
+					ProgressTTL:          time.Hour,
+				},
+			},
+			wantErr: "executor execution_ttl must be at least 1 minute",
+		},
+		{
+			name: "invalid executor result TTL",
+			config: Config{
+				LisAddr:   "localhost:3030",
+				HTTPPort:  ":8081",
+				JWTSecret: "this-is-a-very-secure-secret-with-more-than-32-characters",
+				JWTExpiry: 24 * time.Hour,
+				TLS: TLSConfig{
+					Enabled: false,
+				},
+				RateLimit: RateLimitConfig{
+					LoginRequestsPerMinute:    5,
+					RegisterRequestsPerMinute: 3,
+					DEExecutionsPerUser:       10,
+					MaxConcurrentDEPerUser:    3,
+					MaxRequestsPerSecond:      100,
+					MaxMessageSizeBytes:       4 * 1024 * 1024,
+				},
+				Redis: redis.Config{
+					Host: "localhost",
+					Port: 6379,
+				},
+				Executor: ExecutorConfig{
+					MaxWorkers:           10,
+					QueueSize:            100,
+					MaxVectorsInProgress: 100,
+					ExecutionTTL:         24 * time.Hour,
+					ResultTTL:            30 * time.Minute,
+					ProgressTTL:          time.Hour,
+				},
+			},
+			wantErr: "executor result_ttl must be at least 1 hour",
+		},
+		{
+			name: "invalid executor progress TTL",
+			config: Config{
+				LisAddr:   "localhost:3030",
+				HTTPPort:  ":8081",
+				JWTSecret: "this-is-a-very-secure-secret-with-more-than-32-characters",
+				JWTExpiry: 24 * time.Hour,
+				TLS: TLSConfig{
+					Enabled: false,
+				},
+				RateLimit: RateLimitConfig{
+					LoginRequestsPerMinute:    5,
+					RegisterRequestsPerMinute: 3,
+					DEExecutionsPerUser:       10,
+					MaxConcurrentDEPerUser:    3,
+					MaxRequestsPerSecond:      100,
+					MaxMessageSizeBytes:       4 * 1024 * 1024,
+				},
+				Redis: redis.Config{
+					Host: "localhost",
+					Port: 6379,
+				},
+				Executor: ExecutorConfig{
+					MaxWorkers:           10,
+					QueueSize:            100,
+					MaxVectorsInProgress: 100,
+					ExecutionTTL:         24 * time.Hour,
+					ResultTTL:            7 * 24 * time.Hour,
+					ProgressTTL:          30 * time.Second,
+				},
+			},
+			wantErr: "executor progress_ttl must be at least 1 minute",
+		},
 	}
 
 	for _, tt := range tests {
@@ -361,21 +560,22 @@ func TestConfig_ValidateTLSFiles(t *testing.T) {
 			RateLimit: RateLimitConfig{
 				LoginRequestsPerMinute:    5,
 				RegisterRequestsPerMinute: 3,
-				DEExecutionsPerUser:    10,
-				MaxConcurrentDEPerUser: 3,
-				MaxRequestsPerSecond:   100,
-				MaxMessageSizeBytes:    4 * 1024 * 1024,
+				DEExecutionsPerUser:       10,
+				MaxConcurrentDEPerUser:    3,
+				MaxRequestsPerSecond:      100,
+				MaxMessageSizeBytes:       4 * 1024 * 1024,
 			},
 			Redis: redis.Config{
 				Host: "localhost",
 				Port: 6379,
 			},
 			Executor: ExecutorConfig{
-				MaxWorkers:   10,
-				QueueSize:    100,
-				ExecutionTTL: 24 * time.Hour,
-				ResultTTL:    7 * 24 * time.Hour,
-				ProgressTTL:  time.Hour,
+				MaxWorkers:           10,
+				QueueSize:            100,
+				MaxVectorsInProgress: 100,
+				ExecutionTTL:         24 * time.Hour,
+				ResultTTL:            7 * 24 * time.Hour,
+				ProgressTTL:          time.Hour,
 			},
 		}
 
@@ -397,10 +597,10 @@ func TestConfig_ValidateTLSFiles(t *testing.T) {
 			RateLimit: RateLimitConfig{
 				LoginRequestsPerMinute:    5,
 				RegisterRequestsPerMinute: 3,
-				DEExecutionsPerUser:    10,
-				MaxConcurrentDEPerUser: 3,
-				MaxRequestsPerSecond:   100,
-				MaxMessageSizeBytes:    4 * 1024 * 1024,
+				DEExecutionsPerUser:       10,
+				MaxConcurrentDEPerUser:    3,
+				MaxRequestsPerSecond:      100,
+				MaxMessageSizeBytes:       4 * 1024 * 1024,
 			},
 		}
 
@@ -423,10 +623,10 @@ func TestConfig_ValidateTLSFiles(t *testing.T) {
 			RateLimit: RateLimitConfig{
 				LoginRequestsPerMinute:    5,
 				RegisterRequestsPerMinute: 3,
-				DEExecutionsPerUser:    10,
-				MaxConcurrentDEPerUser: 3,
-				MaxRequestsPerSecond:   100,
-				MaxMessageSizeBytes:    4 * 1024 * 1024,
+				DEExecutionsPerUser:       10,
+				MaxConcurrentDEPerUser:    3,
+				MaxRequestsPerSecond:      100,
+				MaxMessageSizeBytes:       4 * 1024 * 1024,
 			},
 		}
 
@@ -455,4 +655,12 @@ func TestDefaultConfig(t *testing.T) {
 	assert.Equal(t, 3, config.RateLimit.MaxConcurrentDEPerUser)
 	assert.Equal(t, 100, config.RateLimit.MaxRequestsPerSecond)
 	assert.Equal(t, 4*1024*1024, config.RateLimit.MaxMessageSizeBytes)
+
+	// Executor config defaults
+	assert.Equal(t, 10, config.Executor.MaxWorkers)
+	assert.Equal(t, 100, config.Executor.QueueSize)
+	assert.Equal(t, 100, config.Executor.MaxVectorsInProgress)
+	assert.Equal(t, 24*time.Hour, config.Executor.ExecutionTTL)
+	assert.Equal(t, 7*24*time.Hour, config.Executor.ResultTTL)
+	assert.Equal(t, 1*time.Hour, config.Executor.ProgressTTL)
 }

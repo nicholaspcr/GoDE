@@ -43,7 +43,7 @@ For async operations, use 'run-async' instead.`,
 				Generations:    run.DeConfig.Generations,
 				PopulationSize: run.DeConfig.PopulationSize,
 				DimensionsSize: run.DeConfig.DimensionsSize,
-				ObjectivesSize:  run.DeConfig.ObjectivesSize,
+				ObjectivesSize: run.DeConfig.ObjectivesSize,
 				FloorLimiter:   run.DeConfig.FloorLimiter,
 				CeilLimiter:    run.DeConfig.CeilLimiter,
 				AlgorithmConfig: &api.DEConfig_Gde3{Gde3: &api.GDE3Config{

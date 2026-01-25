@@ -298,16 +298,26 @@ func (m *mockStore) GetParetoSetByID(ctx context.Context, id uint64) (*store.Par
 }
 
 // Stub implementations for other store methods
-func (m *mockStore) CreateUser(ctx context.Context, user *api.User) error                         { return nil }
-func (m *mockStore) GetUser(ctx context.Context, ids *api.UserIDs) (*api.User, error)            { return nil, nil }
-func (m *mockStore) UpdateUser(ctx context.Context, user *api.User, fields ...string) error      { return nil }
-func (m *mockStore) DeleteUser(ctx context.Context, ids *api.UserIDs) error                      { return nil }
-func (m *mockStore) CreatePareto(ctx context.Context, pareto *api.Pareto) error                  { return nil }
-func (m *mockStore) GetPareto(ctx context.Context, ids *api.ParetoIDs) (*api.Pareto, error)      { return nil, nil }
-func (m *mockStore) UpdatePareto(ctx context.Context, pareto *api.Pareto, fields ...string) error { return nil }
-func (m *mockStore) DeletePareto(ctx context.Context, ids *api.ParetoIDs) error                  { return nil }
-func (m *mockStore) ListParetos(ctx context.Context, ids *api.UserIDs, limit, offset int) ([]*api.Pareto, int, error) { return nil, 0, nil }
-func (m *mockStore) HealthCheck(ctx context.Context) error                                       { return nil }
+func (m *mockStore) CreateUser(ctx context.Context, user *api.User) error { return nil }
+func (m *mockStore) GetUser(ctx context.Context, ids *api.UserIDs) (*api.User, error) {
+	return nil, nil
+}
+func (m *mockStore) UpdateUser(ctx context.Context, user *api.User, fields ...string) error {
+	return nil
+}
+func (m *mockStore) DeleteUser(ctx context.Context, ids *api.UserIDs) error     { return nil }
+func (m *mockStore) CreatePareto(ctx context.Context, pareto *api.Pareto) error { return nil }
+func (m *mockStore) GetPareto(ctx context.Context, ids *api.ParetoIDs) (*api.Pareto, error) {
+	return nil, nil
+}
+func (m *mockStore) UpdatePareto(ctx context.Context, pareto *api.Pareto, fields ...string) error {
+	return nil
+}
+func (m *mockStore) DeletePareto(ctx context.Context, ids *api.ParetoIDs) error { return nil }
+func (m *mockStore) ListParetos(ctx context.Context, ids *api.UserIDs, limit, offset int) ([]*api.Pareto, int, error) {
+	return nil, 0, nil
+}
+func (m *mockStore) HealthCheck(ctx context.Context) error { return nil }
 
 func TestExecutor_SubmitExecution(t *testing.T) {
 	mockSt := newMockStore()
@@ -339,7 +349,7 @@ func TestExecutor_SubmitExecution(t *testing.T) {
 		Generations:    2,
 		PopulationSize: 10,
 		DimensionsSize: 10,
-		ObjectivesSize:  2,
+		ObjectivesSize: 2,
 		FloorLimiter:   0.0,
 		CeilLimiter:    1.0,
 		AlgorithmConfig: &api.DEConfig_Gde3{
@@ -458,7 +468,7 @@ func TestExecutor_WorkerPoolExhaustion(t *testing.T) {
 		Generations:    5,
 		PopulationSize: 10,
 		DimensionsSize: 10,
-		ObjectivesSize:  2,
+		ObjectivesSize: 2,
 		FloorLimiter:   0.0,
 		CeilLimiter:    1.0,
 		AlgorithmConfig: &api.DEConfig_Gde3{
@@ -529,7 +539,7 @@ func TestExecutor_ConcurrentSubmissions(t *testing.T) {
 		Generations:    2,
 		PopulationSize: 10,
 		DimensionsSize: 10,
-		ObjectivesSize:  2,
+		ObjectivesSize: 2,
 		FloorLimiter:   0.0,
 		CeilLimiter:    1.0,
 		AlgorithmConfig: &api.DEConfig_Gde3{
@@ -608,7 +618,7 @@ func TestExecutor_CompletionTracking(t *testing.T) {
 		Generations:    2,
 		PopulationSize: 10,
 		DimensionsSize: 10,
-		ObjectivesSize:  2,
+		ObjectivesSize: 2,
 		FloorLimiter:   0.0,
 		CeilLimiter:    1.0,
 		AlgorithmConfig: &api.DEConfig_Gde3{
@@ -737,7 +747,7 @@ func TestExecutor_PanicRecovery(t *testing.T) {
 		Generations:    2,
 		PopulationSize: 10,
 		DimensionsSize: 10,
-		ObjectivesSize:  2,
+		ObjectivesSize: 2,
 		FloorLimiter:   0.0,
 		CeilLimiter:    1.0,
 		AlgorithmConfig: &api.DEConfig_Gde3{
@@ -897,7 +907,7 @@ func TestExecutor_WorkerSlotReleaseOnError(t *testing.T) {
 		Generations:    2,
 		PopulationSize: 10,
 		DimensionsSize: 10,
-		ObjectivesSize:  2,
+		ObjectivesSize: 2,
 		FloorLimiter:   0.0,
 		CeilLimiter:    1.0,
 		AlgorithmConfig: &api.DEConfig_Gde3{

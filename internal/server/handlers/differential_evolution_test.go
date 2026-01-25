@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	_ "github.com/nicholaspcr/GoDE/pkg/problems/many/dtlz" // Register DTLZ problems
-	_ "github.com/nicholaspcr/GoDE/pkg/problems/many/wfg"  // Register WFG problems
-	_ "github.com/nicholaspcr/GoDE/pkg/problems/multi"     // Register ZDT and VNT problems
+	_ "github.com/nicholaspcr/GoDE/pkg/problems/many/dtlz"       // Register DTLZ problems
+	_ "github.com/nicholaspcr/GoDE/pkg/problems/many/wfg"        // Register WFG problems
+	_ "github.com/nicholaspcr/GoDE/pkg/problems/multi"           // Register ZDT and VNT problems
 	_ "github.com/nicholaspcr/GoDE/pkg/variants/best"            // Register best/* variants
 	_ "github.com/nicholaspcr/GoDE/pkg/variants/current-to-best" // Register current-to-best/* variants
 	_ "github.com/nicholaspcr/GoDE/pkg/variants/pbest"           // Register pbest/* variants

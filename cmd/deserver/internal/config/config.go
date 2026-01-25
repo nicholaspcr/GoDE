@@ -12,9 +12,9 @@ import (
 
 // Config configuration.
 type Config struct {
-	Log    log.Config           `json:"log" yaml:"log"`
-	Store  storefactory.Config  `json:"store" yaml:"store"`
-	Server server.Config        `json:"server" yaml:"server"`
+	Log    log.Config          `json:"log" yaml:"log"`
+	Store  storefactory.Config `json:"store" yaml:"store"`
+	Server server.Config       `json:"server" yaml:"server"`
 }
 
 // StringifyJSON returns a string with the JSON object of the configuration.

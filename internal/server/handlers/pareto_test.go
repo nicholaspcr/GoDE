@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/nicholaspcr/GoDE/internal/store/mock"
 	storerrors "github.com/nicholaspcr/GoDE/internal/store/errors"
+	"github.com/nicholaspcr/GoDE/internal/store/mock"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

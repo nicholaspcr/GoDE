@@ -17,12 +17,12 @@ type MockStore struct {
 	DeleteUserFn func(ctx context.Context, userIDs *api.UserIDs) error
 
 	// Pareto operations
-	CreateParetoFn    func(ctx context.Context, pareto *api.Pareto) error
-	GetParetoFn       func(ctx context.Context, ids *api.ParetoIDs) (*api.Pareto, error)
-	UpdateParetoFn    func(ctx context.Context, pareto *api.Pareto, fields ...string) error
-	DeleteParetoFn    func(ctx context.Context, ids *api.ParetoIDs) error
-	ListParetosFn     func(ctx context.Context, userIDs *api.UserIDs, limit, offset int) ([]*api.Pareto, int, error)
-	CreateParetoSetFn func(ctx context.Context, paretoSet *store.ParetoSet) error
+	CreateParetoFn     func(ctx context.Context, pareto *api.Pareto) error
+	GetParetoFn        func(ctx context.Context, ids *api.ParetoIDs) (*api.Pareto, error)
+	UpdateParetoFn     func(ctx context.Context, pareto *api.Pareto, fields ...string) error
+	DeleteParetoFn     func(ctx context.Context, ids *api.ParetoIDs) error
+	ListParetosFn      func(ctx context.Context, userIDs *api.UserIDs, limit, offset int) ([]*api.Pareto, int, error)
+	CreateParetoSetFn  func(ctx context.Context, paretoSet *store.ParetoSet) error
 	GetParetoSetByIDFn func(ctx context.Context, id uint64) (*store.ParetoSet, error)
 
 	// Vector operations

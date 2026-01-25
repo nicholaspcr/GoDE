@@ -27,34 +27,34 @@ const (
 // Metrics holds all application metrics.
 type Metrics struct {
 	// API metrics
-	APIRequestsTotal      metric.Int64Counter
-	APIRequestDuration    metric.Float64Histogram
-	APIRequestsInFlight   metric.Int64UpDownCounter
-	APIErrorsTotal        metric.Int64Counter
+	APIRequestsTotal    metric.Int64Counter
+	APIRequestDuration  metric.Float64Histogram
+	APIRequestsInFlight metric.Int64UpDownCounter
+	APIErrorsTotal      metric.Int64Counter
 
 	// DE execution metrics
-	DEExecutionsTotal     metric.Int64Counter
-	DEExecutionDuration   metric.Float64Histogram
-	DEExecutionsInFlight  metric.Int64UpDownCounter
-	DEGenerationsTotal    metric.Int64Counter
-	ParetoSetSize         metric.Int64Histogram
+	DEExecutionsTotal    metric.Int64Counter
+	DEExecutionDuration  metric.Float64Histogram
+	DEExecutionsInFlight metric.Int64UpDownCounter
+	DEGenerationsTotal   metric.Int64Counter
+	ParetoSetSize        metric.Int64Histogram
 
 	// Executor worker pool metrics
-	ExecutorWorkersActive     metric.Int64UpDownCounter
-	ExecutorWorkersTotal      metric.Int64UpDownCounter
-	ExecutorQueueWaitDuration metric.Float64Histogram
+	ExecutorWorkersActive      metric.Int64UpDownCounter
+	ExecutorWorkersTotal       metric.Int64UpDownCounter
+	ExecutorQueueWaitDuration  metric.Float64Histogram
 	ExecutorUtilizationPercent metric.Float64Histogram
 
 	// Auth metrics
-	AuthAttemptsTotal     metric.Int64Counter
-	AuthSuccessTotal      metric.Int64Counter
-	AuthFailuresTotal     metric.Int64Counter
+	AuthAttemptsTotal metric.Int64Counter
+	AuthSuccessTotal  metric.Int64Counter
+	AuthFailuresTotal metric.Int64Counter
 
 	// Rate limiting metrics
-	RateLimitExceeded     metric.Int64Counter
+	RateLimitExceeded metric.Int64Counter
 
 	// Panic metrics
-	PanicsTotal           metric.Int64Counter
+	PanicsTotal metric.Int64Counter
 }
 
 // NewMeterProvider creates a new meter provider with the specified exporter type.

@@ -15,9 +15,9 @@ import (
 
 // Objective defines a specific SLO target.
 type Objective struct {
-	Name        string  // Name of the objective (e.g., "availability", "latency_p95")
-	Description string  // Human-readable description
-	Target      float64 // Target percentage (0.0-100.0), e.g., 99.9 for 99.9%
+	Name        string        // Name of the objective (e.g., "availability", "latency_p95")
+	Description string        // Human-readable description
+	Target      float64       // Target percentage (0.0-100.0), e.g., 99.9 for 99.9%
 	Window      time.Duration // Time window for evaluation (e.g., 24h, 7d)
 }
 

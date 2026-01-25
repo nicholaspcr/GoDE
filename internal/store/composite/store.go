@@ -11,9 +11,9 @@ import (
 
 // Store implements store.Store by combining database and Redis stores.
 type Store struct {
-	db          store.Store
-	redis       *redis.Client
-	execStore   *ExecutionStore
+	db        store.Store
+	redis     *redis.Client
+	execStore *ExecutionStore
 }
 
 // New creates a new composite store.

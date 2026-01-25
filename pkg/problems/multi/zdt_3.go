@@ -42,7 +42,7 @@ func (v *zdt3) Evaluate(e *models.Vector, M int) error {
 		return errors.New("sqrt of a negative number")
 	}
 
-	e.Objectives = []float64{e.Elements[0], g*h}
+	e.Objectives = []float64{e.Elements[0], g * h}
 
 	return nil
 }

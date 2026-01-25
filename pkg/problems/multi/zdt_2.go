@@ -38,7 +38,7 @@ func (v *zdt2) Evaluate(e *models.Vector, M int) error {
 	g := evalG(e.Elements)
 	h := evalH(e.Elements[0], g)
 
-	e.Objectives = []float64{e.Elements[0], g*h}
+	e.Objectives = []float64{e.Elements[0], g * h}
 
 	return nil
 }

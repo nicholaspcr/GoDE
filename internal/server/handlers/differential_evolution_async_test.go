@@ -289,16 +289,26 @@ func (ts *testStore) GetParetoSetByID(ctx context.Context, id uint64) (*store.Pa
 }
 
 // Stub implementations for required interface methods
-func (ts *testStore) CreateUser(ctx context.Context, user *api.User) error                          { return nil }
-func (ts *testStore) GetUser(ctx context.Context, ids *api.UserIDs) (*api.User, error)             { return nil, nil }
-func (ts *testStore) UpdateUser(ctx context.Context, user *api.User, fields ...string) error       { return nil }
-func (ts *testStore) DeleteUser(ctx context.Context, ids *api.UserIDs) error                       { return nil }
-func (ts *testStore) CreatePareto(ctx context.Context, pareto *api.Pareto) error                   { return nil }
-func (ts *testStore) GetPareto(ctx context.Context, ids *api.ParetoIDs) (*api.Pareto, error)       { return nil, nil }
-func (ts *testStore) UpdatePareto(ctx context.Context, pareto *api.Pareto, fields ...string) error { return nil }
-func (ts *testStore) DeletePareto(ctx context.Context, ids *api.ParetoIDs) error                   { return nil }
-func (ts *testStore) ListParetos(ctx context.Context, ids *api.UserIDs, limit, offset int) ([]*api.Pareto, int, error) { return nil, 0, nil }
-func (ts *testStore) HealthCheck(ctx context.Context) error                                        { return nil }
+func (ts *testStore) CreateUser(ctx context.Context, user *api.User) error { return nil }
+func (ts *testStore) GetUser(ctx context.Context, ids *api.UserIDs) (*api.User, error) {
+	return nil, nil
+}
+func (ts *testStore) UpdateUser(ctx context.Context, user *api.User, fields ...string) error {
+	return nil
+}
+func (ts *testStore) DeleteUser(ctx context.Context, ids *api.UserIDs) error     { return nil }
+func (ts *testStore) CreatePareto(ctx context.Context, pareto *api.Pareto) error { return nil }
+func (ts *testStore) GetPareto(ctx context.Context, ids *api.ParetoIDs) (*api.Pareto, error) {
+	return nil, nil
+}
+func (ts *testStore) UpdatePareto(ctx context.Context, pareto *api.Pareto, fields ...string) error {
+	return nil
+}
+func (ts *testStore) DeletePareto(ctx context.Context, ids *api.ParetoIDs) error { return nil }
+func (ts *testStore) ListParetos(ctx context.Context, ids *api.UserIDs, limit, offset int) ([]*api.Pareto, int, error) {
+	return nil, 0, nil
+}
+func (ts *testStore) HealthCheck(ctx context.Context) error { return nil }
 
 func setupTestHandler() (*deHandler, *testStore) {
 	ts := newTestStore()
@@ -338,7 +348,7 @@ func TestRunAsync_Success(t *testing.T) {
 			Generations:    2,
 			PopulationSize: 10,
 			DimensionsSize: 10,
-			ObjectivesSize:  2,
+			ObjectivesSize: 2,
 			FloorLimiter:   0.0,
 			CeilLimiter:    1.0,
 			AlgorithmConfig: &api.DEConfig_Gde3{
@@ -484,8 +494,8 @@ func TestListExecutions_Success(t *testing.T) {
 	assert.NotNil(t, resp)
 	assert.Len(t, resp.Executions, 2)
 	assert.Equal(t, int32(2), resp.TotalCount)
-	assert.Equal(t, int32(50), resp.Limit)  // Default limit
-	assert.Equal(t, int32(0), resp.Offset)  // Default offset
+	assert.Equal(t, int32(50), resp.Limit) // Default limit
+	assert.Equal(t, int32(0), resp.Offset) // Default offset
 	assert.False(t, resp.HasMore)
 }
 
@@ -710,6 +720,57 @@ func TestGetExecutionResults_NoParetoID(t *testing.T) {
 	assert.Contains(t, err.Error(), "results not found")
 }
 
+func TestGetExecutionResults_NilMaxObjectives(t *testing.T) {
+	handler, ts := setupTestHandler()
+
+	ctx := middleware.ContextWithUsername(context.Background(), "testuser")
+
+	executionID := "test-exec-nil-max"
+	paretoID := uint64(2)
+
+	// Create Pareto set with nil MaxObjectives entries
+	ts.paretoSets[paretoID] = &store.ParetoSet{
+		ID: paretoID,
+		Vectors: []*api.Vector{
+			{
+				Elements:         []float64{0.1, 0.2},
+				Objectives:       []float64{0.5, 0.6},
+				CrowdingDistance: 1.0,
+			},
+		},
+		MaxObjectives: []*store.MaxObjectives{
+			nil, // nil entry
+			{Values: []float64{1.0, 2.0}},
+			{Values: nil}, // nil Values
+			{Values: []float64{3.0}},
+		},
+	}
+
+	_ = ts.CreateExecution(ctx, &store.Execution{
+		ID:        executionID,
+		UserID:    "testuser",
+		Status:    store.ExecutionStatusCompleted,
+		Config:    &api.DEConfig{},
+		ParetoID:  &paretoID,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	})
+
+	req := &api.GetExecutionResultsRequest{
+		ExecutionId: executionID,
+	}
+
+	resp, err := handler.GetExecutionResults(ctx, req)
+	require.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.NotNil(t, resp.Pareto)
+	// Should only include non-nil MaxObjectives with non-nil Values
+	assert.Len(t, resp.Pareto.MaxObjs, 3) // 1.0, 2.0, 3.0
+	assert.Equal(t, 1.0, resp.Pareto.MaxObjs[0])
+	assert.Equal(t, 2.0, resp.Pareto.MaxObjs[1])
+	assert.Equal(t, 3.0, resp.Pareto.MaxObjs[2])
+}
+
 func TestCancellationIntegration(t *testing.T) {
 	handler, ts := setupTestHandler()
 
@@ -721,11 +782,11 @@ func TestCancellationIntegration(t *testing.T) {
 		Problem:   "zdt1",
 		Variant:   "rand1",
 		DeConfig: &api.DEConfig{
-			Executions:     5,     // Multiple executions
-			Generations:    1000,  // Many generations
-			PopulationSize: 100,   // Large population
-			DimensionsSize: 30,    // More dimensions
-			ObjectivesSize:  2,
+			Executions:     5,    // Multiple executions
+			Generations:    1000, // Many generations
+			PopulationSize: 100,  // Large population
+			DimensionsSize: 30,   // More dimensions
+			ObjectivesSize: 2,
 			FloorLimiter:   0.0,
 			CeilLimiter:    1.0,
 			AlgorithmConfig: &api.DEConfig_Gde3{
@@ -763,10 +824,10 @@ func TestCancellationIntegration(t *testing.T) {
 
 // mockStreamServer is a mock implementation of the gRPC stream server
 type mockStreamServer struct {
-	ctx      context.Context
-	sent     []*api.StreamProgressResponse
-	sendErr  error
-	mu       sync.Mutex
+	ctx     context.Context
+	sent    []*api.StreamProgressResponse
+	sendErr error
+	mu      sync.Mutex
 }
 
 func newMockStreamServer(ctx context.Context) *mockStreamServer {
@@ -791,8 +852,8 @@ func (m *mockStreamServer) SetHeader(metadata.MD) error  { return nil }
 func (m *mockStreamServer) SendHeader(metadata.MD) error { return nil }
 func (m *mockStreamServer) SetTrailer(metadata.MD)       {}
 func (m *mockStreamServer) Context() context.Context     { return m.ctx }
-func (m *mockStreamServer) SendMsg(any) error    { return nil }
-func (m *mockStreamServer) RecvMsg(any) error    { return nil }
+func (m *mockStreamServer) SendMsg(any) error            { return nil }
+func (m *mockStreamServer) RecvMsg(any) error            { return nil }
 
 func (m *mockStreamServer) getSentMessages() []*api.StreamProgressResponse {
 	m.mu.Lock()

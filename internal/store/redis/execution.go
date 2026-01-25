@@ -15,15 +15,15 @@ import (
 
 // executionJSON is a helper struct for JSON serialization that handles protobuf Config field.
 type executionJSON struct {
-	ID          string              `json:"id"`
-	UserID      string              `json:"user_id"`
+	ID          string                `json:"id"`
+	UserID      string                `json:"user_id"`
 	Status      store.ExecutionStatus `json:"status"`
-	ConfigJSON  string              `json:"config_json"` // protojson encoded DEConfig
-	ParetoID    *uint64             `json:"pareto_id,omitempty"`
-	Error       string              `json:"error,omitempty"`
-	CreatedAt   time.Time           `json:"created_at"`
-	UpdatedAt   time.Time           `json:"updated_at"`
-	CompletedAt *time.Time          `json:"completed_at,omitempty"`
+	ConfigJSON  string                `json:"config_json"` // protojson encoded DEConfig
+	ParetoID    *uint64               `json:"pareto_id,omitempty"`
+	Error       string                `json:"error,omitempty"`
+	CreatedAt   time.Time             `json:"created_at"`
+	UpdatedAt   time.Time             `json:"updated_at"`
+	CompletedAt *time.Time            `json:"completed_at,omitempty"`
 }
 
 func marshalExecution(exec *store.Execution) ([]byte, error) {
@@ -80,13 +80,13 @@ func unmarshalExecution(data []byte) (*store.Execution, error) {
 
 // ExecutionStore implements ExecutionOperations using Redis.
 type ExecutionStore struct {
-	client       *redis.Client
+	client       redis.ClientInterface
 	executionTTL time.Duration
 	progressTTL  time.Duration
 }
 
 // NewExecutionStore creates a new Redis-backed execution store.
-func NewExecutionStore(client *redis.Client, executionTTL, progressTTL time.Duration) *ExecutionStore {
+func NewExecutionStore(client redis.ClientInterface, executionTTL, progressTTL time.Duration) *ExecutionStore {
 	return &ExecutionStore{
 		client:       client,
 		executionTTL: executionTTL,
@@ -441,6 +441,15 @@ func (s *ExecutionStore) Subscribe(ctx context.Context, channel string) (<-chan 
 	// Create output channel
 	ch := make(chan []byte, 100) // Buffer to prevent blocking
 
+	// Handle nil pubsub (e.g., during testing with mocks)
+	if pubsub == nil {
+		go func() {
+			<-ctx.Done()
+			close(ch)
+		}()
+		return ch, nil
+	}
+
 	// Start goroutine to receive messages and forward to channel
 	go func() {
 		defer close(ch)
@@ -481,7 +490,7 @@ func ConfigToProto(config *api.DEConfig) map[string]any {
 		"generations":     config.Generations,
 		"population_size": config.PopulationSize,
 		"dimensions_size": config.DimensionsSize,
-		"objectives_size":  config.ObjectivesSize,
+		"objectives_size": config.ObjectivesSize,
 		"floor_limiter":   config.FloorLimiter,
 		"ceil_limiter":    config.CeilLimiter,
 	}

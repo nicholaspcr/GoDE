@@ -102,17 +102,17 @@ func TestClient_MethodSignatures(t *testing.T) {
 
 		// Verify methods exist by attempting to assign them to variables
 		var (
-			_ func() error                                                         = c.Close
-			_ func(context.Context) error                                          = c.HealthCheck
-			_ func(context.Context, string) (string, error)                        = c.Get
-			_ func(context.Context, string, any, time.Duration) error      = c.Set
-			_ func(context.Context, string) error                                  = c.Delete
-			_ func(context.Context, string, any) error                     = c.Publish
-			_ func(context.Context, string, ...any) error                  = c.HSet
-			_ func(context.Context, string) (map[string]string, error)             = c.HGetAll
-			_ func(context.Context, string, string) (string, error)                = c.HGet
-			_ func(context.Context, string, time.Duration) error                   = c.Expire
-			_ func(context.Context, string) ([]string, error)                      = c.Keys
+			_ func() error                                             = c.Close
+			_ func(context.Context) error                              = c.HealthCheck
+			_ func(context.Context, string) (string, error)            = c.Get
+			_ func(context.Context, string, any, time.Duration) error  = c.Set
+			_ func(context.Context, string) error                      = c.Delete
+			_ func(context.Context, string, any) error                 = c.Publish
+			_ func(context.Context, string, ...any) error              = c.HSet
+			_ func(context.Context, string) (map[string]string, error) = c.HGetAll
+			_ func(context.Context, string, string) (string, error)    = c.HGet
+			_ func(context.Context, string, time.Duration) error       = c.Expire
+			_ func(context.Context, string) ([]string, error)          = c.Keys
 		)
 
 		// If we get here, all methods exist with correct signatures

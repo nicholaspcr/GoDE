@@ -39,6 +39,18 @@ type Metrics struct {
 	DEGenerationsTotal   metric.Int64Counter
 	ParetoSetSize        metric.Int64Histogram
 
+	// DE algorithm-specific metrics
+	DEObjectiveEvaluations   metric.Int64Counter   // Total objective function evaluations
+	DEMutationsTotal         metric.Int64Counter   // Total mutation operations
+	DECrossoverTotal         metric.Int64Counter   // Total crossover operations
+	DEPopulationDiversity    metric.Float64Histogram // Measure of population diversity
+	DEConvergenceRate        metric.Float64Histogram // Rate of improvement per generation
+	DENonDominatedCount      metric.Int64Histogram   // Count of non-dominated solutions
+	DERankZeroSize           metric.Int64Histogram   // Size of rank 0 front
+	DECrowdingDistanceAvg    metric.Float64Histogram // Average crowding distance
+	DEVariantPerformance     metric.Float64Histogram // Performance by variant type
+	DEProblemComplexity      metric.Int64Histogram   // Dimensions × objectives
+
 	// Executor worker pool metrics
 	ExecutorWorkersActive      metric.Int64UpDownCounter
 	ExecutorWorkersTotal       metric.Int64UpDownCounter
@@ -183,6 +195,97 @@ func InitMetrics(ctx context.Context, appName string) (*Metrics, error) {
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pareto_set_size histogram: %w", err)
+	}
+
+	// DE algorithm-specific metrics
+	m.DEObjectiveEvaluations, err = meter.Int64Counter(
+		"de_objective_evaluations_total",
+		metric.WithDescription("Total number of objective function evaluations"),
+		metric.WithUnit("{evaluation}"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create de_objective_evaluations_total counter: %w", err)
+	}
+
+	m.DEMutationsTotal, err = meter.Int64Counter(
+		"de_mutations_total",
+		metric.WithDescription("Total number of mutation operations performed"),
+		metric.WithUnit("{mutation}"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create de_mutations_total counter: %w", err)
+	}
+
+	m.DECrossoverTotal, err = meter.Int64Counter(
+		"de_crossover_total",
+		metric.WithDescription("Total number of crossover operations performed"),
+		metric.WithUnit("{crossover}"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create de_crossover_total counter: %w", err)
+	}
+
+	m.DEPopulationDiversity, err = meter.Float64Histogram(
+		"de_population_diversity",
+		metric.WithDescription("Measure of population diversity (standard deviation of objectives)"),
+		metric.WithUnit("{diversity}"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create de_population_diversity histogram: %w", err)
+	}
+
+	m.DEConvergenceRate, err = meter.Float64Histogram(
+		"de_convergence_rate",
+		metric.WithDescription("Rate of improvement per generation"),
+		metric.WithUnit("{improvement}"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create de_convergence_rate histogram: %w", err)
+	}
+
+	m.DENonDominatedCount, err = meter.Int64Histogram(
+		"de_non_dominated_count",
+		metric.WithDescription("Number of non-dominated solutions in current generation"),
+		metric.WithUnit("{solution}"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create de_non_dominated_count histogram: %w", err)
+	}
+
+	m.DERankZeroSize, err = meter.Int64Histogram(
+		"de_rank_zero_size",
+		metric.WithDescription("Size of rank 0 (Pareto front) in current generation"),
+		metric.WithUnit("{solution}"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create de_rank_zero_size histogram: %w", err)
+	}
+
+	m.DECrowdingDistanceAvg, err = meter.Float64Histogram(
+		"de_crowding_distance_avg",
+		metric.WithDescription("Average crowding distance of solutions in Pareto front"),
+		metric.WithUnit("{distance}"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create de_crowding_distance_avg histogram: %w", err)
+	}
+
+	m.DEVariantPerformance, err = meter.Float64Histogram(
+		"de_variant_performance",
+		metric.WithDescription("Performance metrics by DE variant (rand, best, current-to-best, pbest)"),
+		metric.WithUnit("s"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create de_variant_performance histogram: %w", err)
+	}
+
+	m.DEProblemComplexity, err = meter.Int64Histogram(
+		"de_problem_complexity",
+		metric.WithDescription("Problem complexity (dimensions × objectives)"),
+		metric.WithUnit("{complexity}"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create de_problem_complexity histogram: %w", err)
 	}
 
 	// Executor worker pool metrics

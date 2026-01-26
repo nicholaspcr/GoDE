@@ -18,35 +18,31 @@ func ReduceByCrowdDistance(
 ) ([]models.Vector, []models.Vector) {
 	ranks := FastNonDominatedRanking(ctx, elems)
 
-	// Collect vectors from ranks until we have np elements
-	collected := make([]models.Vector, 0, np)
+	// Deep copy rank 0 vectors early to avoid reprocessing
+	zero := make([]models.Vector, len(ranks[0]))
+	for idx, v := range ranks[0] {
+		zero[idx] = v.Copy()
+	}
+
+	// Optimization: Copy directly to result to avoid intermediate collection
+	result := make([]models.Vector, 0, np)
 	for i := 0; i < len(ranks); i++ {
 		// Check for cancellation and calculate crowding distance
 		if err := CalculateCrwdDist(ctx, ranks[i]); err != nil {
 			// Return what we have so far on cancellation
-			return collected, nil
+			return result, nil
 		}
 		sort.SliceStable(ranks[i], func(l, r int) bool {
 			return ranks[i][l].CrowdingDistance > ranks[i][r].CrowdingDistance
 		})
 
-		collected = append(collected, ranks[i]...)
-		if len(collected) >= np {
-			collected = collected[:np]
-			break
+		// Copy vectors directly to result
+		for _, v := range ranks[i] {
+			if len(result) >= np {
+				return result, zero
+			}
+			result = append(result, v.Copy())
 		}
-	}
-
-	// Deep copy all collected vectors to avoid sharing with ranks
-	result := make([]models.Vector, len(collected))
-	for idx, v := range collected {
-		result[idx] = v.Copy()
-	}
-
-	// Deep copy rank 0 vectors
-	zero := make([]models.Vector, len(ranks[0]))
-	for idx, v := range ranks[0] {
-		zero[idx] = v.Copy()
 	}
 
 	return result, zero

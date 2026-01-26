@@ -110,6 +110,49 @@ func (s *ExecutionStore) userExecutionsKey(userID string) string {
 	return fmt.Sprintf("user:%s:executions", userID)
 }
 
+// updateExecution is a helper that implements the read-modify-write pattern for execution updates.
+// It retrieves an execution, applies the modifier function, updates the timestamp, and saves back to Redis.
+func (s *ExecutionStore) updateExecution(ctx context.Context, executionID string, modifier func(*store.Execution) error) error {
+	key := s.executionKey(executionID)
+
+	// Get current execution
+	data, err := s.client.Get(ctx, key)
+	if err != nil {
+		return fmt.Errorf("execution not found: %w", err)
+	}
+
+	execution, err := unmarshalExecution([]byte(data))
+	if err != nil {
+		return err
+	}
+
+	// Apply modifications
+	if err := modifier(execution); err != nil {
+		return err
+	}
+
+	// Update timestamp
+	execution.UpdatedAt = time.Now()
+
+	// Save updated execution
+	updatedData, err := marshalExecution(execution)
+	if err != nil {
+		return fmt.Errorf("failed to marshal execution: %w", err)
+	}
+
+	if err := s.client.Set(ctx, key, updatedData, s.executionTTL); err != nil {
+		return fmt.Errorf("failed to update execution: %w", err)
+	}
+
+	// Update in user's execution set
+	userKey := s.userExecutionsKey(execution.UserID)
+	if err := s.client.HSet(ctx, userKey, executionID, string(updatedData)); err != nil {
+		return fmt.Errorf("failed to update execution in user set: %w", err)
+	}
+
+	return nil
+}
+
 // CreateExecution stores a new execution in Redis.
 func (s *ExecutionStore) CreateExecution(ctx context.Context, execution *store.Execution) error {
 	key := s.executionKey(execution.ID)
@@ -159,79 +202,25 @@ func (s *ExecutionStore) GetExecution(ctx context.Context, executionID, userID s
 
 // UpdateExecutionStatus updates the status of an execution.
 func (s *ExecutionStore) UpdateExecutionStatus(ctx context.Context, executionID string, status store.ExecutionStatus, errorMsg string) error {
-	key := s.executionKey(executionID)
-
-	data, err := s.client.Get(ctx, key)
-	if err != nil {
-		return fmt.Errorf("execution not found: %w", err)
-	}
-
-	execution, err := unmarshalExecution([]byte(data))
-	if err != nil {
-		return err
-	}
-
-	execution.Status = status
-	execution.UpdatedAt = time.Now()
-	if errorMsg != "" {
-		execution.Error = errorMsg
-	}
-	if status == store.ExecutionStatusCompleted || status == store.ExecutionStatusFailed || status == store.ExecutionStatusCancelled {
-		now := time.Now()
-		execution.CompletedAt = &now
-	}
-
-	updatedData, err := marshalExecution(execution)
-	if err != nil {
-		return fmt.Errorf("failed to marshal execution: %w", err)
-	}
-
-	if err := s.client.Set(ctx, key, updatedData, s.executionTTL); err != nil {
-		return fmt.Errorf("failed to update execution: %w", err)
-	}
-
-	// Update in user's execution set
-	userKey := s.userExecutionsKey(execution.UserID)
-	if err := s.client.HSet(ctx, userKey, executionID, string(updatedData)); err != nil {
-		return fmt.Errorf("failed to update execution in user set: %w", err)
-	}
-
-	return nil
+	return s.updateExecution(ctx, executionID, func(exec *store.Execution) error {
+		exec.Status = status
+		if errorMsg != "" {
+			exec.Error = errorMsg
+		}
+		if status == store.ExecutionStatusCompleted || status == store.ExecutionStatusFailed || status == store.ExecutionStatusCancelled {
+			now := time.Now()
+			exec.CompletedAt = &now
+		}
+		return nil
+	})
 }
 
 // UpdateExecutionResult updates the pareto ID for a completed execution.
 func (s *ExecutionStore) UpdateExecutionResult(ctx context.Context, executionID string, paretoID uint64) error {
-	key := s.executionKey(executionID)
-
-	data, err := s.client.Get(ctx, key)
-	if err != nil {
-		return fmt.Errorf("execution not found: %w", err)
-	}
-
-	execution, err := unmarshalExecution([]byte(data))
-	if err != nil {
-		return err
-	}
-
-	execution.ParetoID = &paretoID
-	execution.UpdatedAt = time.Now()
-
-	updatedData, err := marshalExecution(execution)
-	if err != nil {
-		return fmt.Errorf("failed to marshal execution: %w", err)
-	}
-
-	if err := s.client.Set(ctx, key, updatedData, s.executionTTL); err != nil {
-		return fmt.Errorf("failed to update execution: %w", err)
-	}
-
-	// Update in user's execution set
-	userKey := s.userExecutionsKey(execution.UserID)
-	if err := s.client.HSet(ctx, userKey, executionID, string(updatedData)); err != nil {
-		return fmt.Errorf("failed to update execution in user set: %w", err)
-	}
-
-	return nil
+	return s.updateExecution(ctx, executionID, func(exec *store.Execution) error {
+		exec.ParetoID = &paretoID
+		return nil
+	})
 }
 
 // ListExecutions retrieves all executions for a user, optionally filtered by status.

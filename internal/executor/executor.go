@@ -9,7 +9,6 @@ import (
 	"math/rand"
 	"runtime/debug"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -26,21 +25,16 @@ import (
 
 // Executor manages background execution of DE algorithms.
 type Executor struct {
-	store                store.Store
-	maxWorkers           int
-	maxVectorsInProgress int
-	executionTTL         time.Duration
-	resultTTL            time.Duration
-	progressTTL          time.Duration
-	workerPool           chan struct{}
-	activeWorkerCount    atomic.Int64 // Tracks active workers for metrics (safe to read)
-	activeExecs          map[string]context.CancelFunc
-	activeExecsMu        sync.RWMutex
-	problemRegistry      map[string]problems.Interface
-	variantRegistry      map[string]variants.Interface
-	completionCounters   map[string]*atomic.Int32
-	countersMu           sync.RWMutex
-	metrics              *telemetry.Metrics
+	store           store.Store
+	executionTTL    time.Duration
+	resultTTL       time.Duration
+	progressTTL     time.Duration
+	workers         *workerPool
+	progress        *progressTracker
+	activeExecs     map[string]context.CancelFunc
+	activeExecsMu   sync.RWMutex
+	problemRegistry map[string]problems.Interface
+	variantRegistry map[string]variants.Interface
 }
 
 // Config holds configuration for the Executor.
@@ -62,23 +56,15 @@ func New(cfg Config) *Executor {
 	}
 
 	e := &Executor{
-		store:                cfg.Store,
-		maxWorkers:           cfg.MaxWorkers,
-		maxVectorsInProgress: maxVectorsInProgress,
-		executionTTL:         cfg.ExecutionTTL,
-		resultTTL:            cfg.ResultTTL,
-		progressTTL:          cfg.ProgressTTL,
-		workerPool:           make(chan struct{}, cfg.MaxWorkers),
-		activeExecs:          make(map[string]context.CancelFunc),
-		problemRegistry:      make(map[string]problems.Interface),
-		variantRegistry:      make(map[string]variants.Interface),
-		completionCounters:   make(map[string]*atomic.Int32),
-		metrics:              cfg.Metrics,
-	}
-
-	// Initialize total workers metric
-	if e.metrics != nil && e.metrics.ExecutorWorkersTotal != nil {
-		e.metrics.ExecutorWorkersTotal.Add(context.Background(), int64(cfg.MaxWorkers))
+		store:           cfg.Store,
+		executionTTL:    cfg.ExecutionTTL,
+		resultTTL:       cfg.ResultTTL,
+		progressTTL:     cfg.ProgressTTL,
+		workers:         newWorkerPool(cfg.MaxWorkers, cfg.Metrics),
+		progress:        newProgressTracker(cfg.Store, maxVectorsInProgress),
+		activeExecs:     make(map[string]context.CancelFunc),
+		problemRegistry: make(map[string]problems.Interface),
+		variantRegistry: make(map[string]variants.Interface),
 	}
 
 	return e
@@ -169,7 +155,7 @@ func (e *Executor) Shutdown(ctx context.Context) error {
 
 	slog.Info("shutting down executor",
 		slog.Int("active_executions", activeCount),
-		slog.Int("max_workers", e.maxWorkers),
+		slog.Int("max_workers", e.workers.maxWorkers),
 	)
 
 	// Cancel all active executions
@@ -186,32 +172,32 @@ func (e *Executor) Shutdown(ctx context.Context) error {
 	deadline := time.Now().Add(shutdownTimeout)
 
 	acquired := 0
-	for acquired < e.maxWorkers {
+	for acquired < e.workers.maxWorkers {
 		remainingTime := time.Until(deadline)
 		if remainingTime <= 0 {
 			slog.Warn("shutdown timeout - some workers still active",
-				slog.Int("workers_remaining", e.maxWorkers-acquired),
+				slog.Int("workers_remaining", e.workers.maxWorkers-acquired),
 			)
-			return fmt.Errorf("shutdown timeout: %d workers still active", e.maxWorkers-acquired)
+			return fmt.Errorf("shutdown timeout: %d workers still active", e.workers.maxWorkers-acquired)
 		}
 
 		// Use NewTimer instead of time.After to avoid timer leaks
 		timer := time.NewTimer(remainingTime)
 		select {
-		case e.workerPool <- struct{}{}:
+		case e.workers.pool <- struct{}{}:
 			timer.Stop()
 			acquired++
 		case <-ctx.Done():
 			timer.Stop()
 			slog.Warn("shutdown context cancelled",
-				slog.Int("workers_remaining", e.maxWorkers-acquired),
+				slog.Int("workers_remaining", e.workers.maxWorkers-acquired),
 			)
 			return ctx.Err()
 		case <-timer.C:
 			slog.Warn("shutdown timeout - some workers still active",
-				slog.Int("workers_remaining", e.maxWorkers-acquired),
+				slog.Int("workers_remaining", e.workers.maxWorkers-acquired),
 			)
-			return fmt.Errorf("shutdown timeout: %d workers still active", e.maxWorkers-acquired)
+			return fmt.Errorf("shutdown timeout: %d workers still active", e.workers.maxWorkers-acquired)
 		}
 	}
 
@@ -220,48 +206,12 @@ func (e *Executor) Shutdown(ctx context.Context) error {
 }
 
 func (e *Executor) executeInBackground(parentCtx context.Context, executionID, userID, algorithm, problem, variant string, config *api.DEConfig) {
-	// Measure queue wait time
-	queueStart := time.Now()
-
-	// Acquire worker slot
-	e.workerPool <- struct{}{}
-	queueWait := time.Since(queueStart)
-
-	// Track active workers atomically (safe to read from other goroutines)
-	activeWorkers := e.activeWorkerCount.Add(1)
-
-	// Record metrics
+	// Create base context for worker acquisition
 	ctx := context.Background()
-	if e.metrics != nil {
-		// Record queue wait time
-		if e.metrics.ExecutorQueueWaitDuration != nil {
-			e.metrics.ExecutorQueueWaitDuration.Record(ctx, queueWait.Seconds())
-		}
 
-		// Increment active workers
-		if e.metrics.ExecutorWorkersActive != nil {
-			e.metrics.ExecutorWorkersActive.Add(ctx, 1)
-		}
-
-		// Record utilization percentage
-		if e.metrics.ExecutorUtilizationPercent != nil {
-			utilization := float64(activeWorkers) / float64(e.maxWorkers) * 100
-			e.metrics.ExecutorUtilizationPercent.Record(ctx, utilization)
-		}
-	}
-
-	defer func() {
-		// Decrement active worker count
-		e.activeWorkerCount.Add(-1)
-
-		// Release worker slot
-		<-e.workerPool
-
-		// Decrement active workers metric
-		if e.metrics != nil && e.metrics.ExecutorWorkersActive != nil {
-			e.metrics.ExecutorWorkersActive.Add(ctx, -1)
-		}
-	}()
+	// Acquire worker slot (blocks until available)
+	releaseWorker, _ := e.workers.acquireWorker(ctx)
+	defer releaseWorker()
 
 	// Create cancellable context derived from parent (preserves trace context).
 	// The parent context is already detached from request cancellation via WithoutCancel.
@@ -369,18 +319,9 @@ func (e *Executor) executeInBackground(parentCtx context.Context, executionID, u
 }
 
 func (e *Executor) runAlgorithm(ctx context.Context, executionID, problemName, variantName string, config *api.DEConfig) ([]models.Vector, [][]float64, error) {
-	// Initialize completion counter for this execution
-	counter := &atomic.Int32{}
-	e.countersMu.Lock()
-	e.completionCounters[executionID] = counter
-	e.countersMu.Unlock()
-
-	// Clean up counter when done
-	defer func() {
-		e.countersMu.Lock()
-		delete(e.completionCounters, executionID)
-		e.countersMu.Unlock()
-	}()
+	// Register execution for progress tracking
+	counter, cleanup := e.progress.registerExecution(executionID)
+	defer cleanup()
 
 	// Get problem
 	problemImpl, exists := e.problemRegistry[problemName]
@@ -433,46 +374,13 @@ func (e *Executor) runAlgorithm(ctx context.Context, executionID, problemName, v
 		P:  float64(gde3Config.P),
 	}
 
-	// Create progress callback that tracks completions
-	progressCallback := func(generation int, totalGenerations int, paretoSize int, currentPareto []models.Vector) {
-		// If this is the final generation, increment completion counter
-		if generation == totalGenerations {
-			counter.Add(1)
-		}
-
-		// Convert to API vectors (limit to avoid excessive data)
-		maxVectors := e.maxVectorsInProgress
-		apiVectors := make([]*api.Vector, 0, min(len(currentPareto), maxVectors))
-		for i := 0; i < len(currentPareto) && i < maxVectors; i++ {
-			vec := &currentPareto[i]
-			apiVectors = append(apiVectors, &api.Vector{
-				Elements:         vec.Elements,
-				Objectives:       vec.Objectives,
-				CrowdingDistance: vec.CrowdingDistance,
-			})
-		}
-
-		// Read current completion count
-		completedCount := counter.Load()
-
-		// #nosec G115 - Values validated in ValidateDEConfig, safe to convert
-		progress := &store.ExecutionProgress{
-			ExecutionID:         executionID,
-			CurrentGeneration:   int32(generation),
-			TotalGenerations:    int32(totalGenerations),
-			CompletedExecutions: completedCount,
-			TotalExecutions:     int32(config.Executions),
-			PartialPareto:       apiVectors,
-			UpdatedAt:           time.Now(),
-		}
-
-		if err := e.store.SaveProgress(ctx, progress); err != nil {
-			slog.Warn("failed to save progress",
-				slog.String("execution_id", executionID),
-				slog.String("error", err.Error()),
-			)
-		}
-	}
+	// Create progress callback using progress tracker
+	progressCallback := e.progress.createProgressCallback(
+		ctx,
+		executionID,
+		counter,
+		int32(config.Executions),
+	)
 
 	// Create GDE3 algorithm
 	algorithm := gde3.New(

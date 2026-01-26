@@ -236,6 +236,19 @@ func (s *ExecutionStore) ListExecutions(ctx context.Context, userID string, stat
 
 	userKey := s.userExecutionsKey(userID)
 
+	// Optimization: when not filtering by status, get total count upfront using HLEN
+	// This allows early termination after collecting enough items
+	var totalCount int
+	earlyTerminationEnabled := (status == nil)
+
+	if earlyTerminationEnabled {
+		count, err := s.client.HLen(ctx, userKey)
+		if err != nil {
+			return nil, 0, fmt.Errorf("failed to get execution count: %w", err)
+		}
+		totalCount = int(count)
+	}
+
 	// Use HSCAN to iterate without loading all into memory
 	var cursor uint64
 	var executions []*store.Execution
@@ -268,6 +281,12 @@ func (s *ExecutionStore) ListExecutions(ctx context.Context, userID string, stat
 			if seen > offset && collected < limit {
 				executions = append(executions, execution)
 				collected++
+
+				// Early termination: if we've collected enough and we're not filtering,
+				// we can stop scanning since we already know the total count
+				if earlyTerminationEnabled && collected >= limit {
+					return executions, totalCount, nil
+				}
 			}
 		}
 
@@ -275,12 +294,14 @@ func (s *ExecutionStore) ListExecutions(ctx context.Context, userID string, stat
 		if cursor == 0 {
 			break
 		}
-
-		// Optimization: stop scanning if we've collected enough and passed the offset
-		// Note: we still need full count for totalCount, so we continue scanning
 	}
 
-	return executions, seen, nil
+	// When filtering by status, return the filtered count
+	if !earlyTerminationEnabled {
+		totalCount = seen
+	}
+
+	return executions, totalCount, nil
 }
 
 // DeleteExecution removes an execution from Redis.

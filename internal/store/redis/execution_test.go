@@ -216,6 +216,16 @@ func (m *mockRedisClient) HDel(_ context.Context, key string, fields ...string) 
 	return nil
 }
 
+func (m *mockRedisClient) HLen(_ context.Context, key string) (int64, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	if hash, ok := m.hashData[key]; ok {
+		return int64(len(hash)), nil
+	}
+	return 0, nil
+}
+
 func (m *mockRedisClient) Expire(_ context.Context, key string, ttl time.Duration) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

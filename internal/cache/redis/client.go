@@ -25,6 +25,7 @@ type ClientInterface interface {
 	HGetAll(ctx context.Context, key string) (map[string]string, error)
 	HGet(ctx context.Context, key, field string) (string, error)
 	HDel(ctx context.Context, key string, fields ...string) error
+	HLen(ctx context.Context, key string) (int64, error)
 	HScan(ctx context.Context, key string, cursor uint64, match string, count int64) ([]string, uint64, error)
 	Expire(ctx context.Context, key string, ttl time.Duration) error
 	Publish(ctx context.Context, channel string, message any) error
@@ -228,6 +229,17 @@ func (c *Client) HDel(ctx context.Context, key string, fields ...string) error {
 		return nil, c.rdb.HDel(ctx, key, fields...).Err()
 	})
 	return err
+}
+
+// HLen returns the number of fields in the hash with circuit breaker protection.
+func (c *Client) HLen(ctx context.Context, key string) (int64, error) {
+	result, err := c.breaker.Execute(func() (any, error) {
+		return c.rdb.HLen(ctx, key).Result()
+	})
+	if err != nil {
+		return 0, err
+	}
+	return result.(int64), nil
 }
 
 // HScan iterates over hash fields with cursor-based pagination.

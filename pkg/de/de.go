@@ -9,6 +9,9 @@ import (
 	"time"
 
 	"github.com/nicholaspcr/GoDE/pkg/models"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Algorithm defines the methods that a Differential Evolution algorithm should
@@ -45,8 +48,20 @@ func New(cfg Config, opts ...ModeOptions) (*de, error) {
 }
 
 func (mode *de) Execute(ctx context.Context) ([]models.Vector, [][]float64, error) {
+	tracer := otel.Tracer("de")
+	ctx, span := tracer.Start(ctx, "de.Execute",
+		trace.WithAttributes(
+			attribute.Int("executions", mode.constants.Executions),
+			attribute.Int("pareto_channel_limit", mode.config.ParetoChannelLimiter),
+			attribute.Int("max_channel_limit", mode.config.MaxChannelLimiter),
+			attribute.Int("result_limit", mode.config.ResultLimiter),
+		),
+	)
+	defer span.End()
+
 	// Check if context is already cancelled
 	if err := ctx.Err(); err != nil {
+		span.RecordError(err)
 		return nil, nil, err
 	}
 
@@ -138,13 +153,22 @@ func (mode *de) Execute(ctx context.Context) ([]models.Vector, [][]float64, erro
 	close(maxObjsCh)
 	wgConsumers.Wait()
 
+	span.SetAttributes(
+		attribute.Int("collected_pareto_sets", len(allPareto)),
+		attribute.Int("collected_max_objs", len(allMaxObjs)),
+		attribute.Int("execution_errors", len(execErrors)),
+	)
+
 	// If all executions failed, return the combined error
 	if len(execErrors) == mode.constants.Executions {
-		return nil, nil, errors.Join(execErrors...)
+		combinedErr := errors.Join(execErrors...)
+		span.RecordError(combinedErr)
+		return nil, nil, combinedErr
 	}
 
 	// Check if cancelled before filtering
 	if err := ctx.Err(); err != nil {
+		span.RecordError(err)
 		return nil, nil, err
 	}
 
@@ -152,20 +176,37 @@ func (mode *de) Execute(ctx context.Context) ([]models.Vector, [][]float64, erro
 	finalPareto := mode.filterCollectedPareto(ctx, allPareto)
 	slog.Info("Filtering Pareto", slog.Duration("time", time.Since(now)))
 
+	span.SetAttributes(
+		attribute.Int("final_pareto_size", len(finalPareto)),
+	)
+
 	return finalPareto, allMaxObjs, nil
 }
 
 func (mode *de) filterCollectedPareto(
 	ctx context.Context, allPareto [][]models.Vector,
 ) []models.Vector {
+	tracer := otel.Tracer("de")
+	ctx, span := tracer.Start(ctx, "de.filterCollectedPareto",
+		trace.WithAttributes(
+			attribute.Int("pareto_sets_count", len(allPareto)),
+		),
+	)
+	defer span.End()
+
 	// Merge all pareto sets from all executions
 	merged := make([]models.Vector, 0, len(allPareto)*100)
 	for _, pareto := range allPareto {
 		merged = append(merged, pareto...)
 	}
 
+	span.SetAttributes(attribute.Int("merged_size", len(merged)))
+
 	// Apply full non-dominated ranking and crowding distance reduction
 	// This ensures proper filtering of the combined results
 	finalPareto, _ := ReduceByCrowdDistance(ctx, merged, mode.config.ResultLimiter)
+
+	span.SetAttributes(attribute.Int("final_size", len(finalPareto)))
+
 	return finalPareto
 }

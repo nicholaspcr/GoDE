@@ -6,6 +6,9 @@ import (
 	"sort"
 
 	"github.com/nicholaspcr/GoDE/pkg/models"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // INF is the maximum value used in the crowding distance
@@ -16,6 +19,15 @@ var INF = math.MaxFloat64 - 1e5
 func ReduceByCrowdDistance(
 	ctx context.Context, elems []models.Vector, np int,
 ) ([]models.Vector, []models.Vector) {
+	tracer := otel.Tracer("de")
+	ctx, span := tracer.Start(ctx, "de.ReduceByCrowdDistance",
+		trace.WithAttributes(
+			attribute.Int("input_size", len(elems)),
+			attribute.Int("target_size", np),
+		),
+	)
+	defer span.End()
+
 	ranks := FastNonDominatedRanking(ctx, elems)
 
 	// Deep copy rank 0 vectors early to avoid reprocessing
@@ -39,12 +51,22 @@ func ReduceByCrowdDistance(
 		// Copy vectors directly to result
 		for _, v := range ranks[i] {
 			if len(result) >= np {
+				span.SetAttributes(
+					attribute.Int("result_size", len(result)),
+					attribute.Int("rank_zero_size", len(zero)),
+					attribute.Int("num_ranks", len(ranks)),
+				)
 				return result, zero
 			}
 			result = append(result, v.Copy())
 		}
 	}
 
+	span.SetAttributes(
+		attribute.Int("result_size", len(result)),
+		attribute.Int("rank_zero_size", len(zero)),
+		attribute.Int("num_ranks", len(ranks)),
+	)
 	return result, zero
 }
 
@@ -74,6 +96,17 @@ func ReduceByCrowdDistance(
 func FastNonDominatedRanking(
 	ctx context.Context, elems []models.Vector,
 ) map[int][]models.Vector {
+	tracer := otel.Tracer("de")
+	ctx, span := tracer.Start(ctx, "de.FastNonDominatedRanking",
+		trace.WithAttributes(
+			attribute.Int("population_size", len(elems)),
+		),
+	)
+	defer span.End()
+
+	if len(elems) > 0 {
+		span.SetAttributes(attribute.Int("objectives_count", len(elems[0].Objectives)))
+	}
 
 	dominatingIth := make([]int, len(elems))  // N_p equivalent
 	ithDominated := make([][]int, len(elems)) // S_p equivalent
@@ -137,6 +170,11 @@ func FastNonDominatedRanking(
 		}
 	}
 
+	span.SetAttributes(
+		attribute.Int("num_fronts", len(fronts)-1), // -1 because last front is always empty
+		attribute.Int("front_0_size", len(rankedSubList[0])),
+	)
+
 	return rankedSubList
 }
 
@@ -188,6 +226,14 @@ func DominanceTest(x, y []float64) int {
 func FilterDominated(
 	elems []models.Vector,
 ) ([]models.Vector, []models.Vector) {
+	tracer := otel.Tracer("de")
+	_, span := tracer.Start(context.Background(), "de.FilterDominated",
+		trace.WithAttributes(
+			attribute.Int("population_size", len(elems)),
+		),
+	)
+	defer span.End()
+
 	nonDominated := make([]models.Vector, 0)
 	dominated := make([]models.Vector, 0)
 
@@ -208,6 +254,11 @@ func FilterDominated(
 			dominated = append(dominated, elems[p].Copy())
 		}
 	}
+
+	span.SetAttributes(
+		attribute.Int("non_dominated_count", len(nonDominated)),
+		attribute.Int("dominated_count", len(dominated)),
+	)
 
 	return nonDominated, dominated
 }
@@ -243,16 +294,30 @@ func FilterDominated(
 // Modifies elems in-place by setting the CrowdingDistance field.
 // Supports context cancellation for long-running calculations.
 func CalculateCrwdDist(ctx context.Context, elems []models.Vector) error {
+	tracer := otel.Tracer("de")
+	ctx, span := tracer.Start(ctx, "de.CalculateCrwdDist",
+		trace.WithAttributes(
+			attribute.Int("population_size", len(elems)),
+		),
+	)
+	defer span.End()
+
 	if len(elems) <= 2 {
 		for i := range elems {
 			elems[i].CrowdingDistance = math.MaxFloat64
 		}
+		span.SetAttributes(attribute.Bool("small_population", true))
 		return nil
 	}
 
 	// Check for cancellation before starting
 	if err := ctx.Err(); err != nil {
+		span.RecordError(err)
 		return err
+	}
+
+	if len(elems) > 0 {
+		span.SetAttributes(attribute.Int("objectives_count", len(elems[0].Objectives)))
 	}
 
 	// resets the crwdst

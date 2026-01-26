@@ -42,19 +42,31 @@ func New(ctx context.Context, cfg Config) (store.Store, error) {
 	}
 
 	var dialector gorm.Dialector
+	var pool store.ConnectionPool
 
 	switch cfg.Type {
 	case "memory":
 		dialector = sqlite.Open(":memory:")
+		pool = store.DefaultConnectionPool()
 	case "sqlite":
 		dialector = sqlite.Open(cfg.Sqlite.Filepath)
+		pool = cfg.Sqlite.Pool
+		// Use defaults if not configured
+		if pool.MaxOpenConns == 0 {
+			pool = store.DefaultConnectionPool()
+		}
 	case "postgres":
 		dialector = postgres.Open(cfg.Postgresql.DNS)
+		pool = cfg.Postgresql.Pool
+		// Use defaults if not configured
+		if pool.MaxOpenConns == 0 {
+			pool = store.DefaultConnectionPool()
+		}
 	default:
 		return nil, errors.New("invalid store type")
 	}
 
-	dbStore, err := gorm.New(dialector)
+	dbStore, err := gorm.New(dialector, pool)
 	if err != nil {
 		return nil, err
 	}

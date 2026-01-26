@@ -6,6 +6,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/nicholaspcr/GoDE/internal/store"
 	"gorm.io/gorm"
 	"gorm.io/plugin/opentelemetry/tracing"
 )
@@ -24,7 +25,7 @@ type gormStore struct {
 }
 
 // New returns a new GormStore.
-func New(dialector gorm.Dialector) (*gormStore, error) {
+func New(dialector gorm.Dialector, pool store.ConnectionPool) (*gormStore, error) {
 	db, err := gorm.Open(dialector)
 	if err != nil {
 		return nil, err
@@ -36,11 +37,11 @@ func New(dialector gorm.Dialector) (*gormStore, error) {
 		return nil, err
 	}
 
-	// Set connection pool parameters for optimal performance and resource management
-	sqlDB.SetMaxIdleConns(10)                  // Maximum number of idle connections in the pool
-	sqlDB.SetMaxOpenConns(100)                 // Maximum number of open connections to the database
-	sqlDB.SetConnMaxLifetime(time.Hour)        // Maximum amount of time a connection may be reused
-	sqlDB.SetConnMaxIdleTime(10 * time.Minute) // Maximum amount of time a connection may be idle
+	// Set connection pool parameters from configuration
+	sqlDB.SetMaxIdleConns(pool.MaxIdleConns)
+	sqlDB.SetMaxOpenConns(pool.MaxOpenConns)
+	sqlDB.SetConnMaxLifetime(pool.ConnMaxLifetime)
+	sqlDB.SetConnMaxIdleTime(10 * time.Minute) // Keep hardcoded for now
 
 	if err := db.Use(tracing.NewPlugin()); err != nil {
 		return nil, err

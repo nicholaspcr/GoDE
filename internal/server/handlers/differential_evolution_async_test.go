@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"github.com/nicholaspcr/GoDE/internal/executor"
+	"github.com/nicholaspcr/GoDE/internal/server/auth"
 	"github.com/nicholaspcr/GoDE/internal/server/middleware"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
@@ -333,11 +334,20 @@ func setupTestHandler() (*deHandler, *testStore) {
 	return handler, ts
 }
 
+// authContext creates a context with authenticated user claims
+func authContext(username string) context.Context {
+	claims := &auth.Claims{
+		Username: username,
+		Scopes:   auth.DefaultUserScopes(),
+	}
+	return middleware.ContextWithClaims(context.Background(), claims)
+}
+
 func TestRunAsync_Success(t *testing.T) {
 	handler, _ := setupTestHandler()
 
 	// Create context with authenticated user
-	ctx := middleware.ContextWithUsername(context.Background(), "testuser")
+	ctx := authContext("testuser")
 
 	req := &api.RunAsyncRequest{
 		Algorithm: "gde3",
@@ -388,7 +398,7 @@ func TestRunAsync_UnauthenticatedUser(t *testing.T) {
 func TestRunAsync_ValidationError(t *testing.T) {
 	handler, _ := setupTestHandler()
 
-	ctx := middleware.ContextWithUsername(context.Background(), "testuser")
+	ctx := authContext("testuser")
 
 	req := &api.RunAsyncRequest{
 		Algorithm: "gde3",
@@ -411,7 +421,7 @@ func TestRunAsync_ValidationError(t *testing.T) {
 func TestGetExecutionStatus_Success(t *testing.T) {
 	handler, ts := setupTestHandler()
 
-	ctx := middleware.ContextWithUsername(context.Background(), "testuser")
+	ctx := authContext("testuser")
 
 	// Create a test execution
 	executionID := "test-exec-123"
@@ -439,7 +449,7 @@ func TestGetExecutionStatus_Success(t *testing.T) {
 func TestGetExecutionStatus_NotFound(t *testing.T) {
 	handler, _ := setupTestHandler()
 
-	ctx := middleware.ContextWithUsername(context.Background(), "testuser")
+	ctx := authContext("testuser")
 
 	req := &api.GetExecutionStatusRequest{
 		ExecutionId: "non-existent",
@@ -456,7 +466,7 @@ func TestGetExecutionStatus_NotFound(t *testing.T) {
 func TestListExecutions_Success(t *testing.T) {
 	handler, ts := setupTestHandler()
 
-	ctx := middleware.ContextWithUsername(context.Background(), "testuser")
+	ctx := authContext("testuser")
 
 	// Create test executions
 	_ = ts.CreateExecution(ctx, &store.Execution{
@@ -502,7 +512,7 @@ func TestListExecutions_Success(t *testing.T) {
 func TestListExecutions_WithStatusFilter(t *testing.T) {
 	handler, ts := setupTestHandler()
 
-	ctx := middleware.ContextWithUsername(context.Background(), "testuser")
+	ctx := authContext("testuser")
 
 	// Create test executions with different statuses
 	_ = ts.CreateExecution(ctx, &store.Execution{
@@ -541,7 +551,7 @@ func TestListExecutions_WithStatusFilter(t *testing.T) {
 func TestCancelExecution_Success(t *testing.T) {
 	handler, ts := setupTestHandler()
 
-	ctx := middleware.ContextWithUsername(context.Background(), "testuser")
+	ctx := authContext("testuser")
 
 	// Create a running execution
 	executionID := "test-exec-123"
@@ -565,7 +575,7 @@ func TestCancelExecution_Success(t *testing.T) {
 func TestDeleteExecution_Success(t *testing.T) {
 	handler, ts := setupTestHandler()
 
-	ctx := middleware.ContextWithUsername(context.Background(), "testuser")
+	ctx := authContext("testuser")
 
 	// Create an execution
 	executionID := "test-exec-123"
@@ -593,7 +603,7 @@ func TestDeleteExecution_Success(t *testing.T) {
 func TestGetExecutionResults_Success(t *testing.T) {
 	handler, ts := setupTestHandler()
 
-	ctx := middleware.ContextWithUsername(context.Background(), "testuser")
+	ctx := authContext("testuser")
 
 	// Create a completed execution with Pareto results
 	executionID := "test-exec-123"
@@ -660,7 +670,7 @@ func TestGetExecutionResults_NotAuthenticated(t *testing.T) {
 func TestGetExecutionResults_NotFound(t *testing.T) {
 	handler, _ := setupTestHandler()
 
-	ctx := middleware.ContextWithUsername(context.Background(), "testuser")
+	ctx := authContext("testuser")
 
 	req := &api.GetExecutionResultsRequest{
 		ExecutionId: "nonexistent",
@@ -674,7 +684,7 @@ func TestGetExecutionResults_NotFound(t *testing.T) {
 func TestGetExecutionResults_NotCompleted(t *testing.T) {
 	handler, ts := setupTestHandler()
 
-	ctx := middleware.ContextWithUsername(context.Background(), "testuser")
+	ctx := authContext("testuser")
 
 	executionID := "test-exec-123"
 	_ = ts.CreateExecution(ctx, &store.Execution{
@@ -698,7 +708,7 @@ func TestGetExecutionResults_NotCompleted(t *testing.T) {
 func TestGetExecutionResults_NoParetoID(t *testing.T) {
 	handler, ts := setupTestHandler()
 
-	ctx := middleware.ContextWithUsername(context.Background(), "testuser")
+	ctx := authContext("testuser")
 
 	executionID := "test-exec-123"
 	_ = ts.CreateExecution(ctx, &store.Execution{
@@ -723,7 +733,7 @@ func TestGetExecutionResults_NoParetoID(t *testing.T) {
 func TestGetExecutionResults_NilMaxObjectives(t *testing.T) {
 	handler, ts := setupTestHandler()
 
-	ctx := middleware.ContextWithUsername(context.Background(), "testuser")
+	ctx := authContext("testuser")
 
 	executionID := "test-exec-nil-max"
 	paretoID := uint64(2)
@@ -774,7 +784,7 @@ func TestGetExecutionResults_NilMaxObjectives(t *testing.T) {
 func TestCancellationIntegration(t *testing.T) {
 	handler, ts := setupTestHandler()
 
-	ctx := middleware.ContextWithUsername(context.Background(), "testuser")
+	ctx := authContext("testuser")
 
 	// Submit an execution with large parameters to ensure it runs long enough
 	req := &api.RunAsyncRequest{
@@ -927,7 +937,11 @@ func TestStreamProgress_Success(t *testing.T) {
 	// Create test context with authentication
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	ctx = middleware.ContextWithUsername(ctx, "testuser")
+	claims := &auth.Claims{
+		Username: "testuser",
+		Scopes:   auth.DefaultUserScopes(),
+	}
+	ctx = middleware.ContextWithClaims(ctx, claims)
 
 	// Create execution
 	executionID := "test-exec-123"
@@ -1030,7 +1044,7 @@ func TestStreamProgress_NotAuthenticated(t *testing.T) {
 func TestStreamProgress_ExecutionNotFound(t *testing.T) {
 	handler, _ := setupTestHandler()
 
-	ctx := middleware.ContextWithUsername(context.Background(), "testuser")
+	ctx := authContext("testuser")
 	mockStream := newMockStreamServer(ctx)
 
 	req := &api.StreamProgressRequest{
@@ -1057,7 +1071,7 @@ func TestStreamProgress_WrongUser(t *testing.T) {
 	})
 
 	// Try to stream as different user
-	ctx := middleware.ContextWithUsername(context.Background(), "testuser")
+	ctx := authContext("testuser")
 	mockStream := newMockStreamServer(ctx)
 
 	req := &api.StreamProgressRequest{

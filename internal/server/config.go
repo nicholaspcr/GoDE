@@ -3,13 +3,13 @@ package server
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/nicholaspcr/GoDE/internal/cache/redis"
 	"github.com/nicholaspcr/GoDE/internal/server/middleware"
 	"github.com/nicholaspcr/GoDE/internal/telemetry"
 	"github.com/nicholaspcr/GoDE/pkg/de"
+	"github.com/spf13/viper"
 )
 
 // Config contains all the necessary configuration options for the server.
@@ -66,90 +66,224 @@ type RateLimitConfig struct {
 	MaxMessageSizeBytes int `json:"max_message_size_bytes" yaml:"max_message_size_bytes"`
 }
 
-// DefaultConfig returns the default configuration of the server.
-func DefaultConfig() Config {
-	metricsType := telemetry.MetricsExporterPrometheus
-	if os.Getenv("METRICS_TYPE") == "stdout" {
-		metricsType = telemetry.MetricsExporterStdout
+// LoadConfig loads configuration from environment variables and optional config file.
+// If configPath is empty, it will look for config.yaml in common locations.
+// Environment variables take precedence over config file values.
+func LoadConfig(configPath string) (Config, error) {
+	v := viper.New()
+
+	// Set defaults
+	setDefaults(v)
+
+	// Read config file if specified
+	if configPath != "" {
+		v.SetConfigFile(configPath)
+		if err := v.ReadInConfig(); err != nil {
+			return Config{}, fmt.Errorf("failed to read config file: %w", err)
+		}
+	} else {
+		// Search for config in common locations
+		v.SetConfigName("config")
+		v.SetConfigType("yaml")
+		v.AddConfigPath(".")
+		v.AddConfigPath("./config")
+		v.AddConfigPath("/etc/gode")
+		// Ignore error if config file doesn't exist
+		_ = v.ReadInConfig()
 	}
 
-	tracingEnabled := os.Getenv("TRACING_ENABLED") != "false" // Enabled by default
-	tracingExporterType := telemetry.TracingExporterNone      // Default to none to avoid stdout noise
-	switch os.Getenv("TRACING_EXPORTER") {
+	// Environment variables override config file
+	v.SetEnvPrefix("GODE")
+	v.AutomaticEnv()
+
+	// Bind specific environment variables (for backward compatibility)
+	bindEnvVars(v)
+
+	// Build config struct
+	cfg := Config{
+		LisAddr:        v.GetString("lis_addr"),
+		HTTPPort:       v.GetString("http_port"),
+		JWTSecret:      v.GetString("jwt_secret"),
+		JWTExpiry:      v.GetDuration("jwt_expiry"),
+		MetricsEnabled: v.GetBool("metrics_enabled"),
+		TracingEnabled: v.GetBool("tracing_enabled"),
+		SLOEnabled:     v.GetBool("slo_enabled"),
+		PprofEnabled:   v.GetBool("pprof_enabled"),
+		PprofPort:      v.GetString("pprof_port"),
+		TLS: TLSConfig{
+			Enabled:  v.GetBool("tls.enabled"),
+			CertFile: v.GetString("tls.cert_file"),
+			KeyFile:  v.GetString("tls.key_file"),
+		},
+		RateLimit: RateLimitConfig{
+			LoginRequestsPerMinute:    v.GetInt("rate_limit.login_requests_per_minute"),
+			RegisterRequestsPerMinute: v.GetInt("rate_limit.register_requests_per_minute"),
+			DEExecutionsPerUser:       v.GetInt("rate_limit.de_executions_per_user"),
+			MaxConcurrentDEPerUser:    v.GetInt("rate_limit.max_concurrent_de_per_user"),
+			MaxRequestsPerSecond:      v.GetInt("rate_limit.max_requests_per_second"),
+			MaxMessageSizeBytes:       v.GetInt("rate_limit.max_message_size_bytes"),
+		},
+		Redis: redis.Config{
+			Host:     v.GetString("redis.host"),
+			Port:     v.GetInt("redis.port"),
+			Password: v.GetString("redis.password"),
+			DB:       v.GetInt("redis.db"),
+		},
+		Executor: ExecutorConfig{
+			MaxWorkers:           v.GetInt("executor.max_workers"),
+			QueueSize:            v.GetInt("executor.queue_size"),
+			MaxVectorsInProgress: v.GetInt("executor.max_vectors_in_progress"),
+			ExecutionTTL:         v.GetDuration("executor.execution_ttl"),
+			ResultTTL:            v.GetDuration("executor.result_ttl"),
+			ProgressTTL:          v.GetDuration("executor.progress_ttl"),
+		},
+		DE: de.Config{
+			ParetoChannelLimiter: v.GetInt("de.pareto_channel_limiter"),
+			MaxChannelLimiter:    v.GetInt("de.max_channel_limiter"),
+			ResultLimiter:        v.GetInt("de.result_limiter"),
+		},
+		CORS: middleware.DefaultCORSConfig(),
+	}
+
+	// Handle metrics type enum
+	if v.GetString("metrics_type") == "stdout" {
+		cfg.MetricsType = telemetry.MetricsExporterStdout
+	} else {
+		cfg.MetricsType = telemetry.MetricsExporterPrometheus
+	}
+
+	// Handle tracing configuration
+	cfg.TracingConfig = telemetry.TracingConfig{
+		OTLPEndpoint: v.GetString("tracing.otlp_endpoint"),
+		SampleRatio:  v.GetFloat64("tracing.sample_ratio"),
+		FilePath:     v.GetString("tracing.file_path"),
+	}
+
+	switch v.GetString("tracing.exporter") {
 	case "stdout":
-		tracingExporterType = telemetry.TracingExporterStdout
+		cfg.TracingConfig.ExporterType = telemetry.TracingExporterStdout
 	case "otlp":
-		tracingExporterType = telemetry.TracingExporterOTLP
+		cfg.TracingConfig.ExporterType = telemetry.TracingExporterOTLP
 	case "file":
-		tracingExporterType = telemetry.TracingExporterFile
+		cfg.TracingConfig.ExporterType = telemetry.TracingExporterFile
+	default:
+		cfg.TracingConfig.ExporterType = telemetry.TracingExporterNone
 	}
 
-	traceFilePath := os.Getenv("TRACE_FILE_PATH")
-	if traceFilePath == "" {
-		traceFilePath = "traces.json"
+	return cfg, nil
+}
+
+// setDefaults sets default values for all configuration options.
+func setDefaults(v *viper.Viper) {
+	// Server defaults
+	v.SetDefault("lis_addr", "localhost:3030")
+	v.SetDefault("http_port", ":8081")
+	v.SetDefault("jwt_expiry", 24*time.Hour)
+	v.SetDefault("metrics_enabled", true)
+	v.SetDefault("metrics_type", "prometheus")
+	v.SetDefault("tracing_enabled", true)
+	v.SetDefault("slo_enabled", true)
+	v.SetDefault("pprof_enabled", false)
+	v.SetDefault("pprof_port", ":6060")
+
+	// TLS defaults
+	v.SetDefault("tls.enabled", false)
+
+	// Rate limit defaults
+	v.SetDefault("rate_limit.login_requests_per_minute", 5)
+	v.SetDefault("rate_limit.register_requests_per_minute", 3)
+	v.SetDefault("rate_limit.de_executions_per_user", 10)
+	v.SetDefault("rate_limit.max_concurrent_de_per_user", 3)
+	v.SetDefault("rate_limit.max_requests_per_second", 100)
+	v.SetDefault("rate_limit.max_message_size_bytes", 4*1024*1024)
+
+	// Redis defaults
+	v.SetDefault("redis.host", "localhost")
+	v.SetDefault("redis.port", 6379)
+	v.SetDefault("redis.db", 0)
+
+	// Executor defaults
+	v.SetDefault("executor.max_workers", 10)
+	v.SetDefault("executor.queue_size", 100)
+	v.SetDefault("executor.max_vectors_in_progress", 100)
+	v.SetDefault("executor.execution_ttl", 24*time.Hour)
+	v.SetDefault("executor.result_ttl", 7*24*time.Hour)
+	v.SetDefault("executor.progress_ttl", 1*time.Hour)
+
+	// DE algorithm defaults
+	v.SetDefault("de.pareto_channel_limiter", 100)
+	v.SetDefault("de.max_channel_limiter", 100)
+	v.SetDefault("de.result_limiter", 1000)
+
+	// Tracing defaults
+	v.SetDefault("tracing.exporter", "none")
+	v.SetDefault("tracing.otlp_endpoint", "localhost:4317")
+	v.SetDefault("tracing.sample_ratio", 1.0)
+	v.SetDefault("tracing.file_path", "traces.json")
+}
+
+// bindEnvVars binds specific environment variables for backward compatibility.
+func bindEnvVars(v *viper.Viper) {
+	// Direct environment variable names (without GODE_ prefix) for backward compatibility
+	envBindings := map[string]string{
+		"JWT_SECRET":         "jwt_secret",
+		"GRPC_PORT":          "lis_addr",
+		"HTTP_PORT":          "http_port",
+		"METRICS_TYPE":       "metrics_type",
+		"METRICS_ENABLED":    "metrics_enabled",
+		"TRACING_ENABLED":    "tracing_enabled",
+		"TRACING_EXPORTER":   "tracing.exporter",
+		"TRACE_FILE_PATH":    "tracing.file_path",
+		"TRACE_SAMPLE_RATIO": "tracing.sample_ratio",
+		"OTLP_ENDPOINT":      "tracing.otlp_endpoint",
+		"SLO_ENABLED":        "slo_enabled",
+		"PPROF_ENABLED":      "pprof_enabled",
+		"PPROF_PORT":         "pprof_port",
+		"REDIS_HOST":         "redis.host",
+		"REDIS_PORT":         "redis.port",
+		"REDIS_PASSWORD":     "redis.password",
+		"REDIS_DB":           "redis.db",
 	}
 
-	otlpEndpoint := os.Getenv("OTLP_ENDPOINT")
-	if otlpEndpoint == "" {
-		otlpEndpoint = "localhost:4317" // Default Jaeger/OTLP endpoint
+	for envVar, configKey := range envBindings {
+		_ = v.BindEnv(configKey, envVar)
 	}
+}
 
-	sampleRatio := 1.0 // Sample all traces by default in development
-	if ratio := os.Getenv("TRACE_SAMPLE_RATIO"); ratio != "" {
-		if parsed, err := strconv.ParseFloat(ratio, 64); err == nil {
-			sampleRatio = parsed
-		}
+// DefaultConfig returns the default configuration of the server.
+// For production use, prefer LoadConfig() which supports config files and environment variables.
+func DefaultConfig() Config {
+	cfg, err := LoadConfig("")
+	if err != nil {
+		// Fallback to basic defaults if config loading fails
+		return fallbackConfig()
 	}
+	return cfg
+}
 
-	pprofEnabled := os.Getenv("PPROF_ENABLED") == "true"
-	pprofPort := os.Getenv("PPROF_PORT")
-	if pprofPort == "" {
-		pprofPort = ":6060" // Default pprof port
-	}
-
-	redisHost := os.Getenv("REDIS_HOST")
-	if redisHost == "" {
-		redisHost = "localhost"
-	}
-
-	redisPort := 6379
-	if portStr := os.Getenv("REDIS_PORT"); portStr != "" {
-		if port, err := strconv.Atoi(portStr); err == nil {
-			redisPort = port
-		}
-	}
-
-	redisDB := 0
-	if dbStr := os.Getenv("REDIS_DB"); dbStr != "" {
-		if db, err := strconv.Atoi(dbStr); err == nil {
-			redisDB = db
-		}
-	}
-
-	sloEnabled := os.Getenv("SLO_ENABLED") != "false" // Enabled by default
-
+// fallbackConfig provides minimal defaults when config loading fails.
+func fallbackConfig() Config {
 	return Config{
 		LisAddr:        "localhost:3030",
 		HTTPPort:       ":8081",
-		JWTSecret:      os.Getenv("JWT_SECRET"), // No default - must be set via env var
+		JWTSecret:      os.Getenv("JWT_SECRET"),
 		JWTExpiry:      24 * time.Hour,
-		MetricsEnabled: true, // Metrics enabled by default
-		MetricsType:    metricsType,
-		TracingEnabled: tracingEnabled,
+		MetricsEnabled: true,
+		MetricsType:    telemetry.MetricsExporterPrometheus,
+		TracingEnabled: true,
 		TracingConfig: telemetry.TracingConfig{
-			ExporterType: tracingExporterType,
-			OTLPEndpoint: otlpEndpoint,
-			SampleRatio:  sampleRatio,
-			FilePath:     traceFilePath,
+			ExporterType: telemetry.TracingExporterNone,
+			OTLPEndpoint: "localhost:4317",
+			SampleRatio:  1.0,
+			FilePath:     "traces.json",
 		},
-		SLOEnabled:   sloEnabled,
-		PprofEnabled: pprofEnabled,
-		PprofPort:    pprofPort,
+		SLOEnabled:   true,
+		PprofEnabled: false,
+		PprofPort:    ":6060",
 		Redis: redis.Config{
-			Host:     redisHost,
-			Port:     redisPort,
-			Password: os.Getenv("REDIS_PASSWORD"),
-			DB:       redisDB,
+			Host: "localhost",
+			Port: 6379,
+			DB:   0,
 		},
 		Executor: ExecutorConfig{
 			MaxWorkers:           10,
@@ -160,17 +294,15 @@ func DefaultConfig() Config {
 			ProgressTTL:          1 * time.Hour,
 		},
 		TLS: TLSConfig{
-			Enabled:  false, // TLS disabled by default for development
-			CertFile: "",
-			KeyFile:  "",
+			Enabled: false,
 		},
 		RateLimit: RateLimitConfig{
-			LoginRequestsPerMinute:    5, // 5 login attempts per minute per IP
-			RegisterRequestsPerMinute: 3, // 3 registrations per minute per IP (stricter)
+			LoginRequestsPerMinute:    5,
+			RegisterRequestsPerMinute: 3,
 			DEExecutionsPerUser:       10,
 			MaxConcurrentDEPerUser:    3,
 			MaxRequestsPerSecond:      100,
-			MaxMessageSizeBytes:       4 * 1024 * 1024, // 4MB
+			MaxMessageSizeBytes:       4 * 1024 * 1024,
 		},
 		DE: de.Config{
 			ParetoChannelLimiter: 100,

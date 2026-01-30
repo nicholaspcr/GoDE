@@ -1,0 +1,65 @@
+# GoDE Server Configuration Example
+# Copy this file to config.yaml and customize for your environment
+# All values can be overridden with environment variables using GODE_ prefix
+# For backward compatibility, original env vars (without prefix) are also supported
+
+# Server settings
+lis_addr: "localhost:3030"  # gRPC server address
+http_port: ":8081"           # HTTP gateway port
+jwt_secret: ""               # REQUIRED: JWT secret key (min 32 chars) - set via JWT_SECRET env var
+jwt_expiry: 24h              # JWT token expiration duration
+
+# Observability
+metrics_enabled: true        # Enable Prometheus metrics
+metrics_type: "prometheus"   # Options: "prometheus" or "stdout"
+tracing_enabled: true        # Enable OpenTelemetry tracing
+slo_enabled: true            # Enable SLO tracking
+pprof_enabled: false         # Enable pprof profiling endpoints
+pprof_port: ":6060"          # Pprof HTTP server port
+
+# Tracing configuration
+tracing:
+  exporter: "none"           # Options: "none", "stdout", "otlp", "file"
+  otlp_endpoint: "localhost:4317"  # OTLP collector endpoint (for exporter: "otlp")
+  sample_ratio: 1.0          # Trace sampling ratio (0.0 to 1.0)
+  file_path: "traces.json"   # Trace file path (for exporter: "file")
+
+# TLS/HTTPS configuration
+tls:
+  enabled: false             # Enable TLS for gRPC
+  cert_file: ""              # Path to TLS certificate
+  key_file: ""               # Path to TLS private key
+
+# Rate limiting
+rate_limit:
+  login_requests_per_minute: 5        # Login attempts per IP per minute
+  register_requests_per_minute: 3     # Registration attempts per IP per minute
+  de_executions_per_user: 10          # Max DE executions per user (total)
+  max_concurrent_de_per_user: 3       # Max concurrent DE executions per user
+  max_requests_per_second: 100        # Global API rate limit
+  max_message_size_bytes: 4194304     # Max gRPC message size (4MB)
+
+# Redis configuration
+redis:
+  host: "localhost"          # Redis server host
+  port: 6379                 # Redis server port
+  password: ""               # Redis password (if required)
+  db: 0                      # Redis database number
+
+# Background execution executor
+executor:
+  max_workers: 10            # Maximum concurrent DE executions
+  queue_size: 100            # Execution queue size
+  max_vectors_in_progress: 100  # Max vectors in progress updates
+  execution_ttl: 24h         # Execution metadata TTL
+  result_ttl: 168h           # Results retention (7 days)
+  progress_ttl: 1h           # Progress updates TTL
+
+# Differential Evolution algorithm configuration
+de:
+  pareto_channel_limiter: 100  # Pareto channel buffer size
+  max_channel_limiter: 100     # Max objectives channel buffer size
+  result_limiter: 1000         # Maximum result vectors to collect
+
+# CORS configuration
+# (Managed via middleware.DefaultCORSConfig() - customize in code if needed)

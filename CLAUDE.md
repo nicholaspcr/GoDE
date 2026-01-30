@@ -1,279 +1,457 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides architectural guidance and technical context for Claude Code when working with this repository.
+
+> **For development workflows, build commands, and testing:** See [DEVELOPMENT.md](DEVELOPMENT.md)
+> **For project structure:** See [DEVELOPMENT.md#project-structure](DEVELOPMENT.md#project-structure)
 
 ## Project Overview
 
-GoDE is a Differential Evolution (DE) framework that implements multi-objective optimization algorithms. The project extends [GDE3](https://github.com/nicholaspcr/GDE3) and is architected as both a gRPC/HTTP server and a CLI client, enabling concurrent execution of DE instances across multiple users.
+GoDE is a Differential Evolution (DE) framework implementing multi-objective optimization algorithms. The project extends [GDE3](https://github.com/nicholaspcr/GDE3) and is architected as a multi-tenant gRPC/HTTP server with CLI client, enabling concurrent execution of DE instances across multiple users.
 
-## Build and Development Commands
+**Key Technologies:**
+- Go 1.21+ with generics and context propagation
+- gRPC + grpc-gateway for dual API exposure
+- Protocol Buffers for API definitions
+- PostgreSQL/SQLite/Redis for storage
+- OpenTelemetry for distributed tracing
+- Prometheus for metrics
+- Viper for configuration management
+
+## Quick Reference
 
 ```bash
-# Build both binaries (decli and deserver)
-make build
+# Build
+make build              # Build server and CLI
+make build-race         # Build with race detector
 
-# Run tests
-make test
+# Test
+make test               # Unit tests
+make test-e2e           # E2E tests (requires Docker)
+make test-coverage      # Coverage report
+make bench              # Run benchmarks
 
-# Run a specific test
-go test -v ./pkg/variants/...
-go test -run TestGenerateIndices ./pkg/variants/...
+# Quality
+make check              # All quality checks
+make lint               # Lint code
+make fmt                # Format code
 
-# Lint the codebase
-make lint
+# Development
+make run-dev            # Start server with dev config
+make db-up              # Start PostgreSQL + Redis
+make watch              # Watch and rebuild
 
-# Protocol buffers (uses remote plugins from Buf Schema Registry)
-make proto          # Lint, remove old files, and regenerate
-make proto-generate # Generate only
-make proto-lint     # Lint only
-
-# Development environment (Docker)
-make dev
-
-# Clean build artifacts
-make clean
+# Full reference: make help
 ```
-
-**Output locations:** Binaries are built to `./.dev/decli` and `./.dev/deserver`
 
 ## Architecture
 
+### System Design
+
+```
+┌─────────────┐         ┌──────────────┐
+│   decli     │◄───────►│  deserver    │
+│  (Client)   │  gRPC   │   (Server)   │
+└─────────────┘         └──────┬───────┘
+                               │
+                 ┌─────────────┼────────────┐
+                 │             │            │
+           ┌─────▼────┐   ┌────▼────┐  ┌────▼─────┐
+           │PostgreSQL│   │  Redis  │  │ Executor │
+           │  Store   │   │  Cache  │  │  Pool    │
+           └──────────┘   └─────────┘  └──────────┘
+```
+
 ### Core Components
 
-1. **DE Algorithm Framework** (`pkg/de/`)
-   - `Algorithm` interface defines the execution contract for DE algorithms
-   - Algorithms execute concurrently across multiple runs (controlled by `Executions` parameter)
-   - Results are streamed through channels (`pareto`, `maxObjectives`)
-   - The framework filters results using non-dominated sorting and crowding distance
+#### 1. DE Algorithm Framework (`pkg/de/`)
 
-2. **GDE3 Implementation** (`pkg/de/gde3/`)
-   - Main multi-objective DE algorithm implementation
-   - Configuration: `Constants` struct with CR (crossover rate), F (scaling factor), and P (selection parameter)
-   - Implements the `Algorithm` interface
+The heart of the optimization engine:
 
-3. **Problems** (`pkg/problems/`)
-   - `Interface` defines the contract: `Evaluate(*models.Vector, int) error`
-   - Implementations in `multi/` (ZDT, VNT problems) and `many/` (DTLZ, WFG problems)
-   - Problems modify the `Objectives` slice of the vector in-place
+- **`Algorithm` interface**: Defines execution contract for all DE algorithms
+- **Concurrent execution**: Multiple runs execute in parallel (controlled by `Executions`)
+- **Channel-based streaming**: Results flow through `pareto` and `maxObjectives` channels
+- **Non-dominated sorting**: Filters results using NSGA-II-style sorting + crowding distance
+- **OpenTelemetry tracing**: Spans instrument critical algorithm paths
 
-4. **Variants** (`pkg/variants/`)
-   - `Interface` defines mutation strategies: `Mutate(elems, rankZero []Vector, params Parameters) (Vector, error)`
-   - Subdirectories contain specific variants: `best/`, `current-to-best/`, `pbest/`, `rand/`
-   - `GenerateIndices` utility ensures unique random indices for mutation
+**Key files:**
+- `de.go`: Core execution engine
+- `utils.go`: NSGA-II utilities (ReduceByCrowdDistance, FastNonDominatedRanking)
+- `config.go`: Channel buffer configuration
 
-5. **Server** (`cmd/deserver/`, `internal/server/`)
-   - gRPC server with HTTP gateway (grpc-gateway)
-   - Handlers in `internal/server/handlers/` implement the `Handler` interface
-   - Session management and authentication middleware
-   - OpenTelemetry instrumentation for observability
-   - Default ports: gRPC `:3030`, HTTP `:8081`
+#### 2. GDE3 Implementation (`pkg/de/gde3/`)
 
-6. **CLI** (`cmd/decli/`)
-   - Client for interacting with the server
-   - State management using SQLite (`internal/state/sqlite/`)
-   - Configuration in `.dev/cli/` and `.env/cli/`
+Multi-objective DE algorithm with Pareto-based selection:
 
-7. **Storage** (`internal/store/`)
-   - Abstract `Store` interface with implementations: memory, SQLite, PostgreSQL, Redis, composite
-   - GORM-based implementations in `internal/store/gorm/`
-   - Entities: User, Pareto, Vector, Execution
-   - Configuration via `store.Config` with type selection
-   - Database migrations in `internal/store/migrations/` (2 migrations: 000001_initial_schema, 000002_add_executions_and_indices)
-   - Batch operations for performance (CreateInBatches for large Pareto sets)
+- **Constants**: CR (crossover rate), F (scaling factor), P (selection parameter)
+- **Generational evolution**: Population evolves over N generations
+- **Variant-based mutation**: Pluggable mutation strategies
+- **Progress callbacks**: Real-time generation progress reporting
 
-8. **Async Execution Engine** (`internal/executor/`)
-   - Background execution of DE algorithms with worker pool pattern
-   - Semaphore-based concurrency control (configurable max workers)
-   - Real-time progress tracking via callbacks
-   - Execution state: PENDING → RUNNING → COMPLETED/FAILED/CANCELLED
-   - Context-based cancellation support
-   - TTL configuration: Execution (24h), Results (7d), Progress (1h)
+#### 3. Problems (`pkg/problems/`)
 
-9. **Observability & Monitoring** (`internal/telemetry/`, `internal/slo/`)
-   - OpenTelemetry integration: distributed tracing with OTLP exporter
-   - Prometheus metrics: request counts, durations, error rates, rate limits
-   - Service Level Objective (SLO) tracking: latency (p50/p95/p99), error rate, availability
-   - Structured logging with `log/slog`
-   - Metrics endpoint: `/metrics`
+Optimization problem definitions with benchmark functions:
 
-10. **Caching & Performance** (`internal/cache/redis/`)
-   - Redis client with circuit breaker (uses `github.com/sony/gobreaker`)
-   - Execution metadata caching
-   - Progress tracking with TTL
-   - Graceful degradation when Redis unavailable
+- **Interface**: `Evaluate(*models.Vector, int) error`
+- **In-place evaluation**: Modifies `Objectives` slice directly for performance
+- **Multi-objective**: `multi/` (ZDT, VNT - 2 objectives)
+- **Many-objective**: `many/` (DTLZ, WFG - 3+ objectives)
+- **Auto-registration**: Problems register via `init()` in blank imports
 
-### Key Design Patterns
+#### 4. Variants (`pkg/variants/`)
 
-- **Interface-driven design**: Problems, Variants, Algorithms, Handlers, and Store all use interfaces for extensibility
-- **Channel-based concurrency**: DE executions communicate via channels for streaming results
-- **Worker pool pattern**: Async executor uses semaphore-based concurrency limiting
-- **Registry pattern**: Problems and variants auto-register via blank imports
-- **Middleware architecture**: Server uses composable middleware stack (panic recovery, tracing, metrics, logging, CORS, auth, session)
-- **Circuit breaker**: Redis operations protected against cascade failures
-- **Multi-tenancy support**: Tenant context propagation through `internal/tenant/`
-- **Factory pattern**: Store creation via `storefactory` based on configuration
+DE mutation strategies:
+
+- **Interface**: `Mutate(elems, rankZero []Vector, params Parameters) (Vector, error)`
+- **Categories**: `best/`, `current-to-best/`, `pbest/`, `rand/`
+- **Index generation**: `GenerateIndices` ensures unique random indices
+- **Metadata**: Each variant provides name, description, min population requirements
+- **Validation**: Population size validation prevents index out-of-bounds
+
+**Common variants:**
+- `rand/1`: `v = r1 + F * (r2 - r3)`
+- `best/1`: `v = best + F * (r1 - r2)`
+- `current-to-best/1`: `v = current + F * (best - current) + F * (r1 - r2)`
+
+#### 5. Server (`internal/server/`)
+
+Multi-tenant gRPC server with HTTP gateway:
+
+**Architecture:**
+- **Middleware stack**: Panic recovery → Tracing → Metrics → Logging → CORS → Auth → Session
+- **Handler pattern**: Each service has focused handler files
+- **OpenTelemetry**: Automatic span creation for all gRPC calls
+- **Multi-tenancy**: Tenant context propagates through request chain
+
+**Handler organization** (`internal/server/handlers/`):
+- `differential_evolution.go`: Core handler infrastructure
+- `de_async.go`: Async execution submission
+- `de_progress.go`: Real-time progress streaming
+- `de_results.go`: Status and result retrieval
+- `de_management.go`: Execution lifecycle (list, cancel, delete)
+- `de_list.go`: Registry queries (algorithms, variants, problems)
+- `de_conversions.go`: Proto/store data transformations
+- `auth.go`: Authentication (register, login, JWT)
+- `user.go`: User management
+- `pareto_set.go`: Pareto result access
+
+#### 6. Async Execution Engine (`internal/executor/`)
+
+Background DE execution with worker pool pattern:
+
+**Structure:**
+- `executor.go`: Main executor with lifecycle management
+- `worker_pool.go`: Semaphore-based concurrency control
+- `progress_tracker.go`: Progress callback management
+
+**Features:**
+- **Worker pool**: Configurable max workers (default: 10)
+- **Queue management**: Blocks when pool exhausted
+- **Progress tracking**: Atomic counters for completion status
+- **State management**: PENDING → RUNNING → COMPLETED/FAILED/CANCELLED
+- **Context cancellation**: Graceful shutdown and execution cancellation
+- **TTL configuration**: Execution (24h), Results (7d), Progress (1h)
+- **Metrics**: Queue wait time, active workers, utilization percentage
+
+#### 7. Storage (`internal/store/`)
+
+Abstract storage with multiple backends:
+
+**Implementations:**
+- `gorm/`: PostgreSQL/SQLite via GORM
+- `redis/`: Redis for execution state and progress
+- `memory/`: In-memory for testing
+- `composite/`: Combines multiple stores
+
+**Redis store organization** (`internal/store/redis/`):
+- `execution.go`: Core CRUD operations
+- `execution_list.go`: Query and pagination (HSCAN-based)
+- `execution_lifecycle.go`: Progress, cancellation, pub/sub
+
+**Entities:**
+- User: Authentication and authorization
+- Execution: DE run metadata and state
+- ParetoSet: Optimization results
+- Vector: Individual solutions
+
+**Migrations:**
+- Location: `internal/store/migrations/`
+- 7 migrations total (initial schema through execution metadata)
+- Compatible with both PostgreSQL and SQLite
+
+#### 8. Configuration (`internal/server/config.go`)
+
+Viper-based multi-source configuration:
+
+**Priority (highest to lowest):**
+1. Environment variables (GODE_ prefix or legacy names)
+2. Config file (`config.yaml`)
+3. Defaults
+
+**Config categories:**
+- Server (ports, JWT settings)
+- Observability (metrics, tracing, SLO)
+- Rate limiting (per-IP, per-user)
+- Redis (host, port, DB)
+- Executor (workers, TTLs)
+- Database (type, connection)
+
+**See:** `config.yaml.example` for complete reference
+
+#### 9. Observability (`internal/telemetry/`, `internal/slo/`)
+
+Comprehensive observability stack:
+
+**OpenTelemetry:**
+- Distributed tracing with OTLP exporter
+- Automatic span creation for gRPC, GORM, algorithm operations
+- Span attributes for request context
+- Support for Jaeger, file, stdout exporters
+
+**Prometheus Metrics:**
+- Request counts, durations, error rates
+- Rate limit violations
+- Worker pool utilization
+- Execution queue wait times
+- Active workers and executions
+
+**SLO Tracking:**
+- Latency percentiles (p50, p95, p99)
+- Error rate monitoring
+- Availability tracking
+
+**Endpoints:**
+- `/metrics`: Prometheus metrics
+- `/health`: Liveness probe
+- `/readiness`: Readiness probe (checks DB + Redis)
+
+#### 10. Caching (`internal/cache/redis/`)
+
+Redis client with circuit breaker pattern:
+
+- **Circuit breaker**: `github.com/sony/gobreaker` prevents cascade failures
+- **Graceful degradation**: Continues operation when Redis unavailable
+- **Use cases**: Execution metadata, progress updates, cancellation flags
+- **TTL management**: Automatic expiration for transient data
+
+### Design Patterns
+
+| Pattern | Usage | Location |
+|---------|-------|----------|
+| **Interface-driven** | Extensibility for problems, variants, algorithms, stores | `pkg/problems/`, `pkg/variants/`, `pkg/de/`, `internal/store/` |
+| **Registry** | Auto-registration via blank imports | `pkg/problems/`, `pkg/variants/` |
+| **Worker pool** | Semaphore-based concurrency limiting | `internal/executor/worker_pool.go` |
+| **Channel-based** | Streaming results from concurrent executions | `pkg/de/de.go` |
+| **Middleware chain** | Composable request processing | `internal/server/middleware/` |
+| **Circuit breaker** | Redis fault tolerance | `internal/cache/redis/` |
+| **Factory** | Store creation based on config | `internal/storefactory/` |
+| **Repository** | Data access abstraction | `internal/store/` |
 
 ## Protocol Buffers and API
 
-API definitions are in `api/v1/*.proto` (8 proto files). Generated code goes to `pkg/api/v1/`.
-
-### Key Services
+### Services
 
 **DifferentialEvolutionService** (`differential_evolution.proto`):
-- List supported: `ListSupportedAlgorithms`, `ListSupportedVariants`, `ListSupportedProblems`
-- Async execution: `RunAsync`, `StreamProgress`, `GetExecutionStatus`, `GetExecutionResults`
-- Management: `ListExecutions`, `CancelExecution`, `DeleteExecution`
-- HTTP endpoints: `/v1/de/run` (POST), `/v1/de/executions` (GET), `/v1/de/executions/{id}` (GET/DELETE)
+```protobuf
+// List registries
+rpc ListSupportedAlgorithms()
+rpc ListSupportedVariants()
+rpc ListSupportedProblems()
+
+// Async execution
+rpc RunAsync(RunAsyncRequest) returns (RunAsyncResponse)
+rpc StreamProgress(StreamProgressRequest) returns (stream StreamProgressResponse)
+rpc GetExecutionStatus(GetExecutionStatusRequest) returns (GetExecutionStatusResponse)
+rpc GetExecutionResults(GetExecutionResultsRequest) returns (GetExecutionResultsResponse)
+
+// Management
+rpc ListExecutions(ListExecutionsRequest) returns (ListExecutionsResponse)
+rpc CancelExecution(CancelExecutionRequest) returns (Empty)
+rpc DeleteExecution(DeleteExecutionRequest) returns (Empty)
+```
+
+**HTTP Mapping:**
+- `POST /v1/de/run-async` → RunAsync
+- `GET /v1/de/executions/{id}/progress` → StreamProgress (SSE)
+- `GET /v1/de/executions/{id}` → GetExecutionStatus
+- `GET /v1/de/executions/{id}/results` → GetExecutionResults
+- `GET /v1/de/executions` → ListExecutions
+- `DELETE /v1/de/executions/{id}` → DeleteExecution
 
 **AuthService** (`auth.proto`):
-- Authentication: `Register`, `Login`, `Logout`, `RefreshToken`
-- JWT-based with separate access and refresh tokens
-- HTTP endpoints: `/v1/auth/login`, `/v1/auth/register`, `/v1/auth/refresh`
+- JWT-based authentication
+- Access + refresh token pattern
+- Bcrypt password hashing
 
 **UserService** (`user.proto`):
-- User management: `Create`, `Get`, `Update`, `Delete`
-- Uses `UserResponse` message in responses (excludes password for security)
+- User CRUD operations
+- `UserResponse` excludes password field
 
 **ParetoService** (`pareto_set.proto`):
-- Access Pareto results: `Get`, `Delete`, `ListByUser`
+- Pareto result retrieval
+- Per-user isolation
 
-### API Data Types
-- `definitions.proto` - Core types: Vector, Pareto, PopulationParameters
-- `differential_evolution_config.proto` - DEConfig, GDE3Config
-- `errors.proto` - ErrorDetail, FieldViolation for structured error responses
-- `tenant.proto` - Multi-tenancy support
+### Proto File Organization
 
-## Testing Conventions
+```
+api/v1/
+├── definitions.proto          # Core types (Vector, Pareto)
+├── differential_evolution.proto         # Main DE service
+├── differential_evolution_config.proto  # DE configuration
+├── auth.proto                 # Authentication
+├── user.proto                 # User management
+├── pareto_set.proto          # Results access
+├── errors.proto              # Error details
+└── tenant.proto              # Multi-tenancy
+```
 
-- Test files follow Go conventions: `*_test.go`
-- Use `github.com/stretchr/testify/assert` for assertions
-- Table-driven tests are preferred (see `pkg/variants/utils_test.go`)
-- Use `rand.New(rand.NewSource(1))` for deterministic random testing
+## Testing Strategy
+
+### Test Types
+
+**Unit Tests** (`*_test.go`):
+- Test individual functions and methods
+- Use table-driven tests
+- Mock external dependencies
+- Deterministic randomness: `rand.New(rand.NewSource(1))`
+
+**Integration Tests** (`-tags=integration`):
+- Test component interactions
+- Real database connections
+- Full server startup
+
+**E2E Tests** (`test/e2e/`, `-tags=e2e`):
+- Full user workflows via gRPC/HTTP
+- Uses testcontainers (PostgreSQL + Redis + deserver)
+- Happy paths + failure scenarios (26 scenarios)
+- Authentication, authorization, concurrent executions
+
+**Benchmarks** (`*_test.go` with `Benchmark*`):
+- Variant performance comparison
+- Algorithm execution time
+- Channel throughput
+
+### Running Tests
+
+```bash
+make test              # Unit tests only
+make test-integration  # Integration tests
+make test-e2e          # E2E tests (requires Docker)
+make test-all          # All tests
+make test-coverage     # Coverage report
+make bench             # All benchmarks
+```
 
 ## Error Handling
 
-- Use sentinel errors from `pkg/variants/errors.go` and `internal/store/errors/`
-- Return wrapped errors with context using `fmt.Errorf` or `errors.Join`
-- Log errors using `log/slog` with structured context
+**Patterns:**
+- Sentinel errors in `pkg/variants/errors.go`, `internal/store/errors/`
+- Wrapped errors with context: `fmt.Errorf("context: %w", err)`
+- Structured logging: `log/slog` with attributes
+- gRPC status codes: Use appropriate codes (NotFound, InvalidArgument, etc.)
 
-## Configuration
-
-- Server config: `internal/server/config.go` - default ports and DE limiters
-- Store config: `internal/store/config.go` - database type and connection details
-- DE config: `pkg/de/config.go` - channel limiters and result limits
-- Executor config: `internal/server/config.go` - ExecutorConfig with MaxWorkers (10), MaxVectorsInProgress (100), TTLs (execution: 24h, results: 7d, progress: 1h)
-- CLI state stored in SQLite at `.dev/cli/`
-
-## Important Context
-
-- **Vector modification**: Problem evaluation modifies vectors in-place for performance
-- **Pareto filtering**: Uses non-dominated sorting with crowding distance reduction
-- **Concurrent executions**: Multiple DE runs execute in goroutines, results aggregated through channels
-- **OpenTelemetry**: Instrumentation is enabled for gRPC and GORM operations
-- **Field naming**: Use `ObjectivesSize` (not `ObjetivesSize`) - typo was fixed in API and codebase
-- **Password security**: User responses exclude password field via `UserResponse` message
-- **Database compatibility**: Migrations work with both PostgreSQL and SQLite (avoid PostgreSQL-specific syntax)
-- **Async execution**: All long-running DE operations use async pattern (RunAsync → poll status → get results)
-
-## Database Migrations
-
-Location: `internal/store/migrations/`
-
-**Migration files:**
-1. `000001_initial_schema.{up,down}.sql` - Users, Pareto sets, Vectors tables
-2. `000002_add_executions_and_indices.{up,down}.sql` - Executions table, indices for query performance
-
-**Running migrations:**
-```bash
-# Automatic on server startup
-./deserver
-
-# Manual migration commands
-deserver migrate up      # Apply all pending migrations
-deserver migrate down 1  # Rollback last migration
-deserver migrate version # Check current version
+**Example:**
+```go
+if execution.Status != store.ExecutionStatusCompleted {
+    return nil, status.Error(codes.FailedPrecondition, "execution is not completed")
+}
 ```
 
-**Database compatibility notes:**
-- Migrations must work with both PostgreSQL and SQLite
-- Avoid PostgreSQL-specific syntax: `DO $$` blocks, `ALTER TABLE ADD CONSTRAINT` (use inline `REFERENCES` instead)
-- Use `REFERENCES` in CREATE TABLE for foreign keys, not separate ALTER TABLE statements
+## Important Implementation Details
 
-## Deployment
+### Performance Considerations
 
-**Kubernetes:**
-- Manifests in `k8s/` directory
-- Includes: Deployment, Service, HPA, PostgreSQL StatefulSet, Redis, ConfigMaps, Secrets
-- Minikube commands: `make k8s-build`, `make k8s-deploy`, `make k8s-logs`, `make k8s-status`
+1. **In-place vector evaluation**: Problems modify `Objectives` slice directly
+2. **Batch operations**: Use `CreateInBatches` for large Pareto sets
+3. **Channel buffering**: Configure channel limiters to prevent goroutine leaks
+4. **Worker pool sizing**: Balance concurrency vs memory pressure
+5. **Redis circuit breaker**: Prevents cascade failures under Redis outage
 
-**Health checks:**
-- Liveness probe: `/health` (simple ping)
-- Readiness probe: `/readiness` (DB + Redis connectivity)
+### Data Flow
 
-**Monitoring:**
-- Grafana dashboards in `monitoring/grafana/`
-- Prometheus metrics at `/metrics`
+**Async execution:**
+```
+Client → RunAsync → Executor.SubmitExecution → Worker Pool
+                                                     ↓
+                    Progress Tracker ← Algorithm ← Worker
+                           ↓
+                    Redis pub/sub → StreamProgress → Client
+```
+
+**Result retrieval:**
+```
+Client → GetExecutionStatus → Redis (metadata)
+                            → PostgreSQL (state)
+
+Client → GetExecutionResults → PostgreSQL (ParetoSet + Vectors)
+```
+
+### Multi-Tenancy
+
+- User ID propagates through context
+- Store methods accept userID parameter
+- Cross-user access blocked at store layer
+- Execution ownership verified on all operations
+
+### Database Compatibility
+
+**Migrations:**
+- Must work with both PostgreSQL and SQLite
+- Avoid PostgreSQL-specific syntax (`DO $$` blocks)
+- Use inline `REFERENCES` for foreign keys
+- Test migrations on both databases
+
+### Security
+
+- JWT secrets: Min 32 characters (enforced in validation)
+- Password hashing: Bcrypt
+- Rate limiting: Per-IP (login/register) and per-user (DE executions)
+- Authorization: Scope-based with middleware enforcement
+- Input validation: All requests validated before processing
 
 ## Troubleshooting
 
 ### Common Issues
 
-**1. Migration errors with SQLite**
-- Symptom: `syntax error` during migration
-- Fix: Ensure migrations avoid PostgreSQL-specific syntax (no `DO $$` blocks, use inline `REFERENCES`)
+**Migration errors:**
+- Ensure migrations avoid PostgreSQL-specific syntax
+- Use inline REFERENCES, not separate ALTER TABLE
 
-**3. Compilation errors with `ObjetivesSize`**
-- Symptom: `undefined: config.ObjetivesSize`
-- Fix: Field was renamed to `ObjectivesSize` (correct spelling) - regenerate protobuf with `make proto-generate`
+**Field naming:**
+- Use `ObjectivesSize` (not `ObjetivesSize`) - typo was fixed
 
-**4. Password exposed in API responses**
-- Symptom: User GET endpoint returns password field
-- Fix: Use `UserResponse` message (excludes password), not `User` message in responses
+**Redis failures:**
+- Circuit breaker provides graceful degradation
+- Check Redis connectivity
+- Flush cache: `docker compose exec redis redis-cli FLUSHALL`
 
-**5. Redis connection failures**
-- Symptom: Execution progress not updating
-- Behavior: Circuit breaker provides graceful degradation
-- Fix: Check Redis connectivity, circuit breaker prevents cascade failures
+**Password in responses:**
+- Use `UserResponse` (excludes password), not `User`
 
-### Performance Tips
+### Performance Tuning
 
-- Use batch operations for large Pareto sets (automatic via CreateInBatches)
-- Monitor SLO metrics for latency violations
-- Check worker pool configuration (maxWorkers) if executions queue up
-- Review TTL settings for execution metadata (default 24h)
+- Monitor worker pool utilization via metrics
+- Adjust `maxWorkers` if executions queue up
+- Review TTL settings for execution metadata
+- Check SLO metrics for latency violations
+- Use batch operations for large result sets
 
-## Commit Message Guidelines
+## Development Workflow
 
-When creating commits for this repository:
+1. **Setup**: `make init deps db-up`
+2. **Development**: `make run-dev` (or `make watch`)
+3. **Testing**: `make test`, `make test-e2e`
+4. **Quality**: `make check` (fmt + vet + lint)
+5. **Benchmarking**: `make bench`
+6. **Proto changes**: `make proto`
 
-1. **Keep commits compact and focused**: Each commit should address a single concern or feature
-2. **Use conventional commit format**:
-   - `feat:` for new features
-   - `fix:` for bug fixes
-   - `docs:` for documentation changes
-   - `test:` for test additions/changes
-   - `refactor:` for code refactoring
-   - `chore:` for maintenance tasks
-   - `perf:` for performance improvements
+**Pre-commit:** `make pre-commit` (fmt + vet + lint + test)
 
-3. **Do NOT include AI attribution**:
-   - Do not add "Generated with Claude Code" or similar AI references
-   - Do not add "Co-Authored-By: Claude" lines
-   - The presence of CLAUDE.md in the repository already indicates AI assistance is used
-   - Commit messages should focus on the technical changes, not the tools used to create them
+## References
 
-4. **Write clear, descriptive messages**:
-   - First line: concise summary (50-72 chars)
-   - Optional body: detailed explanation of what and why (not how)
-   - Use bullet points for multiple changes
-   - Reference issue numbers when applicable
-
-**Example of a good commit message:**
-```
-fix: correct best/1 variant mutation index calculation
-
-- Changed index[i] to index[1] in best_1.go line 36
-- Bug caused index out of bounds when DIM >= 3
-- Add comprehensive unit tests for best/1 and best/2 variants
-- All 77 tests now passing
-```
+- [DEVELOPMENT.md](DEVELOPMENT.md) - Complete development guide
+- [config.yaml.example](config.yaml.example) - Configuration reference
+- [Protocol Buffers](https://buf.build/docs/) - API definition
+- [gRPC](https://grpc.io/) - RPC framework
+- [OpenTelemetry](https://opentelemetry.io/) - Observability
+- [NSGA-II](https://ieeexplore.ieee.org/document/996017) - Multi-objective optimization algorithm

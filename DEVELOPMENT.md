@@ -670,23 +670,23 @@ GoDE/
 │   ├── cache/             # Redis cache implementation
 │   ├── executor/          # Background DE execution
 │   │   ├── executor.go
-│   │   ├── worker_pool.go      # NEW: Worker concurrency
-│   │   └── progress_tracker.go # NEW: Progress management
+│   │   ├── worker_pool.go      # Worker concurrency
+│   │   └── progress_tracker.go # Progress management
 │   ├── server/
 │   │   ├── handlers/
 │   │   │   ├── differential_evolution.go  # Core handler
-│   │   │   ├── de_async.go               # NEW: Async execution
-│   │   │   ├── de_progress.go            # NEW: Progress streaming
-│   │   │   ├── de_results.go             # NEW: Result retrieval
-│   │   │   ├── de_management.go          # NEW: Lifecycle management
-│   │   │   ├── de_list.go                # NEW: List operations
-│   │   │   └── de_conversions.go         # NEW: Data conversions
-│   │   └── config.go         # NEW: Viper-based configuration
+│   │   │   ├── de_async.go               # Async execution
+│   │   │   ├── de_progress.go            # Progress streaming
+│   │   │   ├── de_results.go             # Result retrieval
+│   │   │   ├── de_management.go          # Lifecycle management
+│   │   │   ├── de_list.go                # List operations
+│   │   │   └── de_conversions.go         # Data conversions
+│   │   └── config.go         # Viper-based configuration
 │   ├── store/
 │   │   └── redis/
 │   │       ├── execution.go            # Core CRUD
-│   │       ├── execution_list.go       # NEW: Query operations
-│   │       └── execution_lifecycle.go  # NEW: Progress & state
+│   │       ├── execution_list.go       # Query operations
+│   │       └── execution_lifecycle.go  # Progress & state
 │   ├── telemetry/         # Observability (metrics, tracing, SLO)
 │   └── migrations/        # Database migrations
 ├── pkg/                   # Public libraries
@@ -699,12 +699,12 @@ GoDE/
 ├── test/
 │   └── e2e/              # End-to-end tests
 │       ├── e2e_test.go           # Happy path tests
-│       └── e2e_failures_test.go  # NEW: Failure scenarios
+│       └── e2e_failures_test.go  # Failure scenarios
 ├── web/                  # Frontend (React + TypeScript)
 ├── k8s/                  # Kubernetes manifests
 ├── monitoring/           # Grafana dashboards
-├── Makefile              # NEW: Comprehensive build system
-├── config.yaml.example   # NEW: Configuration template
+├── Makefile              # Comprehensive build system
+├── config.yaml.example   # Configuration template
 └── CLAUDE.md             # AI development guide
 ```
 

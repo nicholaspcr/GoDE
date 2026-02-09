@@ -3,6 +3,7 @@ package commands
 import (
 	"testing"
 
+	deconfig "github.com/nicholaspcr/GoDE/cmd/deserver/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -41,6 +42,15 @@ func TestMigrateUpCommand(t *testing.T) {
 	t.Run("has RunE function", func(t *testing.T) {
 		assert.NotNil(t, migrateUpCmd.RunE)
 	})
+
+	t.Run("fails with empty database URL", func(t *testing.T) {
+		cfg = deconfig.Default()
+		// Default config has no database type set, so ConnectionString returns ""
+		cfg.Store.Config.Type = ""
+		err := migrateUpCmd.RunE(migrateUpCmd, nil)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "database URL not configured")
+	})
 }
 
 func TestMigrateDownCommand(t *testing.T) {
@@ -62,6 +72,34 @@ func TestMigrateDownCommand(t *testing.T) {
 		assert.Equal(t, "n", flag.Shorthand)
 		assert.Equal(t, "1", flag.DefValue)
 	})
+
+	t.Run("fails with empty database URL", func(t *testing.T) {
+		cfg = deconfig.Default()
+		cfg.Store.Config.Type = ""
+		err := migrateDownCmd.RunE(migrateDownCmd, nil)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "database URL not configured")
+	})
+
+	t.Run("fails with zero steps", func(t *testing.T) {
+		cfg = deconfig.Default()
+		cfg.Store.Config.Type = "sqlite"
+		cfg.Store.Config.Sqlite.Filepath = "/tmp/test.db"
+		migrateSteps = 0
+		err := migrateDownCmd.RunE(migrateDownCmd, nil)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "steps must be greater than 0")
+	})
+
+	t.Run("fails with negative steps", func(t *testing.T) {
+		cfg = deconfig.Default()
+		cfg.Store.Config.Type = "sqlite"
+		cfg.Store.Config.Sqlite.Filepath = "/tmp/test.db"
+		migrateSteps = -1
+		err := migrateDownCmd.RunE(migrateDownCmd, nil)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "steps must be greater than 0")
+	})
 }
 
 func TestMigrateVersionCommand(t *testing.T) {
@@ -74,5 +112,13 @@ func TestMigrateVersionCommand(t *testing.T) {
 
 	t.Run("has RunE function", func(t *testing.T) {
 		assert.NotNil(t, migrateVersionCmd.RunE)
+	})
+
+	t.Run("fails with empty database URL", func(t *testing.T) {
+		cfg = deconfig.Default()
+		cfg.Store.Config.Type = ""
+		err := migrateVersionCmd.RunE(migrateVersionCmd, nil)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "database URL not configured")
 	})
 }

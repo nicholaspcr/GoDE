@@ -291,3 +291,64 @@ func TestAuthHandler_Logout(t *testing.T) {
 	_, err := handler.(*authHandler).Logout(context.Background(), &api.AuthServiceLogoutRequest{})
 	assert.NoError(t, err)
 }
+
+func TestAuthHandler_RefreshToken(t *testing.T) {
+	jwtService := auth.NewJWTService("test-secret-key-for-refresh-tests", 24*time.Hour)
+	mockStore := &mock.MockStore{}
+
+	handler := NewAuthHandler(mockStore, jwtService).(*authHandler)
+
+	t.Run("empty refresh token", func(t *testing.T) {
+		_, err := handler.RefreshToken(context.Background(), &api.AuthServiceRefreshTokenRequest{
+			RefreshToken: "",
+		})
+		require.Error(t, err)
+		st, ok := status.FromError(err)
+		require.True(t, ok)
+		assert.Equal(t, codes.InvalidArgument, st.Code())
+	})
+
+	t.Run("invalid refresh token", func(t *testing.T) {
+		_, err := handler.RefreshToken(context.Background(), &api.AuthServiceRefreshTokenRequest{
+			RefreshToken: "invalid-token-string",
+		})
+		require.Error(t, err)
+		st, ok := status.FromError(err)
+		require.True(t, ok)
+		assert.Equal(t, codes.Unauthenticated, st.Code())
+	})
+
+	t.Run("access token used as refresh token", func(t *testing.T) {
+		// Generate a valid access token (not refresh token)
+		accessToken, _, err := jwtService.GenerateTokenPair("testuser")
+		require.NoError(t, err)
+
+		_, err = handler.RefreshToken(context.Background(), &api.AuthServiceRefreshTokenRequest{
+			RefreshToken: accessToken,
+		})
+		require.Error(t, err)
+		st, ok := status.FromError(err)
+		require.True(t, ok)
+		assert.Equal(t, codes.InvalidArgument, st.Code())
+	})
+
+	t.Run("successful refresh", func(t *testing.T) {
+		// Generate valid token pair
+		_, refreshToken, err := jwtService.GenerateTokenPair("testuser")
+		require.NoError(t, err)
+
+		resp, err := handler.RefreshToken(context.Background(), &api.AuthServiceRefreshTokenRequest{
+			RefreshToken: refreshToken,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+		assert.NotEmpty(t, resp.AccessToken)
+		assert.NotEmpty(t, resp.RefreshToken)
+		assert.Greater(t, resp.ExpiresIn, int64(0))
+
+		// Verify new access token is valid
+		claims, err := jwtService.ValidateToken(resp.AccessToken)
+		require.NoError(t, err)
+		assert.Equal(t, "testuser", claims.Username)
+	})
+}

@@ -111,6 +111,42 @@ func TestParetoHandler_Delete(t *testing.T) {
 		require.True(t, ok)
 		assert.Equal(t, codes.InvalidArgument, st.Code())
 	})
+
+	t.Run("pareto not found", func(t *testing.T) {
+		mockStore.DeleteParetoFn = func(ctx context.Context, ids *api.ParetoIDs) error {
+			return storerrors.ErrParetoSetNotFound
+		}
+
+		req := &api.ParetoServiceDeleteRequest{
+			ParetoIds: &api.ParetoIDs{Id: 9999},
+		}
+
+		resp, err := handler.(*paretoHandler).Delete(ctx, req)
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+
+		st, ok := status.FromError(err)
+		require.True(t, ok)
+		assert.Equal(t, codes.NotFound, st.Code())
+	})
+
+	t.Run("internal error", func(t *testing.T) {
+		mockStore.DeleteParetoFn = func(ctx context.Context, ids *api.ParetoIDs) error {
+			return assert.AnError
+		}
+
+		req := &api.ParetoServiceDeleteRequest{
+			ParetoIds: &api.ParetoIDs{Id: 1},
+		}
+
+		resp, err := handler.(*paretoHandler).Delete(ctx, req)
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+
+		st, ok := status.FromError(err)
+		require.True(t, ok)
+		assert.Equal(t, codes.Internal, st.Code())
+	})
 }
 
 func TestParetoHandler_ListByUser(t *testing.T) {

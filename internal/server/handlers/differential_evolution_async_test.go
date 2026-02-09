@@ -781,6 +781,84 @@ func TestGetExecutionResults_NilMaxObjectives(t *testing.T) {
 	assert.Equal(t, 3.0, resp.Pareto.MaxObjs[2])
 }
 
+func TestCancelExecution_Unauthenticated(t *testing.T) {
+	handler, _ := setupTestHandler()
+
+	_, err := handler.CancelExecution(context.Background(), &api.CancelExecutionRequest{
+		ExecutionId: "exec-1",
+	})
+	require.Error(t, err)
+
+	st, ok := status.FromError(err)
+	require.True(t, ok)
+	assert.Equal(t, codes.Unauthenticated, st.Code())
+}
+
+func TestCancelExecution_NotFound(t *testing.T) {
+	handler, _ := setupTestHandler()
+	ctx := authContext("testuser")
+
+	_, err := handler.CancelExecution(ctx, &api.CancelExecutionRequest{
+		ExecutionId: "nonexistent",
+	})
+	require.Error(t, err)
+
+	st, ok := status.FromError(err)
+	require.True(t, ok)
+	assert.Equal(t, codes.NotFound, st.Code())
+}
+
+func TestDeleteExecution_Unauthenticated(t *testing.T) {
+	handler, _ := setupTestHandler()
+
+	_, err := handler.DeleteExecution(context.Background(), &api.DeleteExecutionRequest{
+		ExecutionId: "exec-1",
+	})
+	require.Error(t, err)
+
+	st, ok := status.FromError(err)
+	require.True(t, ok)
+	assert.Equal(t, codes.Unauthenticated, st.Code())
+}
+
+func TestDeleteExecution_NotFound(t *testing.T) {
+	handler, _ := setupTestHandler()
+	ctx := authContext("testuser")
+
+	_, err := handler.DeleteExecution(ctx, &api.DeleteExecutionRequest{
+		ExecutionId: "nonexistent",
+	})
+	require.Error(t, err)
+
+	st, ok := status.FromError(err)
+	require.True(t, ok)
+	assert.Equal(t, codes.NotFound, st.Code())
+}
+
+func TestListExecutions_Unauthenticated(t *testing.T) {
+	handler, _ := setupTestHandler()
+
+	_, err := handler.ListExecutions(context.Background(), &api.ListExecutionsRequest{})
+	require.Error(t, err)
+
+	st, ok := status.FromError(err)
+	require.True(t, ok)
+	assert.Equal(t, codes.Unauthenticated, st.Code())
+}
+
+func TestGetExecutionStatus_Unauthenticated(t *testing.T) {
+	handler, _ := setupTestHandler()
+
+	_, err := handler.GetExecutionStatus(context.Background(), &api.GetExecutionStatusRequest{
+		ExecutionId: "exec-1",
+	})
+	require.Error(t, err)
+
+	st, ok := status.FromError(err)
+	require.True(t, ok)
+	assert.Equal(t, codes.Unauthenticated, st.Code())
+}
+
 func TestCancellationIntegration(t *testing.T) {
 	handler, ts := setupTestHandler()
 

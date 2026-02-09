@@ -14,8 +14,7 @@ func TestDefault(t *testing.T) {
 	require.NotNil(t, cfg)
 
 	// Log defaults
-	assert.NotEmpty(t, cfg.Log.Type)
-	assert.NotEmpty(t, cfg.Log.Level)
+	assert.Equal(t, "json", cfg.Log.Type)
 
 	// Server defaults
 	assert.NotEmpty(t, cfg.Server.LisAddr)

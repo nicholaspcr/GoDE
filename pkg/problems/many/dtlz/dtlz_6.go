@@ -45,7 +45,7 @@ func (v *dtlz6) Evaluate(e *models.Vector, m int) error {
 		theta[i] = t * (1.0 + 2.0*g*e.Elements[i])
 	}
 
-	for i := 0; i < m; i++ {
+	for i := range m {
 		prod := (1 + g)
 		for j := 0; j < m-(i+1); j++ {
 			prod *= math.Cos(theta[j])

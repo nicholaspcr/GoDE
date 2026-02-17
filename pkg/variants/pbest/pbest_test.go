@@ -154,7 +154,7 @@ func TestPbest_Mutate_IndicesAreUnique(t *testing.T) {
 
 	p := Pbest()
 	// Run multiple times to check randomness
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		mutant, err := p.Mutate(elems, rankZero, params)
 		assert.NoError(t, err)
 		assert.Len(t, mutant.Elements, 3)
@@ -179,7 +179,7 @@ func TestPbest_Mutate_WithDifferentCurrPos(t *testing.T) {
 
 	p := Pbest()
 
-	for currPos := 0; currPos < 5; currPos++ {
+	for currPos := range 5 {
 		params := variants.Parameters{
 			CurrPos: currPos,
 			DIM:     3,

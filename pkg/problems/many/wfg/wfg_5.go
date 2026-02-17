@@ -34,7 +34,7 @@ func (w *wfg5) Evaluate(e *models.Vector, m int) error {
 	y = _post(y, _ones(n_obj-1)) // post
 
 	var h []float64
-	for m := 0; m < n_obj; m++ {
+	for m := range n_obj {
 		h = append(h, _shape_concave(y[:len(y)-1], m+1))
 	}
 

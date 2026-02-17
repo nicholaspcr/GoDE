@@ -259,7 +259,7 @@ func TestBest1_Mutate_IndicesAreUnique(t *testing.T) {
 
 	b := Best1()
 	// Run multiple times to check randomness
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		mutant, err := b.Mutate(elems, rankZero, params)
 		assert.NoError(t, err)
 		assert.Len(t, mutant.Elements, 3)
@@ -288,7 +288,7 @@ func TestBest2_Mutate_IndicesAreUnique(t *testing.T) {
 
 	b := Best2()
 	// Run multiple times to check randomness
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		mutant, err := b.Mutate(elems, rankZero, params)
 		assert.NoError(t, err)
 		assert.Len(t, mutant.Elements, 3)

@@ -25,7 +25,7 @@ func (w *wfg7) Evaluate(e *models.Vector, m int) error {
 	var y []float64
 	xu := arange(2, 2*n_var+1, 2)
 
-	for i := 0; i < n_var; i++ {
+	for i := range n_var {
 		y = append(y, e.Elements[i]/xu[i])
 	}
 
@@ -35,7 +35,7 @@ func (w *wfg7) Evaluate(e *models.Vector, m int) error {
 	y = _post(y, _ones(n_obj-1)) // post
 
 	var h []float64
-	for m := 0; m < n_obj; m++ {
+	for m := range n_obj {
 		h = append(h, _shape_concave(y[:len(y)-1], m+1))
 	}
 
@@ -55,7 +55,7 @@ func wfg7_t1(X []float64, k int) []float64 {
 	x := make([]float64, len(X))
 	copy(x, X)
 
-	for i := 0; i < k; i++ {
+	for i := range k {
 		aux := _reduction_weighted_sum_uniform(x[i+1:])
 		x[i] = _transformation_param_dependent(
 			x[i],

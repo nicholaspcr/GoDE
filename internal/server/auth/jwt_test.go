@@ -372,7 +372,7 @@ func TestRefreshTokenRotation(t *testing.T) {
 
 	// All refresh tokens should be different
 	tokens := []string{refreshToken1, refreshToken2, refreshToken3}
-	for i := 0; i < len(tokens); i++ {
+	for i := range tokens {
 		for j := i + 1; j < len(tokens); j++ {
 			assert.NotEqual(t, tokens[i], tokens[j])
 		}

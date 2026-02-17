@@ -423,8 +423,7 @@ func TestNew_ContextHandling(t *testing.T) {
 	})
 
 	t.Run("accepts context with cancel", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
+		ctx := t.Context()
 		assert.NotNil(t, ctx)
 	})
 }
@@ -707,10 +706,10 @@ func closeIfPossible(c any) {
 // The Redis connection will fail, but the dialector selection should succeed first
 func TestNew_DialectorSelection(t *testing.T) {
 	tests := []struct {
-		name         string
-		storeType    string
-		expectDbErr  bool // whether we expect a DB-related error before Redis
-		errContains  string
+		name        string
+		storeType   string
+		expectDbErr bool // whether we expect a DB-related error before Redis
+		errContains string
 	}{
 		{
 			name:        "memory dialector selected",
@@ -1017,7 +1016,7 @@ func TestNew_ConcurrentCalls(t *testing.T) {
 	const numGoroutines = 10
 	errChan := make(chan error, numGoroutines)
 
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		go func() {
 			ctx := context.Background()
 			_, err := New(ctx, cfg)
@@ -1026,7 +1025,7 @@ func TestNew_ConcurrentCalls(t *testing.T) {
 	}
 
 	// Collect all errors
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		err := <-errChan
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "Redis")
@@ -1089,7 +1088,7 @@ func TestNew_MultipleInvalidConfigCombinations(t *testing.T) {
 		config Config
 	}{
 		{
-			name: "empty config",
+			name:   "empty config",
 			config: Config{},
 		},
 		{

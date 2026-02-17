@@ -265,7 +265,7 @@ func TestParetoStore_ListParetos(t *testing.T) {
 
 	t.Run("list paretos for user with multiple paretos", func(t *testing.T) {
 		// Create multiple paretos
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			pareto := &api.Pareto{
 				Ids: &api.ParetoIDs{UserId: "listparetouser"},
 				Vectors: []*api.Vector{

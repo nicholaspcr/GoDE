@@ -220,10 +220,7 @@ func (m *mockStore) ListExecutions(ctx context.Context, userID string, status *s
 	if start > totalCount {
 		return []*store.Execution{}, totalCount, nil
 	}
-	end := start + limit
-	if end > totalCount {
-		end = totalCount
-	}
+	end := min(start+limit, totalCount)
 
 	return allMatching[start:end], totalCount, nil
 }
@@ -483,7 +480,7 @@ func TestExecutor_WorkerPoolExhaustion(t *testing.T) {
 	// Submit 5 jobs with MaxWorkers=2
 	// Only 2 should run concurrently, others should queue
 	var executionIDs []string
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		execID, err := exec.SubmitExecution(ctx, userID, "gde3", "zdt1", "rand1", config)
 		require.NoError(t, err)
 		executionIDs = append(executionIDs, execID)
@@ -557,10 +554,8 @@ func TestExecutor_ConcurrentSubmissions(t *testing.T) {
 	var executionIDs []string
 	var errors []error
 
-	for i := 0; i < 10; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	for range 10 {
+		wg.Go(func() {
 			execID, err := exec.SubmitExecution(ctx, userID, "gde3", "zdt1", "rand1", config)
 			mu.Lock()
 			if err != nil {
@@ -569,7 +564,7 @@ func TestExecutor_ConcurrentSubmissions(t *testing.T) {
 				executionIDs = append(executionIDs, execID)
 			}
 			mu.Unlock()
-		}()
+		})
 	}
 
 	wg.Wait()

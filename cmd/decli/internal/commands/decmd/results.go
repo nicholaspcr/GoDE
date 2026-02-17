@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/spf13/cobra"
@@ -81,34 +82,32 @@ Results can be displayed as JSON or saved to a file.`,
 }
 
 func formatResultsSummary(pareto *api.Pareto) string {
-	summary := "\nPareto Set Results\n"
-	summary += "==================\n\n"
-	summary += fmt.Sprintf("Total vectors: %d\n", len(pareto.Vectors))
+	var summary strings.Builder
+	summary.WriteString("\nPareto Set Results\n")
+	summary.WriteString("==================\n\n")
+	summary.WriteString(fmt.Sprintf("Total vectors: %d\n", len(pareto.Vectors)))
 
 	if len(pareto.MaxObjs) > 0 {
-		summary += fmt.Sprintf("\nMax Objectives: %v\n", pareto.MaxObjs)
+		summary.WriteString(fmt.Sprintf("\nMax Objectives: %v\n", pareto.MaxObjs))
 	}
 
-	summary += "\nPareto Front Vectors (first 10):\n\n"
-	limit := len(pareto.Vectors)
-	if limit > 10 {
-		limit = 10
-	}
+	summary.WriteString("\nPareto Front Vectors (first 10):\n\n")
+	limit := min(len(pareto.Vectors), 10)
 
 	for i := 0; i < limit; i++ {
 		v := pareto.Vectors[i]
-		summary += fmt.Sprintf("Vector %d:\n", i+1)
-		summary += fmt.Sprintf("  Objectives: %v\n", v.Objectives)
-		summary += fmt.Sprintf("  Elements: %v\n", v.Elements)
-		summary += "\n"
+		summary.WriteString(fmt.Sprintf("Vector %d:\n", i+1))
+		summary.WriteString(fmt.Sprintf("  Objectives: %v\n", v.Objectives))
+		summary.WriteString(fmt.Sprintf("  Elements: %v\n", v.Elements))
+		summary.WriteString("\n")
 	}
 
 	if len(pareto.Vectors) > 10 {
-		summary += fmt.Sprintf("... and %d more vectors\n", len(pareto.Vectors)-10)
-		summary += "\nUse --format json --output results.json to save all results\n"
+		summary.WriteString(fmt.Sprintf("... and %d more vectors\n", len(pareto.Vectors)-10))
+		summary.WriteString("\nUse --format json --output results.json to save all results\n")
 	}
 
-	return summary
+	return summary.String()
 }
 
 func init() {

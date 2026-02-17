@@ -41,7 +41,7 @@ func TestTracker_RecordRequest(t *testing.T) {
 	ctx := context.Background()
 
 	// Record 100 successful requests
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		tracker.RecordRequest(ctx, "test-service", true, 0.1)
 	}
 
@@ -65,10 +65,10 @@ func TestTracker_RecordRequest_WithErrors(t *testing.T) {
 	ctx := context.Background()
 
 	// Record 95 successful requests and 5 errors
-	for i := 0; i < 95; i++ {
+	for range 95 {
 		tracker.RecordRequest(ctx, "test-service", true, 0.1)
 	}
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		tracker.RecordRequest(ctx, "test-service", false, 0.1)
 	}
 
@@ -92,10 +92,10 @@ func TestTracker_GetViolations(t *testing.T) {
 	ctx := context.Background()
 
 	// Record requests that violate SLO (90% success rate)
-	for i := 0; i < 90; i++ {
+	for range 90 {
 		tracker.RecordRequest(ctx, "test-service", true, 0.1)
 	}
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		tracker.RecordRequest(ctx, "test-service", false, 0.1)
 	}
 
@@ -120,10 +120,10 @@ func TestTracker_NoViolations(t *testing.T) {
 	ctx := context.Background()
 
 	// Record requests that meet SLO (99.5% success rate)
-	for i := 0; i < 995; i++ {
+	for range 995 {
 		tracker.RecordRequest(ctx, "test-service", true, 0.1)
 	}
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		tracker.RecordRequest(ctx, "test-service", false, 0.1)
 	}
 
@@ -176,10 +176,10 @@ func TestTracker_MultipleObjectives(t *testing.T) {
 	ctx := context.Background()
 
 	// Record 97% success rate
-	for i := 0; i < 97; i++ {
+	for range 97 {
 		tracker.RecordRequest(ctx, "test-service", true, 0.1)
 	}
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		tracker.RecordRequest(ctx, "test-service", false, 0.1)
 	}
 

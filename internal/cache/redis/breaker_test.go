@@ -50,7 +50,7 @@ func TestCircuitBreaker_OpensAfterFailures(t *testing.T) {
 
 	// Execute 3 failing requests to trigger circuit breaker
 	// Need 3 requests with >= 60% failure ratio
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		_, _ = breaker.Execute(func() (any, error) {
 			return nil, assert.AnError
 		})
@@ -70,7 +70,7 @@ func TestCircuitBreaker_HalfOpenAfterTimeout(t *testing.T) {
 	breaker := newCircuitBreaker("test-breaker", cfg)
 
 	// Trigger circuit to open (3 failures)
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		_, _ = breaker.Execute(func() (any, error) {
 			return nil, assert.AnError
 		})
@@ -149,7 +149,7 @@ func TestCircuitBreaker_SuccessfulRecovery(t *testing.T) {
 	breaker := newCircuitBreaker("test-breaker", cfg)
 
 	// Open the circuit
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		_, _ = breaker.Execute(func() (any, error) {
 			return nil, assert.AnError
 		})
@@ -160,7 +160,7 @@ func TestCircuitBreaker_SuccessfulRecovery(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// Execute successful requests to close circuit
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		_, err := breaker.Execute(func() (any, error) {
 			return "success", nil
 		})

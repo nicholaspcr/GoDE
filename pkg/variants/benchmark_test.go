@@ -26,13 +26,13 @@ func setupBenchmark(dim, popSize, rankZeroSize int) ([]models.Vector, []models.V
 
 	// Create population
 	elems := make([]models.Vector, popSize)
-	for i := 0; i < popSize; i++ {
+	for i := range popSize {
 		elements := make([]float64, dim)
 		objectives := make([]float64, benchObjectives)
-		for j := 0; j < dim; j++ {
+		for j := range dim {
 			elements[j] = rng.Float64()
 		}
-		for j := 0; j < benchObjectives; j++ {
+		for j := range benchObjectives {
 			objectives[j] = rng.Float64()
 		}
 		elems[i] = models.Vector{
@@ -43,13 +43,13 @@ func setupBenchmark(dim, popSize, rankZeroSize int) ([]models.Vector, []models.V
 
 	// Create rank zero (best individuals)
 	rankZero := make([]models.Vector, rankZeroSize)
-	for i := 0; i < rankZeroSize; i++ {
+	for i := range rankZeroSize {
 		elements := make([]float64, dim)
 		objectives := make([]float64, benchObjectives)
-		for j := 0; j < dim; j++ {
+		for j := range dim {
 			elements[j] = rng.Float64()
 		}
-		for j := 0; j < benchObjectives; j++ {
+		for j := range benchObjectives {
 			objectives[j] = rng.Float64() * 0.5 // Better objectives
 		}
 		rankZero[i] = models.Vector{
@@ -204,12 +204,12 @@ func BenchmarkPBest(b *testing.B) {
 // Benchmark memory allocations
 func BenchmarkVariantMemory(b *testing.B) {
 	variants := map[string]variants.Interface{
-		"rand/1":           variantsRand.Rand1(),
-		"rand/2":           variantsRand.Rand2(),
-		"best/1":           best.Best1(),
-		"best/2":           best.Best2(),
+		"rand/1":            variantsRand.Rand1(),
+		"rand/2":            variantsRand.Rand2(),
+		"best/1":            best.Best1(),
+		"best/2":            best.Best2(),
 		"current-to-best/1": currentToBest.CurrToBest1(),
-		"pbest":            pbest.Pbest(),
+		"pbest":             pbest.Pbest(),
 	}
 
 	dim := 30

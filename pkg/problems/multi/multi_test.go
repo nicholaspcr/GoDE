@@ -392,7 +392,7 @@ func TestAllProblems_MultipleEvaluations(t *testing.T) {
 			vector := &models.Vector{Elements: elements}
 
 			var previousObjectives []float64
-			for i := 0; i < 3; i++ {
+			for i := range 3 {
 				err := problem.Evaluate(vector, p.objectives)
 				require.NoError(t, err)
 				assert.Len(t, vector.Objectives, p.objectives)

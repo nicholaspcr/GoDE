@@ -38,7 +38,7 @@ func (v *dtlz4) Evaluate(e *models.Vector, m int) error {
 	g := evalG(e.Elements[varSz-k:])
 
 	newObjs := make([]float64, m)
-	for i := 0; i < m; i++ {
+	for i := range m {
 		prod := (1 + g)
 		for j := 0; j < m-(i+1); j++ {
 			prod *= math.Cos(math.Pow(e.Elements[j], 100) * math.Pi / 2.0)

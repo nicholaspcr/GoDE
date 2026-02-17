@@ -25,7 +25,7 @@ func (w *wfg6) Evaluate(e *models.Vector, m int) error {
 	var y []float64
 	xu := arange(2, 2*n_var+1, 2)
 
-	for i := 0; i < n_var; i++ {
+	for i := range n_var {
 		y = append(y, e.Elements[i]/xu[i])
 	}
 
@@ -34,7 +34,7 @@ func (w *wfg6) Evaluate(e *models.Vector, m int) error {
 	y = _post(y, _ones(n_obj-1)) // post
 
 	var h []float64
-	for m := 0; m < n_obj; m++ {
+	for m := range n_obj {
 		h = append(h, _shape_concave(y[:len(y)-1], m+1))
 	}
 

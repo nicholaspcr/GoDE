@@ -195,13 +195,13 @@ func TestNewExecutionStore(t *testing.T) {
 
 func TestExecutionStore_CreateExecution(t *testing.T) {
 	tests := []struct {
-		name          string
-		execution     *store.Execution
-		setupRedis    func(*mockExecutionStore)
-		setupDB       func(*mockExecutionStore)
-		wantErr       bool
-		errContains   string
-		wantDBCalls   int
+		name           string
+		execution      *store.Execution
+		setupRedis     func(*mockExecutionStore)
+		setupDB        func(*mockExecutionStore)
+		wantErr        bool
+		errContains    string
+		wantDBCalls    int
 		wantRedisCalls int
 	}{
 		{
@@ -934,11 +934,11 @@ func TestExecutionStore_DeleteExecution(t *testing.T) {
 
 func TestExecutionStore_SaveProgress(t *testing.T) {
 	tests := []struct {
-		name         string
-		progress     *store.ExecutionProgress
-		setupRedis   func(*mockExecutionStore)
-		wantErr      bool
-		errContains  string
+		name           string
+		progress       *store.ExecutionProgress
+		setupRedis     func(*mockExecutionStore)
+		wantErr        bool
+		errContains    string
 		wantRedisCalls int
 	}{
 		{
@@ -1409,7 +1409,7 @@ func TestExecutionStore_ConcurrentGetExecution(t *testing.T) {
 
 	// Run concurrent gets
 	done := make(chan bool, 10)
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		go func(idx int) {
 			exec, err := s.GetExecution(ctx, "exec-1", "user-1")
 			assert.NoError(t, err)
@@ -1419,7 +1419,7 @@ func TestExecutionStore_ConcurrentGetExecution(t *testing.T) {
 	}
 
 	// Wait for all goroutines
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		<-done
 	}
 }
@@ -1459,7 +1459,7 @@ func TestExecutionStore_ConcurrentUpdates(t *testing.T) {
 	}
 
 	// Wait for all goroutines
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		<-done
 	}
 }
@@ -2088,18 +2088,18 @@ type mockStore struct {
 	HealthCheckFn func(ctx context.Context) error
 
 	// Call tracking
-	createUserCalls    int
-	getUserCalls       int
-	updateUserCalls    int
-	deleteUserCalls    int
-	createParetoCalls  int
-	getParetoCalls     int
-	updateParetoCalls  int
-	deleteParetoCalls  int
-	listParetosCalls   int
+	createUserCalls       int
+	getUserCalls          int
+	updateUserCalls       int
+	deleteUserCalls       int
+	createParetoCalls     int
+	getParetoCalls        int
+	updateParetoCalls     int
+	deleteParetoCalls     int
+	listParetosCalls      int
 	createParetoSetCalls  int
 	getParetoSetByIDCalls int
-	healthCheckCalls   int
+	healthCheckCalls      int
 }
 
 // Verify mockStore implements store.Store
@@ -2282,7 +2282,7 @@ func (m *mockStore) HealthCheck(ctx context.Context) error {
 
 // mockRedisClient implements a mock Redis client for Store tests
 type mockRedisClientForStore struct {
-	healthCheckFn func(ctx context.Context) error
+	healthCheckFn    func(ctx context.Context) error
 	healthCheckCalls int
 }
 

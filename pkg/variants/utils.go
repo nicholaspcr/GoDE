@@ -21,7 +21,7 @@ func GenerateIndices(startInd, np int, r []int, random *rand.Rand) error {
 		return ErrInsufficientPopulation
 	}
 	used := make(map[int]bool, len(r))
-	for i := 0; i < startInd; i++ {
+	for i := range startInd {
 		used[r[i]] = true
 	}
 

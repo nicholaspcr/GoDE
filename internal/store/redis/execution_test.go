@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"maps"
 	"sync"
 	"testing"
 	"time"
@@ -159,9 +160,7 @@ func (m *mockRedisClient) HGetAll(_ context.Context, key string) (map[string]str
 
 	result := make(map[string]string)
 	if hash, ok := m.hashData[key]; ok {
-		for k, v := range hash {
-			result[k] = v
-		}
+		maps.Copy(result, hash)
 	}
 	return result, nil
 }
@@ -715,15 +714,15 @@ func TestExecutionStore_UpdateExecutionResult_HSetError(t *testing.T) {
 
 func TestExecutionStore_ListExecutions(t *testing.T) {
 	tests := []struct {
-		name       string
-		userID     string
-		status     *store.ExecutionStatus
-		limit      int
-		offset     int
-		setup      func(*ExecutionStore)
-		wantCount  int
-		wantTotal  int
-		wantErr    bool
+		name      string
+		userID    string
+		status    *store.ExecutionStatus
+		limit     int
+		offset    int
+		setup     func(*ExecutionStore)
+		wantCount int
+		wantTotal int
+		wantErr   bool
 	}{
 		{
 			name:   "list all executions for user",
@@ -731,7 +730,7 @@ func TestExecutionStore_ListExecutions(t *testing.T) {
 			limit:  50,
 			offset: 0,
 			setup: func(s *ExecutionStore) {
-				for i := 0; i < 5; i++ {
+				for i := range 5 {
 					exec := createTestExecution("exec-"+string(rune('1'+i)), "user-1", store.ExecutionStatusPending)
 					_ = s.CreateExecution(context.Background(), exec)
 				}
@@ -764,7 +763,7 @@ func TestExecutionStore_ListExecutions(t *testing.T) {
 			limit:  2,
 			offset: 1,
 			setup: func(s *ExecutionStore) {
-				for i := 0; i < 5; i++ {
+				for i := range 5 {
 					exec := createTestExecution("exec-"+string(rune('1'+i)), "user-1", store.ExecutionStatusPending)
 					_ = s.CreateExecution(context.Background(), exec)
 				}
@@ -1565,7 +1564,7 @@ func TestExecutionStore_EdgeCases(t *testing.T) {
 		var wg sync.WaitGroup
 		numGoroutines := 10
 
-		for i := 0; i < numGoroutines; i++ {
+		for i := range numGoroutines {
 			wg.Add(1)
 			go func(idx int) {
 				defer wg.Done()

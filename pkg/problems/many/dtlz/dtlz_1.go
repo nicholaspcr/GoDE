@@ -42,7 +42,7 @@ func (v *dtlz1) Evaluate(e *models.Vector, m int) error {
 	g := evalG(e.Elements[m-1:])
 
 	newObjs := make([]float64, m)
-	for i := 0; i < m; i++ {
+	for i := range m {
 		prod := (1.0 + g) * 0.5
 		for j := 0; j < m-(i+1); j++ {
 			prod *= e.Elements[j]

@@ -19,7 +19,7 @@ func arange(start, end, steps int) []float64 {
 
 func _ones(n int) []float64 {
 	a := make([]float64, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		a[i] = 1
 	}
 	return a
@@ -28,7 +28,7 @@ func _ones(n int) []float64 {
 func _post(t, a []float64) []float64 {
 	x := make([]float64, 0, len(t))
 	lastIndex := len(t) - 1
-	for i := 0; i < lastIndex; i++ {
+	for i := range lastIndex {
 		x = append(x, math.Max(t[lastIndex], a[i])*(t[i]-0.5)+0.5)
 	}
 	x = append(x, t[lastIndex])
@@ -42,7 +42,7 @@ func _calculate(xVec, s, h []float64) []float64 {
 	// fmt.Println("xVec -> ", xVec)
 	// fmt.Println("s -> ", s)
 	// fmt.Println("h -> ", h)
-	for i := 0; i < len(h); i++ {
+	for i := range h {
 		x = append(x, xVec[len(xVec)-1]+s[i]*h[i])
 	}
 	return x

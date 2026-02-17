@@ -196,10 +196,7 @@ func (ts *testStore) ListExecutions(ctx context.Context, userID string, statusFi
 	if start > totalCount {
 		return []*store.Execution{}, totalCount, nil
 	}
-	end := start + limit
-	if end > totalCount {
-		end = totalCount
-	}
+	end := min(start+limit, totalCount)
 
 	return allMatching[start:end], totalCount, nil
 }

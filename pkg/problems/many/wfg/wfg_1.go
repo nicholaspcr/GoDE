@@ -26,7 +26,7 @@ func (w *wfg1) Evaluate(e *models.Vector, m int) error {
 	var y []float64
 	xu := arange(2, 2*n_var+1, 2)
 
-	for i := 0; i < n_var; i++ {
+	for i := range n_var {
 		y = append(y, e.Elements[i]/xu[i])
 	}
 
@@ -86,7 +86,7 @@ func wfg1_t3(X []float64, n int) []float64 {
 	x := make([]float64, len(X))
 	copy(x, X)
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		x[i] = _transformation_bias_poly(x[i], 0.02)
 	}
 

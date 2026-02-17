@@ -85,26 +85,22 @@ func (mode *de) Execute(ctx context.Context) ([]models.Vector, [][]float64, erro
 	wgConsumers := &sync.WaitGroup{}
 
 	// Goroutine to consume max objectives (prevents deadlock)
-	wgConsumers.Add(1)
-	go func() {
-		defer wgConsumers.Done()
+	wgConsumers.Go(func() {
 		for maxObjs := range maxObjsCh {
 			maxObjsMu.Lock()
 			allMaxObjs = append(allMaxObjs, maxObjs)
 			maxObjsMu.Unlock()
 		}
-	}()
+	})
 
 	// Goroutine to consume pareto results (prevents deadlock)
-	wgConsumers.Add(1)
-	go func() {
-		defer wgConsumers.Done()
+	wgConsumers.Go(func() {
 		for pareto := range paretoCh {
 			paretoMu.Lock()
 			allPareto = append(allPareto, pareto)
 			paretoMu.Unlock()
 		}
-	}()
+	})
 
 	// Runs algorithm for Executions amount of times.
 	for i := range mode.constants.Executions {

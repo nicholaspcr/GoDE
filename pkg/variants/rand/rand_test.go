@@ -140,7 +140,7 @@ func TestRand1_Mutate_IndicesAreUnique(t *testing.T) {
 
 	r := Rand1()
 	// Run multiple times to check randomness
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		mutant, err := r.Mutate(elems, rankZero, params)
 		assert.NoError(t, err)
 		assert.Len(t, mutant.Elements, 3)
@@ -162,7 +162,7 @@ func TestRand1_Mutate_WithDifferentCurrPos(t *testing.T) {
 
 	r := Rand1()
 
-	for currPos := 0; currPos < 5; currPos++ {
+	for currPos := range 5 {
 		params := variants.Parameters{
 			CurrPos: currPos,
 			DIM:     3,
@@ -364,7 +364,7 @@ func TestRand2_Mutate_IndicesAreUnique(t *testing.T) {
 
 	r := Rand2()
 	// Run multiple times to check randomness
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		mutant, err := r.Mutate(elems, rankZero, params)
 		assert.NoError(t, err)
 		assert.Len(t, mutant.Elements, 3)
@@ -386,7 +386,7 @@ func TestRand2_Mutate_WithDifferentCurrPos(t *testing.T) {
 
 	r := Rand2()
 
-	for currPos := 0; currPos < 5; currPos++ {
+	for currPos := range 5 {
 		params := variants.Parameters{
 			CurrPos: currPos,
 			DIM:     3,

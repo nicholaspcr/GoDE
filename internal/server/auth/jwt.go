@@ -3,6 +3,7 @@ package auth
 
 import (
 	"errors"
+	"slices"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -72,12 +73,7 @@ func (c *Claims) HasScope(scope Scope) bool {
 
 // HasAnyScope checks if the claims include any of the specified scopes
 func (c *Claims) HasAnyScope(scopes ...Scope) bool {
-	for _, scope := range scopes {
-		if c.HasScope(scope) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(scopes, c.HasScope)
 }
 
 // JWTService defines methods for JWT token operations

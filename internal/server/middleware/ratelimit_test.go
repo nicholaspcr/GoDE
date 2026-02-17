@@ -89,7 +89,7 @@ func TestRateLimiter_UnaryAuthRateLimitMiddleware(t *testing.T) {
 		}
 
 		// Should not be rate limited
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			resp, err := middleware(ctx, nil, info, mockHandler)
 			assert.NoError(t, err)
 			assert.Equal(t, "response", resp)
@@ -173,7 +173,7 @@ func TestRateLimiter_UnaryDERateLimitMiddleware(t *testing.T) {
 		}
 
 		// Should not be rate limited
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			resp, err := middleware(ctx, nil, info, mockHandler)
 			assert.NoError(t, err)
 			assert.Equal(t, "response", resp)

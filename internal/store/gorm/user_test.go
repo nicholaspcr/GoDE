@@ -250,7 +250,7 @@ func TestUserStore_EdgeCases(t *testing.T) {
 
 	t.Run("create multiple users sequentially", func(t *testing.T) {
 		// Test multiple user creation
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			user := &api.User{
 				Ids:      &api.UserIDs{Username: fmt.Sprintf("multi%d", i)},
 				Email:    fmt.Sprintf("multi%d@example.com", i),
@@ -261,7 +261,7 @@ func TestUserStore_EdgeCases(t *testing.T) {
 		}
 
 		// Verify all users exist
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			_, err := store.GetUser(ctx, &api.UserIDs{Username: fmt.Sprintf("multi%d", i)})
 			assert.NoError(t, err)
 		}

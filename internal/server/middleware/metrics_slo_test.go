@@ -175,7 +175,7 @@ func TestUnaryMetricsAndSLOMiddleware_MultipleRequests(t *testing.T) {
 		return "success", nil
 	}
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		_, err := middleware(ctx, nil, info, successHandler)
 		assert.NoError(t, err)
 	}

@@ -25,7 +25,7 @@ func (w *wfg9) Evaluate(e *models.Vector, m int) error {
 	var y []float64
 	xu := arange(2, 2*n_var+1, 2)
 
-	for i := 0; i < n_var; i++ {
+	for i := range n_var {
 		y = append(y, e.Elements[i]/xu[i])
 	}
 
@@ -38,7 +38,7 @@ func (w *wfg9) Evaluate(e *models.Vector, m int) error {
 	y = _post(y, _ones(n_obj-1)) // post
 
 	var h []float64
-	for m := 0; m < n_obj; m++ {
+	for m := range n_obj {
 		h = append(h, _shape_concave(y[:len(y)-1], m+1))
 	}
 
@@ -73,7 +73,7 @@ func wfg9_t2(X []float64, n, k int) []float64 {
 	copy(x, X)
 	var a, b []float64
 
-	for i := 0; i < k; i++ {
+	for i := range k {
 		a = append(a, _transformation_shift_deceptive(x[i], 0.35, 0.001, 0.05))
 	}
 	for i := k; i < n; i++ {

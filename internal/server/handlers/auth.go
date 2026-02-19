@@ -39,13 +39,14 @@ func mustGenerateDummyHash() []byte {
 // authHandler is responsible for the auth service operations.
 type authHandler struct {
 	api.UnimplementedAuthServiceServer
-	db         store.Store
-	jwtService auth.JWTService
+	db            store.Store
+	jwtService    auth.JWTService
+	accessExpiry  time.Duration
 }
 
 // NewAuthHandler returns a handle that implements api's authServiceServer.
-func NewAuthHandler(st store.Store, jwtService auth.JWTService) Handler {
-	return &authHandler{db: st, jwtService: jwtService}
+func NewAuthHandler(st store.Store, jwtService auth.JWTService, accessExpiry time.Duration) Handler {
+	return &authHandler{db: st, jwtService: jwtService, accessExpiry: accessExpiry}
 }
 
 // RegisterService adds authService to the RPC server.
@@ -132,7 +133,7 @@ func (ah authHandler) Login(
 	return &api.AuthServiceLoginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
-		ExpiresIn:    int64((24 * time.Hour).Seconds()), // Access token expiry in seconds
+		ExpiresIn:    int64(ah.accessExpiry.Seconds()), // Access token expiry in seconds
 	}, nil
 }
 
@@ -172,6 +173,6 @@ func (ah authHandler) RefreshToken(
 	return &api.AuthServiceRefreshTokenResponse{
 		AccessToken:  accessToken,
 		RefreshToken: newRefreshToken,
-		ExpiresIn:    int64((24 * time.Hour).Seconds()), // Access token expiry in seconds
+		ExpiresIn:    int64(ah.accessExpiry.Seconds()), // Access token expiry in seconds
 	}, nil
 }

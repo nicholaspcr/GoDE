@@ -135,7 +135,7 @@ func TestAuthHandler_Register(t *testing.T) {
 			mockStore := &mock.MockStore{}
 			tt.setupMock(mockStore)
 
-			handler := NewAuthHandler(mockStore, jwtService)
+			handler := NewAuthHandler(mockStore, jwtService, 15*time.Minute)
 
 			_, err := handler.(*authHandler).Register(context.Background(), tt.req)
 
@@ -247,7 +247,7 @@ func TestAuthHandler_Login(t *testing.T) {
 			mockStore := &mock.MockStore{}
 			tt.setupMock(mockStore)
 
-			handler := NewAuthHandler(mockStore, jwtService)
+			handler := NewAuthHandler(mockStore, jwtService, 15*time.Minute)
 
 			resp, err := handler.(*authHandler).Login(context.Background(), tt.req)
 
@@ -285,7 +285,7 @@ func TestAuthHandler_Logout(t *testing.T) {
 	jwtService := auth.NewJWTService("test-secret", 24*time.Hour)
 	mockStore := &mock.MockStore{}
 
-	handler := NewAuthHandler(mockStore, jwtService)
+	handler := NewAuthHandler(mockStore, jwtService, 15*time.Minute)
 
 	// Logout should always succeed (JWT is stateless)
 	_, err := handler.(*authHandler).Logout(context.Background(), &api.AuthServiceLogoutRequest{})
@@ -296,7 +296,7 @@ func TestAuthHandler_RefreshToken(t *testing.T) {
 	jwtService := auth.NewJWTService("test-secret-key-for-refresh-tests", 24*time.Hour)
 	mockStore := &mock.MockStore{}
 
-	handler := NewAuthHandler(mockStore, jwtService).(*authHandler)
+	handler := NewAuthHandler(mockStore, jwtService, 15*time.Minute).(*authHandler)
 
 	t.Run("empty refresh token", func(t *testing.T) {
 		_, err := handler.RefreshToken(context.Background(), &api.AuthServiceRefreshTokenRequest{

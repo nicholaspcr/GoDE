@@ -72,7 +72,7 @@ func New(ctx context.Context, cfg Config, opts ...serverOpts) (Server, error) {
 
 	// Create handlers with dependencies
 	srv.handlers = []handlers.Handler{
-		handlers.NewAuthHandler(srv.st, jwtService),
+		handlers.NewAuthHandler(srv.st, jwtService, cfg.JWTExpiry),
 		handlers.NewUserHandler(srv.st),
 		handlers.NewParetoHandler(srv.st),
 		handlers.NewDEHandler(srv.st, srv.executor),

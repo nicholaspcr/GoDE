@@ -178,13 +178,13 @@ func setDefaults(v *viper.Viper) {
 	// Server defaults
 	v.SetDefault("lis_addr", "localhost:3030")
 	v.SetDefault("http_port", ":8081")
-	v.SetDefault("jwt_expiry", 24*time.Hour)
+	v.SetDefault("jwt_expiry", 15*time.Minute)
 	v.SetDefault("metrics_enabled", true)
 	v.SetDefault("metrics_type", "prometheus")
 	v.SetDefault("tracing_enabled", true)
 	v.SetDefault("slo_enabled", true)
 	v.SetDefault("pprof_enabled", false)
-	v.SetDefault("pprof_port", ":6060")
+	v.SetDefault("pprof_port", "localhost:6060")
 
 	// TLS defaults
 	v.SetDefault("tls.enabled", false)
@@ -267,7 +267,7 @@ func fallbackConfig() Config {
 		LisAddr:        "localhost:3030",
 		HTTPPort:       ":8081",
 		JWTSecret:      os.Getenv("JWT_SECRET"),
-		JWTExpiry:      24 * time.Hour,
+		JWTExpiry:      15 * time.Minute,
 		MetricsEnabled: true,
 		MetricsType:    telemetry.MetricsExporterPrometheus,
 		TracingEnabled: true,

@@ -33,13 +33,19 @@ func newWorkerPool(maxWorkers int, metrics *telemetry.Metrics) *workerPool {
 }
 
 // acquireWorker acquires a worker slot and returns a release function.
-// This function blocks until a worker slot is available.
+// This function blocks until a worker slot is available or the context is cancelled.
 // The release function must be called (typically via defer) to return the worker to the pool.
-func (wp *workerPool) acquireWorker(ctx context.Context) (releaseFunc func(), queueWait time.Duration) {
+// Returns an error if the context is cancelled while waiting.
+func (wp *workerPool) acquireWorker(ctx context.Context) (releaseFunc func(), queueWait time.Duration, err error) {
 	queueStart := time.Now()
 
-	// Acquire worker slot (blocks if pool is full)
-	wp.pool <- struct{}{}
+	// Acquire worker slot, respecting context cancellation
+	select {
+	case wp.pool <- struct{}{}:
+		// slot acquired
+	case <-ctx.Done():
+		return nil, 0, ctx.Err()
+	}
 	queueWait = time.Since(queueStart)
 
 	// Increment active worker count
@@ -75,7 +81,7 @@ func (wp *workerPool) acquireWorker(ctx context.Context) (releaseFunc func(), qu
 		}
 	}
 
-	return releaseFunc, queueWait
+	return releaseFunc, queueWait, nil
 }
 
 // getActiveCount returns the current number of active workers.

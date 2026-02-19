@@ -209,8 +209,15 @@ func (e *Executor) executeInBackground(parentCtx context.Context, executionID, u
 	// Create base context for worker acquisition
 	ctx := context.Background()
 
-	// Acquire worker slot (blocks until available)
-	releaseWorker, _ := e.workers.acquireWorker(ctx)
+	// Acquire worker slot (blocks until available or context cancelled)
+	releaseWorker, _, err := e.workers.acquireWorker(ctx)
+	if err != nil {
+		slog.Error("failed to acquire worker slot",
+			slog.String("execution_id", executionID),
+			slog.String("error", err.Error()),
+		)
+		return
+	}
 	defer releaseWorker()
 
 	// Create cancellable context derived from parent (preserves trace context).

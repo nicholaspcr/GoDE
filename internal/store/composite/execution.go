@@ -44,29 +44,27 @@ func (s *ExecutionStore) CreateExecution(ctx context.Context, execution *store.E
 	return nil
 }
 
-// GetExecution tries Redis first, validates freshness against database.
+// GetExecution tries Redis first, falls back to database on cache miss.
 func (s *ExecutionStore) GetExecution(ctx context.Context, executionID, userID string) (*store.Execution, error) {
-	// Try Redis first
+	// Try Redis first (fast path)
 	cachedExec, cacheErr := s.redis.GetExecution(ctx, executionID, userID)
-
-	// Fetch from DB for comparison
-	dbExec, dbErr := s.db.GetExecution(ctx, executionID, userID)
-	if dbErr != nil {
-		if cacheErr == nil {
-			s.logger.Warn("database unavailable, using cached execution",
-				slog.String("execution_id", executionID))
-			return cachedExec, nil
-		}
-		return nil, dbErr
-	}
-
-	// If cache is fresh, use it
-	if cacheErr == nil && !cachedExec.UpdatedAt.Before(dbExec.UpdatedAt) {
+	if cacheErr == nil {
 		return cachedExec, nil
 	}
 
-	// Refresh stale cache
-	_ = s.redis.CreateExecution(ctx, dbExec)
+	// Cache miss — fall back to database
+	dbExec, dbErr := s.db.GetExecution(ctx, executionID, userID)
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
+	// Populate cache for future reads
+	if err := s.redis.CreateExecution(ctx, dbExec); err != nil {
+		s.logger.Warn("failed to populate cache on read",
+			slog.String("execution_id", executionID),
+			slog.Any("error", err))
+	}
+
 	return dbExec, nil
 }
 

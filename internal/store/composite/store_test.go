@@ -308,7 +308,7 @@ func TestExecutionStore_GetExecution(t *testing.T) {
 		wantRedisCalls int
 	}{
 		{
-			name:        "cache hit - cache is fresh",
+			name:        "cache hit - returns cached value without DB query",
 			executionID: "exec-1",
 			userID:      "user-1",
 			setupRedis: func(m *mockExecutionStore) {
@@ -327,7 +327,7 @@ func TestExecutionStore_GetExecution(t *testing.T) {
 			},
 			wantErr:        false,
 			wantExecID:     "exec-1",
-			wantDBCalls:    1,
+			wantDBCalls:    0, // cache-first: DB not queried on cache hit
 			wantRedisCalls: 1,
 		},
 		{
@@ -353,7 +353,7 @@ func TestExecutionStore_GetExecution(t *testing.T) {
 			wantRedisCalls: 1,
 		},
 		{
-			name:        "stale cache - refresh from db",
+			name:        "cache hit with older data - still returns cached value",
 			executionID: "exec-3",
 			userID:      "user-1",
 			setupRedis: func(m *mockExecutionStore) {
@@ -361,9 +361,6 @@ func TestExecutionStore_GetExecution(t *testing.T) {
 					exec := createTestExecution(executionID, userID, store.ExecutionStatusPending)
 					exec.UpdatedAt = olderTime
 					return exec, nil
-				}
-				m.CreateExecutionFn = func(ctx context.Context, execution *store.Execution) error {
-					return nil
 				}
 			},
 			setupDB: func(m *mockExecutionStore) {
@@ -375,11 +372,11 @@ func TestExecutionStore_GetExecution(t *testing.T) {
 			},
 			wantErr:        false,
 			wantExecID:     "exec-3",
-			wantDBCalls:    1,
+			wantDBCalls:    0, // cache-first: DB not queried on cache hit
 			wantRedisCalls: 1,
 		},
 		{
-			name:        "db unavailable - use cached value",
+			name:        "cache hit - db not queried even if unavailable",
 			executionID: "exec-4",
 			userID:      "user-1",
 			setupRedis: func(m *mockExecutionStore) {
@@ -394,7 +391,7 @@ func TestExecutionStore_GetExecution(t *testing.T) {
 			},
 			wantErr:        false,
 			wantExecID:     "exec-4",
-			wantDBCalls:    1,
+			wantDBCalls:    0, // cache-first: DB not queried on cache hit
 			wantRedisCalls: 1,
 		},
 		{
@@ -1290,26 +1287,20 @@ func TestExecutionStore_Subscribe(t *testing.T) {
 // Edge Cases Tests
 
 func TestExecutionStore_GetExecution_CacheRefreshFailure(t *testing.T) {
-	// Test that when cache is stale and refresh fails, we still return DB data
+	// Test that when cache miss and DB returns data but cache populate fails,
+	// we still return DB data
 	redis := &mockExecutionStore{}
 	db := &mockExecutionStore{}
 
-	olderTime := time.Now().Add(-time.Hour)
-	newerTime := time.Now()
-
 	redis.GetExecutionFn = func(ctx context.Context, executionID, userID string) (*store.Execution, error) {
-		exec := createTestExecution(executionID, userID, store.ExecutionStatusPending)
-		exec.UpdatedAt = olderTime
-		return exec, nil
+		return nil, errors.New("cache miss")
 	}
 	redis.CreateExecutionFn = func(ctx context.Context, execution *store.Execution) error {
 		return errors.New("cache refresh failed")
 	}
 
 	db.GetExecutionFn = func(ctx context.Context, executionID, userID string) (*store.Execution, error) {
-		exec := createTestExecution(executionID, userID, store.ExecutionStatusRunning)
-		exec.UpdatedAt = newerTime
-		return exec, nil
+		return createTestExecution(executionID, userID, store.ExecutionStatusRunning), nil
 	}
 
 	s := NewExecutionStore(redis, db)
@@ -1319,7 +1310,7 @@ func TestExecutionStore_GetExecution_CacheRefreshFailure(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NotNil(t, exec)
-	assert.Equal(t, store.ExecutionStatusRunning, exec.Status) // Should return DB value
+	assert.Equal(t, store.ExecutionStatusRunning, exec.Status) // Should return DB value despite cache populate failure
 }
 
 func TestExecutionStore_ContextCancellation(t *testing.T) {
@@ -1464,73 +1455,59 @@ func TestExecutionStore_ConcurrentUpdates(t *testing.T) {
 	}
 }
 
-// Verify cache freshness logic
+// Verify cache-first behavior: cache hit always returns cached value, DB only on miss
 
-func TestExecutionStore_GetExecution_CacheFreshnessComparison(t *testing.T) {
-	tests := []struct {
-		name           string
-		cacheUpdatedAt time.Time
-		dbUpdatedAt    time.Time
-		wantFromCache  bool
-	}{
-		{
-			name:           "cache is newer - use cache",
-			cacheUpdatedAt: time.Now(),
-			dbUpdatedAt:    time.Now().Add(-time.Hour),
-			wantFromCache:  true,
-		},
-		{
-			name:           "cache is older - refresh from db",
-			cacheUpdatedAt: time.Now().Add(-time.Hour),
-			dbUpdatedAt:    time.Now(),
-			wantFromCache:  false,
-		},
-		{
-			name:           "same time - use cache",
-			cacheUpdatedAt: time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC),
-			dbUpdatedAt:    time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC),
-			wantFromCache:  true,
-		},
-	}
+func TestExecutionStore_GetExecution_CacheFirstBehavior(t *testing.T) {
+	t.Run("cache hit always returns cached value regardless of DB state", func(t *testing.T) {
+		redis := &mockExecutionStore{}
+		db := &mockExecutionStore{}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			redis := &mockExecutionStore{}
-			db := &mockExecutionStore{}
+		cacheExec := createTestExecution("exec-1", "user-1", store.ExecutionStatusPending)
+		dbExec := createTestExecution("exec-1", "user-1", store.ExecutionStatusRunning)
 
-			cacheExec := createTestExecution("exec-1", "user-1", store.ExecutionStatusPending)
-			cacheExec.UpdatedAt = tt.cacheUpdatedAt
-			cacheExec.Status = store.ExecutionStatusPending // Marker for cache
+		redis.GetExecutionFn = func(ctx context.Context, executionID, userID string) (*store.Execution, error) {
+			return cacheExec, nil
+		}
+		db.GetExecutionFn = func(ctx context.Context, executionID, userID string) (*store.Execution, error) {
+			return dbExec, nil
+		}
 
-			dbExec := createTestExecution("exec-1", "user-1", store.ExecutionStatusRunning)
-			dbExec.UpdatedAt = tt.dbUpdatedAt
-			dbExec.Status = store.ExecutionStatusRunning // Marker for DB
+		s := NewExecutionStore(redis, db)
+		exec, err := s.GetExecution(context.Background(), "exec-1", "user-1")
 
-			redis.GetExecutionFn = func(ctx context.Context, executionID, userID string) (*store.Execution, error) {
-				return cacheExec, nil
-			}
-			redis.CreateExecutionFn = func(ctx context.Context, execution *store.Execution) error {
-				return nil
-			}
-			db.GetExecutionFn = func(ctx context.Context, executionID, userID string) (*store.Execution, error) {
-				return dbExec, nil
-			}
+		require.NoError(t, err)
+		require.NotNil(t, exec)
+		assert.Equal(t, store.ExecutionStatusPending, exec.Status) // Always cache value
+		assert.Equal(t, 0, db.getExecutionCalls)                  // DB never queried
+	})
 
-			s := NewExecutionStore(redis, db)
-			ctx := context.Background()
+	t.Run("cache miss falls through to DB and populates cache", func(t *testing.T) {
+		redis := &mockExecutionStore{}
+		db := &mockExecutionStore{}
 
-			exec, err := s.GetExecution(ctx, "exec-1", "user-1")
+		dbExec := createTestExecution("exec-1", "user-1", store.ExecutionStatusRunning)
+		var cachedExec *store.Execution
 
-			require.NoError(t, err)
-			require.NotNil(t, exec)
+		redis.GetExecutionFn = func(ctx context.Context, executionID, userID string) (*store.Execution, error) {
+			return nil, errors.New("cache miss")
+		}
+		redis.CreateExecutionFn = func(ctx context.Context, execution *store.Execution) error {
+			cachedExec = execution
+			return nil
+		}
+		db.GetExecutionFn = func(ctx context.Context, executionID, userID string) (*store.Execution, error) {
+			return dbExec, nil
+		}
 
-			if tt.wantFromCache {
-				assert.Equal(t, store.ExecutionStatusPending, exec.Status)
-			} else {
-				assert.Equal(t, store.ExecutionStatusRunning, exec.Status)
-			}
-		})
-	}
+		s := NewExecutionStore(redis, db)
+		exec, err := s.GetExecution(context.Background(), "exec-1", "user-1")
+
+		require.NoError(t, err)
+		require.NotNil(t, exec)
+		assert.Equal(t, store.ExecutionStatusRunning, exec.Status) // DB value
+		assert.Equal(t, 1, db.getExecutionCalls)                   // DB queried
+		assert.NotNil(t, cachedExec)                               // Cache populated
+	})
 }
 
 // Benchmark tests

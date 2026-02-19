@@ -120,6 +120,20 @@ func TestCORSMiddleware_WildcardSubdomain(t *testing.T) {
 	w = httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 	assert.Empty(t, w.Header().Get("Access-Control-Allow-Origin"))
+
+	// Test suffix attack: evil-example.com must NOT match *.example.com
+	req = httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("Origin", "https://evil-example.com")
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	assert.Empty(t, w.Header().Get("Access-Control-Allow-Origin"), "suffix attack should be blocked")
+
+	// Test bare domain match (example.com should match *.example.com)
+	req = httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("Origin", "https://example.com")
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	assert.Equal(t, "https://example.com", w.Header().Get("Access-Control-Allow-Origin"))
 }
 
 func TestDefaultCORSConfig(t *testing.T) {

@@ -129,9 +129,18 @@ func isOriginAllowed(origin string, allowedOrigins []string) bool {
 			return true
 		}
 		// Support wildcard subdomains (e.g., "*.example.com")
+		// Must validate full subdomain boundary to prevent suffix attacks
+		// e.g., "*.example.com" must NOT match "evil-example.com"
 		if strings.HasPrefix(allowed, "*.") {
-			suffix := strings.TrimPrefix(allowed, "*")
-			if strings.HasSuffix(origin, suffix) {
+			domain := strings.TrimPrefix(allowed, "*.")
+			// Origin must be: scheme://[subdomain.]domain
+			// Extract the host part from origin (strip scheme)
+			host := origin
+			if idx := strings.Index(host, "://"); idx >= 0 {
+				host = host[idx+3:]
+			}
+			// Check exact domain match or proper subdomain (preceded by a dot)
+			if host == domain || strings.HasSuffix(host, "."+domain) {
 				return true
 			}
 		}

@@ -120,6 +120,55 @@ func ContextWithClaims(ctx context.Context, claims *auth.Claims) context.Context
 	return ctx
 }
 
+// StreamAuthMiddleware checks for Bearer authentication and validates JWT tokens on stream RPCs.
+func StreamAuthMiddleware(jwtService auth.JWTService) grpc.StreamServerInterceptor {
+	return func(
+		srv any,
+		ss grpc.ServerStream,
+		info *grpc.StreamServerInfo,
+		handler grpc.StreamHandler,
+	) error {
+		ctx := ss.Context()
+
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return errMetadataNotFound
+		}
+
+		values := md["authorization"]
+		if len(values) == 0 {
+			return errTokenNotFound
+		}
+
+		token := values[0]
+		token = strings.TrimPrefix(token, "Bearer ")
+
+		claims, err := jwtService.ValidateToken(token)
+		if err != nil {
+			return errTokenInvalid
+		}
+
+		// Add user info and claims to context for downstream handlers
+		ctx = context.WithValue(ctx, usernameCtxKey, claims.Username)
+		ctx = context.WithValue(ctx, claimsCtxKey, claims)
+
+		// Wrap the stream with the new context
+		wrapped := &wrappedServerStream{ServerStream: ss, ctx: ctx}
+		return handler(srv, wrapped)
+	}
+}
+
+// wrappedServerStream wraps a grpc.ServerStream to override the context.
+type wrappedServerStream struct {
+	grpc.ServerStream
+	ctx context.Context
+}
+
+// Context returns the wrapped context.
+func (w *wrappedServerStream) Context() context.Context {
+	return w.ctx
+}
+
 // RequireScope checks if the current user has the required scope.
 // Returns a permission denied error if the scope is missing.
 func RequireScope(ctx context.Context, scope auth.Scope) error {

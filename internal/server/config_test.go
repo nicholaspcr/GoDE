@@ -649,7 +649,7 @@ func TestDefaultConfig(t *testing.T) {
 	assert.Equal(t, "localhost:3030", config.LisAddr)
 	assert.Equal(t, ":8081", config.HTTPPort)
 	assert.Equal(t, "test-secret-for-default-config-testing-123456", config.JWTSecret)
-	assert.Equal(t, 24*time.Hour, config.JWTExpiry)
+	assert.Equal(t, 15*time.Minute, config.JWTExpiry)
 	assert.False(t, config.TLS.Enabled)
 	assert.Equal(t, 5, config.RateLimit.LoginRequestsPerMinute)
 	assert.Equal(t, 10, config.RateLimit.DEExecutionsPerUser)
@@ -676,12 +676,12 @@ func TestLoadConfig_Defaults(t *testing.T) {
 	// Verify default values
 	assert.Equal(t, "localhost:3030", cfg.LisAddr)
 	assert.Equal(t, ":8081", cfg.HTTPPort)
-	assert.Equal(t, 24*time.Hour, cfg.JWTExpiry)
+	assert.Equal(t, 15*time.Minute, cfg.JWTExpiry)
 	assert.True(t, cfg.MetricsEnabled)
 	assert.True(t, cfg.TracingEnabled)
 	assert.True(t, cfg.SLOEnabled)
 	assert.False(t, cfg.PprofEnabled)
-	assert.Equal(t, ":6060", cfg.PprofPort)
+	assert.Equal(t, "localhost:6060", cfg.PprofPort)
 
 	// TLS defaults
 	assert.False(t, cfg.TLS.Enabled)

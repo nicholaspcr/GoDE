@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -184,7 +183,7 @@ func TestRateLimiter_UnaryDERateLimitMiddleware(t *testing.T) {
 		handlerCalled = 0
 		ctx := context.Background()
 		info := &grpc.UnaryServerInfo{
-			FullMethod: "/api.v1.DifferentialEvolutionService/Run",
+			FullMethod: "/api.v1.DifferentialEvolutionService/RunAsync",
 		}
 
 		// Should return auth error (no username in context)
@@ -198,12 +197,10 @@ func TestRateLimiter_UnaryDERateLimitMiddleware(t *testing.T) {
 	t.Run("DE endpoints are rate limited per user", func(t *testing.T) {
 		handlerCalled = 0
 
-		md := metadata.New(map[string]string{
-			"username": "testuser",
-		})
-		ctx := metadata.NewIncomingContext(context.Background(), md)
+		// Set username via auth context (as the auth middleware would)
+		ctx := ContextWithUsername(context.Background(), "testuser")
 		info := &grpc.UnaryServerInfo{
-			FullMethod: "/api.v1.DifferentialEvolutionService/Run",
+			FullMethod: "/api.v1.DifferentialEvolutionService/RunAsync",
 		}
 
 		// First request should succeed
@@ -235,12 +232,10 @@ func TestRateLimiter_UnaryDERateLimitMiddleware(t *testing.T) {
 
 		handlerCalled = 0
 
-		md := metadata.New(map[string]string{
-			"username": "concurrencyuser",
-		})
-		ctx := metadata.NewIncomingContext(context.Background(), md)
+		// Set username via auth context (as the auth middleware would)
+		ctx := ContextWithUsername(context.Background(), "concurrencyuser")
 		info := &grpc.UnaryServerInfo{
-			FullMethod: "/api.v1.DifferentialEvolutionService/Run",
+			FullMethod: "/api.v1.DifferentialEvolutionService/RunAsync",
 		}
 
 		// Protect handlerCalled with mutex to prevent data race
@@ -403,26 +398,14 @@ func TestGetIPFromContext(t *testing.T) {
 }
 
 func TestGetUsernameFromContext(t *testing.T) {
-	t.Run("no metadata", func(t *testing.T) {
+	t.Run("no username in context", func(t *testing.T) {
 		ctx := context.Background()
 		username := getUsernameFromContext(ctx)
 		assert.Equal(t, "", username)
 	})
 
-	t.Run("no username in metadata", func(t *testing.T) {
-		md := metadata.New(map[string]string{
-			"other": "value",
-		})
-		ctx := metadata.NewIncomingContext(context.Background(), md)
-		username := getUsernameFromContext(ctx)
-		assert.Equal(t, "", username)
-	})
-
-	t.Run("username in metadata", func(t *testing.T) {
-		md := metadata.New(map[string]string{
-			"username": "testuser",
-		})
-		ctx := metadata.NewIncomingContext(context.Background(), md)
+	t.Run("username set via auth middleware", func(t *testing.T) {
+		ctx := ContextWithUsername(context.Background(), "testuser")
 		username := getUsernameFromContext(ctx)
 		assert.Equal(t, "testuser", username)
 	})

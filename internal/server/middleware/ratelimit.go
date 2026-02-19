@@ -9,10 +9,13 @@ import (
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 )
+
+// maxLimiterEntries is the maximum number of per-IP/user rate limiter entries
+// to prevent memory exhaustion from a large number of unique IPs/users.
+const maxLimiterEntries = 10000
 
 // RateLimiter manages rate limiting for different types of requests.
 type RateLimiter struct {
@@ -75,17 +78,11 @@ func getIPFromContext(ctx context.Context) string {
 	return p.Addr.String()
 }
 
-// getUsernameFromContext extracts the username from the gRPC context metadata.
+// getUsernameFromContext extracts the username from the authenticated context.
+// This reads from the context values set by the auth middleware (JWT claims),
+// NOT from client-supplied metadata which could be spoofed.
 func getUsernameFromContext(ctx context.Context) string {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return ""
-	}
-	usernames := md.Get("username")
-	if len(usernames) == 0 {
-		return ""
-	}
-	return usernames[0]
+	return UsernameFromContext(ctx)
 }
 
 // getLoginLimiter gets or creates a rate limiter for login requests from the given IP.
@@ -111,6 +108,11 @@ func (rl *RateLimiter) getLoginLimiter(ip string) *rate.Limiter {
 		lwt.lastAccess = time.Now()
 		lwt.mu.Unlock()
 		return lwt.limiter
+	}
+
+	// Prevent unbounded map growth
+	if len(rl.loginLimiters) >= maxLimiterEntries {
+		return rate.NewLimiter(rl.loginLimit, 1) // Restrictive fallback
 	}
 
 	// Create new limiter with burst of 2 to allow occasional bursts
@@ -148,6 +150,11 @@ func (rl *RateLimiter) getRegisterLimiter(ip string) *rate.Limiter {
 		return lwt.limiter
 	}
 
+	// Prevent unbounded map growth
+	if len(rl.registerLimiters) >= maxLimiterEntries {
+		return rate.NewLimiter(rl.registerLimit, 1) // Restrictive fallback
+	}
+
 	// Create new limiter with burst of 1 (stricter for registration)
 	lwt = &limiterWithTimestamp{
 		limiter:    rate.NewLimiter(rl.registerLimit, 1),
@@ -181,6 +188,16 @@ func (rl *RateLimiter) getUserDELimiter(username string) *rateLimiterWithConcurr
 		limiter.lastAccess = time.Now()
 		limiter.concurMutex.Unlock()
 		return limiter
+	}
+
+	// Prevent unbounded map growth
+	if len(rl.userDELimiters) >= maxLimiterEntries {
+		return &rateLimiterWithConcurrency{
+			limiter:    rate.NewLimiter(rl.deLimit, 1), // Restrictive fallback
+			concurrent: 0,
+			maxConcur:  1,
+			lastAccess: time.Now(),
+		}
 	}
 
 	// Create new limiter with burst of maxConcurrentDE to allow concurrent requests
@@ -280,7 +297,7 @@ func (rl *RateLimiter) UnaryDERateLimitMiddleware() grpc.UnaryServerInterceptor 
 		handler grpc.UnaryHandler,
 	) (any, error) {
 		// Only apply to DE execution endpoint
-		if info.FullMethod != "/api.v1.DifferentialEvolutionService/Run" {
+		if info.FullMethod != "/api.v1.DifferentialEvolutionService/RunAsync" {
 			return handler(ctx, req)
 		}
 

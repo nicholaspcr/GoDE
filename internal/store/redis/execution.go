@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/nicholaspcr/GoDE/internal/cache/redis"
 	"github.com/nicholaspcr/GoDE/internal/store"
+	storerrors "github.com/nicholaspcr/GoDE/internal/store/errors"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -19,6 +21,9 @@ type executionJSON struct {
 	UserID      string                `json:"user_id"`
 	Status      store.ExecutionStatus `json:"status"`
 	ConfigJSON  string                `json:"config_json"` // protojson encoded DEConfig
+	Algorithm   string                `json:"algorithm,omitempty"`
+	Variant     string                `json:"variant,omitempty"`
+	Problem     string                `json:"problem,omitempty"`
 	ParetoID    *uint64               `json:"pareto_id,omitempty"`
 	Error       string                `json:"error,omitempty"`
 	CreatedAt   time.Time             `json:"created_at"`
@@ -41,6 +46,9 @@ func marshalExecution(exec *store.Execution) ([]byte, error) {
 		UserID:      exec.UserID,
 		Status:      exec.Status,
 		ConfigJSON:  configJSON,
+		Algorithm:   exec.Algorithm,
+		Variant:     exec.Variant,
+		Problem:     exec.Problem,
 		ParetoID:    exec.ParetoID,
 		Error:       exec.Error,
 		CreatedAt:   exec.CreatedAt,
@@ -70,6 +78,9 @@ func unmarshalExecution(data []byte) (*store.Execution, error) {
 		UserID:      helper.UserID,
 		Status:      helper.Status,
 		Config:      config,
+		Algorithm:   helper.Algorithm,
+		Variant:     helper.Variant,
+		Problem:     helper.Problem,
 		ParetoID:    helper.ParetoID,
 		Error:       helper.Error,
 		CreatedAt:   helper.CreatedAt,
@@ -83,6 +94,9 @@ type ExecutionStore struct {
 	client       redis.ClientInterface
 	executionTTL time.Duration
 	progressTTL  time.Duration
+	// updateLocks serializes concurrent read-modify-write on the same execution key.
+	// This prevents lost updates when multiple goroutines update the same execution.
+	updateLocks sync.Map
 }
 
 // NewExecutionStore creates a new Redis-backed execution store.
@@ -92,6 +106,12 @@ func NewExecutionStore(client redis.ClientInterface, executionTTL, progressTTL t
 		executionTTL: executionTTL,
 		progressTTL:  progressTTL,
 	}
+}
+
+// getUpdateLock returns a per-execution-ID mutex from the sync.Map, creating one if needed.
+func (s *ExecutionStore) getUpdateLock(executionID string) *sync.Mutex {
+	mu, _ := s.updateLocks.LoadOrStore(executionID, &sync.Mutex{})
+	return mu.(*sync.Mutex)
 }
 
 func (s *ExecutionStore) executionKey(executionID string) string {
@@ -112,13 +132,19 @@ func (s *ExecutionStore) userExecutionsKey(userID string) string {
 
 // updateExecution is a helper that implements the read-modify-write pattern for execution updates.
 // It retrieves an execution, applies the modifier function, updates the timestamp, and saves back to Redis.
+// A per-key mutex serializes concurrent updates to the same execution to prevent lost updates.
 func (s *ExecutionStore) updateExecution(ctx context.Context, executionID string, modifier func(*store.Execution) error) error {
+	// Acquire per-key lock to serialize concurrent read-modify-write
+	mu := s.getUpdateLock(executionID)
+	mu.Lock()
+	defer mu.Unlock()
+
 	key := s.executionKey(executionID)
 
 	// Get current execution
 	data, err := s.client.Get(ctx, key)
 	if err != nil {
-		return fmt.Errorf("execution not found: %w", err)
+		return fmt.Errorf("%w: %s", storerrors.ErrExecutionNotFound, executionID)
 	}
 
 	execution, err := unmarshalExecution([]byte(data))
@@ -184,7 +210,7 @@ func (s *ExecutionStore) GetExecution(ctx context.Context, executionID, userID s
 
 	data, err := s.client.Get(ctx, key)
 	if err != nil {
-		return nil, fmt.Errorf("execution not found: %w", err)
+		return nil, fmt.Errorf("%w: %s", storerrors.ErrExecutionNotFound, executionID)
 	}
 
 	execution, err := unmarshalExecution([]byte(data))
@@ -231,7 +257,7 @@ func (s *ExecutionStore) DeleteExecution(ctx context.Context, executionID, userI
 	key := s.executionKey(executionID)
 	data, err := s.client.Get(ctx, key)
 	if err != nil {
-		return fmt.Errorf("execution not found: %w", err)
+		return fmt.Errorf("%w: %s", storerrors.ErrExecutionNotFound, executionID)
 	}
 
 	execution, err := unmarshalExecution([]byte(data))

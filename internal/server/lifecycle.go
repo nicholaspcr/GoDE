@@ -243,6 +243,7 @@ func (l *lifecycle) setupGRPCServer() error {
 		grpc.ChainStreamInterceptor(
 			middleware.StreamPanicRecoveryMiddleware(),
 			middleware.StreamMetricsMiddleware(l.server.metrics),
+			middleware.StreamAuthMiddleware(l.server.jwtService),
 			logging.StreamServerInterceptor(InterceptorLogger(logger)),
 		),
 	)
@@ -343,6 +344,9 @@ func (l *lifecycle) setupHTTPGateway(ctx context.Context) error {
 		handler = tracingMiddleware(handler)
 		slog.Info("HTTP tracing middleware enabled")
 	}
+
+	// Add security headers middleware
+	handler = middleware.SecurityHeadersMiddleware()(handler)
 
 	// Add CORS middleware
 	corsMiddleware := middleware.CORSMiddleware(l.cfg.CORS)

@@ -31,15 +31,15 @@ func (w *wfg5) Evaluate(e *models.Vector, m int) error {
 
 	y = wfg5_t1(y)
 	y = wfg4_t2(y, n_obj, k)
-	y = _post(y, _ones(n_obj-1)) // post
+	y = post(y, ones(n_obj-1)) // post
 
 	var h []float64
 	for m := range n_obj {
-		h = append(h, _shape_concave(y[:len(y)-1], m+1))
+		h = append(h, shapeConcave(y[:len(y)-1], m+1))
 	}
 
 	s := arange(2, 2*n_obj+1, 2)
-	newObjs := _calculate(y, s, h)
+	newObjs := calculate(y, s, h)
 
 	e.Objectives = make([]float64, len(newObjs))
 	copy(e.Objectives, newObjs)
@@ -55,7 +55,7 @@ func wfg5_t1(X []float64) []float64 {
 	//nolint:prealloc // Dynamic slice growth is intentional for clarity
 	var ret []float64
 	for _, x := range X {
-		ret = append(ret, _transformation_param_deceptive(x, 0.35, 0.001, 0.05))
+		ret = append(ret, transformationParamDeceptive(x, 0.35, 0.001, 0.05))
 	}
 	return ret
 }

@@ -34,19 +34,19 @@ func (w *wfg3) Evaluate(e *models.Vector, m int) error {
 	y = wfg2_t3(y, n_obj, n_var, k)
 
 	// post section
-	a := _ones(n_obj - 1)
+	a := ones(n_obj - 1)
 	for i := 1; i < len(a); i++ {
 		a[i] = 0
 	}
-	y = _post(y, a)
+	y = post(y, a)
 
 	var h []float64
 	for m := range n_obj {
-		h = append(h, _shape_linear(y[:len(y)-1], m+1))
+		h = append(h, shapeLinear(y[:len(y)-1], m+1))
 	}
 
 	s := arange(2, 2*n_obj+1, 2)
-	newObjs := _calculate(y, s, h)
+	newObjs := calculate(y, s, h)
 
 	e.Objectives = make([]float64, len(newObjs))
 	copy(e.Objectives, newObjs)

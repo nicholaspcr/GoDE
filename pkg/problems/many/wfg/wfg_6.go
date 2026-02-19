@@ -31,15 +31,15 @@ func (w *wfg6) Evaluate(e *models.Vector, m int) error {
 
 	y = wfg1_t1(y, n_var, k)
 	y = wfg6_t2(y, n_obj, n_var, k)
-	y = _post(y, _ones(n_obj-1)) // post
+	y = post(y, ones(n_obj-1)) // post
 
 	var h []float64
 	for m := range n_obj {
-		h = append(h, _shape_concave(y[:len(y)-1], m+1))
+		h = append(h, shapeConcave(y[:len(y)-1], m+1))
 	}
 
 	s := arange(2, 2*n_obj+1, 2)
-	newObjs := _calculate(y, s, h)
+	newObjs := calculate(y, s, h)
 
 	e.Objectives = make([]float64, len(newObjs))
 	copy(e.Objectives, newObjs)
@@ -54,8 +54,8 @@ func wfg6_t2(X []float64, m, n, k int) []float64 {
 	gap := k / (m - 1)
 	var ret []float64
 	for i := 1; i < m; i++ {
-		ret = append(ret, _reduction_non_sep(X[(i-1)*gap:(i*gap)], gap))
+		ret = append(ret, reductionNonSep(X[(i-1)*gap:(i*gap)], gap))
 	}
-	ret = append(ret, _reduction_non_sep(X[k:], n-k))
+	ret = append(ret, reductionNonSep(X[k:], n-k))
 	return ret
 }

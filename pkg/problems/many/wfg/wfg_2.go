@@ -33,17 +33,17 @@ func (w *wfg2) Evaluate(e *models.Vector, m int) error {
 	y = wfg2_t2(y, n_var, k)
 	y = wfg2_t3(y, n_obj, n_var, k)
 	// post section
-	a := _ones(n_obj - 1)
-	y = _post(y, a)
+	a := ones(n_obj - 1)
+	y = post(y, a)
 
 	var h []float64
 	for m := 0; m < n_obj-1; m++ {
-		h = append(h, _shape_convex(y[:len(y)-1], m+1))
+		h = append(h, shapeConvex(y[:len(y)-1], m+1))
 	}
-	h = append(h, _shape_disconnected(y[0], 1, 1, 5))
+	h = append(h, shapeDisconnected(y[0], 1, 1, 5))
 
 	s := arange(2, 2*n_obj+1, 2)
-	newObjs := _calculate(y, s, h)
+	newObjs := calculate(y, s, h)
 
 	e.Objectives = make([]float64, len(newObjs))
 	copy(e.Objectives, newObjs)
@@ -67,7 +67,7 @@ func wfg2_t2(X []float64, n, k int) []float64 {
 		head := k + 2*(i-k) - 2
 		tail := k + 2*(i-k)
 
-		x = append(x, _reduction_non_sep(X[head:tail], 2))
+		x = append(x, reductionNonSep(X[head:tail], 2))
 		i++
 	}
 	return x
@@ -80,9 +80,9 @@ func wfg2_t3(X []float64, m, n, k int) []float64 {
 
 	var t []float64
 	for i := 1; i < m; i++ {
-		t = append(t, _reduction_weighted_sum_uniform(X[((i-1)*gap):(i*gap)]))
+		t = append(t, reductionWeightedSumUniform(X[((i-1)*gap):(i*gap)]))
 	}
-	t = append(t, _reduction_weighted_sum_uniform(X[k:ind_r_sum]))
+	t = append(t, reductionWeightedSumUniform(X[k:ind_r_sum]))
 
 	return t
 }

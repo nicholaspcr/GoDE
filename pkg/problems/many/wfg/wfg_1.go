@@ -36,19 +36,19 @@ func (w *wfg1) Evaluate(e *models.Vector, m int) error {
 	y = wfg1_t4(y, n_obj, n_var, k)
 
 	// post section
-	a := _ones(n_obj - 1)
-	y = _post(y, a)
+	a := ones(n_obj - 1)
+	y = post(y, a)
 
 	var h []float64
 	for m := 0; m < n_obj-1; m++ {
-		h = append(h, _shape_convex(y[:(len(y)-1)], m+1))
+		h = append(h, shapeConvex(y[:(len(y)-1)], m+1))
 	}
-	h = append(h, _shape_mixed(y[0], 5.0, 1.0))
+	h = append(h, shapeMixed(y[0], 5.0, 1.0))
 
 	s := arange(2, 2*n_obj+1, 2)
 
 	// fmt.Println(y, s, h)
-	newObjs := _calculate(y, s, h)
+	newObjs := calculate(y, s, h)
 
 	e.Objectives = make([]float64, len(newObjs))
 	copy(e.Objectives, newObjs)
@@ -65,7 +65,7 @@ func wfg1_t1(X []float64, n, k int) []float64 {
 	copy(x, X)
 
 	for i := k; i < n; i++ {
-		x[i] = _transformation_shift_linear(x[i], 0.35)
+		x[i] = transformationShiftLinear(x[i], 0.35)
 	}
 	return x
 }
@@ -76,7 +76,7 @@ func wfg1_t2(X []float64, n, k int) []float64 {
 	copy(x, X)
 
 	for i := k; i < n; i++ {
-		x[i] = _transformation_bias_flat(x[i], 0.8, 0.75, 0.85)
+		x[i] = transformationBiasFlat(x[i], 0.8, 0.75, 0.85)
 	}
 	return x
 }
@@ -87,7 +87,7 @@ func wfg1_t3(X []float64, n int) []float64 {
 	copy(x, X)
 
 	for i := range n {
-		x[i] = _transformation_bias_poly(x[i], 0.02)
+		x[i] = transformationBiasPoly(x[i], 0.02)
 	}
 
 	return x
@@ -104,9 +104,9 @@ func wfg1_t4(X []float64, m, n, k int) []float64 {
 	for i := 1; i < m; i++ {
 		_y := x[(i-1)*gap : (i * gap)]
 		_w := w[(i-1)*gap : (i * gap)]
-		t = append(t, _reduction_weighted_sum(_y, _w))
+		t = append(t, reductionWeightedSum(_y, _w))
 	}
-	t = append(t, _reduction_weighted_sum(X[k:n], w[k:n]))
+	t = append(t, reductionWeightedSum(X[k:n], w[k:n]))
 
 	return t
 }

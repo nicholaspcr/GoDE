@@ -29,10 +29,9 @@ func (deh *deHandler) RunAsync(
 		attribute.String("variant", req.Variant),
 	)
 
-	// Get user ID from context
-	userID := middleware.UsernameFromContext(ctx)
-	if userID == "" {
-		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
+	userID, err := usernameFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	// Check authorization - requires de:run scope
@@ -64,7 +63,7 @@ func (deh *deHandler) RunAsync(
 	executionID, err := deh.executor.SubmitExecution(ctx, userID, req.Algorithm, req.Problem, req.Variant, req.DeConfig)
 	if err != nil {
 		span.RecordError(err)
-		return nil, status.Errorf(codes.Internal, "failed to submit execution: %v", err)
+		return nil, status.Error(codes.Internal, "failed to submit execution")
 	}
 
 	span.SetAttributes(attribute.String("execution_id", executionID))

@@ -5,6 +5,8 @@ import (
 	"errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/nicholaspcr/GoDE/internal/server/auth"
+	"github.com/nicholaspcr/GoDE/internal/server/middleware"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	storerrors "github.com/nicholaspcr/GoDE/internal/store/errors"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
@@ -46,6 +48,14 @@ func (ph *paretoHandler) RegisterHTTPHandler(
 func (ph *paretoHandler) Get(
 	ctx context.Context, req *api.ParetoServiceGetRequest,
 ) (*api.ParetoServiceGetResponse, error) {
+	if err := middleware.RequireScope(ctx, auth.ScopeParetoRead); err != nil {
+		return nil, err
+	}
+
+	if _, err := usernameFromContext(ctx); err != nil {
+		return nil, err
+	}
+
 	if req.ParetoIds == nil || req.ParetoIds.Id == 0 {
 		return nil, status.Error(codes.InvalidArgument, "pareto_ids.id is required")
 	}
@@ -55,7 +65,7 @@ func (ph *paretoHandler) Get(
 		if errors.Is(err, storerrors.ErrParetoSetNotFound) {
 			return nil, status.Error(codes.NotFound, "pareto set not found")
 		}
-		return nil, status.Errorf(codes.Internal, "failed to get pareto set: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to get pareto set")
 	}
 
 	return &api.ParetoServiceGetResponse{Pareto: pareto}, nil
@@ -65,6 +75,14 @@ func (ph *paretoHandler) Get(
 func (ph *paretoHandler) Delete(
 	ctx context.Context, req *api.ParetoServiceDeleteRequest,
 ) (*emptypb.Empty, error) {
+	if err := middleware.RequireScope(ctx, auth.ScopeParetoWrite); err != nil {
+		return nil, err
+	}
+
+	if _, err := usernameFromContext(ctx); err != nil {
+		return nil, err
+	}
+
 	if req.ParetoIds == nil || req.ParetoIds.Id == 0 {
 		return nil, status.Error(codes.InvalidArgument, "pareto_ids.id is required")
 	}
@@ -73,7 +91,7 @@ func (ph *paretoHandler) Delete(
 		if errors.Is(err, storerrors.ErrParetoSetNotFound) {
 			return nil, status.Error(codes.NotFound, "pareto set not found")
 		}
-		return nil, status.Errorf(codes.Internal, "failed to delete pareto set: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to delete pareto set")
 	}
 
 	return &emptypb.Empty{}, nil
@@ -84,8 +102,24 @@ func (ph *paretoHandler) ListByUser(
 	req *api.ParetoServiceListByUserRequest,
 	stream api.ParetoService_ListByUserServer,
 ) error {
+	ctx := stream.Context()
+
+	if err := middleware.RequireScope(ctx, auth.ScopeParetoRead); err != nil {
+		return err
+	}
+
+	// Enforce that users can only list their own pareto sets unless admin
+	callerUsername, err := usernameFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
 	if req.UserIds == nil || req.UserIds.Username == "" {
 		return status.Error(codes.InvalidArgument, "user_ids.username is required")
+	}
+
+	if req.UserIds.Username != callerUsername && !middleware.HasScope(ctx, auth.ScopeAdmin) {
+		return status.Error(codes.PermissionDenied, "cannot list other users' pareto sets")
 	}
 
 	// Apply defaults if not provided
@@ -98,9 +132,9 @@ func (ph *paretoHandler) ListByUser(
 		offset = 0
 	}
 
-	paretos, totalCount, err := ph.ListParetos(stream.Context(), req.UserIds, limit, offset)
+	paretos, totalCount, err := ph.ListParetos(ctx, req.UserIds, limit, offset)
 	if err != nil {
-		return status.Errorf(codes.Internal, "failed to list pareto sets: %v", err)
+		return status.Errorf(codes.Internal, "failed to list pareto sets")
 	}
 
 	hasMore := offset+len(paretos) < totalCount
@@ -118,7 +152,7 @@ func (ph *paretoHandler) ListByUser(
 			resp.HasMore = hasMore
 		}
 		if err := stream.Send(resp); err != nil {
-			return status.Errorf(codes.Internal, "failed to send pareto set: %v", err)
+			return status.Error(codes.Internal, "failed to send pareto set")
 		}
 	}
 

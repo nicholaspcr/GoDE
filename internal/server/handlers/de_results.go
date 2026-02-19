@@ -24,10 +24,9 @@ func (deh *deHandler) GetExecutionStatus(
 
 	span.SetAttributes(attribute.String("execution_id", req.ExecutionId))
 
-	// Get user ID from context
-	userID := middleware.UsernameFromContext(ctx)
-	if userID == "" {
-		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
+	userID, err := usernameFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	// Check authorization - requires de:read scope
@@ -43,7 +42,7 @@ func (deh *deHandler) GetExecutionStatus(
 			return nil, status.Error(codes.NotFound, "execution not found")
 		}
 		span.RecordError(err)
-		return nil, status.Errorf(codes.Internal, "failed to get execution: %v", err)
+		return nil, status.Error(codes.Internal, "failed to get execution")
 	}
 
 	// Convert to API execution
@@ -81,10 +80,9 @@ func (deh *deHandler) GetExecutionResults(
 
 	span.SetAttributes(attribute.String("execution_id", req.ExecutionId))
 
-	// Get user ID from context
-	userID := middleware.UsernameFromContext(ctx)
-	if userID == "" {
-		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
+	userID, err := usernameFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	// Check authorization - requires de:read scope
@@ -100,7 +98,7 @@ func (deh *deHandler) GetExecutionResults(
 			return nil, status.Error(codes.NotFound, "execution not found")
 		}
 		span.RecordError(err)
-		return nil, status.Errorf(codes.Internal, "failed to get execution: %v", err)
+		return nil, status.Error(codes.Internal, "failed to get execution")
 	}
 
 	// Check if execution is completed
@@ -120,7 +118,7 @@ func (deh *deHandler) GetExecutionResults(
 			return nil, status.Error(codes.NotFound, "pareto set not found")
 		}
 		span.RecordError(err)
-		return nil, status.Errorf(codes.Internal, "failed to get pareto set: %v", err)
+		return nil, status.Error(codes.Internal, "failed to get pareto set")
 	}
 
 	// Flatten max objectives from store.MaxObjectives

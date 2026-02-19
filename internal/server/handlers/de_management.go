@@ -23,10 +23,9 @@ func (deh *deHandler) ListExecutions(
 	ctx, span := tracer.Start(ctx, "deHandler.ListExecutions")
 	defer span.End()
 
-	// Get user ID from context
-	userID := middleware.UsernameFromContext(ctx)
-	if userID == "" {
-		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
+	userID, err := usernameFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	// Convert API status filter to store status
@@ -36,23 +35,21 @@ func (deh *deHandler) ListExecutions(
 		statusFilter = &storeStatus
 	}
 
-	// Extract pagination parameters
+	// Extract and normalize pagination parameters before querying
 	limit := int(req.Limit)
 	offset := int(req.Offset)
-
-	// List executions with pagination
-	executions, totalCount, err := deh.Store.ListExecutions(ctx, userID, statusFilter, limit, offset)
-	if err != nil {
-		span.RecordError(err)
-		return nil, status.Errorf(codes.Internal, "failed to list executions: %v", err)
-	}
-
-	// Apply defaults for response
 	if limit <= 0 || limit > 100 {
 		limit = 50
 	}
 	if offset < 0 {
 		offset = 0
+	}
+
+	// List executions with pagination
+	executions, totalCount, err := deh.Store.ListExecutions(ctx, userID, statusFilter, limit, offset)
+	if err != nil {
+		span.RecordError(err)
+		return nil, status.Error(codes.Internal, "failed to list executions")
 	}
 
 	// Convert to API format
@@ -83,10 +80,9 @@ func (deh *deHandler) CancelExecution(
 
 	span.SetAttributes(attribute.String("execution_id", req.ExecutionId))
 
-	// Get user ID from context
-	userID := middleware.UsernameFromContext(ctx)
-	if userID == "" {
-		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
+	userID, err := usernameFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	// Check authorization - requires de:run scope to cancel executions
@@ -101,7 +97,7 @@ func (deh *deHandler) CancelExecution(
 			return nil, status.Error(codes.NotFound, "execution not found")
 		}
 		span.RecordError(err)
-		return nil, status.Errorf(codes.Internal, "failed to cancel execution: %v", err)
+		return nil, status.Error(codes.Internal, "failed to cancel execution")
 	}
 
 	return &emptypb.Empty{}, nil
@@ -117,10 +113,9 @@ func (deh *deHandler) DeleteExecution(
 
 	span.SetAttributes(attribute.String("execution_id", req.ExecutionId))
 
-	// Get user ID from context
-	userID := middleware.UsernameFromContext(ctx)
-	if userID == "" {
-		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
+	userID, err := usernameFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	// Check authorization - requires de:run scope to delete executions
@@ -135,7 +130,7 @@ func (deh *deHandler) DeleteExecution(
 			return nil, status.Error(codes.NotFound, "execution not found")
 		}
 		span.RecordError(err)
-		return nil, status.Errorf(codes.Internal, "failed to delete execution: %v", err)
+		return nil, status.Error(codes.Internal, "failed to delete execution")
 	}
 
 	return &emptypb.Empty{}, nil

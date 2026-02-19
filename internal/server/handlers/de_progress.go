@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/nicholaspcr/GoDE/internal/server/middleware"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"go.opentelemetry.io/otel"
@@ -46,9 +45,9 @@ func (deh *deHandler) StreamProgress(
 
 // verifyExecutionAccess checks if the user has access to the execution.
 func (deh *deHandler) verifyExecutionAccess(ctx context.Context, executionID string, span trace.Span) (string, error) {
-	userID := middleware.UsernameFromContext(ctx)
-	if userID == "" {
-		return "", status.Error(codes.Unauthenticated, "user not authenticated")
+	userID, err := usernameFromContext(ctx)
+	if err != nil {
+		return "", err
 	}
 
 	execution, err := deh.Store.GetExecution(ctx, executionID, userID) //nolint:staticcheck // Explicit for clarity
@@ -57,7 +56,7 @@ func (deh *deHandler) verifyExecutionAccess(ctx context.Context, executionID str
 			return "", status.Error(codes.NotFound, "execution not found")
 		}
 		span.RecordError(err)
-		return "", status.Errorf(codes.Internal, "failed to get execution: %v", err)
+		return "", status.Error(codes.Internal, "failed to get execution")
 	}
 
 	if execution.UserID != userID {
@@ -116,7 +115,7 @@ func (deh *deHandler) streamProgressToClient(
 		case err := <-errCh:
 			if err != nil {
 				span.RecordError(err)
-				return status.Errorf(codes.Internal, "progress stream error: %v", err)
+				return status.Error(codes.Internal, "progress stream error")
 			}
 		case progress, ok := <-progressCh:
 			if !ok {
@@ -137,7 +136,7 @@ func (deh *deHandler) streamProgressToClient(
 					return nil
 				}
 				span.RecordError(err)
-				return status.Errorf(codes.Internal, "failed to send progress: %v", err)
+				return status.Error(codes.Internal, "failed to send progress")
 			}
 		}
 	}

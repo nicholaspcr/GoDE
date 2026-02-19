@@ -5,6 +5,8 @@ import (
 	"errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/nicholaspcr/GoDE/internal/server/auth"
+	"github.com/nicholaspcr/GoDE/internal/server/middleware"
 	"github.com/nicholaspcr/GoDE/internal/store"
 	storerrors "github.com/nicholaspcr/GoDE/internal/store/errors"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
@@ -47,13 +49,17 @@ func (uh *userHandler) RegisterHTTPHandler(
 func (uh *userHandler) Create(
 	ctx context.Context, req *api.UserServiceCreateRequest,
 ) (*emptypb.Empty, error) {
+	if err := middleware.RequireScope(ctx, auth.ScopeUserWrite); err != nil {
+		return nil, err
+	}
+
 	// Validate user
 	if err := validation.ValidateUser(req.User); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if err := uh.CreateUser(ctx, req.User); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to create user: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to create user")
 	}
 	return api.Empty, nil
 }
@@ -61,12 +67,25 @@ func (uh *userHandler) Create(
 func (uh *userHandler) Get(
 	ctx context.Context, req *api.UserServiceGetRequest,
 ) (*api.UserServiceGetResponse, error) {
+	if err := middleware.RequireScope(ctx, auth.ScopeUserRead); err != nil {
+		return nil, err
+	}
+
+	// Users can only read their own data unless admin
+	callerUsername, err := usernameFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if req.UserIds != nil && req.UserIds.Username != callerUsername && !middleware.HasScope(ctx, auth.ScopeAdmin) {
+		return nil, status.Error(codes.PermissionDenied, "cannot access other users' data")
+	}
+
 	usr, err := uh.GetUser(ctx, req.UserIds)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, status.Error(codes.NotFound, "user not found")
 		}
-		return nil, status.Errorf(codes.Internal, "failed to get user: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to get user")
 	}
 	// Convert User to UserResponse (exclude password)
 	userResp := &api.UserResponse{
@@ -79,12 +98,24 @@ func (uh *userHandler) Get(
 func (uh *userHandler) Update(
 	ctx context.Context, req *api.UserServiceUpdateRequest,
 ) (*emptypb.Empty, error) {
-	err := uh.UpdateUser(ctx, req.User, req.FieldMask.GetPaths()...)
+	if err := middleware.RequireScope(ctx, auth.ScopeUserWrite); err != nil {
+		return nil, err
+	}
+
+	// Users can only update their own data unless admin
+	callerUsername, err := usernameFromContext(ctx)
 	if err != nil {
+		return nil, err
+	}
+	if req.User != nil && req.User.Ids != nil && req.User.Ids.Username != callerUsername && !middleware.HasScope(ctx, auth.ScopeAdmin) {
+		return nil, status.Error(codes.PermissionDenied, "cannot modify other users' data")
+	}
+
+	if err = uh.UpdateUser(ctx, req.User, req.FieldMask.GetPaths()...); err != nil {
 		if errors.Is(err, storerrors.ErrUnsupportedFieldMask) {
 			return nil, status.Error(codes.InvalidArgument, "unsupported field mask")
 		}
-		return nil, status.Errorf(codes.Internal, "failed to update user: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to update user")
 	}
 	return api.Empty, nil
 }
@@ -92,8 +123,21 @@ func (uh *userHandler) Update(
 func (uh *userHandler) Delete(
 	ctx context.Context, req *api.UserServiceDeleteRequest,
 ) (*emptypb.Empty, error) {
+	if err := middleware.RequireScope(ctx, auth.ScopeUserWrite); err != nil {
+		return nil, err
+	}
+
+	// Users can only delete their own account unless admin
+	callerUsername, err := usernameFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if req.UserIds != nil && req.UserIds.Username != callerUsername && !middleware.HasScope(ctx, auth.ScopeAdmin) {
+		return nil, status.Error(codes.PermissionDenied, "cannot delete other users' accounts")
+	}
+
 	if err := uh.DeleteUser(ctx, req.UserIds); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to delete user: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to delete user")
 	}
 	return api.Empty, nil
 }

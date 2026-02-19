@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/nicholaspcr/GoDE/internal/server/auth"
+	"github.com/nicholaspcr/GoDE/internal/server/middleware"
 	"github.com/nicholaspcr/GoDE/internal/store/mock"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/stretchr/testify/assert"
@@ -109,7 +111,7 @@ func TestUserHandler_Create(t *testing.T) {
 
 			handler := NewUserHandler(mockStore)
 
-			_, err := handler.(*userHandler).Create(context.Background(), tt.req)
+			_, err := handler.(*userHandler).Create(middleware.ContextWithClaims(context.Background(), &auth.Claims{Username: "testuser", Scopes: auth.DefaultUserScopes()}), tt.req)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -157,7 +159,7 @@ func TestUserHandler_Get(t *testing.T) {
 		{
 			name: "user not found",
 			req: &api.UserServiceGetRequest{
-				UserIds: &api.UserIDs{Username: "nonexistent"},
+				UserIds: &api.UserIDs{Username: "testuser"},
 			},
 			setupMock: func(m *mock.MockStore) {
 				m.GetUserFn = func(ctx context.Context, userIDs *api.UserIDs) (*api.User, error) {
@@ -175,7 +177,7 @@ func TestUserHandler_Get(t *testing.T) {
 
 			handler := NewUserHandler(mockStore)
 
-			resp, err := handler.(*userHandler).Get(context.Background(), tt.req)
+			resp, err := handler.(*userHandler).Get(middleware.ContextWithClaims(context.Background(), &auth.Claims{Username: "testuser", Scopes: auth.DefaultUserScopes()}), tt.req)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -242,7 +244,7 @@ func TestUserHandler_Update(t *testing.T) {
 
 			handler := NewUserHandler(mockStore)
 
-			_, err := handler.(*userHandler).Update(context.Background(), tt.req)
+			_, err := handler.(*userHandler).Update(middleware.ContextWithClaims(context.Background(), &auth.Claims{Username: "testuser", Scopes: auth.DefaultUserScopes()}), tt.req)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -293,7 +295,7 @@ func TestUserHandler_Delete(t *testing.T) {
 
 			handler := NewUserHandler(mockStore)
 
-			_, err := handler.(*userHandler).Delete(context.Background(), tt.req)
+			_, err := handler.(*userHandler).Delete(middleware.ContextWithClaims(context.Background(), &auth.Claims{Username: "testuser", Scopes: auth.DefaultUserScopes()}), tt.req)
 
 			if tt.wantErr {
 				assert.Error(t, err)

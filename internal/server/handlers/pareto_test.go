@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/nicholaspcr/GoDE/internal/server/auth"
+	"github.com/nicholaspcr/GoDE/internal/server/middleware"
 	storerrors "github.com/nicholaspcr/GoDE/internal/store/errors"
 	"github.com/nicholaspcr/GoDE/internal/store/mock"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
@@ -18,7 +20,7 @@ func TestParetoHandler_Get(t *testing.T) {
 	mockStore := &mock.MockStore{}
 	handler := NewParetoHandler(mockStore)
 
-	ctx := context.Background()
+	ctx := middleware.ContextWithClaims(context.Background(), &auth.Claims{Username: "testuser", Scopes: auth.DefaultUserScopes()})
 
 	t.Run("successful get", func(t *testing.T) {
 		testPareto := &api.Pareto{
@@ -84,7 +86,7 @@ func TestParetoHandler_Delete(t *testing.T) {
 	mockStore := &mock.MockStore{}
 	handler := NewParetoHandler(mockStore)
 
-	ctx := context.Background()
+	ctx := middleware.ContextWithClaims(context.Background(), &auth.Claims{Username: "testuser", Scopes: auth.DefaultUserScopes()})
 
 	t.Run("successful delete", func(t *testing.T) {
 		mockStore.DeleteParetoFn = func(ctx context.Context, ids *api.ParetoIDs) error {
@@ -153,7 +155,7 @@ func TestParetoHandler_ListByUser(t *testing.T) {
 	mockStore := &mock.MockStore{}
 	handler := NewParetoHandler(mockStore)
 
-	ctx := context.Background()
+	ctx := middleware.ContextWithClaims(context.Background(), &auth.Claims{Username: "testuser", Scopes: auth.DefaultUserScopes()})
 
 	t.Run("missing user_ids", func(t *testing.T) {
 		req := &api.ParetoServiceListByUserRequest{}

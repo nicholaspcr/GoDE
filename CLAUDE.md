@@ -271,12 +271,13 @@ rpc DeleteExecution(DeleteExecutionRequest) returns (Empty)
 ```
 
 **HTTP Mapping:**
-- `POST /v1/de/run-async` → RunAsync
-- `GET /v1/de/executions/{id}/progress` → StreamProgress (SSE)
-- `GET /v1/de/executions/{id}` → GetExecutionStatus
-- `GET /v1/de/executions/{id}/results` → GetExecutionResults
+- `POST /v1/de/run` → RunAsync
+- `GET /v1/de/executions/{execution_id}/progress` → StreamProgress (SSE)
+- `GET /v1/de/executions/{execution_id}` → GetExecutionStatus
+- `GET /v1/de/executions/{execution_id}/results` → GetExecutionResults
 - `GET /v1/de/executions` → ListExecutions
-- `DELETE /v1/de/executions/{id}` → DeleteExecution
+- `POST /v1/de/executions/{execution_id}/cancel` → CancelExecution
+- `DELETE /v1/de/executions/{execution_id}` → DeleteExecution
 
 **AuthService** (`auth.proto`):
 - JWT-based authentication

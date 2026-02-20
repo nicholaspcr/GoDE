@@ -31,7 +31,8 @@ var rootCmd = &cobra.Command{
 proto files found on the API folder. Requests can be made via gRPC or HTTP.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		cfg = config.Default()
-		if err := sharedCfg.Load("deserver", cfg); err != nil {
+		configPath, _ := cmd.Flags().GetString("config")
+		if err := sharedCfg.Load("deserver", configPath, cfg); err != nil {
 			return err
 		}
 

@@ -10,12 +10,14 @@ import (
 )
 
 // Load loads the configuration from a file and the environment.
-func Load(appName string, cfg any) error {
+// configPath, if non-empty, points to a specific config file; otherwise the
+// function searches for .<appName>.yaml in $HOME and the current directory.
+func Load(appName, configPath string, cfg any) error {
 	// Create a new Viper instance to avoid global state issues
 	v := viper.New()
 
-	if viper.GetString("config") != "" {
-		v.SetConfigFile(viper.GetString("config"))
+	if configPath != "" {
+		v.SetConfigFile(configPath)
 	} else {
 		home, err := os.UserHomeDir()
 		if err != nil {

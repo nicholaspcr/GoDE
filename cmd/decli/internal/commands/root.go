@@ -40,7 +40,8 @@ server.
 `,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		cfg = config.Default()
-		if err := sharedCfg.Load("decli", cfg); err != nil {
+		configPath, _ := cmd.Flags().GetString("config")
+		if err := sharedCfg.Load("decli", configPath, cfg); err != nil {
 			return err
 		}
 

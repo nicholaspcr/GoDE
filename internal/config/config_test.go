@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -52,7 +51,7 @@ func TestLoad_SimpleConfigFromEnv(t *testing.T) {
 	t.Setenv("DEBUG", "true")
 
 	var cfg SimpleConfig
-	err := Load("testapp", &cfg)
+	err := Load("testapp", "", &cfg)
 	require.NoError(t, err)
 
 	assert.Equal(t, "test-app", cfg.Name)
@@ -68,7 +67,7 @@ func TestLoad_NestedConfigFromEnv(t *testing.T) {
 	t.Setenv("DB_SQLITE_FILEPATH", "/data/test.db")
 
 	var cfg NestedConfig
-	err := Load("testapp", &cfg)
+	err := Load("testapp", "", &cfg)
 	require.NoError(t, err)
 
 	assert.Equal(t, "localhost", cfg.Server.Host)
@@ -98,7 +97,7 @@ debug: false
 	require.NoError(t, err)
 
 	var cfg SimpleConfig
-	err = Load("testapp", &cfg)
+	err = Load("testapp", "", &cfg)
 	require.NoError(t, err)
 
 	assert.Equal(t, "file-app", cfg.Name)
@@ -135,7 +134,7 @@ db:
 	require.NoError(t, err)
 
 	var cfg NestedConfig
-	err = Load("testapp", &cfg)
+	err = Load("testapp", "", &cfg)
 	require.NoError(t, err)
 
 	assert.Equal(t, "config-host", cfg.Server.Host)
@@ -173,7 +172,7 @@ debug: false
 	require.NoError(t, err)
 
 	var cfg SimpleConfig
-	err = Load("testapp", &cfg)
+	err = Load("testapp", "", &cfg)
 	require.NoError(t, err)
 
 	// Environment should override file
@@ -196,12 +195,8 @@ debug: true
 	err := os.WriteFile(configPath, []byte(configContent), 0644)
 	require.NoError(t, err)
 
-	// Set config path via viper global (simulating --config flag)
-	viper.Set("config", configPath)
-	defer viper.Set("config", "")
-
 	var cfg SimpleConfig
-	err = Load("testapp", &cfg)
+	err = Load("testapp", configPath, &cfg)
 	require.NoError(t, err)
 
 	assert.Equal(t, "custom-app", cfg.Name)
@@ -216,7 +211,7 @@ func TestLoad_MissingConfigFile(t *testing.T) {
 	t.Setenv("DEBUG", "false")
 
 	var cfg SimpleConfig
-	err := Load("nonexistent", &cfg)
+	err := Load("nonexistent", "", &cfg)
 	require.NoError(t, err)
 
 	assert.Equal(t, "env-only", cfg.Name)
@@ -236,12 +231,8 @@ port: [this is invalid
 	err := os.WriteFile(configPath, []byte(invalidYaml), 0644)
 	require.NoError(t, err)
 
-	// Set config path via viper global
-	viper.Set("config", configPath)
-	defer viper.Set("config", "")
-
 	var cfg SimpleConfig
-	err = Load("testapp", &cfg)
+	err = Load("testapp", configPath, &cfg)
 	assert.Error(t, err)
 }
 
@@ -259,7 +250,7 @@ func TestLoad_StructTags(t *testing.T) {
 	t.Setenv("OPTIONAL", "present")
 
 	var cfg ConfigWithTags
-	err := Load("testapp", &cfg)
+	err := Load("testapp", "", &cfg)
 	require.NoError(t, err)
 
 	assert.Equal(t, "tagged-app", cfg.Name)
@@ -279,7 +270,7 @@ func TestLoad_EmbeddedStruct(t *testing.T) {
 	t.Setenv("DEBUG", "true")
 
 	var cfg ConfigWithEmbedded
-	err := Load("testapp", &cfg)
+	err := Load("testapp", "", &cfg)
 	require.NoError(t, err)
 
 	assert.Equal(t, "embedded-host", cfg.Host)
@@ -306,7 +297,7 @@ func TestLoad_DeepNesting(t *testing.T) {
 	t.Setenv("LEVEL1_LEVEL2_VALUE", "42")
 
 	var cfg ComplexConfig
-	err := Load("testapp", &cfg)
+	err := Load("testapp", "", &cfg)
 	require.NoError(t, err)
 
 	assert.Equal(t, "first", cfg.Level1.Name)
@@ -342,7 +333,7 @@ db:
 	require.NoError(t, err)
 
 	var cfg NestedConfig
-	err = Load("testapp", &cfg)
+	err = Load("testapp", "", &cfg)
 	require.NoError(t, err)
 
 	// File value (no env override)

@@ -14,7 +14,6 @@ import (
 	"github.com/google/uuid"
 	api "github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/nicholaspcr/GoDE/pkg/de"
-	"github.com/nicholaspcr/GoDE/pkg/de/gde3"
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
@@ -263,7 +262,7 @@ func (e *Executor) executeInBackground(parentCtx context.Context, executionID, u
 	}
 
 	// Execute the algorithm
-	pareto, maxObjs, err := e.runAlgorithm(ctx, executionID, problem, variant, config)
+	pareto, maxObjs, err := e.runAlgorithm(ctx, executionID, algorithm, problem, variant, config)
 	if err != nil {
 		var updateErr error
 		if errors.Is(err, context.Canceled) {
@@ -325,7 +324,7 @@ func (e *Executor) executeInBackground(parentCtx context.Context, executionID, u
 	}
 }
 
-func (e *Executor) runAlgorithm(ctx context.Context, executionID, problemName, variantName string, config *api.DEConfig) ([]models.Vector, [][]float64, error) {
+func (e *Executor) runAlgorithm(ctx context.Context, executionID, algorithmName, problemName, variantName string, config *api.DEConfig) ([]models.Vector, [][]float64, error) {
 	// Register execution for progress tracking
 	counter, cleanup := e.progress.registerExecution(executionID)
 	defer cleanup()
@@ -363,24 +362,6 @@ func (e *Executor) runAlgorithm(ctx context.Context, executionID, problemName, v
 		return nil, nil, fmt.Errorf("failed to generate population: %w", err)
 	}
 
-	// Build GDE3 constants
-	gde3Config := config.GetGde3()
-	if gde3Config == nil {
-		return nil, nil, fmt.Errorf("GDE3 configuration is required")
-	}
-
-	gde3Constants := gde3.Constants{
-		DE: de.Constants{
-			Executions:    int(config.Executions),
-			Generations:   int(config.Generations),
-			Dimensions:    int(config.DimensionsSize),
-			ObjFuncAmount: int(config.ObjectivesSize),
-		},
-		CR: float64(gde3Config.Cr),
-		F:  float64(gde3Config.F),
-		P:  float64(gde3Config.P),
-	}
-
 	// Create progress callback using progress tracker
 	progressCallback := e.progress.createProgressCallback(
 		ctx,
@@ -389,15 +370,23 @@ func (e *Executor) runAlgorithm(ctx context.Context, executionID, problemName, v
 		int32(config.Executions),
 	)
 
-	// Create GDE3 algorithm
-	algorithm := gde3.New(
-		gde3.WithProblem(problemImpl),
-		gde3.WithVariant(variantImpl),
-		gde3.WithPopulationParams(popParams),
-		gde3.WithConstants(gde3Constants),
-		gde3.WithInitialPopulation(initialPop),
-		gde3.WithProgressCallback(progressCallback),
-	)
+	// Look up algorithm factory from registry
+	factory, err := de.DefaultRegistry.GetFactory(algorithmName)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unsupported algorithm %q: %w", algorithmName, err)
+	}
+
+	// Create algorithm via factory
+	algorithm, err := factory(de.AlgorithmParams{
+		Problem:           problemImpl,
+		Variant:           variantImpl,
+		PopulationParams:  popParams,
+		InitialPopulation: initialPop,
+		ProgressCallback:  progressCallback,
+	}, config)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create algorithm: %w", err)
+	}
 
 	// Create DE mode
 	deConfig := de.Config{

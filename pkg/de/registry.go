@@ -4,6 +4,11 @@ import (
 	"fmt"
 	"sort"
 	"sync"
+
+	api "github.com/nicholaspcr/GoDE/pkg/api/v1"
+	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/problems"
+	"github.com/nicholaspcr/GoDE/pkg/variants"
 )
 
 // AlgorithmMetadata contains information about a registered algorithm.
@@ -12,16 +17,31 @@ type AlgorithmMetadata struct {
 	Description string
 }
 
+// AlgorithmParams holds all parameters needed to instantiate an algorithm.
+type AlgorithmParams struct {
+	Problem           problems.Interface
+	Variant           variants.Interface
+	PopulationParams  models.PopulationParams
+	InitialPopulation models.Population
+	ProgressCallback  ProgressCallback
+}
+
+// AlgorithmFactory creates an Algorithm from execution parameters and config.
+// The config provides algorithm-specific parameters (e.g. CR, F, P for GDE3).
+type AlgorithmFactory func(params AlgorithmParams, config *api.DEConfig) (Algorithm, error)
+
 // Registry manages algorithm registrations.
 type Registry struct {
-	metadata map[string]AlgorithmMetadata
-	mu       sync.RWMutex
+	metadata  map[string]AlgorithmMetadata
+	factories map[string]AlgorithmFactory
+	mu        sync.RWMutex
 }
 
 // NewRegistry creates a new algorithm registry.
 func NewRegistry() *Registry {
 	return &Registry{
-		metadata: make(map[string]AlgorithmMetadata),
+		metadata:  make(map[string]AlgorithmMetadata),
+		factories: make(map[string]AlgorithmFactory),
 	}
 }
 
@@ -85,6 +105,27 @@ func (r *Registry) ListMetadata() []AlgorithmMetadata {
 	})
 
 	return metas
+}
+
+// RegisterFactory associates an AlgorithmFactory with a registered algorithm.
+// The algorithm must be registered via Register before calling RegisterFactory.
+func (r *Registry) RegisterFactory(name string, factory AlgorithmFactory) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.factories[name] = factory
+}
+
+// GetFactory returns the AlgorithmFactory for the named algorithm.
+func (r *Registry) GetFactory(name string) (AlgorithmFactory, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	factory, ok := r.factories[name]
+	if !ok {
+		return nil, fmt.Errorf("no factory registered for algorithm: %s", name)
+	}
+	return factory, nil
 }
 
 // DefaultRegistry is the global algorithm registry.

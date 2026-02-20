@@ -12,6 +12,7 @@ import (
 
 	api "github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/nicholaspcr/GoDE/pkg/models"
+	_ "github.com/nicholaspcr/GoDE/pkg/de/gde3"            // Register GDE3 algorithm factory
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 	_ "github.com/nicholaspcr/GoDE/pkg/problems/many/dtlz" // Register DTLZ problems
 	_ "github.com/nicholaspcr/GoDE/pkg/problems/many/wfg"  // Register WFG problems

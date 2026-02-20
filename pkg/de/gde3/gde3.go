@@ -8,6 +8,7 @@ import (
 	"math/rand"
 
 	"github.com/nicholaspcr/GoDE/pkg/de"
+	api "github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
@@ -21,6 +22,36 @@ func init() {
 		Name:        "gde3",
 		Description: "GDE3 - Generalized Differential Evolution 3rd version for multi-objective optimization",
 	})
+	de.DefaultRegistry.RegisterFactory("gde3", newFromConfig)
+}
+
+// newFromConfig creates a GDE3 algorithm instance from execution parameters and DEConfig.
+func newFromConfig(params de.AlgorithmParams, config *api.DEConfig) (de.Algorithm, error) {
+	gde3Config := config.GetGde3()
+	if gde3Config == nil {
+		return nil, fmt.Errorf("GDE3 configuration is required")
+	}
+
+	constants := Constants{
+		DE: de.Constants{
+			Executions:    int(config.Executions),
+			Generations:   int(config.Generations),
+			Dimensions:    int(config.DimensionsSize),
+			ObjFuncAmount: int(config.ObjectivesSize),
+		},
+		CR: float64(gde3Config.Cr),
+		F:  float64(gde3Config.F),
+		P:  float64(gde3Config.P),
+	}
+
+	return New(
+		WithProblem(params.Problem),
+		WithVariant(params.Variant),
+		WithPopulationParams(params.PopulationParams),
+		WithConstants(constants),
+		WithInitialPopulation(params.InitialPopulation),
+		WithProgressCallback(params.ProgressCallback),
+	), nil
 }
 
 // gde3 type that contains the definition of the GDE3 algorithm.

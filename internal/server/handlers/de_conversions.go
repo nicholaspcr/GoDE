@@ -5,6 +5,7 @@ import (
 
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
+	"github.com/nicholaspcr/GoDE/pkg/models"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -73,4 +74,28 @@ func executionToProto(exec *store.Execution) *api.Execution {
 // timestampProto converts time.Time to timestamppb.Timestamp.
 func timestampProto(t time.Time) *timestamppb.Timestamp {
 	return timestamppb.New(t)
+}
+
+// vectorToPB converts a models.Vector to a protobuf Vector.
+func vectorToPB(v models.Vector) *api.Vector {
+	vec := &api.Vector{
+		Elements:         make([]float64, len(v.Elements)),
+		Objectives:       make([]float64, len(v.Objectives)),
+		CrowdingDistance: v.CrowdingDistance,
+	}
+	copy(vec.Elements, v.Elements)
+	copy(vec.Objectives, v.Objectives)
+	return vec
+}
+
+// vectorFromPB converts a protobuf Vector to a models.Vector.
+func vectorFromPB(v *api.Vector) models.Vector {
+	vec := models.Vector{
+		Elements:         make([]float64, len(v.Elements)),
+		Objectives:       make([]float64, len(v.Objectives)),
+		CrowdingDistance: v.CrowdingDistance,
+	}
+	copy(vec.Elements, v.Elements)
+	copy(vec.Objectives, v.Objectives)
+	return vec
 }

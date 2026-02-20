@@ -10,50 +10,6 @@ import (
 
 // --- Vector tests ---
 
-func TestVector_ToPB(t *testing.T) {
-	v := &Vector{
-		Elements:         []float64{1.0, 2.0, 3.0},
-		Objectives:       []float64{0.5, 0.6},
-		CrowdingDistance: 1.23,
-	}
-	pb := v.ToPB()
-
-	assert.Equal(t, v.Elements, pb.Elements)
-	assert.Equal(t, v.Objectives, pb.Objectives)
-	assert.Equal(t, v.CrowdingDistance, pb.CrowdingDistance)
-
-	// Verify independence (no shared slice)
-	pb.Elements[0] = 99.9
-	assert.Equal(t, 1.0, v.Elements[0], "ToPB should copy elements, not share them")
-}
-
-func TestVector_ToPB_Empty(t *testing.T) {
-	v := &Vector{}
-	pb := v.ToPB()
-
-	assert.Empty(t, pb.Elements)
-	assert.Empty(t, pb.Objectives)
-	assert.Equal(t, 0.0, pb.CrowdingDistance)
-}
-
-func TestVectorFromPB(t *testing.T) {
-	v := &Vector{
-		Elements:         []float64{1.0, 2.0},
-		Objectives:       []float64{0.5},
-		CrowdingDistance: 2.5,
-	}
-	pb := v.ToPB()
-	got := VectorFromPB(pb)
-
-	assert.Equal(t, v.Elements, got.Elements)
-	assert.Equal(t, v.Objectives, got.Objectives)
-	assert.Equal(t, v.CrowdingDistance, got.CrowdingDistance)
-
-	// Verify independence
-	pb.Elements[0] = 99.9
-	assert.Equal(t, 1.0, got.Elements[0], "VectorFromPB should copy elements, not share them")
-}
-
 func TestVector_Copy(t *testing.T) {
 	v := &Vector{
 		Elements:         []float64{1.0, 2.0, 3.0},

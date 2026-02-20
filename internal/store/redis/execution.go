@@ -17,18 +17,20 @@ import (
 
 // executionJSON is a helper struct for JSON serialization that handles protobuf Config field.
 type executionJSON struct {
-	ID          string                `json:"id"`
-	UserID      string                `json:"user_id"`
-	Status      store.ExecutionStatus `json:"status"`
-	ConfigJSON  string                `json:"config_json"` // protojson encoded DEConfig
-	Algorithm   string                `json:"algorithm,omitempty"`
-	Variant     string                `json:"variant,omitempty"`
-	Problem     string                `json:"problem,omitempty"`
-	ParetoID    *uint64               `json:"pareto_id,omitempty"`
-	Error       string                `json:"error,omitempty"`
-	CreatedAt   time.Time             `json:"created_at"`
-	UpdatedAt   time.Time             `json:"updated_at"`
-	CompletedAt *time.Time            `json:"completed_at,omitempty"`
+	ID                  string                `json:"id"`
+	UserID              string                `json:"user_id"`
+	Status              store.ExecutionStatus `json:"status"`
+	ConfigJSON          string                `json:"config_json"` // protojson encoded DEConfig
+	Algorithm           string                `json:"algorithm,omitempty"`
+	Variant             string                `json:"variant,omitempty"`
+	Problem             string                `json:"problem,omitempty"`
+	ParetoID            *uint64               `json:"pareto_id,omitempty"`
+	Error               string                `json:"error,omitempty"`
+	CreatedAt           time.Time             `json:"created_at"`
+	UpdatedAt           time.Time             `json:"updated_at"`
+	CompletedAt         *time.Time            `json:"completed_at,omitempty"`
+	IdempotencyKey      string                `json:"idempotency_key,omitempty"`
+	MaxExecutionSeconds int64                 `json:"max_execution_seconds,omitempty"`
 }
 
 func marshalExecution(exec *store.Execution) ([]byte, error) {
@@ -42,18 +44,20 @@ func marshalExecution(exec *store.Execution) ([]byte, error) {
 	}
 
 	helper := executionJSON{
-		ID:          exec.ID,
-		UserID:      exec.UserID,
-		Status:      exec.Status,
-		ConfigJSON:  configJSON,
-		Algorithm:   exec.Algorithm,
-		Variant:     exec.Variant,
-		Problem:     exec.Problem,
-		ParetoID:    exec.ParetoID,
-		Error:       exec.Error,
-		CreatedAt:   exec.CreatedAt,
-		UpdatedAt:   exec.UpdatedAt,
-		CompletedAt: exec.CompletedAt,
+		ID:                  exec.ID,
+		UserID:              exec.UserID,
+		Status:              exec.Status,
+		ConfigJSON:          configJSON,
+		Algorithm:           exec.Algorithm,
+		Variant:             exec.Variant,
+		Problem:             exec.Problem,
+		ParetoID:            exec.ParetoID,
+		Error:               exec.Error,
+		CreatedAt:           exec.CreatedAt,
+		UpdatedAt:           exec.UpdatedAt,
+		CompletedAt:         exec.CompletedAt,
+		IdempotencyKey:      exec.IdempotencyKey,
+		MaxExecutionSeconds: exec.MaxExecutionSeconds,
 	}
 
 	return json.Marshal(helper)
@@ -74,18 +78,20 @@ func unmarshalExecution(data []byte) (*store.Execution, error) {
 	}
 
 	return &store.Execution{
-		ID:          helper.ID,
-		UserID:      helper.UserID,
-		Status:      helper.Status,
-		Config:      config,
-		Algorithm:   helper.Algorithm,
-		Variant:     helper.Variant,
-		Problem:     helper.Problem,
-		ParetoID:    helper.ParetoID,
-		Error:       helper.Error,
-		CreatedAt:   helper.CreatedAt,
-		UpdatedAt:   helper.UpdatedAt,
-		CompletedAt: helper.CompletedAt,
+		ID:                  helper.ID,
+		UserID:              helper.UserID,
+		Status:              helper.Status,
+		Config:              config,
+		Algorithm:           helper.Algorithm,
+		Variant:             helper.Variant,
+		Problem:             helper.Problem,
+		ParetoID:            helper.ParetoID,
+		Error:               helper.Error,
+		CreatedAt:           helper.CreatedAt,
+		UpdatedAt:           helper.UpdatedAt,
+		CompletedAt:         helper.CompletedAt,
+		IdempotencyKey:      helper.IdempotencyKey,
+		MaxExecutionSeconds: helper.MaxExecutionSeconds,
 	}, nil
 }
 
@@ -179,6 +185,10 @@ func (s *ExecutionStore) updateExecution(ctx context.Context, executionID string
 	return nil
 }
 
+func (s *ExecutionStore) idempotencyKey(userID, key string) string {
+	return fmt.Sprintf("execution:idempotency:%s:%s", userID, key)
+}
+
 // CreateExecution stores a new execution in Redis.
 func (s *ExecutionStore) CreateExecution(ctx context.Context, execution *store.Execution) error {
 	key := s.executionKey(execution.ID)
@@ -201,7 +211,32 @@ func (s *ExecutionStore) CreateExecution(ctx context.Context, execution *store.E
 		return fmt.Errorf("failed to set TTL on user executions: %w", err)
 	}
 
+	// Store idempotency mapping (best-effort — failure doesn't block creation).
+	if execution.IdempotencyKey != "" {
+		iKey := s.idempotencyKey(execution.UserID, execution.IdempotencyKey)
+		if err := s.client.Set(ctx, iKey, execution.ID, s.executionTTL); err != nil {
+			slog.WarnContext(ctx, "failed to store idempotency mapping",
+				slog.String("execution_id", execution.ID),
+				slog.String("idempotency_key", execution.IdempotencyKey),
+			)
+		}
+	}
+
 	return nil
+}
+
+// GetExecutionByIdempotencyKey returns the executionID for a previously seen idempotency key.
+// Returns ErrExecutionNotFound if the key is unknown or has expired.
+func (s *ExecutionStore) GetExecutionByIdempotencyKey(ctx context.Context, userID, idempotencyKey string) (string, error) {
+	if idempotencyKey == "" {
+		return "", storerrors.ErrExecutionNotFound
+	}
+	key := s.idempotencyKey(userID, idempotencyKey)
+	executionID, err := s.client.Get(ctx, key)
+	if err != nil {
+		return "", storerrors.ErrExecutionNotFound
+	}
+	return executionID, nil
 }
 
 // GetExecution retrieves an execution from Redis.

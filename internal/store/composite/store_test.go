@@ -135,6 +135,10 @@ func (m *mockExecutionStore) Subscribe(ctx context.Context, channel string) (<-c
 	return ch, nil
 }
 
+func (m *mockExecutionStore) GetExecutionByIdempotencyKey(_ context.Context, _, _ string) (string, error) {
+	return "", nil
+}
+
 // Test helper functions
 
 func createTestExecution(id, userID string, status store.ExecutionStatus) *store.Execution {
@@ -2247,6 +2251,10 @@ func (m *mockStore) Subscribe(ctx context.Context, channel string) (<-chan []byt
 	ch := make(chan []byte)
 	close(ch)
 	return ch, nil
+}
+
+func (m *mockStore) GetExecutionByIdempotencyKey(_ context.Context, _, _ string) (string, error) {
+	return "", nil
 }
 
 func (m *mockStore) HealthCheck(ctx context.Context) error {

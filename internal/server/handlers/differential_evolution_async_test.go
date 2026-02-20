@@ -15,6 +15,7 @@ import (
 	"github.com/nicholaspcr/GoDE/internal/server/auth"
 	"github.com/nicholaspcr/GoDE/internal/server/middleware"
 	"github.com/nicholaspcr/GoDE/internal/store"
+	storeerrors "github.com/nicholaspcr/GoDE/internal/store/errors"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
 	_ "github.com/nicholaspcr/GoDE/pkg/problems/many/dtlz" // Register DTLZ problems
@@ -31,21 +32,23 @@ import (
 
 // testStore is a minimal in-memory store for testing
 type testStore struct {
-	executions     map[string]*store.Execution
-	progress       map[string]*store.ExecutionProgress
-	paretoSets     map[uint64]*store.ParetoSet
-	cancelledExecs map[string]bool // Track cancellation requests
-	nextID         uint64
-	mu             sync.RWMutex
+	executions      map[string]*store.Execution
+	progress        map[string]*store.ExecutionProgress
+	paretoSets      map[uint64]*store.ParetoSet
+	cancelledExecs  map[string]bool // Track cancellation requests
+	idempotencyKeys map[string]string // userID:key → executionID
+	nextID          uint64
+	mu              sync.RWMutex
 }
 
 func newTestStore() *testStore {
 	return &testStore{
-		executions:     make(map[string]*store.Execution),
-		progress:       make(map[string]*store.ExecutionProgress),
-		paretoSets:     make(map[uint64]*store.ParetoSet),
-		cancelledExecs: make(map[string]bool),
-		nextID:         1,
+		executions:      make(map[string]*store.Execution),
+		progress:        make(map[string]*store.ExecutionProgress),
+		paretoSets:      make(map[uint64]*store.ParetoSet),
+		cancelledExecs:  make(map[string]bool),
+		idempotencyKeys: make(map[string]string),
+		nextID:          1,
 	}
 }
 
@@ -306,6 +309,23 @@ func (ts *testStore) DeletePareto(ctx context.Context, ids *api.ParetoIDs) error
 func (ts *testStore) ListParetos(ctx context.Context, ids *api.UserIDs, limit, offset int) ([]*api.Pareto, int, error) {
 	return nil, 0, nil
 }
+func (ts *testStore) GetExecutionByIdempotencyKey(_ context.Context, userID, idempotencyKey string) (string, error) {
+	ts.mu.RLock()
+	defer ts.mu.RUnlock()
+	mapKey := userID + ":" + idempotencyKey
+	if execID, ok := ts.idempotencyKeys[mapKey]; ok {
+		return execID, nil
+	}
+	return "", storeerrors.ErrExecutionNotFound
+}
+
+// setIdempotencyKey stores a userID+key → executionID mapping for testing.
+func (ts *testStore) setIdempotencyKey(userID, idempotencyKey, executionID string) {
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
+	ts.idempotencyKeys[userID+":"+idempotencyKey] = executionID
+}
+
 func (ts *testStore) HealthCheck(ctx context.Context) error { return nil }
 
 func setupTestHandler() (*deHandler, *testStore) {
@@ -1160,4 +1180,68 @@ func TestStreamProgress_WrongUser(t *testing.T) {
 	assert.True(t,
 		status.Code(err) == codes.NotFound || status.Code(err) == codes.PermissionDenied,
 		"should return NotFound or PermissionDenied for wrong user")
+}
+
+// TestRunAsync_IdempotencyKey_ReturnsExistingExecution verifies that a duplicate
+// request with the same idempotency key returns the previously created execution ID.
+func TestRunAsync_IdempotencyKey_ReturnsExistingExecution(t *testing.T) {
+	handler, ts := setupTestHandler()
+	ctx := authContext("testuser")
+
+	existingID := "existing-exec-id-123"
+	ts.setIdempotencyKey("testuser", "my-idem-key", existingID)
+
+	req := &api.RunAsyncRequest{
+		Algorithm:      "gde3",
+		Problem:        "zdt1",
+		Variant:        "rand1",
+		IdempotencyKey: "my-idem-key",
+		DeConfig: &api.DEConfig{
+			Executions:     1,
+			Generations:    2,
+			PopulationSize: 10,
+			DimensionsSize: 10,
+			ObjectivesSize: 2,
+			FloorLimiter:   0.0,
+			CeilLimiter:    1.0,
+			AlgorithmConfig: &api.DEConfig_Gde3{
+				Gde3: &api.GDE3Config{Cr: 0.9, F: 0.5, P: 0.1},
+			},
+		},
+	}
+
+	resp, err := handler.RunAsync(ctx, req)
+	require.NoError(t, err)
+	assert.Equal(t, existingID, resp.ExecutionId, "should return the existing execution ID")
+}
+
+// TestRunAsync_IdempotencyKey_NewExecution verifies that a request with an idempotency key
+// that hasn't been seen before creates a new execution normally.
+func TestRunAsync_IdempotencyKey_NewExecution(t *testing.T) {
+	handler, _ := setupTestHandler()
+	ctx := authContext("testuser")
+
+	req := &api.RunAsyncRequest{
+		Algorithm:      "gde3",
+		Problem:        "zdt1",
+		Variant:        "rand1",
+		IdempotencyKey: "fresh-idem-key",
+		DeConfig: &api.DEConfig{
+			Executions:     1,
+			Generations:    2,
+			PopulationSize: 10,
+			DimensionsSize: 10,
+			ObjectivesSize: 2,
+			FloorLimiter:   0.0,
+			CeilLimiter:    1.0,
+			AlgorithmConfig: &api.DEConfig_Gde3{
+				Gde3: &api.GDE3Config{Cr: 0.9, F: 0.5, P: 0.1},
+			},
+		},
+	}
+
+	resp, err := handler.RunAsync(ctx, req)
+	require.NoError(t, err)
+	assert.NotEmpty(t, resp.ExecutionId, "should create a new execution")
+	assert.NotEqual(t, "fresh-idem-key", resp.ExecutionId, "execution ID should be a UUID, not the key")
 }

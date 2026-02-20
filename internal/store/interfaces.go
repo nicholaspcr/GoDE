@@ -42,6 +42,9 @@ type ExecutionOperations interface {
 	ListExecutions(ctx context.Context, userID string, status *ExecutionStatus, limit, offset int) ([]*Execution, int, error)
 	DeleteExecution(ctx context.Context, executionID, userID string) error
 
+	// Idempotency: returns existing executionID or ErrExecutionNotFound.
+	GetExecutionByIdempotencyKey(ctx context.Context, userID, idempotencyKey string) (string, error)
+
 	// Progress tracking
 	SaveProgress(ctx context.Context, progress *ExecutionProgress) error
 	GetProgress(ctx context.Context, executionID string) (*ExecutionProgress, error)

@@ -41,6 +41,7 @@ type ExecutorConfig struct {
 	ExecutionTTL         time.Duration
 	ResultTTL            time.Duration
 	ProgressTTL          time.Duration
+	DefaultMaxExecution  time.Duration // Maximum wall-clock time per execution (0 = no limit)
 }
 
 // TLSConfig contains TLS/HTTPS configuration.
@@ -142,6 +143,7 @@ func LoadConfig(configPath string) (Config, error) {
 			ExecutionTTL:         v.GetDuration("executor.execution_ttl"),
 			ResultTTL:            v.GetDuration("executor.result_ttl"),
 			ProgressTTL:          v.GetDuration("executor.progress_ttl"),
+			DefaultMaxExecution:  v.GetDuration("executor.default_max_execution"),
 		},
 		DE: de.Config{
 			ParetoChannelLimiter: v.GetInt("de.pareto_channel_limiter"),
@@ -217,6 +219,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("executor.execution_ttl", 24*time.Hour)
 	v.SetDefault("executor.result_ttl", 7*24*time.Hour)
 	v.SetDefault("executor.progress_ttl", 1*time.Hour)
+	v.SetDefault("executor.default_max_execution", 0) // 0 = no limit
 
 	// DE algorithm defaults
 	v.SetDefault("de.pareto_channel_limiter", 100)

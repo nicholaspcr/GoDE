@@ -49,4 +49,5 @@ type deStore interface {
 	GetProgress(ctx context.Context, executionID string) (*store.ExecutionProgress, error)
 	GetParetoSetByID(context.Context, uint64) (*store.ParetoSet, error)
 	Subscribe(ctx context.Context, channel string) (<-chan []byte, error)
+	GetExecutionByIdempotencyKey(ctx context.Context, userID, idempotencyKey string) (string, error)
 }

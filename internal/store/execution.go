@@ -28,18 +28,20 @@ const (
 
 // Execution represents a DE algorithm execution.
 type Execution struct {
-	ID          string
-	UserID      string
-	Status      ExecutionStatus
-	Config      *api.DEConfig
-	Algorithm   string
-	Variant     string
-	Problem     string
-	ParetoID    *uint64
-	Error       string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	CompletedAt *time.Time
+	ID                  string
+	UserID              string
+	Status              ExecutionStatus
+	Config              *api.DEConfig
+	Algorithm           string
+	Variant             string
+	Problem             string
+	ParetoID            *uint64
+	Error               string
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+	CompletedAt         *time.Time
+	IdempotencyKey      string        // Optional client-provided deduplication key
+	MaxExecutionSeconds int64         // 0 = use server default
 }
 
 // ExecutionProgress represents the current progress of a running execution.

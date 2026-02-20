@@ -109,12 +109,17 @@ func deepCopyExecution(src *store.Execution) *store.Execution {
 	}
 
 	dst := &store.Execution{
-		ID:        src.ID,
-		UserID:    src.UserID,
-		Status:    src.Status,
-		Error:     src.Error,
-		CreatedAt: src.CreatedAt,
-		UpdatedAt: src.UpdatedAt,
+		ID:                  src.ID,
+		UserID:              src.UserID,
+		Status:              src.Status,
+		Error:               src.Error,
+		Algorithm:           src.Algorithm,
+		Variant:             src.Variant,
+		Problem:             src.Problem,
+		IdempotencyKey:      src.IdempotencyKey,
+		MaxExecutionSeconds: src.MaxExecutionSeconds,
+		CreatedAt:           src.CreatedAt,
+		UpdatedAt:           src.UpdatedAt,
 	}
 
 	// Copy pointer fields
@@ -270,6 +275,10 @@ func (m *mockStore) IsExecutionCancelled(ctx context.Context, executionID string
 	return false, nil
 }
 
+func (m *mockStore) GetExecutionByIdempotencyKey(_ context.Context, _, _ string) (string, error) {
+	return "", nil
+}
+
 func (m *mockStore) Subscribe(ctx context.Context, channel string) (<-chan []byte, error) {
 	ch := make(chan []byte)
 	close(ch)
@@ -359,7 +368,7 @@ func TestExecutor_SubmitExecution(t *testing.T) {
 		},
 	}
 
-	executionID, err := exec.SubmitExecution(ctx, userID, algorithm, problem, variantName, config)
+	executionID, err := exec.SubmitExecution(ctx, userID, algorithm, problem, variantName, config, "", 0)
 	require.NoError(t, err)
 	assert.NotEmpty(t, executionID)
 
@@ -482,7 +491,7 @@ func TestExecutor_WorkerPoolExhaustion(t *testing.T) {
 	// Only 2 should run concurrently, others should queue
 	var executionIDs []string
 	for range 5 {
-		execID, err := exec.SubmitExecution(ctx, userID, "gde3", "zdt1", "rand1", config)
+		execID, err := exec.SubmitExecution(ctx, userID, "gde3", "zdt1", "rand1", config, "", 0)
 		require.NoError(t, err)
 		executionIDs = append(executionIDs, execID)
 	}
@@ -557,7 +566,7 @@ func TestExecutor_ConcurrentSubmissions(t *testing.T) {
 
 	for range 10 {
 		wg.Go(func() {
-			execID, err := exec.SubmitExecution(ctx, userID, "gde3", "zdt1", "rand1", config)
+			execID, err := exec.SubmitExecution(ctx, userID, "gde3", "zdt1", "rand1", config, "", 0)
 			mu.Lock()
 			if err != nil {
 				errors = append(errors, err)
@@ -626,7 +635,7 @@ func TestExecutor_CompletionTracking(t *testing.T) {
 		},
 	}
 
-	executionID, err := exec.SubmitExecution(ctx, userID, "gde3", "zdt1", "rand1", config)
+	executionID, err := exec.SubmitExecution(ctx, userID, "gde3", "zdt1", "rand1", config, "", 0)
 	require.NoError(t, err)
 
 	// Poll progress until complete
@@ -682,7 +691,7 @@ func TestExecutor_ActiveExecutionTracking(t *testing.T) {
 		},
 	}
 
-	executionID, err := exec.SubmitExecution(ctx, userID, "gde3", "slow-problem", "rand1", config)
+	executionID, err := exec.SubmitExecution(ctx, userID, "gde3", "slow-problem", "rand1", config, "", 0)
 	require.NoError(t, err)
 
 	// Should appear in activeExecs
@@ -755,7 +764,7 @@ func TestExecutor_PanicRecovery(t *testing.T) {
 		},
 	}
 
-	executionID, err := exec.SubmitExecution(ctx, userID, "gde3", "panic-problem", "rand1", config)
+	executionID, err := exec.SubmitExecution(ctx, userID, "gde3", "panic-problem", "rand1", config, "", 0)
 	require.NoError(t, err)
 
 	// Wait for execution to fail due to panic
@@ -835,7 +844,7 @@ func TestExecutor_CancellationDuringExecution(t *testing.T) {
 		},
 	}
 
-	executionID, err := exec.SubmitExecution(ctx, userID, "gde3", "zdt1", "rand1", config)
+	executionID, err := exec.SubmitExecution(ctx, userID, "gde3", "zdt1", "rand1", config, "", 0)
 	require.NoError(t, err)
 
 	// Wait for execution to start
@@ -916,7 +925,7 @@ func TestExecutor_WorkerSlotReleaseOnError(t *testing.T) {
 	}
 
 	// Submit execution that will fail
-	executionID, err := exec.SubmitExecution(ctx, userID, "gde3", "error-problem", "rand1", config)
+	executionID, err := exec.SubmitExecution(ctx, userID, "gde3", "error-problem", "rand1", config, "", 0)
 	require.NoError(t, err)
 
 	// Wait for failure
@@ -929,7 +938,7 @@ func TestExecutor_WorkerSlotReleaseOnError(t *testing.T) {
 	}, 5*time.Second, 100*time.Millisecond)
 
 	// Worker slot should be released, allowing new submission
-	_, err = exec.SubmitExecution(ctx, userID, "gde3", "error-problem", "rand1", config)
+	_, err = exec.SubmitExecution(ctx, userID, "gde3", "error-problem", "rand1", config, "", 0)
 	require.NoError(t, err, "Should be able to submit new execution after worker slot released")
 }
 
@@ -990,9 +999,9 @@ func TestExecutor_Shutdown_HappyPath(t *testing.T) {
 	}
 
 	// Submit multiple executions
-	executionID1, err := exec.SubmitExecution(ctx, userID, "gde3", "slow-problem", "rand1", config)
+	executionID1, err := exec.SubmitExecution(ctx, userID, "gde3", "slow-problem", "rand1", config, "", 0)
 	require.NoError(t, err)
-	executionID2, err := exec.SubmitExecution(ctx, userID, "gde3", "slow-problem", "rand1", config)
+	executionID2, err := exec.SubmitExecution(ctx, userID, "gde3", "slow-problem", "rand1", config, "", 0)
 	require.NoError(t, err)
 
 	// Wait a bit for executions to start
@@ -1056,7 +1065,7 @@ func TestExecutor_Shutdown_Timeout(t *testing.T) {
 	}
 
 	// Submit execution
-	_, err = exec.SubmitExecution(ctx, userID, "gde3", "slow-problem", "rand1", config)
+	_, err = exec.SubmitExecution(ctx, userID, "gde3", "slow-problem", "rand1", config, "", 0)
 	require.NoError(t, err)
 
 	// Wait for execution to start
@@ -1110,9 +1119,9 @@ func TestExecutor_Shutdown_ContextCancellation(t *testing.T) {
 	}
 
 	// Submit executions
-	_, err = exec.SubmitExecution(ctx, userID, "gde3", "slow-problem", "rand1", config)
+	_, err = exec.SubmitExecution(ctx, userID, "gde3", "slow-problem", "rand1", config, "", 0)
 	require.NoError(t, err)
-	_, err = exec.SubmitExecution(ctx, userID, "gde3", "slow-problem", "rand1", config)
+	_, err = exec.SubmitExecution(ctx, userID, "gde3", "slow-problem", "rand1", config, "", 0)
 	require.NoError(t, err)
 
 	// Wait for executions to start
@@ -1131,4 +1140,150 @@ func TestExecutor_Shutdown_ContextCancellation(t *testing.T) {
 	err = exec.Shutdown(shutdownCtx)
 	assert.Error(t, err, "Shutdown should fail when context is cancelled")
 	assert.ErrorIs(t, err, context.Canceled, "Should return context cancelled error")
+}
+
+// TestExecutor_ExecutionTimeout tests that an execution is marked as failed when it exceeds its timeout.
+// The GDE3 algorithm checks ctx.Err() at each generation boundary, so we use a short per-evaluation
+// sleep combined with a tight timeout that triggers after at least one full generation completes.
+func TestExecutor_ExecutionTimeout(t *testing.T) {
+	mockSt := newMockStore()
+
+	// Each evaluation sleeps 10ms; with population=5 a generation takes ~50ms.
+	// The default timeout of 300ms allows a few generations then stops.
+	exec := New(Config{
+		Store:               mockSt,
+		MaxWorkers:          2,
+		ExecutionTTL:        time.Hour,
+		ResultTTL:           time.Hour,
+		ProgressTTL:         time.Minute,
+		DefaultMaxExecution: 300 * time.Millisecond,
+	})
+
+	exec.RegisterProblem("slow-problem", &slowProblem{duration: 10 * time.Millisecond})
+	variant, err := variants.DefaultRegistry.Create("rand1")
+	require.NoError(t, err)
+	exec.RegisterVariant("rand1", variant)
+
+	ctx := context.Background()
+	userID := "test-user"
+
+	config := &api.DEConfig{
+		Executions:     1,
+		Generations:    1000, // many generations to ensure it won't finish naturally
+		PopulationSize: 5,
+		DimensionsSize: 5,
+		ObjectivesSize: 2,
+		FloorLimiter:   0.0,
+		CeilLimiter:    1.0,
+		AlgorithmConfig: &api.DEConfig_Gde3{
+			Gde3: &api.GDE3Config{Cr: 0.9, F: 0.5, P: 0.1},
+		},
+	}
+
+	executionID, err := exec.SubmitExecution(ctx, userID, "gde3", "slow-problem", "rand1", config, "", 0)
+	require.NoError(t, err)
+
+	// Wait for the execution to time out and be marked failed
+	assert.Eventually(t, func() bool {
+		execution, err := mockSt.GetExecution(ctx, executionID, userID)
+		if err != nil {
+			return false
+		}
+		return execution.Status == store.ExecutionStatusFailed
+	}, 10*time.Second, 100*time.Millisecond, "Execution should be marked as failed after timeout")
+}
+
+// TestExecutor_ExecutionTimeout_PerRequestOverride tests that per-request max_execution_seconds overrides the default.
+func TestExecutor_ExecutionTimeout_PerRequestOverride(t *testing.T) {
+	mockSt := newMockStore()
+
+	// Default is generous; the per-request override is tight (1 second).
+	exec := New(Config{
+		Store:               mockSt,
+		MaxWorkers:          4,
+		ExecutionTTL:        time.Hour,
+		ResultTTL:           time.Hour,
+		ProgressTTL:         time.Minute,
+		DefaultMaxExecution: 60 * time.Second,
+	})
+
+	exec.RegisterProblem("slow-problem", &slowProblem{duration: 10 * time.Millisecond})
+	variant, err := variants.DefaultRegistry.Create("rand1")
+	require.NoError(t, err)
+	exec.RegisterVariant("rand1", variant)
+
+	ctx := context.Background()
+	userID := "test-user"
+
+	config := &api.DEConfig{
+		Executions:     1,
+		Generations:    1000,
+		PopulationSize: 5,
+		DimensionsSize: 5,
+		ObjectivesSize: 2,
+		FloorLimiter:   0.0,
+		CeilLimiter:    1.0,
+		AlgorithmConfig: &api.DEConfig_Gde3{
+			Gde3: &api.GDE3Config{Cr: 0.9, F: 0.5, P: 0.1},
+		},
+	}
+
+	// Submit with 1-second per-request override (MaxExecutionSeconds=1)
+	executionID, err := exec.SubmitExecution(ctx, userID, "gde3", "slow-problem", "rand1", config, "", 1)
+	require.NoError(t, err)
+
+	// Should fail within a few seconds due to the 1-second per-request timeout
+	assert.Eventually(t, func() bool {
+		execution, err := mockSt.GetExecution(ctx, executionID, userID)
+		if err != nil {
+			return false
+		}
+		return execution.Status == store.ExecutionStatusFailed
+	}, 10*time.Second, 100*time.Millisecond, "Execution with per-request timeout should fail quickly")
+}
+
+// TestExecutor_IdempotencyKey tests that idempotency key is stored with the execution.
+func TestExecutor_IdempotencyKey(t *testing.T) {
+	mockSt := newMockStore()
+	exec := New(Config{
+		Store:        mockSt,
+		MaxWorkers:   2,
+		ExecutionTTL: time.Hour,
+		ResultTTL:    time.Hour,
+		ProgressTTL:  time.Minute,
+	})
+
+	prob, err := problems.DefaultRegistry.Create("zdt1", 10, 2)
+	require.NoError(t, err)
+	exec.RegisterProblem("zdt1", prob)
+
+	variant, err := variants.DefaultRegistry.Create("rand1")
+	require.NoError(t, err)
+	exec.RegisterVariant("rand1", variant)
+
+	ctx := context.Background()
+	userID := "test-user"
+
+	config := &api.DEConfig{
+		Executions:     1,
+		Generations:    2,
+		PopulationSize: 10,
+		DimensionsSize: 10,
+		ObjectivesSize: 2,
+		FloorLimiter:   0.0,
+		CeilLimiter:    1.0,
+		AlgorithmConfig: &api.DEConfig_Gde3{
+			Gde3: &api.GDE3Config{Cr: 0.9, F: 0.5, P: 0.1},
+		},
+	}
+
+	iKey := "test-idem-key-abc"
+	executionID, err := exec.SubmitExecution(ctx, userID, "gde3", "zdt1", "rand1", config, iKey, 0)
+	require.NoError(t, err)
+	assert.NotEmpty(t, executionID)
+
+	// Verify the idempotency key is persisted in the execution record
+	execution, err := mockSt.GetExecution(ctx, executionID, userID)
+	require.NoError(t, err)
+	assert.Equal(t, iKey, execution.IdempotencyKey)
 }

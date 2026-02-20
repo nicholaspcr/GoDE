@@ -41,8 +41,9 @@ type MockStore struct {
 	SaveProgressFn                 func(ctx context.Context, progress *store.ExecutionProgress) error
 	GetProgressFn                  func(ctx context.Context, executionID string) (*store.ExecutionProgress, error)
 	MarkExecutionForCancellationFn func(ctx context.Context, executionID, userID string) error
-	IsExecutionCancelledFn         func(ctx context.Context, executionID string) (bool, error)
-	SubscribeFn                    func(ctx context.Context, channel string) (<-chan []byte, error)
+	IsExecutionCancelledFn              func(ctx context.Context, executionID string) (bool, error)
+	GetExecutionByIdempotencyKeyFn      func(ctx context.Context, userID, idempotencyKey string) (string, error)
+	SubscribeFn                         func(ctx context.Context, channel string) (<-chan []byte, error)
 
 	AutoMigrateFn func() error
 	HealthCheckFn func(ctx context.Context) error
@@ -265,6 +266,14 @@ func (m *MockStore) IsExecutionCancelled(ctx context.Context, executionID string
 		return m.IsExecutionCancelledFn(ctx, executionID)
 	}
 	return false, nil
+}
+
+// GetExecutionByIdempotencyKey implements store.Store
+func (m *MockStore) GetExecutionByIdempotencyKey(ctx context.Context, userID, idempotencyKey string) (string, error) {
+	if m.GetExecutionByIdempotencyKeyFn != nil {
+		return m.GetExecutionByIdempotencyKeyFn(ctx, userID, idempotencyKey)
+	}
+	return "", nil
 }
 
 // Subscribe implements store.Store

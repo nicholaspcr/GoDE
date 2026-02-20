@@ -117,6 +117,10 @@ func (s *Store) Subscribe(ctx context.Context, channel string) (<-chan []byte, e
 	return s.execStore.Subscribe(ctx, channel)
 }
 
+func (s *Store) GetExecutionByIdempotencyKey(ctx context.Context, userID, idempotencyKey string) (string, error) {
+	return s.execStore.GetExecutionByIdempotencyKey(ctx, userID, idempotencyKey)
+}
+
 // HealthCheck checks both database and Redis health.
 func (s *Store) HealthCheck(ctx context.Context) error {
 	// Check database health

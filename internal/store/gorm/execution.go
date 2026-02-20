@@ -188,6 +188,11 @@ func (s *executionStore) Subscribe(ctx context.Context, channel string) (<-chan 
 	return nil, storeerrors.ErrPubSubNotSupported
 }
 
+// GetExecutionByIdempotencyKey is not implemented for GORM (idempotency is Redis-backed).
+func (s *executionStore) GetExecutionByIdempotencyKey(_ context.Context, _, _ string) (string, error) {
+	return "", storeerrors.ErrExecutionNotFound
+}
+
 // modelToExecution converts a database model to a store.Execution.
 func (s *executionStore) modelToExecution(model *executionModel) (*store.Execution, error) {
 	var config api.DEConfig

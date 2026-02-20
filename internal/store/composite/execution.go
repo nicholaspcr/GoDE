@@ -144,3 +144,8 @@ func (s *ExecutionStore) IsExecutionCancelled(ctx context.Context, executionID s
 func (s *ExecutionStore) Subscribe(ctx context.Context, channel string) (<-chan []byte, error) {
 	return s.redis.Subscribe(ctx, channel)
 }
+
+// GetExecutionByIdempotencyKey delegates to Redis (idempotency is Redis-backed).
+func (s *ExecutionStore) GetExecutionByIdempotencyKey(ctx context.Context, userID, idempotencyKey string) (string, error) {
+	return s.redis.GetExecutionByIdempotencyKey(ctx, userID, idempotencyKey)
+}

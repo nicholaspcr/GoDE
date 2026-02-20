@@ -84,6 +84,13 @@ message RunAsyncRequest {
   string variant = 2;
   string problem = 3;
   DEConfig de_config = 4;
+  // idempotency_key is an optional client-provided key for deduplication.
+  // If a prior execution with the same key exists for this user it is returned
+  // instead of creating a new one.
+  string idempotency_key = 5;
+  // max_execution_seconds limits how long the execution may run.
+  // Zero means the server default applies.
+  int64 max_execution_seconds = 6;
 }
 
 message GetExecutionResultsResponse {
@@ -114,6 +121,8 @@ message Execution {
   string algorithm = 10;
   string variant = 11;
   string problem = 12;
+  string idempotency_key = 13;
+  int64 max_execution_seconds = 14;
 }
 
 // Progress update during execution

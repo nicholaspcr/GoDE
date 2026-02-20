@@ -59,6 +59,7 @@ func New(ctx context.Context, cfg Config, opts ...serverOpts) (Server, error) {
 		ExecutionTTL:         cfg.Executor.ExecutionTTL,
 		ResultTTL:            cfg.Executor.ResultTTL,
 		ProgressTTL:          cfg.Executor.ProgressTTL,
+		DefaultMaxExecution:  cfg.Executor.DefaultMaxExecution,
 		Metrics:              srv.metrics,
 	})
 

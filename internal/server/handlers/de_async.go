@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/nicholaspcr/GoDE/internal/server/auth"
 	"github.com/nicholaspcr/GoDE/internal/server/middleware"
+	storeerrors "github.com/nicholaspcr/GoDE/internal/store/errors"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/nicholaspcr/GoDE/pkg/de"
 	"github.com/nicholaspcr/GoDE/pkg/validation"
@@ -59,8 +61,22 @@ func (deh *deHandler) RunAsync(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	// Check idempotency: return existing execution if key was already seen
+	if req.IdempotencyKey != "" {
+		existingID, iErr := deh.Store.GetExecutionByIdempotencyKey(ctx, userID, req.IdempotencyKey)
+		if iErr == nil && existingID != "" {
+			span.SetAttributes(attribute.String("execution_id", existingID))
+			return &api.RunAsyncResponse{ExecutionId: existingID}, nil
+		}
+		// Only proceed on not-found; propagate unexpected errors
+		if iErr != nil && !errors.Is(iErr, storeerrors.ErrExecutionNotFound) {
+			span.RecordError(iErr)
+			return nil, status.Error(codes.Internal, "failed to check idempotency key")
+		}
+	}
+
 	// Submit execution with algorithm, problem, and variant names
-	executionID, err := deh.executor.SubmitExecution(ctx, userID, req.Algorithm, req.Problem, req.Variant, req.DeConfig)
+	executionID, err := deh.executor.SubmitExecution(ctx, userID, req.Algorithm, req.Problem, req.Variant, req.DeConfig, req.IdempotencyKey, req.MaxExecutionSeconds)
 	if err != nil {
 		span.RecordError(err)
 		return nil, status.Error(codes.Internal, "failed to submit execution")

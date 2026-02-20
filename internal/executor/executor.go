@@ -24,16 +24,17 @@ import (
 
 // Executor manages background execution of DE algorithms.
 type Executor struct {
-	store           store.Store
-	executionTTL    time.Duration
-	resultTTL       time.Duration
-	progressTTL     time.Duration
-	workers         *workerPool
-	progress        *progressTracker
-	activeExecs     map[string]context.CancelFunc
-	activeExecsMu   sync.RWMutex
-	problemRegistry map[string]problems.Interface
-	variantRegistry map[string]variants.Interface
+	store               store.Store
+	executionTTL        time.Duration
+	resultTTL           time.Duration
+	progressTTL         time.Duration
+	defaultMaxExecution time.Duration
+	workers             *workerPool
+	progress            *progressTracker
+	activeExecs         map[string]context.CancelFunc
+	activeExecsMu       sync.RWMutex
+	problemRegistry     map[string]problems.Interface
+	variantRegistry     map[string]variants.Interface
 }
 
 // Config holds configuration for the Executor.
@@ -44,6 +45,7 @@ type Config struct {
 	ExecutionTTL         time.Duration
 	ResultTTL            time.Duration
 	ProgressTTL          time.Duration
+	DefaultMaxExecution  time.Duration // Maximum wall-clock time per execution (0 = no limit)
 	Metrics              *telemetry.Metrics
 }
 
@@ -55,15 +57,16 @@ func New(cfg Config) *Executor {
 	}
 
 	e := &Executor{
-		store:           cfg.Store,
-		executionTTL:    cfg.ExecutionTTL,
-		resultTTL:       cfg.ResultTTL,
-		progressTTL:     cfg.ProgressTTL,
-		workers:         newWorkerPool(cfg.MaxWorkers, cfg.Metrics),
-		progress:        newProgressTracker(cfg.Store, maxVectorsInProgress),
-		activeExecs:     make(map[string]context.CancelFunc),
-		problemRegistry: make(map[string]problems.Interface),
-		variantRegistry: make(map[string]variants.Interface),
+		store:               cfg.Store,
+		executionTTL:        cfg.ExecutionTTL,
+		resultTTL:           cfg.ResultTTL,
+		progressTTL:         cfg.ProgressTTL,
+		defaultMaxExecution: cfg.DefaultMaxExecution,
+		workers:             newWorkerPool(cfg.MaxWorkers, cfg.Metrics),
+		progress:            newProgressTracker(cfg.Store, maxVectorsInProgress),
+		activeExecs:         make(map[string]context.CancelFunc),
+		problemRegistry:     make(map[string]problems.Interface),
+		variantRegistry:     make(map[string]variants.Interface),
 	}
 
 	return e
@@ -80,7 +83,9 @@ func (e *Executor) RegisterVariant(name string, v variants.Interface) {
 }
 
 // SubmitExecution submits a new DE execution to run in the background.
-func (e *Executor) SubmitExecution(ctx context.Context, userID, algorithm, problem, variant string, config *api.DEConfig) (string, error) {
+// idempotencyKey is optional; if non-empty the store is checked for an existing execution.
+// maxExecutionSeconds overrides the server default timeout (0 = use server default).
+func (e *Executor) SubmitExecution(ctx context.Context, userID, algorithm, problem, variant string, config *api.DEConfig, idempotencyKey string, maxExecutionSeconds int64) (string, error) {
 	// Validate problem and variant exist before creating execution record
 	if _, exists := e.problemRegistry[problem]; !exists {
 		return "", fmt.Errorf("unknown problem: %s", problem)
@@ -89,20 +94,28 @@ func (e *Executor) SubmitExecution(ctx context.Context, userID, algorithm, probl
 		return "", fmt.Errorf("unknown variant: %s", variant)
 	}
 
+	// Determine effective timeout for this execution
+	timeout := e.defaultMaxExecution
+	if maxExecutionSeconds > 0 {
+		timeout = time.Duration(maxExecutionSeconds) * time.Second
+	}
+
 	// Generate execution ID
 	executionID := uuid.New().String()
 
 	// Create execution record
 	execution := &store.Execution{
-		ID:        executionID,
-		UserID:    userID,
-		Status:    store.ExecutionStatusPending,
-		Config:    config,
-		Algorithm: algorithm,
-		Variant:   variant,
-		Problem:   problem,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		ID:                  executionID,
+		UserID:              userID,
+		Status:              store.ExecutionStatusPending,
+		Config:              config,
+		Algorithm:           algorithm,
+		Variant:             variant,
+		Problem:             problem,
+		IdempotencyKey:      idempotencyKey,
+		MaxExecutionSeconds: maxExecutionSeconds,
+		CreatedAt:           time.Now(),
+		UpdatedAt:           time.Now(),
 	}
 
 	if err := e.store.CreateExecution(ctx, execution); err != nil {
@@ -115,7 +128,7 @@ func (e *Executor) SubmitExecution(ctx context.Context, userID, algorithm, probl
 	parentCtx := context.WithoutCancel(ctx)
 
 	// Submit to worker pool (non-blocking)
-	go e.executeInBackground(parentCtx, executionID, userID, algorithm, problem, variant, config)
+	go e.executeInBackground(parentCtx, executionID, userID, algorithm, problem, variant, config, timeout)
 
 	return executionID, nil
 }
@@ -204,7 +217,7 @@ func (e *Executor) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (e *Executor) executeInBackground(parentCtx context.Context, executionID, userID, algorithm, problem, variant string, config *api.DEConfig) {
+func (e *Executor) executeInBackground(parentCtx context.Context, executionID, userID, algorithm, problem, variant string, config *api.DEConfig, timeout time.Duration) {
 	// Create base context for worker acquisition
 	ctx := context.Background()
 
@@ -221,7 +234,12 @@ func (e *Executor) executeInBackground(parentCtx context.Context, executionID, u
 
 	// Create cancellable context derived from parent (preserves trace context).
 	// The parent context is already detached from request cancellation via WithoutCancel.
-	ctx, cancel := context.WithCancel(parentCtx)
+	var cancel context.CancelFunc
+	if timeout > 0 {
+		ctx, cancel = context.WithTimeout(parentCtx, timeout)
+	} else {
+		ctx, cancel = context.WithCancel(parentCtx)
+	}
 	defer cancel()
 
 	// Register active execution
@@ -265,7 +283,8 @@ func (e *Executor) executeInBackground(parentCtx context.Context, executionID, u
 	pareto, maxObjs, err := e.runAlgorithm(ctx, executionID, algorithm, problem, variant, config)
 	if err != nil {
 		var updateErr error
-		if errors.Is(err, context.Canceled) {
+		switch {
+		case errors.Is(err, context.Canceled):
 			updateErr = e.store.UpdateExecutionStatus(ctx, executionID, store.ExecutionStatusCancelled, "")
 			if updateErr != nil {
 				slog.Error("failed to update execution status to cancelled",
@@ -273,7 +292,15 @@ func (e *Executor) executeInBackground(parentCtx context.Context, executionID, u
 					slog.Any("update_error", updateErr),
 				)
 			}
-		} else {
+		case errors.Is(err, context.DeadlineExceeded):
+			updateErr = e.store.UpdateExecutionStatus(ctx, executionID, store.ExecutionStatusFailed, "execution timed out")
+			if updateErr != nil {
+				slog.Error("failed to update execution status after timeout",
+					slog.String("execution_id", executionID),
+					slog.Any("update_error", updateErr),
+				)
+			}
+		default:
 			updateErr = e.store.UpdateExecutionStatus(ctx, executionID, store.ExecutionStatusFailed, err.Error())
 			if updateErr != nil {
 				slog.Error("failed to update execution status to failed",

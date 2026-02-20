@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 var (
@@ -172,6 +173,7 @@ func (j *jwtService) generateTokenWithScopes(username string, tokenType TokenTyp
 		TokenType: tokenType,
 		Scopes:    scopes,
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        uuid.New().String(), // JTI for token revocation
 			ExpiresAt: jwt.NewNumericDate(now.Add(expiry)),
 			IssuedAt:  jwt.NewNumericDate(now),
 			NotBefore: jwt.NewNumericDate(now),

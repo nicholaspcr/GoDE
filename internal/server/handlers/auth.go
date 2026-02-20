@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"context"
+	"log/slog"
 	"strings"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/nicholaspcr/GoDE/internal/server/auth"
+	"github.com/nicholaspcr/GoDE/internal/server/middleware"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/nicholaspcr/GoDE/pkg/validation"
 	"golang.org/x/crypto/bcrypt"
@@ -41,11 +43,13 @@ type authHandler struct {
 	db           authDB
 	jwtService   auth.JWTService
 	accessExpiry time.Duration
+	revoker      auth.TokenRevoker // nil if token revocation is unavailable
 }
 
 // NewAuthHandler returns a handle that implements api's authServiceServer.
-func NewAuthHandler(st authDB, jwtService auth.JWTService, accessExpiry time.Duration) Handler {
-	return &authHandler{db: st, jwtService: jwtService, accessExpiry: accessExpiry}
+// revoker may be nil, in which case logout and refresh revocation are best-effort no-ops.
+func NewAuthHandler(st authDB, jwtService auth.JWTService, accessExpiry time.Duration, revoker auth.TokenRevoker) Handler {
+	return &authHandler{db: st, jwtService: jwtService, accessExpiry: accessExpiry, revoker: revoker}
 }
 
 // RegisterService adds authService to the RPC server.
@@ -139,9 +143,21 @@ func (ah authHandler) Login(
 func (ah authHandler) Logout(
 	ctx context.Context, req *api.AuthServiceLogoutRequest,
 ) (*emptypb.Empty, error) {
-	// JWT is stateless, so logout is handled client-side by discarding the token
-	// This endpoint exists for API compatibility and future extensions
-	// (e.g., token blacklisting, revocation lists)
+	if ah.revoker != nil {
+		claims := middleware.ClaimsFromContext(ctx)
+		if claims != nil && claims.ID != "" && claims.ExpiresAt != nil {
+			ttl := time.Until(claims.ExpiresAt.Time)
+			if ttl > 0 {
+				if err := ah.revoker.RevokeToken(ctx, claims.ID, ttl); err != nil {
+					// Best-effort: log and continue so logout still succeeds
+					slog.WarnContext(ctx, "failed to revoke access token on logout",
+						slog.String("jti", claims.ID),
+						slog.String("error", err.Error()),
+					)
+				}
+			}
+		}
+	}
 	return api.Empty, nil
 }
 
@@ -153,10 +169,9 @@ func (ah authHandler) RefreshToken(
 		return nil, status.Error(codes.InvalidArgument, "refresh token is required")
 	}
 
-	// Use the JWT service to refresh the access token
-	accessToken, newRefreshToken, err := ah.jwtService.RefreshAccessToken(req.RefreshToken)
+	// Validate and extract claims from the refresh token so we can revoke its JTI.
+	oldClaims, err := ah.jwtService.ValidateRefreshToken(req.RefreshToken)
 	if err != nil {
-		// Map JWT errors to appropriate gRPC status codes
 		switch err {
 		case auth.ErrExpiredToken:
 			return nil, status.Error(codes.Unauthenticated, "refresh token has expired")
@@ -169,9 +184,41 @@ func (ah authHandler) RefreshToken(
 		}
 	}
 
+	// Check whether the refresh token has already been revoked.
+	if ah.revoker != nil && oldClaims.ID != "" {
+		revoked, revokeErr := ah.revoker.IsRevoked(ctx, oldClaims.ID)
+		if revokeErr != nil {
+			slog.WarnContext(ctx, "failed to check refresh token revocation",
+				slog.String("jti", oldClaims.ID),
+				slog.String("error", revokeErr.Error()),
+			)
+		} else if revoked {
+			return nil, status.Error(codes.Unauthenticated, "refresh token has been revoked")
+		}
+	}
+
+	// Issue new token pair.
+	accessToken, newRefreshToken, err := ah.jwtService.GenerateTokenPair(oldClaims.Username)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to generate tokens")
+	}
+
+	// Revoke the old refresh token so it cannot be reused (token rotation).
+	if ah.revoker != nil && oldClaims.ID != "" && oldClaims.ExpiresAt != nil {
+		ttl := time.Until(oldClaims.ExpiresAt.Time)
+		if ttl > 0 {
+			if err := ah.revoker.RevokeToken(ctx, oldClaims.ID, ttl); err != nil {
+				slog.WarnContext(ctx, "failed to revoke old refresh token",
+					slog.String("jti", oldClaims.ID),
+					slog.String("error", err.Error()),
+				)
+			}
+		}
+	}
+
 	return &api.AuthServiceRefreshTokenResponse{
 		AccessToken:  accessToken,
 		RefreshToken: newRefreshToken,
-		ExpiresIn:    int64(ah.accessExpiry.Seconds()), // Access token expiry in seconds
+		ExpiresIn:    int64(ah.accessExpiry.Seconds()),
 	}, nil
 }

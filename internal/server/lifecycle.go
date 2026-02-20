@@ -233,7 +233,7 @@ func (l *lifecycle) setupGRPCServer() error {
 	unaryInterceptors = append(unaryInterceptors,
 		l.rateLimiter.UnaryGlobalRateLimitMiddleware(),
 		l.rateLimiter.UnaryAuthRateLimitMiddleware(),        // IP-based, runs before auth
-		middleware.UnaryAuthMiddleware(l.server.jwtService), // Auth BEFORE DE limiter
+		middleware.UnaryAuthMiddleware(l.server.jwtService, l.server.revoker), // Auth BEFORE DE limiter
 		l.rateLimiter.UnaryDERateLimitMiddleware(),          // User-based, needs auth
 		logging.UnaryServerInterceptor(InterceptorLogger(logger)),
 	)
@@ -243,7 +243,7 @@ func (l *lifecycle) setupGRPCServer() error {
 		grpc.ChainStreamInterceptor(
 			middleware.StreamPanicRecoveryMiddleware(),
 			middleware.StreamMetricsMiddleware(l.server.metrics),
-			middleware.StreamAuthMiddleware(l.server.jwtService),
+			middleware.StreamAuthMiddleware(l.server.jwtService, l.server.revoker),
 			logging.StreamServerInterceptor(InterceptorLogger(logger)),
 		),
 	)

@@ -8,6 +8,7 @@ import (
 	_ "net/http/pprof" // Register pprof HTTP handlers
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	rediscache "github.com/nicholaspcr/GoDE/internal/cache/redis"
 	"github.com/nicholaspcr/GoDE/internal/executor"
 	"github.com/nicholaspcr/GoDE/internal/server/auth"
 	"github.com/nicholaspcr/GoDE/internal/server/handlers"
@@ -31,6 +32,15 @@ func New(ctx context.Context, cfg Config, opts ...serverOpts) (Server, error) {
 	srv := &server{
 		cfg:        cfg,
 		jwtService: jwtService,
+	}
+
+	// Create Redis-backed token revoker; gracefully degrade if unavailable.
+	if redisClient, err := rediscache.NewClient(cfg.Redis); err != nil {
+		slog.WarnContext(ctx, "failed to create Redis client for token revocation, revocation disabled",
+			slog.String("error", err.Error()),
+		)
+	} else {
+		srv.revoker = auth.NewRedisTokenRevoker(redisClient)
 	}
 
 	for _, opt := range opts {
@@ -72,7 +82,7 @@ func New(ctx context.Context, cfg Config, opts ...serverOpts) (Server, error) {
 
 	// Create handlers with dependencies
 	srv.handlers = []handlers.Handler{
-		handlers.NewAuthHandler(srv.st, jwtService, cfg.JWTExpiry),
+		handlers.NewAuthHandler(srv.st, jwtService, cfg.JWTExpiry, srv.revoker),
 		handlers.NewUserHandler(srv.st),
 		handlers.NewParetoHandler(srv.st),
 		handlers.NewDEHandler(srv.st, srv.executor),
@@ -84,6 +94,7 @@ func New(ctx context.Context, cfg Config, opts ...serverOpts) (Server, error) {
 type server struct {
 	st         store.Store
 	jwtService auth.JWTService
+	revoker    auth.TokenRevoker
 	handlers   []handlers.Handler
 	cfg        Config
 	metrics    *telemetry.Metrics

@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -30,7 +31,7 @@ func TestUnaryAuthMiddleware_IgnoredMethods(t *testing.T) {
 
 func TestUnaryAuthMiddleware_MissingMetadata(t *testing.T) {
 	jwtService := auth.NewJWTService("test-secret", 15*time.Minute)
-	middleware := UnaryAuthMiddleware(jwtService)
+	middleware := UnaryAuthMiddleware(jwtService, nil)
 
 	mockHandler := func(ctx context.Context, req any) (any, error) {
 		t.Fatal("handler should not be called")
@@ -53,7 +54,7 @@ func TestUnaryAuthMiddleware_MissingMetadata(t *testing.T) {
 
 func TestUnaryAuthMiddleware_MissingToken(t *testing.T) {
 	jwtService := auth.NewJWTService("test-secret", 15*time.Minute)
-	middleware := UnaryAuthMiddleware(jwtService)
+	middleware := UnaryAuthMiddleware(jwtService, nil)
 
 	mockHandler := func(ctx context.Context, req any) (any, error) {
 		t.Fatal("handler should not be called")
@@ -80,7 +81,7 @@ func TestUnaryAuthMiddleware_MissingToken(t *testing.T) {
 
 func TestUnaryAuthMiddleware_InvalidToken(t *testing.T) {
 	jwtService := auth.NewJWTService("test-secret", 15*time.Minute)
-	middleware := UnaryAuthMiddleware(jwtService)
+	middleware := UnaryAuthMiddleware(jwtService, nil)
 
 	mockHandler := func(ctx context.Context, req any) (any, error) {
 		t.Fatal("handler should not be called")
@@ -129,7 +130,7 @@ func TestUnaryAuthMiddleware_InvalidToken(t *testing.T) {
 func TestUnaryAuthMiddleware_ExpiredToken(t *testing.T) {
 	// Create JWT service with very short expiration
 	jwtService := auth.NewJWTService("test-secret", 100*time.Millisecond)
-	middleware := UnaryAuthMiddleware(jwtService)
+	middleware := UnaryAuthMiddleware(jwtService, nil)
 
 	// Generate token
 	token, err := jwtService.GenerateToken("testuser")
@@ -162,7 +163,7 @@ func TestUnaryAuthMiddleware_ExpiredToken(t *testing.T) {
 
 func TestUnaryAuthMiddleware_ValidToken(t *testing.T) {
 	jwtService := auth.NewJWTService("test-secret", 15*time.Minute)
-	middleware := UnaryAuthMiddleware(jwtService)
+	middleware := UnaryAuthMiddleware(jwtService, nil)
 
 	// Generate valid token
 	token, err := jwtService.GenerateToken("testuser")
@@ -221,7 +222,7 @@ func TestUnaryAuthMiddleware_WrongSecret(t *testing.T) {
 
 	// Try to validate with different secret
 	jwtService2 := auth.NewJWTService("secret2", 15*time.Minute)
-	middleware := UnaryAuthMiddleware(jwtService2)
+	middleware := UnaryAuthMiddleware(jwtService2, nil)
 
 	mockHandler := func(ctx context.Context, req any) (any, error) {
 		t.Fatal("handler should not be called")
@@ -247,7 +248,7 @@ func TestUnaryAuthMiddleware_WrongSecret(t *testing.T) {
 
 func TestUnaryAuthMiddleware_MultipleAuthorizationHeaders(t *testing.T) {
 	jwtService := auth.NewJWTService("test-secret", 15*time.Minute)
-	middleware := UnaryAuthMiddleware(jwtService)
+	middleware := UnaryAuthMiddleware(jwtService, nil)
 
 	// Generate valid token
 	token, err := jwtService.GenerateToken("testuser")
@@ -275,6 +276,82 @@ func TestUnaryAuthMiddleware_MultipleAuthorizationHeaders(t *testing.T) {
 	assert.Equal(t, "success", resp)
 	assert.True(t, handlerCalled)
 }
+// stubRevoker is a simple TokenRevoker for testing.
+type stubRevoker struct {
+	revokedJTIs map[string]bool
+	revokeErr   error
+}
+
+func (s *stubRevoker) RevokeToken(_ context.Context, jti string, _ time.Duration) error {
+	if s.revokedJTIs == nil {
+		s.revokedJTIs = make(map[string]bool)
+	}
+	s.revokedJTIs[jti] = true
+	return s.revokeErr
+}
+
+func (s *stubRevoker) IsRevoked(_ context.Context, jti string) (bool, error) {
+	if s.revokeErr != nil {
+		return false, s.revokeErr
+	}
+	return s.revokedJTIs[jti], nil
+}
+
+func TestUnaryAuthMiddleware_RevokedToken(t *testing.T) {
+	jwtService := auth.NewJWTService("test-secret", 15*time.Minute)
+	token, err := jwtService.GenerateToken("testuser")
+	require.NoError(t, err)
+
+	// Validate once to extract the JTI
+	claims, err := jwtService.ValidateToken(token)
+	require.NoError(t, err)
+
+	revoker := &stubRevoker{revokedJTIs: map[string]bool{claims.ID: true}}
+	mw := UnaryAuthMiddleware(jwtService, revoker)
+
+	mockHandler := func(ctx context.Context, req any) (any, error) {
+		t.Fatal("handler should not be called for a revoked token")
+		return nil, nil
+	}
+
+	md := metadata.New(map[string]string{"authorization": "Bearer " + token})
+	ctx := metadata.NewIncomingContext(context.Background(), md)
+	info := &grpc.UnaryServerInfo{FullMethod: "/api.v1.SomeService/ProtectedMethod"}
+
+	_, reqErr := mw(ctx, nil, info, mockHandler)
+
+	assert.Error(t, reqErr)
+	st, ok := status.FromError(reqErr)
+	assert.True(t, ok)
+	assert.Equal(t, codes.Unauthenticated, st.Code())
+}
+
+func TestUnaryAuthMiddleware_RevokerError(t *testing.T) {
+	jwtService := auth.NewJWTService("test-secret", 15*time.Minute)
+	token, err := jwtService.GenerateToken("testuser")
+	require.NoError(t, err)
+
+	// Revoker returns an error — middleware should allow through (fail open)
+	revoker := &stubRevoker{revokeErr: errors.New("redis unavailable")}
+	mw := UnaryAuthMiddleware(jwtService, revoker)
+
+	handlerCalled := false
+	mockHandler := func(ctx context.Context, req any) (any, error) {
+		handlerCalled = true
+		return "ok", nil
+	}
+
+	md := metadata.New(map[string]string{"authorization": "Bearer " + token})
+	ctx := metadata.NewIncomingContext(context.Background(), md)
+	info := &grpc.UnaryServerInfo{FullMethod: "/api.v1.SomeService/ProtectedMethod"}
+
+	resp, reqErr := mw(ctx, nil, info, mockHandler)
+
+	assert.NoError(t, reqErr)
+	assert.Equal(t, "ok", resp)
+	assert.True(t, handlerCalled, "should allow through when revoker errors")
+}
+
 func TestClaimsFromContext(t *testing.T) {
 	t.Run("returns nil when no claims in context", func(t *testing.T) {
 		ctx := context.Background()

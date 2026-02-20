@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"log/slog"
 	"strings"
 
 	"github.com/nicholaspcr/GoDE/internal/server/auth"
@@ -35,8 +36,9 @@ var (
 )
 
 // UnaryAuthMiddleware checks for Bearer authentication and validates JWT tokens.
+// The revoker is optional; pass nil to disable revocation checks.
 func UnaryAuthMiddleware(
-	jwtService auth.JWTService, ignoreMethods ...string,
+	jwtService auth.JWTService, revoker auth.TokenRevoker, ignoreMethods ...string,
 ) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
@@ -73,6 +75,19 @@ func UnaryAuthMiddleware(
 			claims, err := jwtService.ValidateToken(token)
 			if err != nil {
 				return nil, errTokenInvalid
+			}
+
+			// Check token revocation list
+			if revoker != nil && claims.ID != "" {
+				revoked, revokeErr := revoker.IsRevoked(ctx, claims.ID)
+				if revokeErr != nil {
+					slog.WarnContext(ctx, "failed to check token revocation, allowing request",
+						slog.String("jti", claims.ID),
+						slog.String("error", revokeErr.Error()),
+					)
+				} else if revoked {
+					return nil, errTokenInvalid
+				}
 			}
 
 			// Add user info and claims to context for downstream handlers
@@ -121,7 +136,8 @@ func ContextWithClaims(ctx context.Context, claims *auth.Claims) context.Context
 }
 
 // StreamAuthMiddleware checks for Bearer authentication and validates JWT tokens on stream RPCs.
-func StreamAuthMiddleware(jwtService auth.JWTService) grpc.StreamServerInterceptor {
+// The revoker is optional; pass nil to disable revocation checks.
+func StreamAuthMiddleware(jwtService auth.JWTService, revoker auth.TokenRevoker) grpc.StreamServerInterceptor {
 	return func(
 		srv any,
 		ss grpc.ServerStream,
@@ -146,6 +162,19 @@ func StreamAuthMiddleware(jwtService auth.JWTService) grpc.StreamServerIntercept
 		claims, err := jwtService.ValidateToken(token)
 		if err != nil {
 			return errTokenInvalid
+		}
+
+		// Check token revocation list
+		if revoker != nil && claims.ID != "" {
+			revoked, revokeErr := revoker.IsRevoked(ctx, claims.ID)
+			if revokeErr != nil {
+				slog.WarnContext(ctx, "failed to check token revocation, allowing request",
+					slog.String("jti", claims.ID),
+					slog.String("error", revokeErr.Error()),
+				)
+			} else if revoked {
+				return errTokenInvalid
+			}
 		}
 
 		// Add user info and claims to context for downstream handlers

@@ -3,6 +3,7 @@ package redis
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"strconv"
 	"time"
@@ -41,22 +42,47 @@ type Client struct {
 	breaker *gobreaker.CircuitBreaker
 }
 
+// TLSConfig holds TLS settings for Redis connections.
+type TLSConfig struct {
+	Enabled            bool
+	InsecureSkipVerify bool
+	CertFile           string
+	KeyFile            string
+}
+
 // Config holds Redis connection configuration.
 type Config struct {
 	Host          string
 	Port          int
 	Password      string
 	DB            int
+	TLS           TLSConfig
 	BreakerConfig BreakerConfig // Circuit breaker configuration
 }
 
 // NewClient creates a new Redis client wrapper with circuit breaker.
 func NewClient(cfg Config) (*Client, error) {
-	rdb := redis.NewClient(&redis.Options{
+	opts := &redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
 		Password: cfg.Password,
 		DB:       cfg.DB,
-	})
+	}
+
+	if cfg.TLS.Enabled {
+		tlsCfg := &tls.Config{
+			InsecureSkipVerify: cfg.TLS.InsecureSkipVerify, //nolint:gosec // controlled by operator config
+		}
+		if cfg.TLS.CertFile != "" && cfg.TLS.KeyFile != "" {
+			cert, err := tls.LoadX509KeyPair(cfg.TLS.CertFile, cfg.TLS.KeyFile)
+			if err != nil {
+				return nil, fmt.Errorf("failed to load Redis TLS cert/key: %w", err)
+			}
+			tlsCfg.Certificates = []tls.Certificate{cert}
+		}
+		opts.TLSConfig = tlsCfg
+	}
+
+	rdb := redis.NewClient(opts)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

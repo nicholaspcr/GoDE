@@ -1,0 +1,264 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gode.fullname" . }}
+  labels:
+    {{- include "gode.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "gode.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "gode.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "gode.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.initContainers.enabled }}
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z {{ include "gode.postgresql.host" . }} {{ include "gode.postgresql.port" . }}; do
+                echo "Waiting for PostgreSQL..."
+                sleep 2
+              done
+        - name: wait-for-redis
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z {{ include "gode.redis.host" . }} {{ include "gode.redis.port" . }}; do
+                echo "Waiting for Redis..."
+                sleep 2
+              done
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ include "gode.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - start
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.server.grpcPort }}
+              protocol: TCP
+            - name: http
+              containerPort: {{ .Values.server.httpPort }}
+              protocol: TCP
+          env:
+            # Server
+            - name: GODE_LIS_ADDR
+              value: "0.0.0.0:{{ .Values.server.grpcPort }}"
+            - name: GODE_HTTP_PORT
+              value: ":{{ .Values.server.httpPort }}"
+            # JWT
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "gode.jwt.secretName" . }}
+                  key: {{ include "gode.jwt.secretKey" . }}
+            - name: GODE_JWT_EXPIRY
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "gode.fullname" . }}-config
+                  key: JWT_EXPIRY
+            # Database
+            - name: DB_TYPE
+              value: "postgres"
+            - name: DB_HOST
+              value: {{ include "gode.postgresql.host" . | quote }}
+            - name: DB_PORT
+              value: {{ include "gode.postgresql.port" . | quote }}
+            - name: DB_NAME
+              value: {{ include "gode.postgresql.database" . | quote }}
+            - name: DB_USER
+              value: {{ include "gode.postgresql.username" . | quote }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "gode.postgresql.secretName" . }}
+                  key: {{ include "gode.postgresql.secretKey" . }}
+            # Redis
+            - name: REDIS_HOST
+              value: {{ include "gode.redis.host" . | quote }}
+            - name: REDIS_PORT
+              value: {{ include "gode.redis.port" . | quote }}
+            - name: REDIS_DB
+              value: {{ include "gode.redis.db" . | quote }}
+            {{- $redisSecretName := include "gode.redis.secretName" . }}
+            {{- if $redisSecretName }}
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $redisSecretName }}
+                  key: {{ include "gode.redis.secretKey" . }}
+            {{- end }}
+            {{- if not .Values.redis.enabled }}
+            - name: REDIS_TLS_ENABLED
+              value: {{ .Values.externalRedis.tls.enabled | quote }}
+            {{- if .Values.externalRedis.tls.enabled }}
+            - name: REDIS_TLS_INSECURE_SKIP_VERIFY
+              value: {{ .Values.externalRedis.tls.insecureSkipVerify | quote }}
+            {{- if .Values.externalRedis.tls.certFile }}
+            - name: REDIS_TLS_CERT_FILE
+              value: {{ .Values.externalRedis.tls.certFile | quote }}
+            {{- end }}
+            {{- if .Values.externalRedis.tls.keyFile }}
+            - name: REDIS_TLS_KEY_FILE
+              value: {{ .Values.externalRedis.tls.keyFile | quote }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+            # Observability
+            - name: GODE_METRICS_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "gode.fullname" . }}-config
+                  key: METRICS_ENABLED
+            - name: GODE_METRICS_TYPE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "gode.fullname" . }}-config
+                  key: METRICS_TYPE
+            - name: GODE_TRACING_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "gode.fullname" . }}-config
+                  key: TRACING_ENABLED
+            - name: GODE_SLO_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "gode.fullname" . }}-config
+                  key: SLO_ENABLED
+            # Tracing
+            - name: TRACING_EXPORTER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "gode.fullname" . }}-config
+                  key: TRACING_EXPORTER
+            - name: OTLP_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "gode.fullname" . }}-config
+                  key: OTLP_ENDPOINT
+            - name: TRACE_SAMPLE_RATIO
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "gode.fullname" . }}-config
+                  key: TRACE_SAMPLE_RATIO
+            # Executor
+            - name: GODE_EXECUTOR_MAX_WORKERS
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "gode.fullname" . }}-config
+                  key: EXECUTOR_MAX_WORKERS
+            - name: GODE_EXECUTOR_QUEUE_SIZE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "gode.fullname" . }}-config
+                  key: EXECUTOR_QUEUE_SIZE
+            - name: GODE_EXECUTOR_EXECUTION_TTL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "gode.fullname" . }}-config
+                  key: EXECUTOR_EXECUTION_TTL
+            - name: GODE_EXECUTOR_RESULT_TTL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "gode.fullname" . }}-config
+                  key: EXECUTOR_RESULT_TTL
+            - name: GODE_EXECUTOR_PROGRESS_TTL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "gode.fullname" . }}-config
+                  key: EXECUTOR_PROGRESS_TTL
+            # Rate limiting
+            - name: GODE_RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "gode.fullname" . }}-config
+                  key: RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE
+            - name: GODE_RATE_LIMIT_REGISTER_REQUESTS_PER_MINUTE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "gode.fullname" . }}-config
+                  key: RATE_LIMIT_REGISTER_REQUESTS_PER_MINUTE
+            - name: GODE_RATE_LIMIT_MAX_REQUESTS_PER_SECOND
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "gode.fullname" . }}-config
+                  key: RATE_LIMIT_MAX_REQUESTS_PER_SECOND
+            # DE algorithm
+            - name: GODE_DE_PARETO_CHANNEL_LIMITER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "gode.fullname" . }}-config
+                  key: DE_PARETO_CHANNEL_LIMITER
+            - name: GODE_DE_MAX_CHANNEL_LIMITER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "gode.fullname" . }}-config
+                  key: DE_MAX_CHANNEL_LIMITER
+            - name: GODE_DE_RESULT_LIMITER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "gode.fullname" . }}-config
+                  key: DE_RESULT_LIMITER
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- with .Values.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.extraVolumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

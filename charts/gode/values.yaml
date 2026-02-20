@@ -1,0 +1,235 @@
+# GoDE Helm Chart - Default Values
+
+replicaCount: 2
+
+image:
+  repository: gode-server
+  pullPolicy: IfNotPresent
+  tag: ""  # Defaults to appVersion
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# -- Server configuration
+server:
+  grpcPort: 3030
+  httpPort: 8081
+
+# -- JWT configuration
+jwt:
+  # -- JWT secret (min 32 chars). Ignored if existingSecret is set.
+  secret: ""
+  # -- JWT token expiration duration
+  expiry: "24h"
+  # -- Use an existing Kubernetes secret for JWT_SECRET
+  existingSecret: ""
+  # -- Key within the existing secret
+  existingSecretKey: "JWT_SECRET"
+
+# -- Observability
+observability:
+  metrics:
+    enabled: true
+    type: "prometheus"
+  tracing:
+    enabled: true
+    exporter: "none"  # none, stdout, otlp, file
+    otlpEndpoint: "localhost:4317"
+    sampleRatio: 1.0
+    filePath: "traces.json"
+  slo:
+    enabled: true
+  pprof:
+    enabled: false
+    port: 6060
+
+# -- Rate limiting
+rateLimit:
+  loginRequestsPerMinute: 5
+  registerRequestsPerMinute: 3
+  deExecutionsPerUser: 10
+  maxConcurrentDEPerUser: 3
+  maxRequestsPerSecond: 100
+  maxMessageSizeBytes: 4194304
+
+# -- Background executor configuration
+executor:
+  maxWorkers: 10
+  queueSize: 100
+  maxVectorsInProgress: 100
+  executionTTL: "24h"
+  resultTTL: "168h"
+  progressTTL: "1h"
+
+# -- DE algorithm configuration
+de:
+  paretoChannelLimiter: 100
+  maxChannelLimiter: 100
+  resultLimiter: 1000
+
+# -- Service configuration
+service:
+  type: ClusterIP
+  grpc:
+    port: 3030
+  http:
+    port: 8081
+
+# -- Ingress (HTTP gateway only)
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: gode.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: gode-tls
+  #    hosts:
+  #      - gode.local
+
+# -- Resource limits
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+# -- Liveness probe (HTTP /health)
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# -- Readiness probe (HTTP /readiness)
+readinessProbe:
+  httpGet:
+    path: /readiness
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# -- HorizontalPodAutoscaler
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# -- Node scheduling
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# -- Init containers: wait for dependencies
+initContainers:
+  enabled: true
+
+# -- Prometheus ServiceMonitor
+serviceMonitor:
+  enabled: false
+  interval: 30s
+  scrapeTimeout: 10s
+  labels: {}
+  # release: prometheus
+
+# -- Extra environment variables
+extraEnv: []
+# - name: FOO
+#   value: bar
+
+# -- Extra volume mounts
+extraVolumeMounts: []
+extraVolumes: []
+
+# =========================================================================
+# PostgreSQL sub-chart (Bitnami)
+# Set postgresql.enabled=false and configure externalPostgresql for an
+# existing database.
+# =========================================================================
+postgresql:
+  enabled: true
+  auth:
+    database: gode
+    username: gode
+    password: ""          # Set via --set or a values override
+    existingSecret: ""
+  primary:
+    persistence:
+      size: 1Gi
+
+# -- External PostgreSQL (used when postgresql.enabled=false)
+externalPostgresql:
+  host: ""
+  port: 5432
+  database: gode
+  username: gode
+  # -- Password. Ignored if existingSecret is set.
+  password: ""
+  existingSecret: ""
+  existingSecretKey: "DB_PASSWORD"
+
+# =========================================================================
+# Redis sub-chart (Bitnami)
+# Set redis.enabled=false and configure externalRedis for an existing
+# Redis instance.
+# =========================================================================
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: true
+    password: ""
+    existingSecret: ""
+  master:
+    persistence:
+      size: 1Gi
+
+# -- External Redis (used when redis.enabled=false)
+externalRedis:
+  host: ""
+  port: 6379
+  password: ""
+  db: 0
+  existingSecret: ""
+  existingSecretKey: "REDIS_PASSWORD"
+  tls:
+    enabled: false
+    insecureSkipVerify: false
+    certFile: ""
+    keyFile: ""

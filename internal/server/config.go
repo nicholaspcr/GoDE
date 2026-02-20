@@ -128,6 +128,12 @@ func LoadConfig(configPath string) (Config, error) {
 			Port:     v.GetInt("redis.port"),
 			Password: v.GetString("redis.password"),
 			DB:       v.GetInt("redis.db"),
+			TLS: redis.TLSConfig{
+				Enabled:            v.GetBool("redis.tls.enabled"),
+				InsecureSkipVerify: v.GetBool("redis.tls.insecure_skip_verify"),
+				CertFile:           v.GetString("redis.tls.cert_file"),
+				KeyFile:            v.GetString("redis.tls.key_file"),
+			},
 		},
 		Executor: ExecutorConfig{
 			MaxWorkers:           v.GetInt("executor.max_workers"),
@@ -201,6 +207,8 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("redis.host", "localhost")
 	v.SetDefault("redis.port", 6379)
 	v.SetDefault("redis.db", 0)
+	v.SetDefault("redis.tls.enabled", false)
+	v.SetDefault("redis.tls.insecure_skip_verify", false)
 
 	// Executor defaults
 	v.SetDefault("executor.max_workers", 10)
@@ -239,10 +247,14 @@ func bindEnvVars(v *viper.Viper) {
 		"SLO_ENABLED":        "slo_enabled",
 		"PPROF_ENABLED":      "pprof_enabled",
 		"PPROF_PORT":         "pprof_port",
-		"REDIS_HOST":         "redis.host",
-		"REDIS_PORT":         "redis.port",
-		"REDIS_PASSWORD":     "redis.password",
-		"REDIS_DB":           "redis.db",
+		"REDIS_HOST":                    "redis.host",
+		"REDIS_PORT":                    "redis.port",
+		"REDIS_PASSWORD":                "redis.password",
+		"REDIS_DB":                      "redis.db",
+		"REDIS_TLS_ENABLED":             "redis.tls.enabled",
+		"REDIS_TLS_INSECURE_SKIP_VERIFY": "redis.tls.insecure_skip_verify",
+		"REDIS_TLS_CERT_FILE":           "redis.tls.cert_file",
+		"REDIS_TLS_KEY_FILE":            "redis.tls.key_file",
 	}
 
 	for envVar, configKey := range envBindings {

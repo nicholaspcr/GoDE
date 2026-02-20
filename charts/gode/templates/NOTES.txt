@@ -1,0 +1,28 @@
+GoDE has been deployed successfully!
+
+{{- if .Values.ingress.enabled }}
+
+Access the HTTP gateway via Ingress:
+{{- range .Values.ingress.hosts }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}
+{{- end }}
+
+{{- else }}
+
+Get the HTTP gateway URL:
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "{{ include "gode.selectorLabels" . | replace "\n" "," }}" -o jsonpath="{.items[0].metadata.name}")
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME {{ .Values.service.http.port }}:{{ .Values.server.httpPort }}
+
+Then visit: http://localhost:{{ .Values.service.http.port }}
+
+{{- end }}
+
+gRPC endpoint (port-forward for local access):
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "{{ include "gode.selectorLabels" . | replace "\n" "," }}" -o jsonpath="{.items[0].metadata.name}")
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME {{ .Values.service.grpc.port }}:{{ .Values.server.grpcPort }}
+
+Health check:  http://localhost:{{ .Values.service.http.port }}/health
+Readiness:     http://localhost:{{ .Values.service.http.port }}/readiness
+{{- if .Values.observability.metrics.enabled }}
+Metrics:       http://localhost:{{ .Values.service.http.port }}/metrics
+{{- end }}

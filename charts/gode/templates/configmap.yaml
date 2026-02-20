@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "gode.fullname" . }}-config
+  labels:
+    {{- include "gode.labels" . | nindent 4 }}
+data:
+  # JWT
+  JWT_EXPIRY: {{ .Values.jwt.expiry | quote }}
+
+  # Observability
+  METRICS_ENABLED: {{ .Values.observability.metrics.enabled | quote }}
+  METRICS_TYPE: {{ .Values.observability.metrics.type | quote }}
+  TRACING_ENABLED: {{ .Values.observability.tracing.enabled | quote }}
+  SLO_ENABLED: {{ .Values.observability.slo.enabled | quote }}
+
+  # Tracing
+  TRACING_EXPORTER: {{ .Values.observability.tracing.exporter | quote }}
+  OTLP_ENDPOINT: {{ .Values.observability.tracing.otlpEndpoint | quote }}
+  TRACE_SAMPLE_RATIO: {{ .Values.observability.tracing.sampleRatio | quote }}
+
+  # Executor
+  EXECUTOR_MAX_WORKERS: {{ .Values.executor.maxWorkers | quote }}
+  EXECUTOR_QUEUE_SIZE: {{ .Values.executor.queueSize | quote }}
+  EXECUTOR_MAX_VECTORS_IN_PROGRESS: {{ .Values.executor.maxVectorsInProgress | quote }}
+  EXECUTOR_EXECUTION_TTL: {{ .Values.executor.executionTTL | quote }}
+  EXECUTOR_RESULT_TTL: {{ .Values.executor.resultTTL | quote }}
+  EXECUTOR_PROGRESS_TTL: {{ .Values.executor.progressTTL | quote }}
+
+  # Rate limiting
+  RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE: {{ .Values.rateLimit.loginRequestsPerMinute | quote }}
+  RATE_LIMIT_REGISTER_REQUESTS_PER_MINUTE: {{ .Values.rateLimit.registerRequestsPerMinute | quote }}
+  RATE_LIMIT_DE_EXECUTIONS_PER_USER: {{ .Values.rateLimit.deExecutionsPerUser | quote }}
+  RATE_LIMIT_MAX_CONCURRENT_DE_PER_USER: {{ .Values.rateLimit.maxConcurrentDEPerUser | quote }}
+  RATE_LIMIT_MAX_REQUESTS_PER_SECOND: {{ .Values.rateLimit.maxRequestsPerSecond | quote }}
+  RATE_LIMIT_MAX_MESSAGE_SIZE_BYTES: {{ .Values.rateLimit.maxMessageSizeBytes | int64 | quote }}
+
+  # DE algorithm
+  DE_PARETO_CHANNEL_LIMITER: {{ .Values.de.paretoChannelLimiter | quote }}
+  DE_MAX_CHANNEL_LIMITER: {{ .Values.de.maxChannelLimiter | quote }}
+  DE_RESULT_LIMITER: {{ .Values.de.resultLimiter | quote }}

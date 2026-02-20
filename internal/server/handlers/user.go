@@ -7,7 +7,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/nicholaspcr/GoDE/internal/server/auth"
 	"github.com/nicholaspcr/GoDE/internal/server/middleware"
-	"github.com/nicholaspcr/GoDE/internal/store"
 	storerrors "github.com/nicholaspcr/GoDE/internal/store/errors"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/nicholaspcr/GoDE/pkg/validation"
@@ -21,12 +20,12 @@ import (
 // userHandler is responsible for the user service operations.
 type userHandler struct {
 	api.UnimplementedUserServiceServer
-	store.Store
+	db userDB
 }
 
 // NewUserHandler returns a handle that implements api's UserServiceServer.
-func NewUserHandler(st store.Store) Handler {
-	return &userHandler{Store: st}
+func NewUserHandler(st userDB) Handler {
+	return &userHandler{db: st}
 }
 
 // RegisterService adds UserService to the RPC server.
@@ -58,7 +57,7 @@ func (uh *userHandler) Create(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if err := uh.CreateUser(ctx, req.User); err != nil {
+	if err := uh.db.CreateUser(ctx, req.User); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create user")
 	}
 	return api.Empty, nil
@@ -80,7 +79,7 @@ func (uh *userHandler) Get(
 		return nil, status.Error(codes.PermissionDenied, "cannot access other users' data")
 	}
 
-	usr, err := uh.GetUser(ctx, req.UserIds)
+	usr, err := uh.db.GetUser(ctx, req.UserIds)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, status.Error(codes.NotFound, "user not found")
@@ -111,7 +110,7 @@ func (uh *userHandler) Update(
 		return nil, status.Error(codes.PermissionDenied, "cannot modify other users' data")
 	}
 
-	if err = uh.UpdateUser(ctx, req.User, req.FieldMask.GetPaths()...); err != nil {
+	if err = uh.db.UpdateUser(ctx, req.User, req.FieldMask.GetPaths()...); err != nil {
 		if errors.Is(err, storerrors.ErrUnsupportedFieldMask) {
 			return nil, status.Error(codes.InvalidArgument, "unsupported field mask")
 		}
@@ -136,7 +135,7 @@ func (uh *userHandler) Delete(
 		return nil, status.Error(codes.PermissionDenied, "cannot delete other users' accounts")
 	}
 
-	if err := uh.DeleteUser(ctx, req.UserIds); err != nil {
+	if err := uh.db.DeleteUser(ctx, req.UserIds); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to delete user")
 	}
 	return api.Empty, nil

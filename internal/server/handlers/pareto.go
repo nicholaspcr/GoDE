@@ -7,7 +7,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/nicholaspcr/GoDE/internal/server/auth"
 	"github.com/nicholaspcr/GoDE/internal/server/middleware"
-	"github.com/nicholaspcr/GoDE/internal/store"
 	storerrors "github.com/nicholaspcr/GoDE/internal/store/errors"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"google.golang.org/grpc"
@@ -19,12 +18,12 @@ import (
 // paretoHandler is responsible for the pareto service operations.
 type paretoHandler struct {
 	api.UnimplementedParetoServiceServer
-	store.Store
+	db paretoDB
 }
 
 // NewParetoHandler returns a handle that implements api's ParetoServiceServer.
-func NewParetoHandler(st store.Store) Handler {
-	return &paretoHandler{Store: st}
+func NewParetoHandler(st paretoDB) Handler {
+	return &paretoHandler{db: st}
 }
 
 // RegisterService adds ParetoService to the RPC server.
@@ -60,7 +59,7 @@ func (ph *paretoHandler) Get(
 		return nil, status.Error(codes.InvalidArgument, "pareto_ids.id is required")
 	}
 
-	pareto, err := ph.GetPareto(ctx, req.ParetoIds)
+	pareto, err := ph.db.GetPareto(ctx, req.ParetoIds)
 	if err != nil {
 		if errors.Is(err, storerrors.ErrParetoSetNotFound) {
 			return nil, status.Error(codes.NotFound, "pareto set not found")
@@ -87,7 +86,7 @@ func (ph *paretoHandler) Delete(
 		return nil, status.Error(codes.InvalidArgument, "pareto_ids.id is required")
 	}
 
-	if err := ph.DeletePareto(ctx, req.ParetoIds); err != nil {
+	if err := ph.db.DeletePareto(ctx, req.ParetoIds); err != nil {
 		if errors.Is(err, storerrors.ErrParetoSetNotFound) {
 			return nil, status.Error(codes.NotFound, "pareto set not found")
 		}
@@ -132,7 +131,7 @@ func (ph *paretoHandler) ListByUser(
 		offset = 0
 	}
 
-	paretos, totalCount, err := ph.ListParetos(ctx, req.UserIds, limit, offset)
+	paretos, totalCount, err := ph.db.ListParetos(ctx, req.UserIds, limit, offset)
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed to list pareto sets")
 	}

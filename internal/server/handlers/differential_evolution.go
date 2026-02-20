@@ -5,7 +5,6 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/nicholaspcr/GoDE/internal/executor"
-	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	_ "github.com/nicholaspcr/GoDE/pkg/de/gde3"                    // Register GDE3 algorithm
 	_ "github.com/nicholaspcr/GoDE/pkg/problems/many/dtlz"         // Register DTLZ problems
@@ -21,13 +20,13 @@ import (
 // deHandler is responsible for the de service operations.
 type deHandler struct {
 	api.UnimplementedDifferentialEvolutionServiceServer
-	store.Store
+	Store    deStore
 	executor *executor.Executor
 }
 
 // NewDEHandler returns a handler that implements
 // DifferentialEvolutionServiceServer.
-func NewDEHandler(st store.Store, exec *executor.Executor) Handler {
+func NewDEHandler(st deStore, exec *executor.Executor) Handler {
 	return &deHandler{Store: st, executor: exec}
 }
 

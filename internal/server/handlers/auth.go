@@ -7,7 +7,6 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/nicholaspcr/GoDE/internal/server/auth"
-	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/nicholaspcr/GoDE/pkg/validation"
 	"golang.org/x/crypto/bcrypt"
@@ -39,13 +38,13 @@ func mustGenerateDummyHash() []byte {
 // authHandler is responsible for the auth service operations.
 type authHandler struct {
 	api.UnimplementedAuthServiceServer
-	db            store.Store
-	jwtService    auth.JWTService
-	accessExpiry  time.Duration
+	db           authDB
+	jwtService   auth.JWTService
+	accessExpiry time.Duration
 }
 
 // NewAuthHandler returns a handle that implements api's authServiceServer.
-func NewAuthHandler(st store.Store, jwtService auth.JWTService, accessExpiry time.Duration) Handler {
+func NewAuthHandler(st authDB, jwtService auth.JWTService, accessExpiry time.Duration) Handler {
 	return &authHandler{db: st, jwtService: jwtService, accessExpiry: accessExpiry}
 }
 

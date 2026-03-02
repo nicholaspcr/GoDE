@@ -690,17 +690,6 @@ func getRedisPort() int {
 	return 6379
 }
 
-// Close method helper for testing (assuming redis.Client has Close)
-type closeable interface {
-	Close() error
-}
-
-func closeIfPossible(c any) {
-	if closer, ok := c.(closeable); ok {
-		closer.Close()
-	}
-}
-
 // TestNew_DialectorSelection tests that the correct dialector is selected for each store type
 // This test exercises the switch statement by attempting to create stores with different types
 // The Redis connection will fail, but the dialector selection should succeed first

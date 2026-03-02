@@ -1589,12 +1589,6 @@ func BenchmarkExecutionStore_CreateExecution(b *testing.B) {
 // Store (composite wrapper) Tests
 // ================================================================================
 
-// mockFullStore implements all operations needed for the Store wrapper
-type mockFullStore struct {
-	mockStore
-	mockExecutionStore
-}
-
 // createMockStoreWrapper creates a Store instance with mock dependencies for testing.
 // This allows testing the Store wrapper without requiring a real Redis connection.
 func createMockStoreWrapper(dbMock *mockStore, redisMock *mockExecutionStore) *Store {
@@ -2261,20 +2255,6 @@ func (m *mockStore) HealthCheck(ctx context.Context) error {
 	m.healthCheckCalls++
 	if m.HealthCheckFn != nil {
 		return m.HealthCheckFn(ctx)
-	}
-	return nil
-}
-
-// mockRedisClient implements a mock Redis client for Store tests
-type mockRedisClientForStore struct {
-	healthCheckFn    func(ctx context.Context) error
-	healthCheckCalls int
-}
-
-func (m *mockRedisClientForStore) HealthCheck(ctx context.Context) error {
-	m.healthCheckCalls++
-	if m.healthCheckFn != nil {
-		return m.healthCheckFn(ctx)
 	}
 	return nil
 }

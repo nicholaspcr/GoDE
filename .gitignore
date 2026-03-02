@@ -58,3 +58,4 @@ vendor/
 
 # Claude Code
 .claude/settings.json
+.reports/

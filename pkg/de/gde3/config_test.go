@@ -36,10 +36,10 @@ func TestConstants_Validate(t *testing.T) {
 	t.Run("CR must be in [0, 1]", func(t *testing.T) {
 		c := validGDE3
 		c.CR = -0.1
-		assert.ErrorContains(t, c.Validate(), "CR (crossover rate) must be in range [0, 1]")
+		assert.ErrorContains(t, c.Validate(), "cr (crossover rate) must be in range [0, 1]")
 
 		c.CR = 1.1
-		assert.ErrorContains(t, c.Validate(), "CR (crossover rate) must be in range [0, 1]")
+		assert.ErrorContains(t, c.Validate(), "cr (crossover rate) must be in range [0, 1]")
 	})
 
 	t.Run("CR boundary values", func(t *testing.T) {
@@ -54,13 +54,13 @@ func TestConstants_Validate(t *testing.T) {
 	t.Run("F must be in (0, 2]", func(t *testing.T) {
 		c := validGDE3
 		c.F = 0.0
-		assert.ErrorContains(t, c.Validate(), "F (scaling factor) must be in range (0, 2]")
+		assert.ErrorContains(t, c.Validate(), "f (scaling factor) must be in range (0, 2]")
 
 		c.F = -0.5
-		assert.ErrorContains(t, c.Validate(), "F (scaling factor) must be in range (0, 2]")
+		assert.ErrorContains(t, c.Validate(), "f (scaling factor) must be in range (0, 2]")
 
 		c.F = 2.1
-		assert.ErrorContains(t, c.Validate(), "F (scaling factor) must be in range (0, 2]")
+		assert.ErrorContains(t, c.Validate(), "f (scaling factor) must be in range (0, 2]")
 	})
 
 	t.Run("F boundary values", func(t *testing.T) {
@@ -75,13 +75,13 @@ func TestConstants_Validate(t *testing.T) {
 	t.Run("P must be in (0, 1]", func(t *testing.T) {
 		c := validGDE3
 		c.P = 0.0
-		assert.ErrorContains(t, c.Validate(), "P (selection parameter) must be in range (0, 1]")
+		assert.ErrorContains(t, c.Validate(), "p (selection parameter) must be in range (0, 1]")
 
 		c.P = -0.1
-		assert.ErrorContains(t, c.Validate(), "P (selection parameter) must be in range (0, 1]")
+		assert.ErrorContains(t, c.Validate(), "p (selection parameter) must be in range (0, 1]")
 
 		c.P = 1.1
-		assert.ErrorContains(t, c.Validate(), "P (selection parameter) must be in range (0, 1]")
+		assert.ErrorContains(t, c.Validate(), "p (selection parameter) must be in range (0, 1]")
 	})
 
 	t.Run("P boundary values", func(t *testing.T) {

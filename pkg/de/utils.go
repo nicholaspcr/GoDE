@@ -97,7 +97,7 @@ func FastNonDominatedRanking(
 	ctx context.Context, elems []models.Vector,
 ) map[int][]models.Vector {
 	tracer := otel.Tracer("de")
-	ctx, span := tracer.Start(ctx, "de.FastNonDominatedRanking",
+	_, span := tracer.Start(ctx, "de.FastNonDominatedRanking",
 		trace.WithAttributes(
 			attribute.Int("population_size", len(elems)),
 		),

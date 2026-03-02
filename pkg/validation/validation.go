@@ -57,19 +57,6 @@ func ValidateRange[T int | int64 | float32 | float64](value T, minVal, maxVal T,
 	return nil
 }
 
-// ValidatePositive checks if a numeric value is positive (> 0).
-func ValidatePositive[T int | int64 | float32 | float64](value T, fieldName string) error {
-	if value <= 0 {
-		return NewValidationError(
-			fieldName,
-			value,
-			ErrOutOfRange,
-			"must be positive",
-		)
-	}
-	return nil
-}
-
 // ValidateNonEmpty checks if a string is non-empty after trimming.
 func ValidateNonEmpty(value string, fieldName string) error {
 	if strings.TrimSpace(value) == "" {

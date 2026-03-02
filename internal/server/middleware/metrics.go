@@ -131,31 +131,6 @@ func StreamMetricsMiddleware(metrics *telemetry.Metrics) grpc.StreamServerInterc
 	}
 }
 
-// RecordRateLimitExceeded records a rate limit exceeded event.
-func RecordRateLimitExceeded(ctx context.Context, metrics *telemetry.Metrics, limitType string) {
-	if metrics == nil {
-		return
-	}
-
-	metrics.RateLimitExceeded.Add(ctx, 1,
-		metric.WithAttributes(
-			attribute.String("limit_type", limitType),
-		),
-	)
-}
-
-// RecordPanic records a panic event.
-func RecordPanic(ctx context.Context, metrics *telemetry.Metrics, location string) {
-	if metrics == nil {
-		return
-	}
-
-	metrics.PanicsTotal.Add(ctx, 1,
-		metric.WithAttributes(
-			attribute.String("location", location),
-		),
-	)
-}
 
 // UnaryMetricsAndSLOMiddleware records both metrics and SLO data for unary RPC calls.
 func UnaryMetricsAndSLOMiddleware(metrics *telemetry.Metrics, sloTracker *slo.Tracker) grpc.UnaryServerInterceptor {

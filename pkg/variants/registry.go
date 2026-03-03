@@ -2,8 +2,9 @@ package variants
 
 import (
 	"fmt"
-	"sort"
 	"sync"
+
+	"github.com/nicholaspcr/GoDE/pkg/util"
 )
 
 // VariantFactory is a function that creates a new variant instance.
@@ -56,16 +57,7 @@ func (r *Registry) Create(name string) (Interface, error) {
 
 // List returns all registered variant names.
 func (r *Registry) List() []string {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	names := make([]string, 0, len(r.factories))
-	for name := range r.factories {
-		names = append(names, name)
-	}
-
-	sort.Strings(names)
-	return names
+	return util.SortedMapKeys(&r.mu, r.factories)
 }
 
 // Get returns metadata for a specific variant.
@@ -79,20 +71,7 @@ func (r *Registry) Get(name string) (VariantMetadata, bool) {
 
 // ListMetadata returns metadata for all registered variants.
 func (r *Registry) ListMetadata() []VariantMetadata {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	metas := make([]VariantMetadata, 0, len(r.metadata))
-	for _, meta := range r.metadata {
-		metas = append(metas, meta)
-	}
-
-	// Sort by name for consistent ordering
-	sort.Slice(metas, func(i, j int) bool {
-		return metas[i].Name < metas[j].Name
-	})
-
-	return metas
+	return util.SortedMapValues(&r.mu, r.metadata)
 }
 
 // DefaultRegistry is the global variant registry.

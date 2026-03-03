@@ -2,8 +2,9 @@ package problems
 
 import (
 	"fmt"
-	"sort"
 	"sync"
+
+	"github.com/nicholaspcr/GoDE/pkg/util"
 )
 
 // ProblemFactory is a function that creates a new problem instance.
@@ -59,16 +60,7 @@ func (r *Registry) Create(name string, dim, objs int) (Interface, error) {
 
 // List returns all registered problem names.
 func (r *Registry) List() []string {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	names := make([]string, 0, len(r.factories))
-	for name := range r.factories {
-		names = append(names, name)
-	}
-
-	sort.Strings(names)
-	return names
+	return util.SortedMapKeys(&r.mu, r.factories)
 }
 
 // Get returns metadata for a specific problem.
@@ -82,20 +74,7 @@ func (r *Registry) Get(name string) (ProblemMetadata, bool) {
 
 // ListMetadata returns metadata for all registered problems.
 func (r *Registry) ListMetadata() []ProblemMetadata {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	metas := make([]ProblemMetadata, 0, len(r.metadata))
-	for _, meta := range r.metadata {
-		metas = append(metas, meta)
-	}
-
-	// Sort by name for consistent ordering
-	sort.Slice(metas, func(i, j int) bool {
-		return metas[i].Name < metas[j].Name
-	})
-
-	return metas
+	return util.SortedMapValues(&r.mu, r.metadata)
 }
 
 // DefaultRegistry is the global problem registry.

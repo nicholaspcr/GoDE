@@ -2,12 +2,12 @@ package de
 
 import (
 	"fmt"
-	"sort"
 	"sync"
 
 	api "github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"github.com/nicholaspcr/GoDE/pkg/models"
 	"github.com/nicholaspcr/GoDE/pkg/problems"
+	"github.com/nicholaspcr/GoDE/pkg/util"
 	"github.com/nicholaspcr/GoDE/pkg/variants"
 )
 
@@ -77,34 +77,12 @@ func (r *Registry) Get(name string) (AlgorithmMetadata, error) {
 
 // List returns all registered algorithm names.
 func (r *Registry) List() []string {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	names := make([]string, 0, len(r.metadata))
-	for name := range r.metadata {
-		names = append(names, name)
-	}
-
-	sort.Strings(names)
-	return names
+	return util.SortedMapKeys(&r.mu, r.metadata)
 }
 
 // ListMetadata returns metadata for all registered algorithms.
 func (r *Registry) ListMetadata() []AlgorithmMetadata {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	metas := make([]AlgorithmMetadata, 0, len(r.metadata))
-	for _, meta := range r.metadata {
-		metas = append(metas, meta)
-	}
-
-	// Sort by name for consistent ordering
-	sort.Slice(metas, func(i, j int) bool {
-		return metas[i].Name < metas[j].Name
-	})
-
-	return metas
+	return util.SortedMapValues(&r.mu, r.metadata)
 }
 
 // RegisterFactory associates an AlgorithmFactory with a registered algorithm.

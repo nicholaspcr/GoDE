@@ -4,6 +4,8 @@ package models
 import (
 	"fmt"
 	"math/rand"
+
+	"github.com/nicholaspcr/GoDE/pkg/util"
 )
 
 // Population represents a collection of solution vectors in a Differential Evolution algorithm.
@@ -11,11 +13,7 @@ type Population []Vector
 
 // Copy returns a copy of the population.
 func (p Population) Copy() Population {
-	newP := make(Population, len(p))
-	for i, v := range p {
-		newP[i] = v.Copy()
-	}
-	return newP
+	return Population(util.CopySlice([]Vector(p)))
 }
 
 // PopulationParams is the set of parameters to generate a population.

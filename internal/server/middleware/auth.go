@@ -99,14 +99,16 @@ func UnaryAuthMiddleware(
 	}
 }
 
+// ctxValue retrieves a typed value from a context, returning the zero value if absent.
+func ctxValue[T any](ctx context.Context, key any) T {
+	val, _ := ctx.Value(key).(T)
+	return val
+}
+
 // UsernameFromContext extracts the authenticated username from the context.
 // Returns empty string if no username is found.
 func UsernameFromContext(ctx context.Context) string {
-	username, ok := ctx.Value(usernameCtxKey).(string)
-	if !ok {
-		return ""
-	}
-	return username
+	return ctxValue[string](ctx, usernameCtxKey)
 }
 
 // ContextWithUsername creates a context with the given username.
@@ -118,11 +120,7 @@ func ContextWithUsername(ctx context.Context, username string) context.Context {
 // ClaimsFromContext extracts the JWT claims from the context.
 // Returns nil if no claims are found.
 func ClaimsFromContext(ctx context.Context) *auth.Claims {
-	claims, ok := ctx.Value(claimsCtxKey).(*auth.Claims)
-	if !ok {
-		return nil
-	}
-	return claims
+	return ctxValue[*auth.Claims](ctx, claimsCtxKey)
 }
 
 // ContextWithClaims creates a context with the given claims.

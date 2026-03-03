@@ -8,7 +8,7 @@ type Vector struct {
 }
 
 // Copy all the content of a Vector into a new Vector.
-func (v *Vector) Copy() Vector {
+func (v Vector) Copy() Vector {
 	vec := Vector{
 		Elements:         make([]float64, len(v.Elements)),
 		Objectives:       make([]float64, len(v.Objectives)),

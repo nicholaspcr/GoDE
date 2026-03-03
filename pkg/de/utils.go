@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/nicholaspcr/GoDE/pkg/models"
+	"github.com/nicholaspcr/GoDE/pkg/util"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -31,10 +32,7 @@ func ReduceByCrowdDistance(
 	ranks := FastNonDominatedRanking(ctx, elems)
 
 	// Deep copy rank 0 vectors early to avoid reprocessing
-	zero := make([]models.Vector, len(ranks[0]))
-	for idx, v := range ranks[0] {
-		zero[idx] = v.Copy()
-	}
+	zero := util.CopySlice(ranks[0])
 
 	// Optimization: Copy directly to result to avoid intermediate collection
 	result := make([]models.Vector, 0, np)

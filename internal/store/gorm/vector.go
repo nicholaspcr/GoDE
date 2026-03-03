@@ -2,7 +2,6 @@ package gorm
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
 	"gorm.io/gorm"
@@ -23,42 +22,26 @@ func (vectorModel) TableName() string {
 
 // SetElements serializes float64 slice to JSON
 func (v *vectorModel) SetElements(elements []float64) error {
-	data, err := json.Marshal(elements)
-	if err != nil {
-		return err
-	}
-	v.ElementsJSON = string(data)
-	return nil
+	var err error
+	v.ElementsJSON, err = marshalJSON(elements)
+	return err
 }
 
 // GetElements deserializes JSON to float64 slice
 func (v *vectorModel) GetElements() ([]float64, error) {
-	var elements []float64
-	if v.ElementsJSON == "" {
-		return elements, nil
-	}
-	err := json.Unmarshal([]byte(v.ElementsJSON), &elements)
-	return elements, err
+	return unmarshalJSON[[]float64](v.ElementsJSON)
 }
 
 // SetObjectives serializes float64 slice to JSON
 func (v *vectorModel) SetObjectives(objectives []float64) error {
-	data, err := json.Marshal(objectives)
-	if err != nil {
-		return err
-	}
-	v.ObjectivesJSON = string(data)
-	return nil
+	var err error
+	v.ObjectivesJSON, err = marshalJSON(objectives)
+	return err
 }
 
 // GetObjectives deserializes JSON to float64 slice
 func (v *vectorModel) GetObjectives() ([]float64, error) {
-	var objectives []float64
-	if v.ObjectivesJSON == "" {
-		return objectives, nil
-	}
-	err := json.Unmarshal([]byte(v.ObjectivesJSON), &objectives)
-	return objectives, err
+	return unmarshalJSON[[]float64](v.ObjectivesJSON)
 }
 
 type vectorStore struct{ *gorm.DB }

@@ -2,11 +2,11 @@ package gorm
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/nicholaspcr/GoDE/internal/store"
 	"github.com/nicholaspcr/GoDE/pkg/api/v1"
+	"github.com/nicholaspcr/GoDE/pkg/util"
 	"gorm.io/gorm"
 )
 
@@ -27,22 +27,32 @@ func (paretoModel) TableName() string {
 
 // SetMaxObjs serializes float64 slice to JSON
 func (p *paretoModel) SetMaxObjs(maxObjs []float64) error {
-	data, err := json.Marshal(maxObjs)
-	if err != nil {
-		return err
-	}
-	p.MaxObjsJSON = string(data)
-	return nil
+	var err error
+	p.MaxObjsJSON, err = marshalJSON(maxObjs)
+	return err
 }
 
 // GetMaxObjs deserializes JSON to float64 slice
 func (p *paretoModel) GetMaxObjs() ([]float64, error) {
-	var maxObjs []float64
-	if p.MaxObjsJSON == "" {
-		return maxObjs, nil
+	return unmarshalJSON[[]float64](p.MaxObjsJSON)
+}
+
+// vectorModelToAPI converts a vectorModel to an api.Vector including its database ID.
+func vectorModelToAPI(vec vectorModel) (*api.Vector, error) {
+	elements, err := vec.GetElements()
+	if err != nil {
+		return nil, err
 	}
-	err := json.Unmarshal([]byte(p.MaxObjsJSON), &maxObjs)
-	return maxObjs, err
+	objectives, err := vec.GetObjectives()
+	if err != nil {
+		return nil, err
+	}
+	return &api.Vector{
+		Ids:              &api.VectorIDs{Id: uint64(vec.ID)},
+		Elements:         elements,
+		Objectives:       objectives,
+		CrowdingDistance: vec.CrowdingDistance,
+	}, nil
 }
 
 type paretoStore struct{ *gorm.DB }
@@ -123,23 +133,9 @@ func (st *paretoStore) GetPareto(
 		return nil, err
 	}
 
-	vectors := make([]*api.Vector, len(pareto.Vectors))
-	for i, vec := range pareto.Vectors {
-		elements, err := vec.GetElements()
-		if err != nil {
-			return nil, err
-		}
-		objectives, err := vec.GetObjectives()
-		if err != nil {
-			return nil, err
-		}
-
-		vectors[i] = &api.Vector{
-			Ids:              &api.VectorIDs{Id: uint64(vec.ID)},
-			Elements:         elements,
-			Objectives:       objectives,
-			CrowdingDistance: vec.CrowdingDistance,
-		}
+	vectors, err := util.MapSlice(pareto.Vectors, vectorModelToAPI)
+	if err != nil {
+		return nil, err
 	}
 
 	return &api.Pareto{
@@ -247,23 +243,9 @@ func (st *paretoStore) ListParetos(
 			return nil, 0, err
 		}
 
-		vectors := make([]*api.Vector, len(p.Vectors))
-		for j, vec := range p.Vectors {
-			elements, err := vec.GetElements()
-			if err != nil {
-				return nil, 0, err
-			}
-			objectives, err := vec.GetObjectives()
-			if err != nil {
-				return nil, 0, err
-			}
-
-			vectors[j] = &api.Vector{
-				Ids:              &api.VectorIDs{Id: uint64(vec.ID)},
-				Elements:         elements,
-				Objectives:       objectives,
-				CrowdingDistance: vec.CrowdingDistance,
-			}
+		vectors, err := util.MapSlice(p.Vectors, vectorModelToAPI)
+		if err != nil {
+			return nil, 0, err
 		}
 
 		result[i] = &api.Pareto{
@@ -362,8 +344,7 @@ func (st *paretoStore) GetParetoSetByID(ctx context.Context, id uint64) (*store.
 		return nil, err
 	}
 
-	vectors := make([]*api.Vector, len(paretoModel.Vectors))
-	for i, vec := range paretoModel.Vectors {
+	vectors, err := util.MapSlice(paretoModel.Vectors, func(vec vectorModel) (*api.Vector, error) {
 		elements, err := vec.GetElements()
 		if err != nil {
 			return nil, err
@@ -372,12 +353,14 @@ func (st *paretoStore) GetParetoSetByID(ctx context.Context, id uint64) (*store.
 		if err != nil {
 			return nil, err
 		}
-
-		vectors[i] = &api.Vector{
+		return &api.Vector{
 			Elements:         elements,
 			Objectives:       objectives,
 			CrowdingDistance: vec.CrowdingDistance,
-		}
+		}, nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	// Convert flat max objs to store.MaxObjectives

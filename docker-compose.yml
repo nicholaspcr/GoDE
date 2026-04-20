@@ -3,16 +3,18 @@ services:
     container_name: gode-postgres
     image: postgres:15
     restart: unless-stopped
+    env_file:
+      - .env.compose
     environment:
-      POSTGRES_DB: gode
-      POSTGRES_PASSWORD: gode_password
-      POSTGRES_USER: gode_user
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U gode_user -d gode"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -47,18 +49,21 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    env_file:
+      - .env.compose
     environment:
       # Database configuration
       STORE_TYPE: postgres
-      STORE_POSTGRESQL_DNS: postgres://gode_user:gode_password@postgres:5432/gode?sslmode=disable
+      STORE_POSTGRESQL_DNS: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
 
       # Redis configuration
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_DB: 0
 
-      # JWT configuration (MUST be changed in production!)
-      JWT_SECRET: development-secret-key-change-in-production-min-32-chars
+      # JWT configuration — sourced from .env.compose; rejected at startup
+      # if it matches any known dev value.
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
 
       # Server configuration
       GRPC_PORT: 3030
@@ -126,9 +131,11 @@ services:
     container_name: gode-grafana
     image: grafana/grafana:latest
     restart: unless-stopped
+    env_file:
+      - .env.compose
     environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?GRAFANA_ADMIN_USER is required}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
       GF_INSTALL_PLUGINS: ""
     ports:
       - "3000:3000"

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuthStore } from '@/stores/authStore'
 import { useLogout, useExecutions } from '@/api/hooks'
+import { executionStatusLabel } from '@/lib/status'
 
 export function DashboardPage() {
   const username = useAuthStore((s) => s.username)
@@ -93,9 +94,16 @@ export function DashboardPage() {
                 <Card key={execution.id}>
                   <CardContent className="flex items-center justify-between py-4">
                     <div>
-                      <p className="font-medium">{execution.id}</p>
+                      <p className="font-mono text-[13px] font-medium">
+                        {execution.id}
+                      </p>
                       <p className="text-muted-foreground text-sm">
-                        Status: {execution.status?.replace('EXECUTION_STATUS_', '')}
+                        Status:{' '}
+                        {
+                          executionStatusLabel[
+                            execution.status ?? 'EXECUTION_STATUS_UNSPECIFIED'
+                          ]
+                        }
                       </p>
                     </div>
                     <Button asChild variant="outline" size="sm">

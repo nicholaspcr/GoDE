@@ -2,22 +2,11 @@ import { Link } from 'react-router-dom'
 import { Card, Badge, Progress, Button } from '@/components/ui'
 import { useCancelExecution, useDeleteExecution } from '@/api/hooks/useExecutions'
 import { useExecutionProgressValue } from '@/api/hooks/useProgress'
-import type { ApiV1Execution, ApiV1ExecutionStatus } from '@/api/generated'
+import type { ApiV1Execution } from '@/api/generated'
+import { executionStatusLabel, executionStatusVariant } from '@/lib/status'
 
 interface ExecutionCardProps {
   execution: ApiV1Execution
-}
-
-const statusConfig: Record<
-  ApiV1ExecutionStatus,
-  { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
-> = {
-  EXECUTION_STATUS_UNSPECIFIED: { label: 'Unknown', variant: 'outline' },
-  EXECUTION_STATUS_PENDING: { label: 'Pending', variant: 'secondary' },
-  EXECUTION_STATUS_RUNNING: { label: 'Running', variant: 'default' },
-  EXECUTION_STATUS_COMPLETED: { label: 'Completed', variant: 'outline' },
-  EXECUTION_STATUS_FAILED: { label: 'Failed', variant: 'destructive' },
-  EXECUTION_STATUS_CANCELLED: { label: 'Cancelled', variant: 'secondary' },
 }
 
 function formatDate(date: Date | undefined): string {
@@ -34,7 +23,8 @@ export function ExecutionCard({ execution }: ExecutionCardProps) {
   const progress = useExecutionProgressValue(execution.id)
 
   const status = execution.status ?? 'EXECUTION_STATUS_UNSPECIFIED'
-  const { label, variant } = statusConfig[status]
+  const label = executionStatusLabel[status]
+  const variant = executionStatusVariant[status]
   const isRunning = status === 'EXECUTION_STATUS_RUNNING' || status === 'EXECUTION_STATUS_PENDING'
   const canDelete = status === 'EXECUTION_STATUS_COMPLETED' ||
                     status === 'EXECUTION_STATUS_FAILED' ||

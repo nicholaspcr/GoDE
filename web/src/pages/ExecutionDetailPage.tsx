@@ -8,19 +8,7 @@ import {
 import { useExecutionProgressValue } from '@/api/hooks/useProgress'
 import { Card, Badge, Progress, Button } from '@/components/ui'
 import { ParetoVisualization } from '@/components/visualization'
-import type { ApiV1ExecutionStatus } from '@/api/generated'
-
-const statusConfig: Record<
-  ApiV1ExecutionStatus,
-  { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
-> = {
-  EXECUTION_STATUS_UNSPECIFIED: { label: 'Unknown', variant: 'outline' },
-  EXECUTION_STATUS_PENDING: { label: 'Pending', variant: 'secondary' },
-  EXECUTION_STATUS_RUNNING: { label: 'Running', variant: 'default' },
-  EXECUTION_STATUS_COMPLETED: { label: 'Completed', variant: 'outline' },
-  EXECUTION_STATUS_FAILED: { label: 'Failed', variant: 'destructive' },
-  EXECUTION_STATUS_CANCELLED: { label: 'Cancelled', variant: 'secondary' },
-}
+import { executionStatusLabel, executionStatusVariant } from '@/lib/status'
 
 function formatDate(date: Date | undefined): string {
   if (!date) return '-'
@@ -57,7 +45,8 @@ export function ExecutionDetailPage() {
   }
 
   const status = execution.status ?? 'EXECUTION_STATUS_UNSPECIFIED'
-  const { label, variant } = statusConfig[status]
+  const label = executionStatusLabel[status]
+  const variant = executionStatusVariant[status]
   const isRunning = status === 'EXECUTION_STATUS_RUNNING' || status === 'EXECUTION_STATUS_PENDING'
   const isCompleted = status === 'EXECUTION_STATUS_COMPLETED'
   const canDelete = isCompleted ||

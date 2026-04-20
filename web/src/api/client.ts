@@ -6,8 +6,9 @@ import {
   ApiV1ParetoServiceApi,
 } from './generated'
 import { useAuthStore } from '@/stores/authStore'
+import { env } from '@/lib/env'
 
-const BASE_PATH = import.meta.env.VITE_API_BASE_URL || ''
+const BASE_PATH = env.API_BASE_URL
 
 export const createApiConfig = (): Configuration => {
   const token = useAuthStore.getState().accessToken

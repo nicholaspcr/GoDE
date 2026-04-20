@@ -16,8 +16,8 @@ export function LoginPage() {
     <div className="bg-background flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <h1 className="text-3xl font-bold">GoDE</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-bold tracking-tight">GoDE</h1>
+          <p className="text-muted-foreground mt-1.5 text-sm">
             Differential Evolution Optimization Framework
           </p>
         </div>

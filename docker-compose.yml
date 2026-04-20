@@ -19,6 +19,23 @@ services:
     networks:
       - gode-network
 
+  redis:
+    container_name: gode-redis
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gode-network
+
   deserver:
     container_name: gode-server
     build:
@@ -28,10 +45,17 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       # Database configuration
       STORE_TYPE: postgres
       STORE_POSTGRESQL_DNS: postgres://gode_user:gode_password@postgres:5432/gode?sslmode=disable
+
+      # Redis configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
 
       # JWT configuration (MUST be changed in production!)
       JWT_SECRET: development-secret-key-change-in-production-min-32-chars
@@ -119,6 +143,7 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
   prometheus_data:
   grafana_data:
 

@@ -49,9 +49,9 @@ export function ExecutionCard({ execution }: ExecutionCardProps) {
           <div className="flex items-center gap-2">
             <Link
               to={`/executions/${execution.id}`}
-              className="font-medium hover:underline"
+              className="font-mono text-[13px] font-medium hover:underline"
             >
-              Execution {execution.id?.slice(0, 8)}...
+              {execution.id}
             </Link>
             <Badge variant={variant}>{label}</Badge>
           </div>

@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/nicholaspcr/GoDE/internal/cache/redis"
@@ -11,6 +12,23 @@ import (
 	"github.com/nicholaspcr/GoDE/pkg/de"
 	"github.com/spf13/viper"
 )
+
+// jwtSecretBlocklist is a list of known insecure JWT secret sentinel values
+// that must never be accepted at startup, even if they satisfy length
+// requirements. Matching is case-insensitive and substring-based, so any
+// secret that contains any of these markers is rejected.
+var jwtSecretBlocklist = []string{
+	"change-me",
+	"changeme",
+	"change me",
+	"development-secret",
+	"dev-secret",
+	"please-change",
+	"insecure",
+	"example-secret",
+	"demo-secret",
+	"default-secret",
+}
 
 // Config contains all the necessary configuration options for the server.
 type Config struct {
@@ -334,8 +352,15 @@ func (c *Config) Validate() error {
 	if c.JWTSecret == "" {
 		return fmt.Errorf("JWT_SECRET environment variable is required and must not be empty")
 	}
-	if c.JWTSecret == "change-me-in-production" {
-		return fmt.Errorf("JWT_SECRET is set to the insecure default value 'change-me-in-production' - please use a secure random secret")
+	lower := strings.ToLower(c.JWTSecret)
+	for _, marker := range jwtSecretBlocklist {
+		if strings.Contains(lower, marker) {
+			return fmt.Errorf(
+				"JWT_SECRET contains blocklisted marker %q — this looks like a development or example value. "+
+					"Generate a real secret with e.g. `openssl rand -base64 48`",
+				marker,
+			)
+		}
 	}
 	if len(c.JWTSecret) < 32 {
 		return fmt.Errorf("JWT_SECRET must be at least 32 characters long for security")

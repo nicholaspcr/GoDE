@@ -71,11 +71,11 @@ func TestConfig_Validate(t *testing.T) {
 			wantErr: "JWT_SECRET environment variable is required",
 		},
 		{
-			name: "insecure default JWT secret",
+			name: "JWT secret contains blocklisted marker (change-me)",
 			config: Config{
 				LisAddr:   "localhost:3030",
 				HTTPPort:  ":8081",
-				JWTSecret: "change-me-in-production",
+				JWTSecret: "change-me-in-production-32-chars-long",
 				JWTExpiry: 24 * time.Hour,
 				RateLimit: RateLimitConfig{
 					LoginRequestsPerMinute:    5,
@@ -86,7 +86,25 @@ func TestConfig_Validate(t *testing.T) {
 					MaxMessageSizeBytes:       4 * 1024 * 1024,
 				},
 			},
-			wantErr: "insecure default value",
+			wantErr: `contains blocklisted marker "change-me"`,
+		},
+		{
+			name: "JWT secret contains blocklisted marker (development-secret, case-insensitive)",
+			config: Config{
+				LisAddr:   "localhost:3030",
+				HTTPPort:  ":8081",
+				JWTSecret: "Development-Secret-Key-For-Local-Testing-12345",
+				JWTExpiry: 24 * time.Hour,
+				RateLimit: RateLimitConfig{
+					LoginRequestsPerMinute:    5,
+					RegisterRequestsPerMinute: 3,
+					DEExecutionsPerUser:       10,
+					MaxConcurrentDEPerUser:    3,
+					MaxRequestsPerSecond:      100,
+					MaxMessageSizeBytes:       4 * 1024 * 1024,
+				},
+			},
+			wantErr: `contains blocklisted marker "development-secret"`,
 		},
 		{
 			name: "JWT secret too short",

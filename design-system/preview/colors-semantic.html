@@ -1,0 +1,17 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+.swatch { border-radius:8px; padding:12px; min-height:72px; display:flex; flex-direction:column; justify-content:space-between; color:white; }
+.row { display:grid; grid-template-columns:repeat(5, 1fr); gap:10px; }
+.label { font-size:12px; font-weight:600; }
+.hsl { font-family:var(--font-mono); font-size:10.5px; opacity:.85; }
+</style></head>
+<body>
+<div class="row">
+  <div class="swatch" style="background:hsl(var(--primary));"><div class="label">primary</div><div class="hsl">222 47% 11%</div></div>
+  <div class="swatch" style="background:hsl(var(--destructive));"><div class="label">destructive</div><div class="hsl">0 84% 60%</div></div>
+  <div class="swatch" style="background:hsl(var(--success));"><div class="label">success</div><div class="hsl">142 71% 45%</div></div>
+  <div class="swatch" style="background:hsl(var(--warning));color:#111;"><div class="label">warning</div><div class="hsl">48 96% 53%</div></div>
+  <div class="swatch" style="background:hsl(var(--ring));"><div class="label">ring</div><div class="hsl">222 84% 4.9%</div></div>
+</div>
+</body></html>

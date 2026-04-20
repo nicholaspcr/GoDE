@@ -1,0 +1,184 @@
+/* ---------------------------------------------------------------------------
+ * GoDE Design System — tokens
+ * Mirrors web/src/index.css (shadcn default light palette) and adds typography
+ * and spacing tokens used across the web console.
+ * ------------------------------------------------------------------------- */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* ----- Color (HSL, sourced from web/src/index.css) ----- */
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+
+  --primary: 222.2 47.4% 11.2%;
+  --primary-foreground: 210 40% 98%;
+
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+
+  --success: 142 71% 45%;       /* tailwind green-500 */
+  --success-foreground: 0 0% 100%;
+  --warning: 48 96% 53%;        /* tailwind yellow-500 */
+  --warning-foreground: 0 0% 0%;
+
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 222.2 84% 4.9%;
+
+  /* Semantic aliases (design-system convenience) */
+  --fg1: hsl(var(--foreground));
+  --fg2: hsl(var(--muted-foreground));
+  --bg1: hsl(var(--background));
+  --bg2: hsl(var(--secondary));
+  --line: hsl(var(--border));
+
+  /* ----- Viridis stops (Plotly default — used in plots only) ----- */
+  --viridis-0: #440154;
+  --viridis-1: #3b528b;
+  --viridis-2: #21918c;
+  --viridis-3: #5ec962;
+  --viridis-4: #fde725;
+
+  /* ----- Typography ----- */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+               Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco,
+               Consolas, 'Liberation Mono', 'Courier New', monospace;
+
+  /* Size scale (Tailwind defaults, referenced by name in repo) */
+  --text-xs: 0.75rem;     /* 12px — metadata under progress */
+  --text-sm: 0.875rem;    /* 14px — body default, button, labels */
+  --text-base: 1rem;      /* 16px — not commonly used in chrome */
+  --text-lg: 1.125rem;    /* 18px — card section heading */
+  --text-xl: 1.25rem;     /* 20px — recent-executions-style heading */
+  --text-2xl: 1.5rem;     /* 24px — page title, card title default */
+  --text-3xl: 1.875rem;   /* 30px — app wordmark on login */
+
+  --leading-none: 1;
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+
+  --tracking-tight: -0.025em;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* ----- Radii (web/src/index.css) ----- */
+  --radius-lg: 0.5rem;
+  --radius-md: calc(0.5rem - 2px);
+  --radius-sm: calc(0.5rem - 4px);
+  --radius-full: 9999px;
+
+  /* ----- Shadow ----- */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-none: 0 0 #0000;
+
+  /* ----- Spacing (4px base, Tailwind defaults — aliased for clarity) ----- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+
+  /* ----- Motion ----- */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);   /* tailwind ease-in-out */
+  --dur-fast: 150ms;
+  --dur-base: 300ms;
+}
+
+/* ---------------------------------------------------------------------------
+ * Base resets
+ * ------------------------------------------------------------------------- */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: hsl(var(--foreground));
+  background: hsl(var(--background));
+  font-feature-settings: "rlig" 1, "calt" 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------------------------------------------------------------------------
+ * Semantic typography (maps to repo patterns)
+ * ------------------------------------------------------------------------- */
+
+h1, .h1 {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  margin: 0;
+}
+
+h2, .h2 {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  margin: 0;
+}
+
+h3, .h3 {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  margin: 0;
+}
+
+h4, .h4, .card-title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  margin: 0;
+}
+
+p, .body {
+  font-size: var(--text-sm);
+  color: hsl(var(--foreground));
+  margin: 0;
+}
+
+.muted {
+  font-size: var(--text-sm);
+  color: hsl(var(--muted-foreground));
+}
+
+.meta, .caption {
+  font-size: var(--text-xs);
+  color: hsl(var(--muted-foreground));
+}
+
+.label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-none);
+}
+
+code, kbd, samp, pre, .mono {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+}

@@ -5,6 +5,16 @@ This file provides architectural guidance and technical context for Claude Code 
 > **For development workflows, build commands, and testing:** See [DEVELOPMENT.md](DEVELOPMENT.md)
 > **For project structure:** See [DEVELOPMENT.md#project-structure](DEVELOPMENT.md#project-structure)
 
+This repo uses a design system in `design-system/`. Before creating or modifying
+UI (web/src/**, HTML artifacts, mocks, docs), read:
+
+- `design-system/README.md` — design rules, type, color, spacing, iconography
+- `design-system/colors_and_type.css` — canonical tokens
+- `design-system/ui_kits/web_console/` — reference React patterns
+
+Match tokens exactly. Do not invent new colors, fonts, or radii.
+The wordmark is type-only ("GoDE", Inter 700, -0.025em tracking).
+
 ## Project Overview
 
 GoDE is a Differential Evolution (DE) framework implementing multi-objective optimization algorithms. The project extends [GDE3](https://github.com/nicholaspcr/GDE3) and is architected as a multi-tenant gRPC/HTTP server with CLI client, enabling concurrent execution of DE instances across multiple users.

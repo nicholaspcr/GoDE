@@ -1,0 +1,26 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+.label { display:block; font-size:14px; font-weight:500; margin-bottom:6px; }
+.input, .select { display:block; width:100%; height:40px; padding:0 12px; border-radius:var(--radius-md); border:1px solid hsl(var(--input)); background:hsl(var(--background)); font-size:14px; font-family:inherit; color:inherit; }
+.input:focus, .select:focus { outline:none; box-shadow:0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring)); }
+.err { color:hsl(var(--destructive)); font-size:14px; margin-top:6px; }
+.row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+</style></head>
+<body>
+<div class="row">
+  <div>
+    <label class="label">Algorithm</label>
+    <select class="select"><option>gde3</option></select>
+  </div>
+  <div>
+    <label class="label">Generations</label>
+    <input class="input" type="number" value="100" />
+  </div>
+  <div>
+    <label class="label">CR</label>
+    <input class="input" type="number" step="0.01" value="" placeholder="0.90" />
+    <div class="err">CR is required</div>
+  </div>
+</div>
+</body></html>

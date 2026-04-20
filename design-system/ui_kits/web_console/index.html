@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>GoDE Web Console — UI Kit</title>
+<link rel="stylesheet" href="../../colors_and_type.css">
+<style>html,body{margin:0;}</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" src="Primitives.jsx"></script>
+<script type="text/babel" src="AppShell.jsx"></script>
+<script type="text/babel" src="LoginForm.jsx"></script>
+<script type="text/babel" src="Dashboard.jsx"></script>
+<script type="text/babel" src="ExecutionForm.jsx"></script>
+<script type="text/babel" src="ParetoPlot.jsx"></script>
+<script type="text/babel" src="ExecutionDetail.jsx"></script>
+<script type="text/babel">
+function App() {
+  const [route, setRoute] = React.useState({ name:'login' });
+  const [user, setUser] = React.useState(null);
+  const [execs, setExecs] = React.useState([
+    { id:'exec-7f3a29b1', status:'completed', problem:'zdt1', algorithm:'gde3', variant:'rand/1', executions:1, generations:100, populationSize:100, dimensionsSize:30, objectivesSize:2, floorLimiter:0, ceilLimiter:1, cr:0.9, f:0.5, p:0.1 },
+    { id:'exec-2c84d5e0', status:'running',   problem:'dtlz2', algorithm:'gde3', variant:'best/1', executions:1, generations:200, populationSize:100, dimensionsSize:12, objectivesSize:3, floorLimiter:0, ceilLimiter:1, cr:0.9, f:0.5, p:0.1 },
+    { id:'exec-a14e8fcd', status:'failed',    problem:'wfg4',  algorithm:'gde3', variant:'pbest', executions:1, generations:100, populationSize:100, dimensionsSize:24, objectivesSize:2, floorLimiter:0, ceilLimiter:1, cr:0.9, f:0.5, p:0.1 },
+  ]);
+
+  const go = (r) => {
+    setRoute(r);
+    try { localStorage.setItem('gode-route', JSON.stringify(r)); } catch {}
+  };
+  React.useEffect(() => {
+    try { const r = JSON.parse(localStorage.getItem('gode-route')); if (r && r.name !== 'login') { setUser('researcher'); setRoute(r); } } catch {}
+  }, []);
+
+  if (route.name === 'login') {
+    return <LoginForm onSuccess={(u)=>{ setUser(u); go({name:'dashboard'}); }} />;
+  }
+
+  let content = null;
+  if (route.name === 'dashboard') {
+    content = <Dashboard executions={execs} onNew={()=>go({name:'new'})} onViewAll={()=>go({name:'list'})} onViewExecution={(id)=>go({name:'detail', id})} />;
+  } else if (route.name === 'new') {
+    content = <ExecutionForm onCancel={()=>go({name:'dashboard'})} onStart={(ex)=>{ const full={...ex, status:'running'}; setExecs([full, ...execs]); go({name:'detail', id:full.id}); }} />;
+  } else if (route.name === 'list') {
+    content = (
+      <div>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 }}>
+          <h1 style={{ margin:0, fontSize:24, fontWeight:700, letterSpacing:'-0.025em' }}>Executions</h1>
+          <Button onClick={()=>go({name:'new'})}>New Execution</Button>
+        </div>
+        <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+          {execs.map(ex => {
+            const sMap = { running:{l:'Running',v:'default'}, pending:{l:'Pending',v:'secondary'}, completed:{l:'Completed',v:'outline'}, failed:{l:'Failed',v:'destructive'}, cancelled:{l:'Cancelled',v:'secondary'} };
+            const s = sMap[ex.status] || {l:'Unknown',v:'outline'};
+            return (
+              <Card key={ex.id}><CardContent style={{ padding:16 }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+                  <div>
+                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      <a href="#" onClick={(e)=>{e.preventDefault();go({name:'detail', id:ex.id});}} style={{ fontFamily:'JetBrains Mono, monospace', fontSize:13, color:'inherit' }}>{ex.id}</a>
+                      <Badge variant={s.v}>{s.l}</Badge>
+                    </div>
+                    <div style={{ fontSize:14, color:'hsl(215.4 16.3% 46.9%)', marginTop:4 }}>Created: Apr 20, 2026, 2:32 PM</div>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={()=>go({name:'detail', id:ex.id})}>View</Button>
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:8, fontSize:13, marginTop:12 }}>
+                  <div><span style={{ color:'hsl(215.4 16.3% 46.9%)' }}>Problem:</span> {ex.problem}</div>
+                  <div><span style={{ color:'hsl(215.4 16.3% 46.9%)' }}>Generations:</span> {ex.generations}</div>
+                  <div><span style={{ color:'hsl(215.4 16.3% 46.9%)' }}>Population:</span> {ex.populationSize}</div>
+                  <div><span style={{ color:'hsl(215.4 16.3% 46.9%)' }}>Dimensions:</span> {ex.dimensionsSize}</div>
+                  <div><span style={{ color:'hsl(215.4 16.3% 46.9%)' }}>Objectives:</span> {ex.objectivesSize}</div>
+                </div>
+              </CardContent></Card>
+            );
+          })}
+        </div>
+      </div>
+    );
+  } else if (route.name === 'detail') {
+    const ex = execs.find(e => e.id === route.id) || execs[0];
+    content = <ExecutionDetail execution={ex} onBack={()=>go({name:'list'})} onCancel={()=>{ setExecs(execs.map(e=> e.id===ex.id ? {...e, status:'cancelled'}:e)); }} onDelete={()=>{ setExecs(execs.filter(e=>e.id!==ex.id)); go({name:'list'}); }} />;
+  }
+
+  return (
+    <AppShell username={user || 'researcher'} onLogout={()=>{ setUser(null); go({name:'login'}); }}>
+      {content}
+    </AppShell>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

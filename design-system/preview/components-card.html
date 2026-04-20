@@ -1,0 +1,21 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+.card { border:1px solid hsl(var(--border)); background:hsl(var(--card)); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); }
+.card-header { padding:24px 24px 0; }
+.card-title { font-size:24px; font-weight:600; letter-spacing:-0.025em; line-height:1; }
+.card-desc { font-size:14px; color:hsl(var(--muted-foreground)); margin-top:6px; }
+.card-content { padding:16px 24px 24px; }
+.btn { display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 16px;border-radius:var(--radius-md);font-size:14px;font-weight:500;background:hsl(var(--primary));color:hsl(var(--primary-foreground));border:none;width:100%; }
+</style></head>
+<body>
+<div class="card" style="max-width:360px;">
+  <div class="card-header">
+    <div class="card-title">New Execution</div>
+    <div class="card-desc">Configure and run a new DE optimization</div>
+  </div>
+  <div class="card-content">
+    <button class="btn">Create Execution</button>
+  </div>
+</div>
+</body></html>

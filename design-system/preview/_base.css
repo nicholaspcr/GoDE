@@ -1,0 +1,8 @@
+@import url('../colors_and_type.css');
+html, body { margin: 0; padding: 0; }
+body { padding: 24px; }
+.card-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

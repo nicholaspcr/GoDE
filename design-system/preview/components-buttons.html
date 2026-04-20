@@ -1,0 +1,32 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+.btn { display:inline-flex; align-items:center; justify-content:center; height:40px; padding:0 16px; border-radius:var(--radius-md); font-size:14px; font-weight:500; border:1px solid transparent; cursor:pointer; transition: background-color 150ms var(--ease); font-family:var(--font-sans); }
+.btn-primary { background:hsl(var(--primary)); color:hsl(var(--primary-foreground)); }
+.btn-primary:hover { background:hsl(222.2 47.4% 18%); }
+.btn-destructive { background:hsl(var(--destructive)); color:white; }
+.btn-outline { border-color:hsl(var(--input)); background:hsl(var(--background)); color:hsl(var(--foreground)); }
+.btn-outline:hover { background:hsl(var(--accent)); }
+.btn-secondary { background:hsl(var(--secondary)); color:hsl(var(--secondary-foreground)); }
+.btn-ghost { background:transparent; color:hsl(var(--foreground)); }
+.btn-ghost:hover { background:hsl(var(--accent)); }
+.btn-link { background:transparent; color:hsl(var(--primary)); text-decoration:none; padding:0; height:auto; }
+.btn-link:hover { text-decoration:underline; text-underline-offset:4px; }
+.row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+</style></head>
+<body>
+<div class="row">
+  <button class="btn btn-primary">Start Execution</button>
+  <button class="btn btn-destructive">Delete</button>
+  <button class="btn btn-outline">Cancel</button>
+  <button class="btn btn-secondary">Secondary</button>
+  <button class="btn btn-ghost">Ghost</button>
+  <a href="#" class="btn btn-link">Register</a>
+</div>
+<div class="row" style="margin-top:14px;">
+  <button class="btn btn-primary" style="height:36px;padding:0 12px;">sm</button>
+  <button class="btn btn-primary">default · 40h</button>
+  <button class="btn btn-primary" style="height:44px;padding:0 32px;">lg</button>
+  <button class="btn btn-outline" style="width:40px;height:40px;padding:0;">＋</button>
+</div>
+</body></html>

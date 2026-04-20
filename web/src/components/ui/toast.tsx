@@ -77,10 +77,13 @@ interface ToastItemProps {
   onRemove: (id: string) => void
 }
 
+// Per the GoDE design system, success is green-500 and warning is
+// yellow-500 (Tailwind defaults) — the same values used by the Badge
+// success/warning variants.
 const typeStyles: Record<ToastType, string> = {
-  success: 'bg-green-600 text-white',
+  success: 'bg-green-500 text-white',
   error: 'bg-destructive text-destructive-foreground',
-  warning: 'bg-yellow-500 text-white',
+  warning: 'bg-yellow-500 text-black',
   info: 'bg-primary text-primary-foreground',
 }
 

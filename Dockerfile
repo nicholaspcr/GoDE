@@ -1,40 +1,32 @@
-# Multi-stage build for GoDE server
-FROM golang:1.23-alpine AS builder
+# Multi-stage build for GoDE server (legacy top-level Dockerfile).
+# Prefer Dockerfile.server for new work — this file is kept for backward
+# compatibility with anyone still running `docker build .`.
+
+FROM golang:1.25-alpine3.21 AS builder
 
 WORKDIR /build
 
-# Install build dependencies
 RUN apk add --no-cache git make
 
-# Copy go mod files
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy source code
 COPY . .
 
-# Build the server binary
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -o deserver ./cmd/deserver
+ARG TARGETOS=linux
+ARG TARGETARCH=amd64
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
+    -trimpath \
+    -ldflags="-w -s" \
+    -o /build/bin/deserver \
+    ./cmd/deserver
 
-# Final stage
-FROM alpine:3.19
+FROM gcr.io/distroless/static-debian12:nonroot
 
-# Install CA certificates for HTTPS and timezone data
-RUN apk --no-cache add ca-certificates tzdata
+COPY --from=builder /build/bin/deserver /usr/local/bin/deserver
 
-WORKDIR /app
+USER nonroot:nonroot
 
-# Copy the binary from builder
-COPY --from=builder /build/deserver .
-
-# Create non-root user
-RUN addgroup -g 1000 gode && \
-    adduser -D -u 1000 -G gode gode && \
-    chown -R gode:gode /app
-
-USER gode
-
-# Expose gRPC and HTTP ports
 EXPOSE 3030 8081
 
-ENTRYPOINT ["./deserver"]
+ENTRYPOINT ["/usr/local/bin/deserver"]

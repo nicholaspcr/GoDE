@@ -65,7 +65,7 @@ export function ParetoPlot2D({
       data={data}
       layout={layout}
       useResizeHandler
-      className="w-full h-full min-h-[400px]"
+      className="h-full min-h-[400px] w-full"
       config={{
         displaylogo: false,
         modeBarButtonsToRemove: ['lasso2d', 'select2d'],

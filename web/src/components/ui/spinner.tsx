@@ -15,7 +15,7 @@ export function Spinner({ size = 'md', className }: SpinnerProps) {
   return (
     <div
       className={cn(
-        'animate-spin rounded-full border-primary border-t-transparent',
+        'border-primary animate-spin rounded-full border-t-transparent',
         sizeClasses[size],
         className
       )}
@@ -34,9 +34,9 @@ interface LoadingStateProps {
 
 export function LoadingState({ message = 'Loading...', size = 'md' }: LoadingStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 gap-4">
+    <div className="flex flex-col items-center justify-center gap-4 py-12">
       <Spinner size={size} />
-      <p className="text-sm text-muted-foreground">{message}</p>
+      <p className="text-muted-foreground text-sm">{message}</p>
     </div>
   )
 }

@@ -61,7 +61,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
               {...register('username')}
             />
             {errors.username && (
-              <p className="text-sm text-destructive">{errors.username.message}</p>
+              <p className="text-destructive text-sm">{errors.username.message}</p>
             )}
           </div>
 
@@ -74,12 +74,12 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
               {...register('password')}
             />
             {errors.password && (
-              <p className="text-sm text-destructive">{errors.password.message}</p>
+              <p className="text-destructive text-sm">{errors.password.message}</p>
             )}
           </div>
 
           {login.isError && (
-            <p className="text-sm text-destructive">
+            <p className="text-destructive text-sm">
               Invalid username or password. Please try again.
             </p>
           )}
@@ -92,7 +92,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
             {login.isPending ? 'Signing in...' : 'Sign In'}
           </Button>
 
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-center text-sm">
             Don't have an account?{' '}
             <Link to="/register" className="text-primary hover:underline">
               Register

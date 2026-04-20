@@ -64,7 +64,7 @@ function ToastContainer({ toasts, onRemove }: ToastContainerProps) {
   if (toasts.length === 0) return null
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
+    <div className="fixed right-4 bottom-4 z-50 flex max-w-sm flex-col gap-2">
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onRemove={onRemove} />
       ))}
@@ -88,7 +88,7 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
   return (
     <div
       className={cn(
-        'px-4 py-3 rounded-md shadow-lg flex items-center justify-between gap-2 animate-in slide-in-from-right-full',
+        'animate-in slide-in-from-right-full flex items-center justify-between gap-2 rounded-md px-4 py-3 shadow-lg',
         typeStyles[toast.type]
       )}
       role="alert"
@@ -96,7 +96,7 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
       <p className="text-sm">{toast.message}</p>
       <button
         onClick={() => onRemove(toast.id)}
-        className="text-current opacity-70 hover:opacity-100 transition-opacity"
+        className="text-current opacity-70 transition-opacity hover:opacity-100"
         aria-label="Dismiss"
       >
         <svg

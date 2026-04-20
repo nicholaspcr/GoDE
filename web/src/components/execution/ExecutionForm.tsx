@@ -92,8 +92,8 @@ export function ExecutionForm({ onSuccess }: ExecutionFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Algorithm Configuration</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <h3 className="mb-4 text-lg font-semibold">Algorithm Configuration</h3>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="algorithm">Algorithm</Label>
             <Select {...register('algorithm')}>
@@ -105,7 +105,7 @@ export function ExecutionForm({ onSuccess }: ExecutionFormProps) {
               ))}
             </Select>
             {errors.algorithm && (
-              <p className="text-sm text-destructive">{errors.algorithm.message}</p>
+              <p className="text-destructive text-sm">{errors.algorithm.message}</p>
             )}
           </div>
 
@@ -120,7 +120,7 @@ export function ExecutionForm({ onSuccess }: ExecutionFormProps) {
               ))}
             </Select>
             {errors.variant && (
-              <p className="text-sm text-destructive">{errors.variant.message}</p>
+              <p className="text-destructive text-sm">{errors.variant.message}</p>
             )}
           </div>
 
@@ -135,15 +135,15 @@ export function ExecutionForm({ onSuccess }: ExecutionFormProps) {
               ))}
             </Select>
             {errors.problem && (
-              <p className="text-sm text-destructive">{errors.problem.message}</p>
+              <p className="text-destructive text-sm">{errors.problem.message}</p>
             )}
           </div>
         </div>
       </Card>
 
       <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Execution Parameters</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <h3 className="mb-4 text-lg font-semibold">Execution Parameters</h3>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <div className="space-y-2">
             <Label htmlFor="executions">Executions</Label>
             <Input
@@ -152,7 +152,7 @@ export function ExecutionForm({ onSuccess }: ExecutionFormProps) {
               min={1}
             />
             {errors.executions && (
-              <p className="text-sm text-destructive">{errors.executions.message}</p>
+              <p className="text-destructive text-sm">{errors.executions.message}</p>
             )}
           </div>
 
@@ -164,7 +164,7 @@ export function ExecutionForm({ onSuccess }: ExecutionFormProps) {
               min={1}
             />
             {errors.generations && (
-              <p className="text-sm text-destructive">{errors.generations.message}</p>
+              <p className="text-destructive text-sm">{errors.generations.message}</p>
             )}
           </div>
 
@@ -176,7 +176,7 @@ export function ExecutionForm({ onSuccess }: ExecutionFormProps) {
               min={1}
             />
             {errors.populationSize && (
-              <p className="text-sm text-destructive">{errors.populationSize.message}</p>
+              <p className="text-destructive text-sm">{errors.populationSize.message}</p>
             )}
           </div>
 
@@ -188,7 +188,7 @@ export function ExecutionForm({ onSuccess }: ExecutionFormProps) {
               min={1}
             />
             {errors.dimensionsSize && (
-              <p className="text-sm text-destructive">{errors.dimensionsSize.message}</p>
+              <p className="text-destructive text-sm">{errors.dimensionsSize.message}</p>
             )}
           </div>
 
@@ -200,7 +200,7 @@ export function ExecutionForm({ onSuccess }: ExecutionFormProps) {
               min={2}
             />
             {errors.objectivesSize && (
-              <p className="text-sm text-destructive">{errors.objectivesSize.message}</p>
+              <p className="text-destructive text-sm">{errors.objectivesSize.message}</p>
             )}
           </div>
 
@@ -212,7 +212,7 @@ export function ExecutionForm({ onSuccess }: ExecutionFormProps) {
               {...register('floorLimiter', { valueAsNumber: true })}
             />
             {errors.floorLimiter && (
-              <p className="text-sm text-destructive">{errors.floorLimiter.message}</p>
+              <p className="text-destructive text-sm">{errors.floorLimiter.message}</p>
             )}
           </div>
 
@@ -224,15 +224,15 @@ export function ExecutionForm({ onSuccess }: ExecutionFormProps) {
               {...register('ceilLimiter', { valueAsNumber: true })}
             />
             {errors.ceilLimiter && (
-              <p className="text-sm text-destructive">{errors.ceilLimiter.message}</p>
+              <p className="text-destructive text-sm">{errors.ceilLimiter.message}</p>
             )}
           </div>
         </div>
       </Card>
 
       <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">GDE3 Parameters</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <h3 className="mb-4 text-lg font-semibold">GDE3 Parameters</h3>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="gde3Cr">CR (Crossover Rate)</Label>
             <Input
@@ -243,7 +243,7 @@ export function ExecutionForm({ onSuccess }: ExecutionFormProps) {
               max={1}
             />
             {errors.gde3Cr && (
-              <p className="text-sm text-destructive">{errors.gde3Cr.message}</p>
+              <p className="text-destructive text-sm">{errors.gde3Cr.message}</p>
             )}
           </div>
 
@@ -257,7 +257,7 @@ export function ExecutionForm({ onSuccess }: ExecutionFormProps) {
               max={2}
             />
             {errors.gde3F && (
-              <p className="text-sm text-destructive">{errors.gde3F.message}</p>
+              <p className="text-destructive text-sm">{errors.gde3F.message}</p>
             )}
           </div>
 
@@ -271,14 +271,14 @@ export function ExecutionForm({ onSuccess }: ExecutionFormProps) {
               max={1}
             />
             {errors.gde3P && (
-              <p className="text-sm text-destructive">{errors.gde3P.message}</p>
+              <p className="text-destructive text-sm">{errors.gde3P.message}</p>
             )}
           </div>
         </div>
       </Card>
 
       {runAsync.error && (
-        <div className="p-4 bg-destructive/10 text-destructive rounded-md">
+        <div className="bg-destructive/10 text-destructive rounded-md p-4">
           Failed to start execution. Please try again.
         </div>
       )}

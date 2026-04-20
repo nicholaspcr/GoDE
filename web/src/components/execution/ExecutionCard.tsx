@@ -65,11 +65,11 @@ export function ExecutionCard({ execution }: ExecutionCardProps) {
             </Link>
             <Badge variant={variant}>{label}</Badge>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Created: {formatDate(execution.createdAt)}
           </p>
           {execution.completedAt && (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Completed: {formatDate(execution.completedAt)}
             </p>
           )}
@@ -109,7 +109,7 @@ export function ExecutionCard({ execution }: ExecutionCardProps) {
             <span>{Math.round(progress.overallPercent)}%</span>
           </div>
           <Progress value={progress.overallPercent} />
-          <div className="flex justify-between text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex justify-between text-xs">
             <span>
               Generation {progress.currentGeneration}/{progress.totalGenerations}
             </span>
@@ -121,7 +121,7 @@ export function ExecutionCard({ execution }: ExecutionCardProps) {
       )}
 
       {execution.config && (
-        <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
+        <div className="mt-4 grid grid-cols-2 gap-2 text-sm md:grid-cols-5">
           <div>
             <span className="text-muted-foreground">Problem:</span>{' '}
             {execution.problem || '-'}
@@ -146,7 +146,7 @@ export function ExecutionCard({ execution }: ExecutionCardProps) {
       )}
 
       {execution.error && (
-        <div className="mt-4 p-2 bg-destructive/10 text-destructive text-sm rounded">
+        <div className="bg-destructive/10 text-destructive mt-4 rounded p-2 text-sm">
           {execution.error}
         </div>
       )}

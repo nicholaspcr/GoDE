@@ -41,8 +41,8 @@ export function ExecutionDetailPage() {
 
   if (executionLoading) {
     return (
-      <div className="container mx-auto py-8 px-4">
-        <div className="text-center text-muted-foreground">Loading...</div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-muted-foreground text-center">Loading...</div>
       </div>
     )
   }
@@ -50,8 +50,8 @@ export function ExecutionDetailPage() {
   const execution = executionData?.execution
   if (!execution) {
     return (
-      <div className="container mx-auto py-8 px-4">
-        <div className="text-center text-destructive">Execution not found</div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-destructive text-center">Execution not found</div>
       </div>
     )
   }
@@ -79,14 +79,14 @@ export function ExecutionDetailPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
-        <Link to="/executions" className="text-sm text-muted-foreground hover:underline">
+        <Link to="/executions" className="text-muted-foreground text-sm hover:underline">
           &larr; Back to Executions
         </Link>
       </div>
 
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold">Execution Details</h1>
           <Badge variant={variant}>{label}</Badge>
@@ -113,9 +113,9 @@ export function ExecutionDetailPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card className="p-6">
-          <h2 className="text-lg font-semibold mb-4">Information</h2>
+          <h2 className="mb-4 text-lg font-semibold">Information</h2>
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between">
               <dt className="text-muted-foreground">ID</dt>
@@ -157,7 +157,7 @@ export function ExecutionDetailPage() {
         </Card>
 
         <Card className="p-6">
-          <h2 className="text-lg font-semibold mb-4">Configuration</h2>
+          <h2 className="mb-4 text-lg font-semibold">Configuration</h2>
           {execution.config && (
             <dl className="grid grid-cols-2 gap-2 text-sm">
               <div className="flex justify-between">
@@ -210,11 +210,11 @@ export function ExecutionDetailPage() {
       </div>
 
       {isRunning && (
-        <Card className="p-6 mt-6">
-          <h2 className="text-lg font-semibold mb-4">Progress</h2>
+        <Card className="mt-6 p-6">
+          <h2 className="mb-4 text-lg font-semibold">Progress</h2>
           <div className="space-y-4">
             <div>
-              <div className="flex justify-between text-sm mb-2">
+              <div className="mb-2 flex justify-between text-sm">
                 <span>Overall Progress</span>
                 <span>{Math.round(progress.overallPercent)}%</span>
               </div>
@@ -235,15 +235,15 @@ export function ExecutionDetailPage() {
       )}
 
       {execution.error && (
-        <Card className="p-6 mt-6 border-destructive">
-          <h2 className="text-lg font-semibold mb-4 text-destructive">Error</h2>
-          <p className="text-sm text-destructive">{execution.error}</p>
+        <Card className="border-destructive mt-6 p-6">
+          <h2 className="text-destructive mb-4 text-lg font-semibold">Error</h2>
+          <p className="text-destructive text-sm">{execution.error}</p>
         </Card>
       )}
 
       {isCompleted && (
         <div className="mt-6">
-          <h2 className="text-lg font-semibold mb-4">Results</h2>
+          <h2 className="mb-4 text-lg font-semibold">Results</h2>
           {resultsLoading ? (
             <Card className="p-6">
               <div className="text-muted-foreground">Loading results...</div>

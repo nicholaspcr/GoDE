@@ -22,7 +22,7 @@ export function ParetoVisualization({ vectors }: ParetoVisualizationProps) {
 
   if (vectors.length === 0) {
     return (
-      <Card className="p-6 text-center text-muted-foreground">
+      <Card className="text-muted-foreground p-6 text-center">
         No Pareto-optimal solutions to display
       </Card>
     )
@@ -32,7 +32,7 @@ export function ParetoVisualization({ vectors }: ParetoVisualizationProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap justify-between items-center gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex gap-2">
           <Button
             variant={viewMode === '2d' ? 'default' : 'outline'}

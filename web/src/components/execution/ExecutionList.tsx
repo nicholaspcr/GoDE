@@ -20,7 +20,7 @@ export function ExecutionList() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <h2 className="text-xl font-semibold">Executions</h2>
           <Select
@@ -48,19 +48,19 @@ export function ExecutionList() {
       </div>
 
       {isLoading && (
-        <div className="text-center py-8 text-muted-foreground">
+        <div className="text-muted-foreground py-8 text-center">
           Loading executions...
         </div>
       )}
 
       {isError && (
-        <div className="text-center py-8 text-destructive">
+        <div className="text-destructive py-8 text-center">
           Failed to load executions. Please try again.
         </div>
       )}
 
       {!isLoading && !isError && data?.executions?.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
+        <div className="text-muted-foreground py-8 text-center">
           No executions found.{' '}
           <Link to="/executions/new" className="text-primary hover:underline">
             Create your first execution

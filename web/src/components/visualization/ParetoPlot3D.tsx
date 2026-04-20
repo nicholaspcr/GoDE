@@ -69,7 +69,7 @@ export function ParetoPlot3D({
       data={data}
       layout={layout}
       useResizeHandler
-      className="w-full h-full min-h-[500px]"
+      className="h-full min-h-[500px] w-full"
       config={{
         displaylogo: false,
         toImageButtonOptions: {

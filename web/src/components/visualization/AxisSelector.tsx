@@ -27,7 +27,7 @@ export function AxisSelector({
   }))
 
   return (
-    <div className="flex flex-wrap gap-4 items-end">
+    <div className="flex flex-wrap items-end gap-4">
       <div className="space-y-1">
         <Label htmlFor="x-axis" className="text-sm">
           X Axis

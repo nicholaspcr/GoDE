@@ -16,12 +16,12 @@ export function DashboardPage() {
   const recentExecutions = executionsData?.executions?.slice(0, 5) ?? []
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background min-h-screen">
       <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto flex items-center justify-between px-4 py-4">
           <h1 className="text-2xl font-bold">GoDE</h1>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
+            <span className="text-muted-foreground text-sm">
               Welcome, {username}
             </span>
             <Button variant="outline" size="sm" onClick={handleLogout}>
@@ -72,18 +72,18 @@ export function DashboardPage() {
               <div className="text-3xl font-bold">
                 {isLoading ? '...' : executionsData?.totalCount ?? 0}
               </div>
-              <p className="text-sm text-muted-foreground">Total executions</p>
+              <p className="text-muted-foreground text-sm">Total executions</p>
             </CardContent>
           </Card>
         </div>
 
         <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-4">Recent Executions</h2>
+          <h2 className="mb-4 text-xl font-semibold">Recent Executions</h2>
           {isLoading ? (
             <p className="text-muted-foreground">Loading...</p>
           ) : recentExecutions.length === 0 ? (
             <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
+              <CardContent className="text-muted-foreground py-8 text-center">
                 No executions yet. Create your first optimization run!
               </CardContent>
             </Card>
@@ -91,10 +91,10 @@ export function DashboardPage() {
             <div className="space-y-2">
               {recentExecutions.map((execution) => (
                 <Card key={execution.id}>
-                  <CardContent className="py-4 flex items-center justify-between">
+                  <CardContent className="flex items-center justify-between py-4">
                     <div>
                       <p className="font-medium">{execution.id}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         Status: {execution.status?.replace('EXECUTION_STATUS_', '')}
                       </p>
                     </div>

@@ -76,7 +76,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
               {...register('username')}
             />
             {errors.username && (
-              <p className="text-sm text-destructive">{errors.username.message}</p>
+              <p className="text-destructive text-sm">{errors.username.message}</p>
             )}
           </div>
 
@@ -89,7 +89,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
               {...register('email')}
             />
             {errors.email && (
-              <p className="text-sm text-destructive">{errors.email.message}</p>
+              <p className="text-destructive text-sm">{errors.email.message}</p>
             )}
           </div>
 
@@ -102,7 +102,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
               {...register('password')}
             />
             {errors.password && (
-              <p className="text-sm text-destructive">{errors.password.message}</p>
+              <p className="text-destructive text-sm">{errors.password.message}</p>
             )}
           </div>
 
@@ -115,12 +115,12 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
               {...register('confirmPassword')}
             />
             {errors.confirmPassword && (
-              <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
+              <p className="text-destructive text-sm">{errors.confirmPassword.message}</p>
             )}
           </div>
 
           {registerMutation.isError && (
-            <p className="text-sm text-destructive">
+            <p className="text-destructive text-sm">
               Registration failed. Username or email may already be taken.
             </p>
           )}
@@ -133,7 +133,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
             {registerMutation.isPending ? 'Creating account...' : 'Create Account'}
           </Button>
 
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-center text-sm">
             Already have an account?{' '}
             <Link to="/login" className="text-primary hover:underline">
               Sign in

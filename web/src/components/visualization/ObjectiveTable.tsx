@@ -64,8 +64,8 @@ export function ObjectiveTable({ vectors, pageSize = 20 }: ObjectiveTableProps) 
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-muted-foreground">
+      <div className="flex items-center justify-between">
+        <p className="text-muted-foreground text-sm">
           {vectors.length} Pareto-optimal solutions
         </p>
         <Button variant="outline" size="sm" onClick={exportCSV}>
@@ -77,11 +77,11 @@ export function ObjectiveTable({ vectors, pageSize = 20 }: ObjectiveTableProps) 
         <table className="w-full text-sm">
           <thead className="bg-muted/50">
             <tr>
-              <th className="text-left py-3 px-3 font-medium">#</th>
+              <th className="px-3 py-3 text-left font-medium">#</th>
               {Array.from({ length: objectivesCount }, (_, i) => (
                 <th
                   key={i}
-                  className="text-left py-3 px-3 font-medium cursor-pointer hover:bg-muted"
+                  className="hover:bg-muted cursor-pointer px-3 py-3 text-left font-medium"
                   onClick={() => handleSort(i)}
                 >
                   Objective {i + 1}
@@ -91,7 +91,7 @@ export function ObjectiveTable({ vectors, pageSize = 20 }: ObjectiveTableProps) 
                 </th>
               ))}
               <th
-                className="text-left py-3 px-3 font-medium cursor-pointer hover:bg-muted"
+                className="hover:bg-muted cursor-pointer px-3 py-3 text-left font-medium"
                 onClick={() => handleSort('crowding')}
               >
                 Crowding
@@ -103,16 +103,16 @@ export function ObjectiveTable({ vectors, pageSize = 20 }: ObjectiveTableProps) 
           </thead>
           <tbody>
             {paginatedVectors.map((vector, idx) => (
-              <tr key={idx} className="border-t hover:bg-muted/30">
-                <td className="py-2 px-3 text-muted-foreground">
+              <tr key={idx} className="hover:bg-muted/30 border-t">
+                <td className="text-muted-foreground px-3 py-2">
                   {page * pageSize + idx + 1}
                 </td>
                 {vector.objectives?.map((obj, objIdx) => (
-                  <td key={objIdx} className="py-2 px-3 font-mono text-xs">
+                  <td key={objIdx} className="px-3 py-2 font-mono text-xs">
                     {obj.toFixed(6)}
                   </td>
                 ))}
-                <td className="py-2 px-3 font-mono text-xs">
+                <td className="px-3 py-2 font-mono text-xs">
                   {vector.crowdingDistance?.toFixed(4) ?? '-'}
                 </td>
               </tr>
@@ -122,7 +122,7 @@ export function ObjectiveTable({ vectors, pageSize = 20 }: ObjectiveTableProps) 
       </div>
 
       {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2">
+        <div className="flex items-center justify-center gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -131,7 +131,7 @@ export function ObjectiveTable({ vectors, pageSize = 20 }: ObjectiveTableProps) 
           >
             Previous
           </Button>
-          <span className="text-sm text-muted-foreground">
+          <span className="text-muted-foreground text-sm">
             Page {page + 1} of {totalPages}
           </span>
           <Button

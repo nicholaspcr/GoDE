@@ -38,12 +38,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       }
 
       return (
-        <Card className="p-6 m-4">
-          <div className="text-center space-y-4">
-            <h2 className="text-lg font-semibold text-destructive">
+        <Card className="m-4 p-6">
+          <div className="space-y-4 text-center">
+            <h2 className="text-destructive text-lg font-semibold">
               Something went wrong
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {this.state.error?.message || 'An unexpected error occurred'}
             </p>
             <div className="flex justify-center gap-2">

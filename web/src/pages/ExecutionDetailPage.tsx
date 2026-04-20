@@ -7,6 +7,7 @@ import {
 } from '@/api/hooks/useExecutions'
 import { useExecutionProgressValue } from '@/api/hooks/useProgress'
 import { Card, Badge, Progress, Button } from '@/components/ui'
+import { AppShell } from '@/components/layout'
 import { ParetoVisualization } from '@/components/visualization'
 import { executionStatusLabel, executionStatusVariant } from '@/lib/status'
 
@@ -29,18 +30,18 @@ export function ExecutionDetailPage() {
 
   if (executionLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <AppShell>
         <div className="text-muted-foreground text-center">Loading...</div>
-      </div>
+      </AppShell>
     )
   }
 
   const execution = executionData?.execution
   if (!execution) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <AppShell>
         <div className="text-destructive text-center">Execution not found</div>
-      </div>
+      </AppShell>
     )
   }
 
@@ -68,16 +69,21 @@ export function ExecutionDetailPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <AppShell>
       <div className="mb-6">
-        <Link to="/executions" className="text-muted-foreground text-sm hover:underline">
+        <Link
+          to="/executions"
+          className="text-muted-foreground text-sm hover:underline"
+        >
           &larr; Back to Executions
         </Link>
       </div>
 
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold">Execution Details</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Execution Details
+          </h1>
           <Badge variant={variant}>{label}</Badge>
         </div>
         <div className="flex gap-2">
@@ -246,6 +252,6 @@ export function ExecutionDetailPage() {
           )}
         </div>
       )}
-    </div>
+    </AppShell>
   )
 }

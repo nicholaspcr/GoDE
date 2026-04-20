@@ -13,12 +13,23 @@ BUILD_DIR := .dev
 COVERAGE_DIR := .dev/coverage
 GO_FILES := $(shell find . -type f -name '*.go' -not -path "./vendor/*")
 
-# Colors for output
-CYAN := \033[36m
-GREEN := \033[32m
-YELLOW := \033[33m
-RED := \033[31m
-RESET := \033[0m
+# Colors for output.
+# Resolve via `printf` so the variables hold real ESC bytes — /bin/sh's echo
+# (used by make recipes) does not interpret \033 by default. Honor NO_COLOR
+# (https://no-color.org) to disable.
+ifdef NO_COLOR
+CYAN :=
+GREEN :=
+YELLOW :=
+RED :=
+RESET :=
+else
+CYAN := $(shell printf '\033[36m')
+GREEN := $(shell printf '\033[32m')
+YELLOW := $(shell printf '\033[33m')
+RED := $(shell printf '\033[31m')
+RESET := $(shell printf '\033[0m')
+endif
 
 .DEFAULT_GOAL := help
 

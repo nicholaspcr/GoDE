@@ -9,9 +9,9 @@ import (
 
 // BreakerConfig holds circuit breaker configuration.
 type BreakerConfig struct {
-	MaxFailures uint32        // Number of failures before opening (default: 5)
-	Timeout     time.Duration // Time to wait before half-open (default: 60s)
-	MaxRequests uint32        // Max requests in half-open state (default: 10)
+	MaxFailures uint32        `json:"max_failures" yaml:"max_failures" mapstructure:"max_failures"` // Number of failures before opening (default: 5)
+	Timeout     time.Duration `json:"timeout" yaml:"timeout" mapstructure:"timeout"`               // Time to wait before half-open (default: 60s)
+	MaxRequests uint32        `json:"max_requests" yaml:"max_requests" mapstructure:"max_requests"` // Max requests in half-open state (default: 10)
 }
 
 // DefaultBreakerConfig returns sensible defaults for Redis circuit breaker.

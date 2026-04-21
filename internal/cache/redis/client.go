@@ -44,20 +44,20 @@ type Client struct {
 
 // TLSConfig holds TLS settings for Redis connections.
 type TLSConfig struct {
-	Enabled            bool
-	InsecureSkipVerify bool
-	CertFile           string
-	KeyFile            string
+	Enabled            bool   `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
+	InsecureSkipVerify bool   `json:"insecure_skip_verify" yaml:"insecure_skip_verify" mapstructure:"insecure_skip_verify"`
+	CertFile           string `json:"cert_file" yaml:"cert_file" mapstructure:"cert_file"`
+	KeyFile            string `json:"key_file" yaml:"key_file" mapstructure:"key_file"`
 }
 
 // Config holds Redis connection configuration.
 type Config struct {
-	Host          string
-	Port          int
-	Password      string
-	DB            int
-	TLS           TLSConfig
-	BreakerConfig BreakerConfig // Circuit breaker configuration
+	Host          string        `json:"host" yaml:"host" mapstructure:"host"`
+	Port          int           `json:"port" yaml:"port" mapstructure:"port"`
+	Password      string        `json:"password" yaml:"password" mapstructure:"password"`
+	DB            int           `json:"db" yaml:"db" mapstructure:"db"`
+	TLS           TLSConfig     `json:"tls" yaml:"tls" mapstructure:"tls"`
+	BreakerConfig BreakerConfig `json:"breaker_config" yaml:"breaker_config" mapstructure:"breaker_config"` // Circuit breaker configuration
 }
 
 // NewClient creates a new Redis client wrapper with circuit breaker.

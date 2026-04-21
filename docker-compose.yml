@@ -61,13 +61,18 @@ services:
       REDIS_PORT: 6379
       REDIS_DB: 0
 
+      # Store Redis configuration (used by the composite store)
+      STORE_REDIS_HOST: redis
+      STORE_REDIS_PORT: 6379
+      STORE_REDIS_DB: 0
+
       # JWT configuration — sourced from .env.compose; rejected at startup
       # if it matches any known dev value.
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
 
       # Server configuration
-      GRPC_PORT: 3030
-      HTTP_PORT: 8081
+      SERVER_LIS_ADDR: :3030
+      SERVER_HTTP_PORT: :8081
 
       # Observability
       METRICS_ENABLED: "true"

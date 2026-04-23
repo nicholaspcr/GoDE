@@ -388,7 +388,7 @@ web-api: openapi ## Generate TypeScript API client from OpenAPI spec
 .PHONY: k8s-build
 k8s-build: ## Build Docker image for Kubernetes
 	@echo '$(GREEN)Building Docker image for Kubernetes...$(RESET)'
-	@eval $$(minikube docker-env) && docker build -t gode-server:latest .
+	@eval $$(minikube docker-env) && docker build -f cmd/deserver/Dockerfile -t gode-server:latest .
 	@echo '$(GREEN)✓ Docker image built$(RESET)'
 
 .PHONY: k8s-deploy
@@ -453,7 +453,7 @@ pre-push: check test ## Run pre-push checks
 .PHONY: docker-build
 docker-build: ## Build Docker image
 	@echo '$(GREEN)Building Docker image...$(RESET)'
-	@docker build -t gode-server:latest .
+	@docker build -f cmd/deserver/Dockerfile -t gode-server:latest .
 	@echo '$(GREEN)✓ Docker image built$(RESET)'
 
 .PHONY: docker-run

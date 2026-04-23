@@ -42,7 +42,7 @@ services:
     container_name: gode-server
     build:
       context: .
-      dockerfile: Dockerfile.server
+      dockerfile: cmd/deserver/Dockerfile
     restart: unless-stopped
     depends_on:
       postgres:
